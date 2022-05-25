@@ -11,6 +11,27 @@ import SwiftTreeSitter
 public class TreeSitterModel {
     public static let shared: TreeSitterModel = .init()
 
+    public func query(for language: TreeSitterLanguage) -> Query? {
+        switch language {
+        case .go:
+            return goQuery
+        case .goMod:
+            return goModQuery
+        case .html:
+            return htmlQuery
+        case .json:
+            return jsonQuery
+        case .ruby:
+            return rubyQuery
+        case .swift:
+            return swiftQuery
+        case .yaml:
+            return yamlQuery
+        case .plainText:
+            return nil
+        }
+    }
+
     private init() {}
 
     public lazy var swiftQuery: Query? = {

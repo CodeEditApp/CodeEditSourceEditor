@@ -35,7 +35,7 @@ public struct CodeLanguage {
         "Contents/Resources/queries/highlights.scm"
     }
 
-    internal var language: Language? {
+    public var language: Language? {
         guard let ts_language = ts_language else { return nil }
         return Language(language: ts_language)
     }
@@ -80,7 +80,7 @@ public struct CodeLanguage {
     )
 }
 
-extension CodeLanguage {
+public extension CodeLanguage {
     static let knownLanguages: [CodeLanguage] = [
         .go,
         .goMod,

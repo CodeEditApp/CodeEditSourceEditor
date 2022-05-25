@@ -7,11 +7,18 @@
 
 import AppKit
 import STTextView
+import CodeLanguage
+import SwiftTreeSitter
 
 final public class STTextViewController: NSViewController {
 
     private var textView: STTextView!
     private var text: String
+    private var language: CodeLanguage
+
+    private var parser: Parser?
+    private var query: Query?
+    private var tree: Tree?
 
     public var font: NSFont = .monospacedSystemFont(ofSize: 14, weight: .regular) {
         didSet { update() }
@@ -19,8 +26,9 @@ final public class STTextViewController: NSViewController {
     public var lineHeight: Double = 1.1
     public var tabInterval: Double = 28
 
-    init(text: String) {
+    init(text: String, language: CodeLanguage) {
         self.text = text
+        self.language = language
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -62,6 +70,11 @@ final public class STTextViewController: NSViewController {
         }
     }
 
+    public override func viewDidLoad() {
+        super.viewDidLoad()
+        setupTreeSitter()
+    }
+
     private func paragraphStyle() -> NSMutableParagraphStyle {
         let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
         paragraph.lineHeightMultiple = self.lineHeight
@@ -83,7 +96,8 @@ final public class STTextViewController: NSViewController {
         self.font = .monospacedSystemFont(ofSize: size, weight: .regular)
     }
 
-
+    // MARK: Key Presses
+    
     private var keyIsDown: Bool = false
 
     override public func keyDown(with event: NSEvent) {
@@ -102,6 +116,8 @@ final public class STTextViewController: NSViewController {
     }
 }
 
+// MARK: - STTextViewDelegate
+
 extension STTextViewController: STTextViewDelegate {
     
     public func textDidChange(_ notification: Notification) {
@@ -119,5 +135,82 @@ extension STTextViewController: STTextViewDelegate {
     public func textView(_ textView: STTextView, didChangeTextIn affectedCharRange: NSTextRange, replacementString: String) {
         textView.autocompleteSymbols(replacementString)
         print("Did change text in \(affectedCharRange) | \(replacementString)")
+        highlight()
+    }
+}
+
+// MARK: - Tree Sitter
+
+extension STTextViewController {
+    private func setupTreeSitter() {
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.parser = Parser()
+            guard let lang = self.language.language else { return }
+            try? self.parser?.setLanguage(lang)
+
+            self.query = TreeSitterModel.shared.query(for: self.language.id)
+
+            DispatchQueue.main.async {
+                self.highlight()
+            }
+        }
+    }
+
+    private func highlight() {
+        guard let parser = parser,
+              let text = textView?.string,
+              let tree = parser.parse(text),
+              let cursor = query?.execute(node: tree.rootNode!, in: tree)
+        else { return }
+
+        if let expr = tree.rootNode?.sExpressionString,
+           expr.contains("ERROR") { return }
+
+        while let match = cursor.next() {
+            print("match: ", match)
+            self.highlightCaptures(match.captures)
+            self.highlightCaptures(for: match.predicates, in: match)
+        }
+    }
+
+    private func highlightCaptures(_ captures: [QueryCapture]) {
+        captures.forEach { capture in
+            // DEBUG only:
+            //            printCaptureInfo(capture)
+            textView?.addAttributes([
+                .foregroundColor: colorForCapture(capture.name),
+                .font: NSFont.monospacedSystemFont(ofSize: 14, weight: .medium)
+            ], range: capture.node.range)
+        }
+    }
+
+    private func highlightCaptures(for predicates: [Predicate], in match: QueryMatch) {
+        predicates.forEach { predicate in
+            predicate.captures(in: match).forEach { capture in
+                //                print(capture.name, string[capture.node.range])
+                textView?.addAttributes(
+                    [
+                        .foregroundColor: colorForCapture(capture.name?.appending("_alternate")),
+                        .font: NSFont.monospacedSystemFont(ofSize: 14, weight: .medium)
+                    ],
+                    range: capture.node.range
+                )
+            }
+        }
+    }
+
+    private func colorForCapture(_ capture: String?) -> NSColor {
+        switch capture {
+        case "include", "constructor", "keyword", "boolean", "variable.builtin", "keyword.return", "keyword.function", "repeat", "conditional": return .magenta
+        case "comment": return .systemGreen
+        case "variable", "property": return .systemTeal
+        case "function", "method": return .systemMint
+        case "number", "float": return .systemYellow
+        case "string": return .systemRed
+        case "type": return .systemPurple
+        case "parameter": return .systemTeal
+        case "type_alternate": return .systemCyan
+        default: return .textColor
+        }
     }
 }
