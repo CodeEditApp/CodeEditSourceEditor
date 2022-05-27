@@ -13,7 +13,9 @@ import SwiftTreeSitter
 final public class STTextViewController: NSViewController {
 
     private var textView: STTextView!
-    private var text: String
+    public var text: String { didSet {
+        self.textView?.string = text
+    }}
     private var language: CodeLanguage
 
     private var parser: Parser?

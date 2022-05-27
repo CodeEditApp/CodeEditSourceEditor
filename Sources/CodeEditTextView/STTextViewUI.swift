@@ -36,6 +36,7 @@ public struct STTextViewUI: NSViewControllerRepresentable {
 
     public func updateNSViewController(_ nsViewController: STTextViewController, context: Context) {
         nsViewController.setFontSize(fontSize)
+        nsViewController.text = text
         return
     }
 }
