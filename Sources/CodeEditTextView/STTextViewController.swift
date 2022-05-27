@@ -186,7 +186,7 @@ extension STTextViewController {
             //            printCaptureInfo(capture)
             textView?.addAttributes([
                 .foregroundColor: colorForCapture(capture.name),
-                .font: NSFont.monospacedSystemFont(ofSize: 14, weight: .medium)
+                .font: NSFont.monospacedSystemFont(ofSize: font.pointSize, weight: .medium)
             ], range: capture.node.range)
         }
     }
@@ -198,7 +198,7 @@ extension STTextViewController {
                 textView?.addAttributes(
                     [
                         .foregroundColor: colorForCapture(capture.name?.appending("_alternate")),
-                        .font: NSFont.monospacedSystemFont(ofSize: 14, weight: .medium)
+                        .font: NSFont.monospacedSystemFont(ofSize: font.pointSize, weight: .medium)
                     ],
                     range: capture.node.range
                 )
