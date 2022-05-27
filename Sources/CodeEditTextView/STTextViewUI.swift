@@ -29,8 +29,11 @@ public struct STTextViewUI: NSViewControllerRepresentable {
     public typealias NSViewControllerType = STTextViewController
 
     public func makeNSViewController(context: Context) -> STTextViewController {
-        let controller = STTextViewController(text: text, language: language)
-        controller.font = .monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        let controller = STTextViewController(
+            text: text,
+            language: language,
+            font: .monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        )
         return controller
     }
 

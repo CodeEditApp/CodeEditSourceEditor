@@ -24,15 +24,16 @@ final public class STTextViewController: NSViewController {
     private var query: Query?
     private var tree: Tree?
 
-    public var font: NSFont = .monospacedSystemFont(ofSize: 14, weight: .regular) {
+    public var font: NSFont {
         didSet { update() }
     }
     public var lineHeight: Double = 1.1
     public var tabInterval: Double = 28
 
-    init(text: String, language: CodeLanguage) {
+    init(text: String, language: CodeLanguage, font: NSFont) {
         self.text = text
         self.language = language
+        self.font = font
         super.init(nibName: nil, bundle: nil)
     }
     
