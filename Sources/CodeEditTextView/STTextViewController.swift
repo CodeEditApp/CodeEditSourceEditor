@@ -148,8 +148,10 @@ extension STTextViewController {
             guard let lang = self.language.language else { return }
             try? self.parser?.setLanguage(lang)
 
+            let start = CFAbsoluteTimeGetCurrent()
             self.query = TreeSitterModel.shared.query(for: self.language.id)
-
+            let end = CFAbsoluteTimeGetCurrent()
+            print("Fetching Query for \(self.language.displayName): \(end-start) seconds")
             DispatchQueue.main.async {
                 self.highlight()
             }
@@ -167,7 +169,7 @@ extension STTextViewController {
            expr.contains("ERROR") { return }
 
         while let match = cursor.next() {
-            print("match: ", match)
+//            print("match: ", match)
             self.highlightCaptures(match.captures)
             self.highlightCaptures(for: match.predicates, in: match)
         }
