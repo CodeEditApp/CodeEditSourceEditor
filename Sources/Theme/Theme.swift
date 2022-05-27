@@ -108,7 +108,7 @@ public extension Theme {
         }
 
         /// The `SwiftUI` color
-        public internal(set) var swiftColor: Color {
+        public var swiftColor: Color {
             get {
                 Color(hex: color)
             }
@@ -117,7 +117,7 @@ public extension Theme {
             }
         }
 
-        public internal(set) var nsColor: NSColor {
+        public var nsColor: NSColor {
             get {
                 NSColor(hex: color)
             }
