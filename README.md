@@ -1,3 +1,3 @@
-# STTextViewUI
+# CodeEditTextView
 
-A description of this package.
+The Editor Text View for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit)
