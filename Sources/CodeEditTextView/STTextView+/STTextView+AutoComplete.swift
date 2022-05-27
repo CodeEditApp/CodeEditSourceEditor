@@ -30,7 +30,9 @@ extension STTextView {
     private func nextSymbol() -> String {
         let start = selectedRange().location
         let nextRange = NSRange(location: start, length: 1)
-        let nextSymbol = string[nextRange]
+        guard let nextSymbol = string[nextRange] else {
+            return ""
+        }
         return String(nextSymbol)
     }
 }
