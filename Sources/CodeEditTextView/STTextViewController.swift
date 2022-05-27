@@ -9,6 +9,7 @@ import AppKit
 import STTextView
 import CodeLanguage
 import SwiftTreeSitter
+import Theme
 
 final public class STTextViewController: NSViewController {
 
@@ -19,6 +20,11 @@ final public class STTextViewController: NSViewController {
     public var language: CodeLanguage { didSet {
         self.setupTreeSitter()
     }}
+    public var theme: Theme {
+        didSet {
+            highlight()
+        }
+    }
 
     private var parser: Parser?
     private var query: Query?
@@ -30,10 +36,11 @@ final public class STTextViewController: NSViewController {
     public var lineHeight: Double = 1.1
     public var tabInterval: Double = 28
 
-    init(text: String, language: CodeLanguage, font: NSFont) {
+    init(text: String, language: CodeLanguage, font: NSFont, theme: Theme) {
         self.text = text
         self.language = language
         self.font = font
+        self.theme = theme
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -51,8 +58,8 @@ final public class STTextViewController: NSViewController {
 
         textView.defaultParagraphStyle = paragraphStyle()
         textView.font = self.font
-        textView.textColor = .textColor
-        textView.backgroundColor = .textBackgroundColor
+        textView.textColor = theme.editor.text.nsColor
+        textView.backgroundColor = theme.editor.background.nsColor
         textView.string = self.text
         textView.widthTracksTextView = true
         textView.highlightSelectedLine = true
@@ -207,17 +214,18 @@ extension STTextViewController {
     }
 
     private func colorForCapture(_ capture: String?) -> NSColor {
+        let colors = theme.editor
         switch capture {
-        case "include", "constructor", "keyword", "boolean", "variable.builtin", "keyword.return", "keyword.function", "repeat", "conditional": return .magenta
-        case "comment": return .systemGreen
-        case "variable", "property": return .systemTeal
-        case "function", "method": return .systemMint
-        case "number", "float": return .systemYellow
-        case "string": return .systemRed
-        case "type": return .systemPurple
-        case "parameter": return .systemTeal
-        case "type_alternate": return .systemCyan
-        default: return .textColor
+        case "include", "constructor", "keyword", "boolean", "variable.builtin", "keyword.return", "keyword.function", "repeat", "conditional": return colors.keywords.nsColor
+        case "comment": return colors.comments.nsColor
+        case "variable", "property": return colors.variables.nsColor
+        case "function", "method": return colors.variables.nsColor
+        case "number", "float": return colors.numbers.nsColor
+        case "string": return colors.strings.nsColor
+        case "type": return colors.types.nsColor
+        case "parameter": return colors.commands.nsColor
+        case "type_alternate": return colors.commands.nsColor
+        default: return colors.text.nsColor
         }
     }
 }

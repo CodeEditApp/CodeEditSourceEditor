@@ -8,21 +8,25 @@
 import SwiftUI
 import STTextView
 import CodeLanguage
+import Theme
 
 public struct STTextViewUI: NSViewControllerRepresentable {
 
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
+        theme: Binding<Theme>,
         fontSize: Binding<Double> = .constant(13)
     ) {
         self._text = text
         self._fontSize = fontSize
+        self._theme = theme
         self.language = language
     }
 
     @Binding private var text: String
     @Binding private var fontSize: Double
+    @Binding private var theme: Theme
     private var language: CodeLanguage
 
 
@@ -32,7 +36,8 @@ public struct STTextViewUI: NSViewControllerRepresentable {
         let controller = STTextViewController(
             text: text,
             language: language,
-            font: .monospacedSystemFont(ofSize: fontSize, weight: .regular)
+            font: .monospacedSystemFont(ofSize: fontSize, weight: .regular),
+            theme: theme
         )
         return controller
     }
@@ -41,6 +46,7 @@ public struct STTextViewUI: NSViewControllerRepresentable {
         nsViewController.setFontSize(fontSize)
         nsViewController.text = text
         nsViewController.language = language
+        nsViewController.theme = theme
         return
     }
 }

@@ -14,6 +14,9 @@ let package = Package(
         .library(
             name: "CodeLanguage",
             targets: ["CodeLanguage"]),
+        .library(
+            name: "Theme",
+            targets: ["Theme"])
     ],
     dependencies: [
         .package(url: "https://github.com/krzyzanowskim/STTextView", branch: "main"),
@@ -33,7 +36,8 @@ let package = Package(
             name: "CodeEditTextView",
             dependencies: [
                 "STTextView",
-                "CodeLanguage"
+                "CodeLanguage",
+                "Theme"
             ]),
         .target(
             name: "CodeLanguage",
@@ -47,6 +51,9 @@ let package = Package(
                 .product(name: "TreeSitterRuby", package: "tree-sitter-ruby"),
                 .product(name: "TreeSitterYAML", package: "tree-sitter-yaml"),
             ]
+        ),
+        .target(
+            name: "Theme"
         ),
         .testTarget(
             name: "CodeEditTextViewTests",
