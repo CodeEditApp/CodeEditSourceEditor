@@ -13,7 +13,7 @@ extension String {
         let upperBound = String.Index(utf16Offset: Int(value.upperBound), in: self)
         let lowerBound = String.Index(utf16Offset: Int(value.lowerBound), in: self)
         print("Subscript:", value, lowerBound, upperBound)
-        if self.endIndex <= upperBound {
+        if upperBound <= self.endIndex {
             return self[lowerBound..<upperBound]
         } else {
             return nil
