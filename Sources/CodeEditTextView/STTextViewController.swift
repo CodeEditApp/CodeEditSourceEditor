@@ -60,6 +60,7 @@ final public class STTextViewController: NSViewController {
         textView.font = self.font
         textView.textColor = theme.editor.text.nsColor
         textView.backgroundColor = theme.editor.background.nsColor
+        textView.insertionPointColor = theme.editor.insertionPoint.nsColor
         textView.string = self.text
         textView.widthTracksTextView = true
         textView.highlightSelectedLine = true
