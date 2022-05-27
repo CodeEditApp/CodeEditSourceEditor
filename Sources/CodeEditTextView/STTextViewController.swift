@@ -70,6 +70,7 @@ final public class STTextViewController: NSViewController {
 
         scrollView.documentView = textView
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.backgroundColor = theme.editor.background.nsColor
 
         self.view = scrollView
 
