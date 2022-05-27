@@ -294,7 +294,7 @@ public extension Theme {
         /// // equal to calling
         /// terminal.text
         /// ```
-        subscript(key: String) -> Attributes {
+        public subscript(key: String) -> Attributes {
             get {
                 switch key {
                 case "text": return self.text
@@ -349,7 +349,7 @@ public extension Theme {
             }
         }
 
-        init(
+        public init(
             text: Attributes,
             boldText: Attributes,
             cursor: Attributes,
