@@ -69,8 +69,16 @@ final public class STTextViewController: NSViewController {
         textView.delegate = self
 
         scrollView.documentView = textView
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
 
         self.view = scrollView
+
+        NSLayoutConstraint.activate([
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
 
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             self.keyDown(with: event)
