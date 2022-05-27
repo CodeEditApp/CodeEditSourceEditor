@@ -156,7 +156,7 @@ public extension Theme {
         /// // equal to calling
         /// editor.text
         /// ```
-        subscript(key: String) -> Attributes {
+        public subscript(key: String) -> Attributes {
             get {
                 switch key {
                 case "text": return self.text
