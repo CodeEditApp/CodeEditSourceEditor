@@ -61,7 +61,7 @@ public struct CodeLanguage {
         }
     }
 
-    static func detectLanguageFrom(url: URL) -> CodeLanguage {
+    public static func detectLanguageFrom(url: URL) -> CodeLanguage {
         let fileExtension = url.pathExtension.lowercased()
         let fileName = url.pathComponents.last?.lowercased()
         // This is to handle special file types without an extension (e.g., Makefile, Dockerfile)
@@ -73,7 +73,7 @@ public struct CodeLanguage {
         }
     }
 
-    static let `default` = CodeLanguage(
+    public static let `default` = CodeLanguage(
         id: .plainText,
         displayName: "Plain Text",
         extensions: ["txt"]
