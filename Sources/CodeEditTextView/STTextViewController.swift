@@ -16,7 +16,9 @@ final public class STTextViewController: NSViewController {
     public var text: String { didSet {
         self.textView?.string = text
     }}
-    private var language: CodeLanguage
+    public var language: CodeLanguage { didSet {
+        self.setupTreeSitter()
+    }}
 
     private var parser: Parser?
     private var query: Query?
