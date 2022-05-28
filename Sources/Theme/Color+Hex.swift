@@ -1,8 +1,8 @@
 //
 //  Color+HEX.swift
-//  CodeEditModules/CodeEditUtils
+//  CodeEditTextView/Theme
 //
-//  Created by Lukas Pistrol on 23.03.22.
+//  Created by Lukas Pistrol on 27.05.22.
 //
 
 import SwiftUI

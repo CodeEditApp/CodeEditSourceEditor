@@ -19,6 +19,7 @@ let package = Package(
             targets: ["Theme"])
     ],
     dependencies: [
+//        .package(name: "STTextView", path: "/Users/lukeeep/Developer/Swift/_Packages/STTextView"),
         .package(url: "https://github.com/krzyzanowskim/STTextView", branch: "main"),
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.6.0"),
         .package(url: "https://github.com/mattmassicotte/tree-sitter-swift.git", branch: "feature/spm"),
@@ -57,6 +58,9 @@ let package = Package(
         ),
         .testTarget(
             name: "CodeEditTextViewTests",
-            dependencies: ["CodeEditTextView"]),
+            dependencies: [
+                "CodeEditTextView",
+                "CodeLanguage",
+            ]),
     ]
 )

@@ -1,6 +1,6 @@
 //
 //  STTextViewUI.swift
-//  
+//  CodeEditTextView
 //
 //  Created by Lukas Pistrol on 24.05.22.
 //
@@ -16,16 +16,19 @@ public struct STTextViewUI: NSViewControllerRepresentable {
         _ text: Binding<String>,
         language: CodeLanguage,
         theme: Binding<Theme>,
-        fontSize: Binding<Double> = .constant(13)
+        font: Binding<NSFont> = .constant(.monospacedSystemFont(ofSize: 12, weight: .regular)),
+        tabWidth: Binding<Int>
     ) {
         self._text = text
-        self._fontSize = fontSize
+        self._font = font
         self._theme = theme
+        self._tabWidth = tabWidth
         self.language = language
     }
 
+    @Binding private var tabWidth: Int
     @Binding private var text: String
-    @Binding private var fontSize: Double
+    @Binding private var font: NSFont
     @Binding private var theme: Theme
     private var language: CodeLanguage
 
@@ -34,19 +37,21 @@ public struct STTextViewUI: NSViewControllerRepresentable {
 
     public func makeNSViewController(context: Context) -> STTextViewController {
         let controller = STTextViewController(
-            text: text,
+            text: $text,
             language: language,
-            font: .monospacedSystemFont(ofSize: fontSize, weight: .regular),
-            theme: theme
+            font: font,
+            theme: theme,
+            tabWidth: tabWidth
         )
         return controller
     }
 
     public func updateNSViewController(_ nsViewController: STTextViewController, context: Context) {
-        nsViewController.setFontSize(fontSize)
-        nsViewController.text = text
+        nsViewController.font = font
         nsViewController.language = language
         nsViewController.theme = theme
+        nsViewController.tabWidth = tabWidth
+        nsViewController.reloadUI()
         return
     }
 }

@@ -1,46 +1,53 @@
 //
 //  STTextViewController.swift
-//
+//  CodeEditTextView
 //
 //  Created by Lukas Pistrol on 24.05.22.
 //
 
 import AppKit
+import SwiftUI
 import STTextView
 import CodeLanguage
 import SwiftTreeSitter
 import Theme
 
-final public class STTextViewController: NSViewController {
+public class STTextViewController: NSViewController, STTextViewDelegate {
 
-    private var textView: STTextView!
-    public var text: String { didSet {
-        self.textView?.string = text
-    }}
+    internal var textView: STTextView!
+
+    internal var rulerView: STLineNumberRulerView!
+
+    public var text: Binding<String>
+
     public var language: CodeLanguage { didSet {
         self.setupTreeSitter()
     }}
-    public var theme: Theme {
-        didSet {
-            highlight()
-        }
-    }
 
-    private var parser: Parser?
-    private var query: Query?
-    private var tree: Tree?
+    public var theme: Theme { didSet {
+        highlight()
+    }}
 
-    public var font: NSFont {
-        didSet { update() }
-    }
-    public var lineHeight: Double = 1.1
-    public var tabInterval: Double = 28
+    public var tabWidth: Int
 
-    init(text: String, language: CodeLanguage, font: NSFont, theme: Theme) {
+    public var lineHeightMultiple: Double = 1.0
+
+    public var font: NSFont
+
+    // MARK: Tree-Sitter
+
+    internal var parser: Parser?
+    internal var query: Query?
+    internal var tree: Tree?
+
+    // MARK: Init
+
+    init(text: Binding<String>, language: CodeLanguage, font: NSFont, theme: Theme, tabWidth: Int) {
         self.text = text
         self.language = language
         self.font = font
         self.theme = theme
+        self.tabWidth = tabWidth
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -48,20 +55,32 @@ final public class STTextViewController: NSViewController {
         fatalError()
     }
 
+    // MARK: VC Lifecycle
+
     public override func loadView() {
         let scrollView = STTextView.scrollableTextView()
         textView = scrollView.documentView as? STTextView
+
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
-        scrollView.verticalRulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
+
+        rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
+        rulerView.backgroundColor = theme.editor.background.nsColor
+        rulerView.textColor = .systemGray
+        rulerView.separatorColor = theme.editor.invisibles.nsColor
+        rulerView.baselineOffset = baselineOffset
+
+        scrollView.verticalRulerView = rulerView
         scrollView.rulersVisible = true
 
-        textView.defaultParagraphStyle = paragraphStyle()
+        textView.defaultParagraphStyle = self.paragraphStyle
         textView.font = self.font
         textView.textColor = theme.editor.text.nsColor
         textView.backgroundColor = theme.editor.background.nsColor
         textView.insertionPointColor = theme.editor.insertionPoint.nsColor
-        textView.string = self.text
+        textView.selectionBackgroundColor = theme.editor.selection.nsColor
+        textView.selectedLineHighlightColor = theme.editor.lineHighlight.nsColor
+        textView.string = self.text.wrappedValue
         textView.widthTracksTextView = true
         textView.highlightSelectedLine = true
         textView.allowsUndo = true
@@ -69,8 +88,8 @@ final public class STTextViewController: NSViewController {
         textView.delegate = self
 
         scrollView.documentView = textView
+
         scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.backgroundColor = theme.editor.background.nsColor
 
         self.view = scrollView
 
@@ -97,25 +116,43 @@ final public class STTextViewController: NSViewController {
         setupTreeSitter()
     }
 
-    private func paragraphStyle() -> NSMutableParagraphStyle {
+    // MARK: UI
+
+    private var paragraphStyle: NSMutableParagraphStyle {
         let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
-        paragraph.lineHeightMultiple = self.lineHeight
-        paragraph.defaultTabInterval = self.tabInterval
+        paragraph.minimumLineHeight = lineHeight
         return paragraph
     }
 
-    private func update() {
+    internal func reloadUI() {
         textView?.font = font
-//        textView?.textColor = .textColor
-//        textView?.backgroundColor = .textBackgroundColor
+        textView?.textColor = theme.editor.text.nsColor
+        textView?.backgroundColor = theme.editor.background.nsColor
+        textView?.insertionPointColor = theme.editor.insertionPoint.nsColor
+        textView?.selectionBackgroundColor = theme.editor.selection.nsColor
+        textView?.selectedLineHighlightColor = theme.editor.lineHighlight.nsColor
 
-        textView?.addAttributes([
-            .font: font
-        ], range: .init(0..<text.count))
+        rulerView?.backgroundColor = theme.editor.background.nsColor
+        rulerView?.separatorColor = theme.editor.invisibles.nsColor
+        rulerView?.baselineOffset = baselineOffset
+
+        setStandardAttributes()
     }
 
-    public func setFontSize(_ size: Double) {
-        self.font = .monospacedSystemFont(ofSize: size, weight: .regular)
+    internal func setStandardAttributes() {
+        guard let textView = textView else { return }
+        textView.addAttributes([
+            .font: font,
+            .baselineOffset: baselineOffset
+        ], range: .init(0..<textView.string.count))
+    }
+
+    internal var lineHeight: Double {
+        font.lineHeight * 1.5
+    }
+
+    internal var baselineOffset: Double {
+        ((self.lineHeight) - font.lineHeight) / 2
     }
 
     // MARK: Key Presses
@@ -128,114 +165,12 @@ final public class STTextViewController: NSViewController {
 
         // handle tab insertation
         if event.specialKey == .tab {
-            textView?.insertText(String(repeating: " ", count: 4))
+            textView?.insertText(String(repeating: " ", count: tabWidth))
         }
-        print(event.keyCode)
+//        print(event.keyCode)
     }
 
     override public func keyUp(with event: NSEvent) {
         keyIsDown = false
-    }
-}
-
-// MARK: - STTextViewDelegate
-
-extension STTextViewController: STTextViewDelegate {
-    
-    public func textDidChange(_ notification: Notification) {
-        print("Text did change")
-    }
-
-    public func textView(_ textView: STTextView, shouldChangeTextIn affectedCharRange: NSTextRange, replacementString: String?) -> Bool {
-        // Don't add '\t' characters
-        if replacementString == "\t" {
-            return false
-        }
-        return true
-    }
-
-    public func textView(_ textView: STTextView, didChangeTextIn affectedCharRange: NSTextRange, replacementString: String) {
-        textView.autocompleteSymbols(replacementString)
-        print("Did change text in \(affectedCharRange) | \(replacementString)")
-        highlight()
-    }
-}
-
-// MARK: - Tree Sitter
-
-extension STTextViewController {
-    private func setupTreeSitter() {
-        DispatchQueue.global(qos: .userInitiated).async {
-            self.parser = Parser()
-            guard let lang = self.language.language else { return }
-            try? self.parser?.setLanguage(lang)
-
-            let start = CFAbsoluteTimeGetCurrent()
-            self.query = TreeSitterModel.shared.query(for: self.language.id)
-            let end = CFAbsoluteTimeGetCurrent()
-            print("Fetching Query for \(self.language.displayName): \(end-start) seconds")
-            DispatchQueue.main.async {
-                self.highlight()
-            }
-        }
-    }
-
-    private func highlight() {
-        guard let parser = parser,
-              let text = textView?.string,
-              let tree = parser.parse(text),
-              let cursor = query?.execute(node: tree.rootNode!, in: tree)
-        else { return }
-
-        if let expr = tree.rootNode?.sExpressionString,
-           expr.contains("ERROR") { return }
-
-        while let match = cursor.next() {
-//            print("match: ", match)
-            self.highlightCaptures(match.captures)
-            self.highlightCaptures(for: match.predicates, in: match)
-        }
-    }
-
-    private func highlightCaptures(_ captures: [QueryCapture]) {
-        captures.forEach { capture in
-            // DEBUG only:
-            //            printCaptureInfo(capture)
-            textView?.addAttributes([
-                .foregroundColor: colorForCapture(capture.name),
-                .font: NSFont.monospacedSystemFont(ofSize: font.pointSize, weight: .medium)
-            ], range: capture.node.range)
-        }
-    }
-
-    private func highlightCaptures(for predicates: [Predicate], in match: QueryMatch) {
-        predicates.forEach { predicate in
-            predicate.captures(in: match).forEach { capture in
-                //                print(capture.name, string[capture.node.range])
-                textView?.addAttributes(
-                    [
-                        .foregroundColor: colorForCapture(capture.name?.appending("_alternate")),
-                        .font: NSFont.monospacedSystemFont(ofSize: font.pointSize, weight: .medium)
-                    ],
-                    range: capture.node.range
-                )
-            }
-        }
-    }
-
-    private func colorForCapture(_ capture: String?) -> NSColor {
-        let colors = theme.editor
-        switch capture {
-        case "include", "constructor", "keyword", "boolean", "variable.builtin", "keyword.return", "keyword.function", "repeat", "conditional": return colors.keywords.nsColor
-        case "comment": return colors.comments.nsColor
-        case "variable", "property": return colors.variables.nsColor
-        case "function", "method": return colors.variables.nsColor
-        case "number", "float": return colors.numbers.nsColor
-        case "string": return colors.strings.nsColor
-        case "type": return colors.types.nsColor
-        case "parameter": return colors.commands.nsColor
-        case "type_alternate": return colors.commands.nsColor
-        default: return colors.text.nsColor
-        }
     }
 }

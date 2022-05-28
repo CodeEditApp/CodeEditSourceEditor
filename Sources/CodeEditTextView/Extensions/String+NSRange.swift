@@ -1,6 +1,6 @@
 //
 //  String+NSRange.swift
-//  
+//  CodeEditTextView
 //
 //  Created by Lukas Pistrol on 25.05.22.
 //
@@ -12,7 +12,6 @@ extension String {
     subscript(value: NSRange) -> Substring? {
         let upperBound = String.Index(utf16Offset: Int(value.upperBound), in: self)
         let lowerBound = String.Index(utf16Offset: Int(value.lowerBound), in: self)
-        print("Subscript:", value, lowerBound, upperBound)
         if upperBound <= self.endIndex {
             return self[lowerBound..<upperBound]
         } else {
