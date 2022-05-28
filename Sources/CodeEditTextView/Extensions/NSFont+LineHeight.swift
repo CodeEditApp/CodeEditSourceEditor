@@ -8,6 +8,7 @@
 import AppKit
 
 public extension NSFont {
+    /// The default line height of the font.
     var lineHeight: Double {
         NSLayoutManager().defaultLineHeight(for: self)
     }

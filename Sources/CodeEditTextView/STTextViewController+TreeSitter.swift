@@ -10,6 +10,8 @@ import SwiftTreeSitter
 import CodeLanguage
 
 internal extension STTextViewController {
+
+    /// Setup the `tree-sitter` parser and get queries.
     func setupTreeSitter() {
         DispatchQueue.global(qos: .userInitiated).async {
             self.parser = Parser()
@@ -26,6 +28,7 @@ internal extension STTextViewController {
         }
     }
 
+    /// Execute queries and handle matches
     func highlight() {
         guard let parser = parser,
               let text = textView?.string,
@@ -45,6 +48,7 @@ internal extension STTextViewController {
         }
     }
 
+    /// Highlight query captures
     func highlightCaptures(_ captures: [QueryCapture]) {
         captures.forEach { capture in
             textView?.addAttributes([
@@ -55,6 +59,7 @@ internal extension STTextViewController {
         }
     }
 
+    /// Highlight query captures for predicates
     func highlightCaptures(for predicates: [Predicate], in match: QueryMatch) {
         predicates.forEach { predicate in
             predicate.captures(in: match).forEach { capture in
@@ -71,6 +76,9 @@ internal extension STTextViewController {
         }
     }
 
+    /// Get the color from ``theme`` for the specified capture name.
+    /// - Parameter capture: The capture name
+    /// - Returns: A `NSColor`
     func colorForCapture(_ capture: String?) -> NSColor {
         let colors = theme.editor
         switch capture {

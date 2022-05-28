@@ -10,6 +10,7 @@ import STTextView
 import CodeLanguage
 import Theme
 
+/// A `SwiftUI` wrapper for a `STTextView`.
 public struct STTextViewUI: NSViewControllerRepresentable {
 
     public init(

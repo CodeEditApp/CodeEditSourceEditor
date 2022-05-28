@@ -12,26 +12,33 @@ import CodeLanguage
 import SwiftTreeSitter
 import Theme
 
+/// A View Controller managing and displaying a `STTextView`
 public class STTextViewController: NSViewController, STTextViewDelegate {
 
     internal var textView: STTextView!
 
     internal var rulerView: STLineNumberRulerView!
 
+    /// Binding for the `textView`s string
     public var text: Binding<String>
 
+    /// The associated `CodeLanguage`
     public var language: CodeLanguage { didSet {
         self.setupTreeSitter()
     }}
 
+    /// The associated `Theme` used for highlighting.
     public var theme: Theme { didSet {
         highlight()
     }}
 
+    /// The number of spaces to use for a `tab '\t'` character
     public var tabWidth: Int
 
+    /// A multiplier for setting the line height. Defaults to `1.0`
     public var lineHeightMultiple: Double = 1.0
 
+    /// The font to use in the `textView`
     public var font: NSFont
 
     // MARK: Tree-Sitter
@@ -118,12 +125,14 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
 
     // MARK: UI
 
+    /// A default `NSParagraphStyle` with a set `lineHeight`
     private var paragraphStyle: NSMutableParagraphStyle {
         let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
         paragraph.minimumLineHeight = lineHeight
         return paragraph
     }
 
+    /// Reloads the UI to apply changes to ``STTextViewController/font``, ``STTextViewController/theme``, ...
     internal func reloadUI() {
         textView?.font = font
         textView?.textColor = theme.editor.text.nsColor
@@ -139,6 +148,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
         setStandardAttributes()
     }
 
+    /// Sets the standard attributes (`font`, `baselineOffset`) to the whole text
     internal func setStandardAttributes() {
         guard let textView = textView else { return }
         textView.addAttributes([
@@ -147,10 +157,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
         ], range: .init(0..<textView.string.count))
     }
 
+    /// Calculated line height depending on ``STTextViewController/lineHeightMultiple``
     internal var lineHeight: Double {
-        font.lineHeight * 1.5
+        font.lineHeight * lineHeightMultiple
     }
 
+    /// Calculated baseline offset depending on `lineHeight`.
     internal var baselineOffset: Double {
         ((self.lineHeight) - font.lineHeight) / 2
     }
@@ -159,6 +171,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
     
     private var keyIsDown: Bool = false
 
+    /// Handles `keyDown` events in the `textView`
     override public func keyDown(with event: NSEvent) {
         if keyIsDown { return }
         keyIsDown = true
@@ -170,6 +183,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
 //        print(event.keyCode)
     }
 
+    /// Handles `keyUp` events in the `textView`
     override public func keyUp(with event: NSEvent) {
         keyIsDown = false
     }

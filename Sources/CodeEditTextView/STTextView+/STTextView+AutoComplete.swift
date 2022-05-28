@@ -9,7 +9,14 @@ import AppKit
 import STTextView
 
 extension STTextView {
-    private var autoPairs: [String: String] {
+
+    /// Corresponding closing brackets for given opening bracket.
+    ///
+    /// The following pairs are currently implemented:
+    /// * `(` : `)`
+    /// * `{` : `}`
+    /// * `[` : `]`
+    private var closurePairs: [String: String] {
         [
             "(": ")",
             "{": "}",
@@ -20,13 +27,16 @@ extension STTextView {
         ]
     }
 
-    func autocompleteSymbols(_ symbol: String) {
-        guard let end = autoPairs[symbol],
+    /// Add closing bracket and move curser back one symbol if applicable.
+    /// - Parameter symbol: The symbol to check for
+    func autocompleteClosurePairs(_ symbol: String) {
+        guard let end = closurePairs[symbol],
               nextSymbol() != end else { return }
         insertText(end, replacementRange: selectedRange())
         moveBackward(self)
     }
 
+    /// Returns the symbol right of the cursor.
     private func nextSymbol() -> String {
         let start = selectedRange().location
         let nextRange = NSRange(location: start, length: 1)

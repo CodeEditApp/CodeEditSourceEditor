@@ -8,9 +8,18 @@
 import Foundation
 import SwiftTreeSitter
 
+/// A singleton class to manage `tree-sitter` queries and keep them in memory.
+///
+/// This is important to not having to refetch queries any time a new file
+/// is opened since this can be very expensive
 public class TreeSitterModel {
+
+    /// The singleton/shared instance of ``TreeSitterModel``.
     public static let shared: TreeSitterModel = .init()
 
+    /// Get a query for a specific language
+    /// - Parameter language: The language to request the query for.
+    /// - Returns: A Query if available. Returns `nil` for not implemented languages
     public func query(for language: TreeSitterLanguage) -> Query? {
         switch language {
         case .go:
@@ -31,8 +40,6 @@ public class TreeSitterModel {
             return nil
         }
     }
-
-    private init() {}
 
     public lazy var swiftQuery: Query? = {
         return queryFor(.swift)
@@ -67,4 +74,6 @@ public class TreeSitterModel {
               let url = codeLanguage.queryURL else { return nil }
         return try? language.query(contentsOf: url)
     }
+
+    private init() {}
 }

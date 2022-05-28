@@ -17,11 +17,17 @@ import TreeSitterJSON
 import TreeSitterRuby
 import TreeSitterYAML
 
+/// A structure holding metadata for code languages
 public struct CodeLanguage {
     public let id: TreeSitterLanguage
+
+    /// The display name of the ``CodeLanguage``
     public let displayName: String
+
+    /// A set of file extensions for the ``CodeLanguage``
     public let extensions: Set<String>
 
+    /// The query URL for the ``CodeLanguage`` if available
     public var queryURL: URL? {
         Bundle.main.resourceURL?
             .appendingPathComponent(bundle)
@@ -35,6 +41,7 @@ public struct CodeLanguage {
         "Contents/Resources/queries/highlights.scm"
     }
 
+    /// The tree-sitter language for the ``CodeLanguage`` if available
     public var language: Language? {
         guard let ts_language = ts_language else { return nil }
         return Language(language: ts_language)
@@ -61,6 +68,11 @@ public struct CodeLanguage {
         }
     }
 
+    /// Gets the corresponding ``CodeLanguage`` for the given file URL
+    ///
+    /// Uses the `pathExtension` URL component to detect the ``CodeLanguage``
+    /// - Parameter url: The URL to get the ``CodeLanguage`` for.
+    /// - Returns: A ``CodeLanguage`` structure
     public static func detectLanguageFrom(url: URL) -> CodeLanguage {
         let fileExtension = url.pathExtension.lowercased()
         let fileName = url.pathComponents.last?.lowercased()
@@ -73,6 +85,7 @@ public struct CodeLanguage {
         }
     }
 
+    /// The default ``CodeLanguage`` (plain text)
     public static let `default` = CodeLanguage(
         id: .plainText,
         displayName: "Plain Text",
@@ -81,6 +94,8 @@ public struct CodeLanguage {
 }
 
 public extension CodeLanguage {
+
+    /// A collection of available ``CodeLanguage`` structures.
     static let knownLanguages: [CodeLanguage] = [
         .go,
         .goMod,
@@ -91,11 +106,24 @@ public extension CodeLanguage {
         .yaml
     ]
 
+    /// A ``CodeLanguage`` structure for `Go`
     static let go: CodeLanguage = .init(id: .go, displayName: "Go", extensions: ["go"])
+
+    /// A ``CodeLanguage`` structure for `GoMod`
     static let goMod: CodeLanguage = .init(id: .goMod, displayName: "GoMod", extensions: ["mod"])
+
+    /// A ``CodeLanguage`` structure for `HTML`
     static let html: CodeLanguage = .init(id: .html, displayName: "HTML", extensions: ["html", "htm"])
+
+    /// A ``CodeLanguage`` structure for `JSON`
     static let json: CodeLanguage = .init(id: .json, displayName: "JSON", extensions: ["json"])
+
+    /// A ``CodeLanguage`` structure for `Ruby`
     static let ruby: CodeLanguage = .init(id: .ruby, displayName: "Ruby", extensions: ["rb"])
+
+    /// A ``CodeLanguage`` structure for `Swift`
     static let swift: CodeLanguage = .init(id: .swift, displayName: "Swift", extensions: ["swift"])
+    
+    /// A ``CodeLanguage`` structure for `YAML`
     static let yaml: CodeLanguage = .init(id: .yaml, displayName: "YAML", extensions: ["yml", "yaml"])
 }
