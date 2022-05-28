@@ -129,6 +129,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
     private var paragraphStyle: NSMutableParagraphStyle {
         let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
         paragraph.minimumLineHeight = lineHeight
+        paragraph.maximumLineHeight = lineHeight
         return paragraph
     }
 

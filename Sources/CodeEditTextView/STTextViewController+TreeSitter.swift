@@ -39,8 +39,6 @@ internal extension STTextViewController {
         if let expr = tree.rootNode?.sExpressionString,
            expr.contains("ERROR") { return }
 
-        print(tree.rootNode?.sExpressionString)
-
         while let match = cursor.next() {
             //            print("match: ", match)
             self.highlightCaptures(match.captures)
