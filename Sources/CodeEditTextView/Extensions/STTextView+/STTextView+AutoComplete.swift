@@ -16,7 +16,7 @@ extension STTextView {
     /// * `(` : `)`
     /// * `{` : `}`
     /// * `[` : `]`
-    private var closurePairs: [String: String] {
+    private var bracketPairs: [String: String] {
         [
             "(": ")",
             "{": "}",
@@ -29,8 +29,8 @@ extension STTextView {
 
     /// Add closing bracket and move curser back one symbol if applicable.
     /// - Parameter symbol: The symbol to check for
-    func autocompleteClosurePairs(_ symbol: String) {
-        guard let end = closurePairs[symbol],
+    func autocompleteBracketPairs(_ symbol: String) {
+        guard let end = bracketPairs[symbol],
               nextSymbol() != end else { return }
         insertText(end, replacementRange: selectedRange())
         moveBackward(self)

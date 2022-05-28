@@ -22,7 +22,7 @@ extension STTextViewController {
     }
 
     public func textView(_ textView: STTextView, didChangeTextIn affectedCharRange: NSTextRange, replacementString: String) {
-        textView.autocompleteClosurePairs(replacementString)
+        textView.autocompleteBracketPairs(replacementString)
         print("Did change text in \(affectedCharRange) | \(replacementString)")
         highlight()
         setStandardAttributes()
