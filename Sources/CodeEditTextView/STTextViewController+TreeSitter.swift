@@ -79,7 +79,9 @@ internal extension STTextViewController {
     func colorForCapture(_ capture: String?) -> NSColor {
         let colors = theme
         switch capture {
-        case "include", "constructor", "keyword", "boolean", "variable.builtin", "keyword.return", "keyword.function", "repeat", "conditional", "tag": return colors.keywords
+        case "include", "constructor", "keyword", "boolean", "variable.builtin",
+            "keyword.return", "keyword.function", "repeat", "conditional", "tag":
+            return colors.keywords
         case "comment": return colors.comments
         case "variable", "property": return colors.variables
         case "function", "method": return colors.variables

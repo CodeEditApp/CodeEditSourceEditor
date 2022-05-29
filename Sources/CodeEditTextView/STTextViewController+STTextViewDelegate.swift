@@ -13,7 +13,11 @@ extension STTextViewController {
         print("Text did change")
     }
 
-    public func textView(_ textView: STTextView, shouldChangeTextIn affectedCharRange: NSTextRange, replacementString: String?) -> Bool {
+    public func textView(
+        _ textView: STTextView,
+        shouldChangeTextIn affectedCharRange: NSTextRange,
+        replacementString: String?
+    ) -> Bool {
         // Don't add '\t' characters
         if replacementString == "\t" {
             return false
@@ -21,7 +25,11 @@ extension STTextViewController {
         return true
     }
 
-    public func textView(_ textView: STTextView, didChangeTextIn affectedCharRange: NSTextRange, replacementString: String) {
+    public func textView(
+        _ textView: STTextView,
+        didChangeTextIn affectedCharRange: NSTextRange,
+        replacementString: String
+    ) {
         textView.autocompleteBracketPairs(replacementString)
         print("Did change text in \(affectedCharRange) | \(replacementString)")
         highlight()

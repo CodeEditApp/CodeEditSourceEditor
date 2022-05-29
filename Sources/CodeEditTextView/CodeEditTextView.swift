@@ -11,7 +11,6 @@ import STTextView
 /// A `SwiftUI` wrapper for a ``STTextViewController``.
 public struct CodeEditTextView: NSViewControllerRepresentable {
 
-
     /// Initializes a Text Editor
     /// - Parameters:
     ///   - text: The text content
