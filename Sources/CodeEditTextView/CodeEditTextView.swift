@@ -23,7 +23,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
-        theme: Binding<Theme>,
+        theme: Binding<EditorTheme>,
         font: Binding<NSFont>,
         tabWidth: Binding<Int>,
         lineHeight: Binding<Double>
@@ -38,7 +38,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
 
     @Binding private var text: String
     private var language: CodeLanguage
-    @Binding private var theme: Theme
+    @Binding private var theme: EditorTheme
     @Binding private var font: NSFont
     @Binding private var tabWidth: Int
     @Binding private var lineHeight: Double

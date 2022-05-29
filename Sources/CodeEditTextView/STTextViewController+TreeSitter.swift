@@ -77,20 +77,20 @@ internal extension STTextViewController {
     /// - Parameter capture: The capture name
     /// - Returns: A `NSColor`
     func colorForCapture(_ capture: String?) -> NSColor {
-        let colors = theme.editor
+        let colors = theme
         switch capture {
-        case "include", "constructor", "keyword", "boolean", "variable.builtin", "keyword.return", "keyword.function", "repeat", "conditional", "tag": return colors.keywords.nsColor
-        case "comment": return colors.comments.nsColor
-        case "variable", "property": return colors.variables.nsColor
-        case "function", "method": return colors.variables.nsColor
-        case "number", "float": return colors.numbers.nsColor
-        case "string": return colors.strings.nsColor
-        case "type": return colors.types.nsColor
-        case "parameter": return colors.variables.nsColor
-        case "type_alternate": return colors.attributes.nsColor
+        case "include", "constructor", "keyword", "boolean", "variable.builtin", "keyword.return", "keyword.function", "repeat", "conditional", "tag": return colors.keywords
+        case "comment": return colors.comments
+        case "variable", "property": return colors.variables
+        case "function", "method": return colors.variables
+        case "number", "float": return colors.numbers
+        case "string": return colors.strings
+        case "type": return colors.types
+        case "parameter": return colors.variables
+        case "type_alternate": return colors.attributes
         default:
             //            print(capture)
-            return colors.text.nsColor
+            return colors.text
         }
     }
 }

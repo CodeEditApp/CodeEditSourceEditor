@@ -8,7 +8,7 @@ import CodeEditTextView
 struct ContentView: View {
 
     @State var text = "let x = 1.0"
-    @State var theme = Theme(...)
+    @State var theme = EditorTheme(...)
     @State var font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
     @State var tabWidth = 4
     @State var lineHeight = 1.2
@@ -25,9 +25,3 @@ struct ContentView: View {
     }
 }
 ```
-
-## Topics
-
-### <!--@START_MENU_TOKEN@-->Group<!--@END_MENU_TOKEN@-->
-
-- <!--@START_MENU_TOKEN@-->``Symbol``<!--@END_MENU_TOKEN@-->

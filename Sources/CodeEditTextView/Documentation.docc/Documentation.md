@@ -28,6 +28,5 @@ This package includes both `AppKit` and `SwiftUI` components. It also relies on 
 
 ### Theme
 
-- ``Theme``
-- ``Loopable``
+- ``EditorTheme``
 

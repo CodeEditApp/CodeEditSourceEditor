@@ -26,7 +26,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
     }}
 
     /// The associated `Theme` used for highlighting.
-    public var theme: Theme { didSet {
+    public var theme: EditorTheme { didSet {
         highlight()
     }}
 
@@ -47,7 +47,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
 
     // MARK: Init
 
-    public init(text: Binding<String>, language: CodeLanguage, font: NSFont, theme: Theme, tabWidth: Int) {
+    public init(text: Binding<String>, language: CodeLanguage, font: NSFont, theme: EditorTheme, tabWidth: Int) {
         self.text = text
         self.language = language
         self.font = font
@@ -70,9 +70,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
         scrollView.hasVerticalScroller = true
 
         rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
-        rulerView.backgroundColor = theme.editor.background.nsColor
+        rulerView.backgroundColor = theme.background
         rulerView.textColor = .systemGray
-        rulerView.separatorColor = theme.editor.invisibles.nsColor
+        rulerView.separatorColor = theme.invisibles
         rulerView.baselineOffset = baselineOffset
 
         scrollView.verticalRulerView = rulerView
@@ -80,12 +80,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
 
         textView.defaultParagraphStyle = self.paragraphStyle
         textView.font = self.font
-        textView.textColor = theme.editor.text.nsColor
-        textView.backgroundColor = theme.editor.background.nsColor
-        textView.insertionPointColor = theme.editor.insertionPoint.nsColor
+        textView.textColor = theme.text
+        textView.backgroundColor = theme.background
+        textView.insertionPointColor = theme.insertionPoint
         textView.insertionPointWidth = 1.0
-        textView.selectionBackgroundColor = theme.editor.selection.nsColor
-        textView.selectedLineHighlightColor = theme.editor.lineHighlight.nsColor
+        textView.selectionBackgroundColor = theme.selection
+        textView.selectedLineHighlightColor = theme.lineHighlight
         textView.string = self.text.wrappedValue
         textView.widthTracksTextView = true
         textView.highlightSelectedLine = true
@@ -135,14 +135,14 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
     /// Reloads the UI to apply changes to ``STTextViewController/font``, ``STTextViewController/theme``, ...
     internal func reloadUI() {
         textView?.font = font
-        textView?.textColor = theme.editor.text.nsColor
-        textView?.backgroundColor = theme.editor.background.nsColor
-        textView?.insertionPointColor = theme.editor.insertionPoint.nsColor
-        textView?.selectionBackgroundColor = theme.editor.selection.nsColor
-        textView?.selectedLineHighlightColor = theme.editor.lineHighlight.nsColor
+        textView?.textColor = theme.text
+        textView?.backgroundColor = theme.background
+        textView?.insertionPointColor = theme.insertionPoint
+        textView?.selectionBackgroundColor = theme.selection
+        textView?.selectedLineHighlightColor = theme.lineHighlight
 
-        rulerView?.backgroundColor = theme.editor.background.nsColor
-        rulerView?.separatorColor = theme.editor.invisibles.nsColor
+        rulerView?.backgroundColor = theme.background
+        rulerView?.separatorColor = theme.invisibles
         rulerView?.baselineOffset = baselineOffset
 
         setStandardAttributes()
