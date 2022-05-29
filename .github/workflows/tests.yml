@@ -1,0 +1,20 @@
+name: tests
+on:
+  push:
+    branches:
+      - 'main'
+    paths:
+      - 'Sources/**'
+      - 'Tests/**'
+  pull_request:
+    branches:
+      - 'main'
+jobs:
+  pexels-swift-tests:
+    name: Testing CodeEditTextView
+    runs-on: macos-12
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v1
+      - name: Testing Package
+        run: exec ./.github/scripts/tests.sh
