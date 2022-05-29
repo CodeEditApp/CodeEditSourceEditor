@@ -10,9 +10,11 @@ The Editor Text View for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit)
 
 > This is currently only implemented in the [`feature/new-editor`](https://github.com/CodeEditApp/CodeEdit/tree/feature/new-editor) branch!
 
-## Usage
+## Documentation
 
-See the full documentation [here](https://codeeditapp.github.io/CodeEditTextView/documentation/codeedittextview/).
+This package is fully documented. Check out the documentation [here](https://codeeditapp.github.io/CodeEditTextView/documentation/codeedittextview/)!
+
+## Usage
 
 ```swift
 import CodeEditTextView
