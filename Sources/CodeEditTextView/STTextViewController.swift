@@ -85,6 +85,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
         textView.textColor = theme.editor.text.nsColor
         textView.backgroundColor = theme.editor.background.nsColor
         textView.insertionPointColor = theme.editor.insertionPoint.nsColor
+        textView.insertionPointWidth = 1.0
         textView.selectionBackgroundColor = theme.editor.selection.nsColor
         textView.selectedLineHighlightColor = theme.editor.lineHighlight.nsColor
         textView.string = self.text.wrappedValue

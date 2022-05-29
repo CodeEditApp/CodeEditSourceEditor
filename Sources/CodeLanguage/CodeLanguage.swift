@@ -37,6 +37,7 @@ public struct CodeLanguage {
     private var bundle: String {
         "TreeSitter\(displayName)_TreeSitter\(displayName).bundle"
     }
+    
     private var highlights: String {
         "Contents/Resources/queries/highlights.scm"
     }

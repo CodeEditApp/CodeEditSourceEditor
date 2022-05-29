@@ -107,7 +107,7 @@ public extension Theme {
             self.color = color
         }
 
-        /// The `SwiftUI` color
+        /// The `SwiftUI` of ``color``
         public var swiftColor: Color {
             get {
                 Color(hex: color)
@@ -117,6 +117,7 @@ public extension Theme {
             }
         }
 
+        /// The `NSColor` of ``color``
         public var nsColor: NSColor {
             get {
                 NSColor(hex: color)
