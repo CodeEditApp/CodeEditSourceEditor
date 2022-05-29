@@ -74,7 +74,7 @@ public class TreeSitterModel {
     public lazy var swiftQuery: Query? = {
         return queryFor(.swift)
     }()
-    
+
     /// Query for `YAML` files.
     public lazy var yamlQuery: Query? = {
         return queryFor(.yaml)
