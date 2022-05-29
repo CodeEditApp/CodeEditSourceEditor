@@ -9,12 +9,13 @@ import Foundation
 import tree_sitter
 import SwiftTreeSitter
 
-import TreeSitterSwift
 import TreeSitterGo
 import TreeSitterGoMod
 import TreeSitterHTML
 import TreeSitterJSON
+import TreeSitterPython
 import TreeSitterRuby
+import TreeSitterSwift
 import TreeSitterYAML
 
 /// A structure holding metadata for code languages
@@ -59,6 +60,8 @@ public struct CodeLanguage {
             return tree_sitter_html()
         case .json:
             return tree_sitter_json()
+        case .python:
+            return tree_sitter_python()
         case .ruby:
             return tree_sitter_ruby()
         case .swift:
@@ -103,6 +106,7 @@ public extension CodeLanguage {
         .goMod,
         .html,
         .json,
+        .python,
         .ruby,
         .swift,
         .yaml
@@ -119,6 +123,9 @@ public extension CodeLanguage {
 
     /// A ``CodeLanguage`` structure for `JSON`
     static let json: CodeLanguage = .init(id: .json, displayName: "JSON", extensions: ["json"])
+
+    /// A ``CodeLanguage`` structure for `Python`
+    static let python: CodeLanguage = .init(id: .python, displayName: "Python", extensions: ["py"])
 
     /// A ``CodeLanguage`` structure for `Ruby`
     static let ruby: CodeLanguage = .init(id: .ruby, displayName: "Ruby", extensions: ["rb"])

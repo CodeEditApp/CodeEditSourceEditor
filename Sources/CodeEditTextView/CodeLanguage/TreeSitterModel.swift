@@ -27,6 +27,8 @@ public class TreeSitterModel {
             return htmlQuery
         case .json:
             return jsonQuery
+        case .python:
+            return pythonQuery
         case .ruby:
             return rubyQuery
         case .swift:
@@ -37,11 +39,6 @@ public class TreeSitterModel {
             return nil
         }
     }
-
-    /// Query for `Swift` files.
-    public lazy var swiftQuery: Query? = {
-        return queryFor(.swift)
-    }()
 
     /// Query for `Go` files.
     public lazy var goQuery: Query? = {
@@ -63,11 +60,21 @@ public class TreeSitterModel {
         return queryFor(.json)
     }()
 
+    /// Query for `Python` files.
+    public lazy var pythonQuery: Query? = {
+        return queryFor(.python)
+    }()
+
     /// Query for `Ruby` files.
     public lazy var rubyQuery: Query? = {
         return queryFor(.ruby)
     }()
 
+    /// Query for `Swift` files.
+    public lazy var swiftQuery: Query? = {
+        return queryFor(.swift)
+    }()
+    
     /// Query for `YAML` files.
     public lazy var yamlQuery: Query? = {
         return queryFor(.yaml)
