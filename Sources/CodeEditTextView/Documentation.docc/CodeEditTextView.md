@@ -4,8 +4,6 @@
 
 ```swift
 import CodeEditTextView
-import CodeLanguage
-import Theme
 
 struct ContentView: View {
 

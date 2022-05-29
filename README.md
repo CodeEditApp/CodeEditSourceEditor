@@ -8,16 +8,24 @@ The Editor Text View for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit)
 
 ```swift
 import CodeEditTextView
-import CodeLanguage
 
-@State var text = "let x = 1.0"
+struct ContentView: View {
 
-CodeEditTextView(
-    $text,
-    language: .swift,
-    theme: $theme,
-    font: $font,
-    tabWidth: .constant(4),
-    lineHeight: .constant(1.2)
-)
+    @State var text = "let x = 1.0"
+    @State var theme = Theme(...)
+    @State var font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
+    @State var tabWidth = 4
+    @State var lineHeight = 1.2
+
+    var body: some View { 
+        CodeEditTextView(
+            $text,
+            language: .swift,
+            theme: $theme,
+            font: $font,
+            tabWidth: $tabWidth,
+            lineHeight: $lineHeight
+        )
+    }
+}
 ```
