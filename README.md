@@ -40,6 +40,16 @@ struct ContentView: View {
 }
 ```
 
+## Currently Supported Languages
+- Go
+- HTML
+- Java
+- JSON
+- Python
+- Ruby
+- Swift
+- YAML
+
 ## Dependencies
 
 Special thanks to both [Marcin Krzyzanowski](https://twitter.com/krzyzanowskim) & [Matt Massicotte](https://twitter.com/mattie) for the great work they've done!
