@@ -6,6 +6,8 @@ The Editor Text View for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit)
 
 ## Usage
 
+See the full documentation [here](https://codeeditapp.github.io/CodeEditTextView/documentation/codeedittextview/).
+
 ```swift
 import CodeEditTextView
 
