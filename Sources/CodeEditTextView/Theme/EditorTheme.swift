@@ -27,7 +27,6 @@ public struct EditorTheme {
     public var characters: NSColor
     public var comments: NSColor
 
-
     public init(
         text: NSColor,
         insertionPoint: NSColor,
