@@ -12,6 +12,7 @@ import SwiftTreeSitter
 import TreeSitterGo
 import TreeSitterGoMod
 import TreeSitterHTML
+import TreeSitterJava
 import TreeSitterJSON
 import TreeSitterPython
 import TreeSitterRuby
@@ -58,6 +59,8 @@ public struct CodeLanguage {
             return tree_sitter_gomod()
         case .html:
             return tree_sitter_html()
+        case .java:
+            return tree_sitter_java()
         case .json:
             return tree_sitter_json()
         case .python:
@@ -105,6 +108,7 @@ public extension CodeLanguage {
         .go,
         .goMod,
         .html,
+        .java,
         .json,
         .python,
         .ruby,
@@ -120,6 +124,9 @@ public extension CodeLanguage {
 
     /// A ``CodeLanguage`` structure for `HTML`
     static let html: CodeLanguage = .init(id: .html, displayName: "HTML", extensions: ["html", "htm"])
+
+    /// A ``CodeLanguage`` structure for `JSON`
+    static let java: CodeLanguage = .init(id: .java, displayName: "Java", extensions: ["java"])
 
     /// A ``CodeLanguage`` structure for `JSON`
     static let json: CodeLanguage = .init(id: .json, displayName: "JSON", extensions: ["json"])

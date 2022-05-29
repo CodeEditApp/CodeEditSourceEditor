@@ -55,6 +55,15 @@
       }
     },
     {
+      "identity" : "tree-sitter-java",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lukepistrol/tree-sitter-java.git",
+      "state" : {
+        "branch" : "feature/spm",
+        "revision" : "4140d566eb446658187cdd0b72de7581cc686408"
+      }
+    },
+    {
       "identity" : "tree-sitter-json",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mattmassicotte/tree-sitter-json.git",

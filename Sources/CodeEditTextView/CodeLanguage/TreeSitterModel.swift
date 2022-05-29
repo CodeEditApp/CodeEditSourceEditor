@@ -25,6 +25,8 @@ public class TreeSitterModel {
             return goModQuery
         case .html:
             return htmlQuery
+        case .java:
+            return javaQuery
         case .json:
             return jsonQuery
         case .python:
@@ -53,6 +55,11 @@ public class TreeSitterModel {
     /// Query for `HTML` files.
     public lazy var htmlQuery: Query? = {
         return queryFor(.html)
+    }()
+
+    /// Query for `Java` files.
+    public lazy var javaQuery: Query? = {
+        return queryFor(.java)
     }()
 
     /// Query for `JSON` files.

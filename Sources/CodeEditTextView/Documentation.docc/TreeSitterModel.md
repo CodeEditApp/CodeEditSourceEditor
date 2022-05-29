@@ -35,6 +35,7 @@ let query = TreeSitterModel.shared.swiftQuery
 - ``goQuery``
 - ``goModQuery``
 - ``htmlQuery``
+- ``javaQuery``
 - ``jsonQuery``
 - ``pythonQuery``
 - ``rubyQuery``
