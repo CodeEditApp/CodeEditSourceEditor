@@ -10,7 +10,7 @@ on:
     branches:
       - 'main'
 jobs:
-  pexels-swift-tests:
+  code-edit-text-view-tests:
     name: Testing CodeEditTextView
     runs-on: macos-12
     steps:
