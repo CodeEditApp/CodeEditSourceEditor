@@ -12,6 +12,7 @@ let package = Package(
             targets: ["CodeEditTextView"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
         .package(url: "https://github.com/krzyzanowskim/STTextView", branch: "main"),
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.6.0"),
         .package(url: "https://github.com/mattmassicotte/tree-sitter-swift.git", branch: "feature/spm"),
