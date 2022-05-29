@@ -12,6 +12,7 @@ public enum TreeSitterLanguage: String {
     case go
     case goMod
     case html
+    case java
     case json
     case python
     case ruby
