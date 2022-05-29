@@ -22,6 +22,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 - Go 
 - HTML
 - JSON
+- Python
 - Ruby
 - Swift
 - YAML
@@ -44,6 +45,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 - ``goMod``
 - ``html``
 - ``json``
+- ``python``
 - ``ruby``
 - ``swift``
 - ``yaml``

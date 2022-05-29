@@ -64,6 +64,15 @@
       }
     },
     {
+      "identity" : "tree-sitter-python",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lukepistrol/tree-sitter-python.git",
+      "state" : {
+        "branch" : "feature/spm",
+        "revision" : "78ab3c3dd69a571156ffd1c7ace7c49fb2e284ef"
+      }
+    },
+    {
       "identity" : "tree-sitter-ruby",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mattmassicotte/tree-sitter-ruby.git",

@@ -13,6 +13,7 @@ public enum TreeSitterLanguage: String {
     case goMod
     case html
     case json
+    case python
     case ruby
     case swift
     case yaml
