@@ -1,8 +1,8 @@
 # CodeEditTextView
 
-> This is still work in progress and not yet implemented! Please don't submit PRs yet!
-
 The Editor Text View for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit)
+
+> This is currently only implemented in the [`feature/new-editor`](https://github.com/CodeEditApp/CodeEdit/tree/feature/new-editor) branch!
 
 ## Usage
 
