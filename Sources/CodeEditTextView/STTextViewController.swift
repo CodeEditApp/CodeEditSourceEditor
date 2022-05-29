@@ -8,9 +8,7 @@
 import AppKit
 import SwiftUI
 import STTextView
-import CodeLanguage
 import SwiftTreeSitter
-import Theme
 
 /// A View Controller managing and displaying a `STTextView`
 public class STTextViewController: NSViewController, STTextViewDelegate {
@@ -49,7 +47,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
 
     // MARK: Init
 
-    init(text: Binding<String>, language: CodeLanguage, font: NSFont, theme: Theme, tabWidth: Int) {
+    public init(text: Binding<String>, language: CodeLanguage, font: NSFont, theme: Theme, tabWidth: Int) {
         self.text = text
         self.language = language
         self.font = font

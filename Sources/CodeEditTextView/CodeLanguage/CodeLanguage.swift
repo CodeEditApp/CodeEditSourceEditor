@@ -19,6 +19,7 @@ import TreeSitterYAML
 
 /// A structure holding metadata for code languages
 public struct CodeLanguage {
+    /// The ID of the ``CodeLanguage``
     public let id: TreeSitterLanguage
 
     /// The display name of the ``CodeLanguage``

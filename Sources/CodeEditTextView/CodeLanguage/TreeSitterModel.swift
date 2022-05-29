@@ -9,9 +9,6 @@ import Foundation
 import SwiftTreeSitter
 
 /// A singleton class to manage `tree-sitter` queries and keep them in memory.
-///
-/// This is important to not having to refetch queries any time a new file
-/// is opened since this can be very expensive
 public class TreeSitterModel {
 
     /// The singleton/shared instance of ``TreeSitterModel``.
@@ -41,30 +38,37 @@ public class TreeSitterModel {
         }
     }
 
+    /// Query for `Swift` files.
     public lazy var swiftQuery: Query? = {
         return queryFor(.swift)
     }()
 
+    /// Query for `Go` files.
     public lazy var goQuery: Query? = {
         return queryFor(.go)
     }()
 
+    /// Query for `GoMod` files.
     public lazy var goModQuery: Query? = {
         return queryFor(.goMod)
     }()
 
+    /// Query for `HTML` files.
     public lazy var htmlQuery: Query? = {
         return queryFor(.html)
     }()
 
+    /// Query for `JSON` files.
     public lazy var jsonQuery: Query? = {
         return queryFor(.json)
     }()
 
+    /// Query for `Ruby` files.
     public lazy var rubyQuery: Query? = {
         return queryFor(.ruby)
     }()
 
+    /// Query for `YAML` files.
     public lazy var yamlQuery: Query? = {
         return queryFor(.yaml)
     }()

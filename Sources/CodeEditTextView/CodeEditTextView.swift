@@ -7,10 +7,8 @@
 
 import SwiftUI
 import STTextView
-import CodeLanguage
-import Theme
 
-/// A `SwiftUI` wrapper for a `STTextView`.
+/// A `SwiftUI` wrapper for a ``STTextViewController``.
 public struct CodeEditTextView: NSViewControllerRepresentable {
 
 

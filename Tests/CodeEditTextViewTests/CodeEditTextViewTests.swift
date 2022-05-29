@@ -1,7 +1,5 @@
 import XCTest
 @testable import CodeEditTextView
-@testable import CodeLanguage
-import SwiftTreeSitter
 
 final class CodeEditTextViewTests: XCTestCase {
 

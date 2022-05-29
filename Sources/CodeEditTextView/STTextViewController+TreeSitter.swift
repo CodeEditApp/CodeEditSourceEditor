@@ -7,7 +7,6 @@
 
 import AppKit
 import SwiftTreeSitter
-import CodeLanguage
 
 internal extension STTextViewController {
 
