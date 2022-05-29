@@ -55,7 +55,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
         self.tabWidth = tabWidth
         super.init(nibName: nil, bundle: nil)
     }
-    
+
     required init(coder: NSCoder) {
         fatalError()
     }
@@ -168,7 +168,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
     }
 
     // MARK: Key Presses
-    
+
     private var keyIsDown: Bool = false
 
     /// Handles `keyDown` events in the `textView`

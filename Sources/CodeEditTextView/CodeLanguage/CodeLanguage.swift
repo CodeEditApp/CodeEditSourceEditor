@@ -38,7 +38,7 @@ public struct CodeLanguage {
     private var bundle: String {
         "TreeSitter\(displayName)_TreeSitter\(displayName).bundle"
     }
-    
+
     private var highlights: String {
         "Contents/Resources/queries/highlights.scm"
     }
@@ -125,7 +125,7 @@ public extension CodeLanguage {
 
     /// A ``CodeLanguage`` structure for `Swift`
     static let swift: CodeLanguage = .init(id: .swift, displayName: "Swift", extensions: ["swift"])
-    
+
     /// A ``CodeLanguage`` structure for `YAML`
     static let yaml: CodeLanguage = .init(id: .yaml, displayName: "YAML", extensions: ["yml", "yaml"])
 }
