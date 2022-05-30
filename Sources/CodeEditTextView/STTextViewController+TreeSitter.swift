@@ -20,7 +20,7 @@ internal extension STTextViewController {
             let start = CFAbsoluteTimeGetCurrent()
             self.query = TreeSitterModel.shared.query(for: self.language.id)
             let end = CFAbsoluteTimeGetCurrent()
-            print("Fetching Query for \(self.language.displayName): \(end-start) seconds")
+            print("Fetching Query for \(self.language.id.rawValue): \(end-start) seconds")
             DispatchQueue.main.async {
                 self.highlight()
             }

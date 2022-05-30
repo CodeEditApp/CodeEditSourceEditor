@@ -19,6 +19,7 @@ public enum TreeSitterLanguage: String {
     case java
     case javascript
     case json
+    case jsx
     case php
     case python
     case ruby

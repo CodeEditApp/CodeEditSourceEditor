@@ -20,11 +20,17 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 ### Supported Languages
 
 - C
+- C++
+- C#
 - CSS
-- Go 
+- Go
+- Go Mod
 - HTML
 - Java
+- JavaScript
 - JSON
+- JSX
+- PHP
 - Python
 - Ruby
 - Rust
@@ -36,22 +42,30 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 ### Instance Properties
 
 - ``id``
-- ``displayName``
+- ``tsName``
 - ``extensions``
+- ``parentQueryURL``
+- ``tsName``
 - ``queryURL``
 - ``language``
+- ``additionalHighlights``
 
 ### Type Properties
 
-- ``knownLanguages``
+- ``allLanguages``
 - ``default``
 - ``c``
+- ``cpp``
+- ``cSharp``
 - ``css``
 - ``go``
 - ``goMod``
 - ``html``
 - ``java``
+- ``javascript``
 - ``json``
+- ``jsx``
+- ``php``
 - ``python``
 - ``ruby``
 - ``rust``

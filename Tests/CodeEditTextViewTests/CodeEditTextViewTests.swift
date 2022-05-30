@@ -159,6 +159,15 @@ final class CodeEditTextViewTests: XCTestCase {
         XCTAssertEqual(language.id, .json)
     }
 
+    // MARK: JSX
+
+    func test_CodeLanguageJSX() throws {
+        let url = URL(fileURLWithPath: "~/path/to/file.jsx")
+        let language = CodeLanguage.detectLanguageFrom(url: url)
+
+        XCTAssertEqual(language.id, .jsx)
+    }
+
     // MARK: PHP
 
     func test_CodeLanguagePHP() throws {
@@ -323,6 +332,16 @@ final class CodeEditTextViewTests: XCTestCase {
 
     func test_FetchQueryJSON() throws {
         var language = CodeLanguage.json
+        language.resourceURL = bundleURL
+
+        let data = try Data(contentsOf: language.queryURL!)
+        let query = try? Query(language: language.language!, data: data)
+        XCTAssertNotNil(query)
+        XCTAssertNotEqual(query?.patternCount, 0)
+    }
+
+    func test_FetchQueryJSX() throws {
+        var language = CodeLanguage.jsx
         language.resourceURL = bundleURL
 
         let data = try Data(contentsOf: language.queryURL!)
