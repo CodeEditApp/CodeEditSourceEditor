@@ -15,7 +15,9 @@ import TreeSitterGo
 import TreeSitterGoMod
 import TreeSitterHTML
 import TreeSitterJava
+import TreeSitterJS
 import TreeSitterJSON
+import TreeSitterPHP
 import TreeSitterPython
 import TreeSitterRuby
 import TreeSitterRust
@@ -68,8 +70,12 @@ public struct CodeLanguage {
             return tree_sitter_html()
         case .java:
             return tree_sitter_java()
+        case .javascript:
+            return tree_sitter_javascript()
         case .json:
             return tree_sitter_json()
+        case .php:
+            return tree_sitter_php()
         case .python:
             return tree_sitter_python()
         case .ruby:
@@ -120,7 +126,9 @@ public extension CodeLanguage {
         .goMod,
         .html,
         .java,
+        .javascript,
         .json,
+        .php,
         .python,
         .ruby,
         .rust,
@@ -146,8 +154,14 @@ public extension CodeLanguage {
     /// A ``CodeLanguage`` structure for `Java`
     static let java: CodeLanguage = .init(id: .java, displayName: "Java", extensions: ["java"])
 
+    /// A ``CodeLanguage`` structure for `JavaScript`
+    static let javascript: CodeLanguage = .init(id: .javascript, displayName: "JS", extensions: ["js"])
+
     /// A ``CodeLanguage`` structure for `JSON`
     static let json: CodeLanguage = .init(id: .json, displayName: "JSON", extensions: ["json"])
+
+    /// A ``CodeLanguage`` structure for `PHP`
+    static let php: CodeLanguage = .init(id: .php, displayName: "PHP", extensions: ["php"])
 
     /// A ``CodeLanguage`` structure for `Python`
     static let python: CodeLanguage = .init(id: .python, displayName: "Python", extensions: ["py"])
