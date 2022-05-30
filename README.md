@@ -1,5 +1,5 @@
 ![Github Tests](https://img.shields.io/github/workflow/status/CodeEditApp/CodeEditTextView/tests/main?label=tests&style=flat-square)
-![Documentation](https://img.shields.io/github/workflow/status/CodeEditApp/CodeEditTextView/build-documentation/main?label=docs)
+![Documentation](https://img.shields.io/github/workflow/status/CodeEditApp/CodeEditTextView/build-documentation/main?label=docs&style=flat-square)
 ![GitHub Repo stars](https://img.shields.io/github/stars/CodeEditApp/CodeEditTextView?style=flat-square)
 ![GitHub forks](https://img.shields.io/github/forks/CodeEditApp/CodeEditTextView?style=flat-square)
 [![Discord Badge](https://img.shields.io/discord/951544472238444645?color=5865F2&label=Discord&logo=discord&logoColor=white&style=flat-square)](https://discord.gg/vChUXVf9Em)
@@ -44,7 +44,6 @@ struct ContentView: View {
 - [ ] Agda
 - [ ] Bash
 - [x] C
-- [ ] Clojure
 - [ ] C++
 - [ ] C#
 - [ ] CodeQL
@@ -54,26 +53,24 @@ struct ContentView: View {
 - [ ] Haskell
 - [x] HTML
 - [x] Java
-- [ ] JavaScript
+- [x] JavaScript
 - [ ] JSDoc
 - [x] JSON
 - [ ] Julia
 - [ ] OCaml
 - [ ] Markdown
-- [ ] Plain Text
+- [x] Plain Text
 - [ ] Perl
-- [ ] PHP
+- [x] PHP
 - [x] Python
 - [ ] Regex
 - [x] Ruby
 - [x] Rust
-- [ ] Sass
 - [ ] Scala
 - [ ] Sql
 - [x] Swift
 - [ ] Toml
 - [ ] TypeScript
-- [ ] Xml
 - [ ] Verilog
 - [x] YAML
 

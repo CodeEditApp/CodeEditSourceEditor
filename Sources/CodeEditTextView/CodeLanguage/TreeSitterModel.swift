@@ -32,8 +32,12 @@ public class TreeSitterModel {
             return htmlQuery
         case .java:
             return javaQuery
+        case .javascript:
+            return javascriptQuery
         case .json:
             return jsonQuery
+        case .php:
+            return phpQuery
         case .python:
             return pythonQuery
         case .ruby:
@@ -79,9 +83,19 @@ public class TreeSitterModel {
         return queryFor(.java)
     }()
 
+    /// Query for `JavaScript` files.
+    public lazy var javascriptQuery: Query? = {
+        return queryFor(.javascript)
+    }()
+
     /// Query for `JSON` files.
     public lazy var jsonQuery: Query? = {
         return queryFor(.json)
+    }()
+
+    /// Query for `PHP` files.
+    public lazy var phpQuery: Query? = {
+        return queryFor(.php)
     }()
 
     /// Query for `Python` files.
