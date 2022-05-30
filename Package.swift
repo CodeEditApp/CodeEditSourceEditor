@@ -15,6 +15,7 @@ let package = Package(
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
         .package(url: "https://github.com/krzyzanowskim/STTextView", branch: "main"),
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.6.0"),
+        .package(url: "https://github.com/lukepistrol/tree-sitter-css.git", branch: "feature/spm"),
         .package(url: "https://github.com/mattmassicotte/tree-sitter-go.git", branch: "feature/swift"),
         .package(url: "https://github.com/camdencheek/tree-sitter-go-mod.git", branch: "main"),
         .package(url: "https://github.com/mattmassicotte/tree-sitter-html.git", branch: "feature/spm"),
@@ -31,6 +32,7 @@ let package = Package(
             dependencies: [
                 "STTextView",
                 "SwiftTreeSitter",
+                .product(name: "TreeSitterCSS", package: "tree-sitter-css"),
                 .product(name: "TreeSitterGo", package: "tree-sitter-go"),
                 .product(name: "TreeSitterGoMod", package: "tree-sitter-go-mod"),
                 .product(name: "TreeSitterHTML", package: "tree-sitter-html"),

@@ -19,6 +19,8 @@ public class TreeSitterModel {
     /// - Returns: A Query if available. Returns `nil` for not implemented languages
     public func query(for language: TreeSitterLanguage) -> Query? {
         switch language {
+        case .css:
+            return cssQuery
         case .go:
             return goQuery
         case .goMod:
@@ -41,6 +43,11 @@ public class TreeSitterModel {
             return nil
         }
     }
+
+    /// Query for `CSS` files.
+    public lazy var cssQuery: Query? = {
+        return queryFor(.css)
+    }()
 
     /// Query for `Go` files.
     public lazy var goQuery: Query? = {
