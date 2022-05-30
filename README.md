@@ -49,10 +49,10 @@ struct ContentView: View {
 - [x] Go
 - [x] HTML
 - [x] Java
-- [ ] JavaScript
+- [x] JavaScript
 - [x] JSON
 - [ ] Markdown
-- [ ] PHP
+- [x] PHP
 - [x] Python
 - [ ] Regex
 - [x] Ruby
