@@ -41,17 +41,25 @@ struct ContentView: View {
 ```
 
 ## Currently Supported Languages
-- C
-- CSS
-- Go
-- HTML
-- Java
-- JSON
-- Python
-- Ruby
-- Rust
-- Swift
-- YAML
+- [ ] Bash
+- [x] C
+- [ ] C++
+- [ ] C#
+- [x] CSS
+- [x] Go
+- [x] HTML
+- [x] Java
+- [ ] JavaScript
+- [x] JSON
+- [ ] Markdown
+- [ ] PHP
+- [x] Python
+- [ ] Regex
+- [x] Ruby
+- [x] Rust
+- [x] Swift
+- [ ] TypeScript
+- [x] YAML
 
 ## Dependencies
 
