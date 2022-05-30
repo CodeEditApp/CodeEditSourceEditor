@@ -28,6 +28,15 @@
       }
     },
     {
+      "identity" : "tree-sitter-css",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lukepistrol/tree-sitter-css.git",
+      "state" : {
+        "branch" : "feature/spm",
+        "revision" : "baf1fadcac4f7b7c0f0f273feec4ad68864bc783"
+      }
+    },
+    {
       "identity" : "tree-sitter-go",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mattmassicotte/tree-sitter-go.git",

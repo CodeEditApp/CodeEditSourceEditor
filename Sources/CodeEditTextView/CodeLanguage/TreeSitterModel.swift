@@ -17,8 +17,11 @@ public class TreeSitterModel {
     /// Get a query for a specific language
     /// - Parameter language: The language to request the query for.
     /// - Returns: A Query if available. Returns `nil` for not implemented languages
+    // swiftlint:disable:next cyclomatic_complexity
     public func query(for language: TreeSitterLanguage) -> Query? {
         switch language {
+        case .css:
+            return cssQuery
         case .go:
             return goQuery
         case .goMod:
@@ -41,6 +44,11 @@ public class TreeSitterModel {
             return nil
         }
     }
+
+    /// Query for `CSS` files.
+    public lazy var cssQuery: Query? = {
+        return queryFor(.css)
+    }()
 
     /// Query for `Go` files.
     public lazy var goQuery: Query? = {

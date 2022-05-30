@@ -19,6 +19,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 
 ### Supported Languages
 
+- CSS
 - Go 
 - HTML
 - Java
@@ -42,6 +43,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 
 - ``knownLanguages``
 - ``default``
+- ``css``
 - ``go``
 - ``goMod``
 - ``html``

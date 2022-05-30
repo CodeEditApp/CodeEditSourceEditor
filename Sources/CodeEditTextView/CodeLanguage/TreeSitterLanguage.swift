@@ -9,6 +9,7 @@ import Foundation
 
 /// A collection of languages that are supported by `tree-sitter`
 public enum TreeSitterLanguage: String {
+    case css
     case go
     case goMod
     case html

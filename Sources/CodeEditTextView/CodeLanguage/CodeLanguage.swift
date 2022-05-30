@@ -9,6 +9,7 @@ import Foundation
 import tree_sitter
 import SwiftTreeSitter
 
+import TreeSitterCSS
 import TreeSitterGo
 import TreeSitterGoMod
 import TreeSitterHTML
@@ -53,6 +54,8 @@ public struct CodeLanguage {
 
     private var ts_language: UnsafeMutablePointer<TSLanguage>? {
         switch id {
+        case .css:
+            return tree_sitter_css()
         case .go:
             return tree_sitter_go()
         case .goMod:
@@ -105,6 +108,7 @@ public extension CodeLanguage {
 
     /// A collection of available ``CodeLanguage`` structures.
     static let knownLanguages: [CodeLanguage] = [
+        .css,
         .go,
         .goMod,
         .html,
@@ -116,6 +120,9 @@ public extension CodeLanguage {
         .yaml
     ]
 
+    /// A ``CodeLanguage`` structure for `CSS`
+    static let css: CodeLanguage = .init(id: .css, displayName: "CSS", extensions: ["css"])
+
     /// A ``CodeLanguage`` structure for `Go`
     static let go: CodeLanguage = .init(id: .go, displayName: "Go", extensions: ["go"])
 
@@ -125,7 +132,7 @@ public extension CodeLanguage {
     /// A ``CodeLanguage`` structure for `HTML`
     static let html: CodeLanguage = .init(id: .html, displayName: "HTML", extensions: ["html", "htm"])
 
-    /// A ``CodeLanguage`` structure for `JSON`
+    /// A ``CodeLanguage`` structure for `Java`
     static let java: CodeLanguage = .init(id: .java, displayName: "Java", extensions: ["java"])
 
     /// A ``CodeLanguage`` structure for `JSON`
