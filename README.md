@@ -41,6 +41,7 @@ struct ContentView: View {
 ```
 
 ## Currently Supported Languages
+- CSS
 - Go
 - HTML
 - Java
