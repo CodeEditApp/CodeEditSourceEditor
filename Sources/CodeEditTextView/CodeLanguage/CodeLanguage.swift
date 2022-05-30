@@ -9,6 +9,7 @@ import Foundation
 import tree_sitter
 import SwiftTreeSitter
 
+import TreeSitterC
 import TreeSitterCSS
 import TreeSitterGo
 import TreeSitterGoMod
@@ -17,6 +18,7 @@ import TreeSitterJava
 import TreeSitterJSON
 import TreeSitterPython
 import TreeSitterRuby
+import TreeSitterRust
 import TreeSitterSwift
 import TreeSitterYAML
 
@@ -54,6 +56,8 @@ public struct CodeLanguage {
 
     private var ts_language: UnsafeMutablePointer<TSLanguage>? {
         switch id {
+        case .c:
+            return tree_sitter_c()
         case .css:
             return tree_sitter_css()
         case .go:
@@ -70,6 +74,8 @@ public struct CodeLanguage {
             return tree_sitter_python()
         case .ruby:
             return tree_sitter_ruby()
+        case .rust:
+            return tree_sitter_rust()
         case .swift:
             return tree_sitter_swift()
         case .yaml:
@@ -108,6 +114,7 @@ public extension CodeLanguage {
 
     /// A collection of available ``CodeLanguage`` structures.
     static let knownLanguages: [CodeLanguage] = [
+        .c,
         .css,
         .go,
         .goMod,
@@ -116,9 +123,13 @@ public extension CodeLanguage {
         .json,
         .python,
         .ruby,
+        .rust,
         .swift,
         .yaml
     ]
+
+    /// A ``CodeLanguage`` structure for `C`
+    static let c: CodeLanguage = .init(id: .c, displayName: "C", extensions: ["c", "h", "o"])
 
     /// A ``CodeLanguage`` structure for `CSS`
     static let css: CodeLanguage = .init(id: .css, displayName: "CSS", extensions: ["css"])
@@ -143,6 +154,9 @@ public extension CodeLanguage {
 
     /// A ``CodeLanguage`` structure for `Ruby`
     static let ruby: CodeLanguage = .init(id: .ruby, displayName: "Ruby", extensions: ["rb"])
+
+    /// A ``CodeLanguage`` structure for `Rust`
+    static let rust: CodeLanguage = .init(id: .rust, displayName: "Rust", extensions: ["rs"])
 
     /// A ``CodeLanguage`` structure for `Swift`
     static let swift: CodeLanguage = .init(id: .swift, displayName: "Swift", extensions: ["swift"])

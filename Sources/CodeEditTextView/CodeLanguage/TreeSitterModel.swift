@@ -20,6 +20,8 @@ public class TreeSitterModel {
     // swiftlint:disable:next cyclomatic_complexity
     public func query(for language: TreeSitterLanguage) -> Query? {
         switch language {
+        case .c:
+            return cQuery
         case .css:
             return cssQuery
         case .go:
@@ -36,6 +38,8 @@ public class TreeSitterModel {
             return pythonQuery
         case .ruby:
             return rubyQuery
+        case .rust:
+            return rustQuery
         case .swift:
             return swiftQuery
         case .yaml:
@@ -44,6 +48,11 @@ public class TreeSitterModel {
             return nil
         }
     }
+
+    /// Query for `C` files.
+    public lazy var cQuery: Query? = {
+        return queryFor(.c)
+    }()
 
     /// Query for `CSS` files.
     public lazy var cssQuery: Query? = {
@@ -83,6 +92,11 @@ public class TreeSitterModel {
     /// Query for `Ruby` files.
     public lazy var rubyQuery: Query? = {
         return queryFor(.ruby)
+    }()
+
+    /// Query for `Rust` files.
+    public lazy var rustQuery: Query? = {
+        return queryFor(.rust)
     }()
 
     /// Query for `Swift` files.
