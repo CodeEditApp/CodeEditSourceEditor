@@ -43,8 +43,8 @@ struct ContentView: View {
 ## Currently Supported Languages
 - [ ] Bash
 - [x] C
-- [ ] C++
-- [ ] C#
+- [x] C++
+- [x] C#
 - [x] CSS
 - [x] Go
 - [x] HTML
