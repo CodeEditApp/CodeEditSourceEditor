@@ -17,7 +17,7 @@ let package = Package(
         .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.6.0"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-c.git", branch: "master"),
         .package(url: "https://github.com/lukepistrol/tree-sitter-cpp.git", branch: "feature/spm"),
-        .package(url: "https://github.com/lukepistrol/tree-sitter-c-sharp.git", branch: "feature/spm"),
+        .package(url: "https://github.com/tree-sitter/tree-sitter-c-sharp.git", branch: "master"),
         .package(url: "https://github.com/lukepistrol/tree-sitter-css.git", branch: "feature/spm"),
         .package(url: "https://github.com/mattmassicotte/tree-sitter-go.git", branch: "feature/swift"),
         .package(url: "https://github.com/camdencheek/tree-sitter-go-mod.git", branch: "main"),
