@@ -33,12 +33,17 @@ let query = TreeSitterModel.shared.swiftQuery
 ### Instance Properties
 
 - ``cQuery``
+- ``cppQuery``
+- ``cSharpQuery``
 - ``cssQuery``
 - ``goQuery``
 - ``goModQuery``
 - ``htmlQuery``
 - ``javaQuery``
+- ``javascriptQuery``
 - ``jsonQuery``
+- ``jsxQuery``
+- ``phpQuery``
 - ``pythonQuery``
 - ``rubyQuery``
 - ``rustQuery``

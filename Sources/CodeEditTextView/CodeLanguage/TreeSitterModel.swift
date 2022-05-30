@@ -40,6 +40,8 @@ public class TreeSitterModel {
             return javascriptQuery
         case .json:
             return jsonQuery
+        case .jsx:
+            return jsxQuery
         case .php:
             return phpQuery
         case .python:
@@ -58,82 +60,87 @@ public class TreeSitterModel {
     }
 
     /// Query for `C` files.
-    public lazy var cQuery: Query? = {
+    public private(set) lazy var cQuery: Query? = {
         return queryFor(.c)
     }()
 
     /// Query for `C++` files.
-    public lazy var cppQuery: Query? = {
+    public private(set) lazy var cppQuery: Query? = {
         return queryFor(.cpp)
     }()
 
     /// Query for `C#` files.
-    public lazy var cSharpQuery: Query? = {
+    public private(set) lazy var cSharpQuery: Query? = {
         return queryFor(.cSharp)
     }()
 
     /// Query for `CSS` files.
-    public lazy var cssQuery: Query? = {
+    public private(set) lazy var cssQuery: Query? = {
         return queryFor(.css)
     }()
 
     /// Query for `Go` files.
-    public lazy var goQuery: Query? = {
+    public private(set) lazy var goQuery: Query? = {
         return queryFor(.go)
     }()
 
     /// Query for `GoMod` files.
-    public lazy var goModQuery: Query? = {
+    public private(set) lazy var goModQuery: Query? = {
         return queryFor(.goMod)
     }()
 
     /// Query for `HTML` files.
-    public lazy var htmlQuery: Query? = {
+    public private(set) lazy var htmlQuery: Query? = {
         return queryFor(.html)
     }()
 
     /// Query for `Java` files.
-    public lazy var javaQuery: Query? = {
+    public private(set) lazy var javaQuery: Query? = {
         return queryFor(.java)
     }()
 
     /// Query for `JavaScript` files.
-    public lazy var javascriptQuery: Query? = {
+    public private(set) lazy var javascriptQuery: Query? = {
         return queryFor(.javascript)
     }()
 
+    /// Query for `JSX` files.
+    public private(set) lazy var jsxQuery: Query? = {
+        return queryFor(.jsx)
+    }()
+
     /// Query for `JSON` files.
-    public lazy var jsonQuery: Query? = {
+    public private(set) lazy var jsonQuery: Query? = {
         return queryFor(.json)
     }()
 
     /// Query for `PHP` files.
-    public lazy var phpQuery: Query? = {
+    public private(set) lazy var phpQuery: Query? = {
         return queryFor(.php)
     }()
 
     /// Query for `Python` files.
-    public lazy var pythonQuery: Query? = {
+    public private(set) lazy var pythonQuery: Query? = {
         return queryFor(.python)
     }()
 
     /// Query for `Ruby` files.
-    public lazy var rubyQuery: Query? = {
+    public private(set) lazy var rubyQuery: Query? = {
         return queryFor(.ruby)
     }()
 
     /// Query for `Rust` files.
-    public lazy var rustQuery: Query? = {
+    public private(set) lazy var rustQuery: Query? = {
         return queryFor(.rust)
     }()
 
     /// Query for `Swift` files.
-    public lazy var swiftQuery: Query? = {
+    public private(set) lazy var swiftQuery: Query? = {
         return queryFor(.swift)
     }()
 
     /// Query for `YAML` files.
-    public lazy var yamlQuery: Query? = {
+    public private(set) lazy var yamlQuery: Query? = {
         return queryFor(.yaml)
     }()
 
@@ -142,6 +149,11 @@ public class TreeSitterModel {
               let url = codeLanguage.queryURL else { return nil }
         if let parentURL = codeLanguage.parentQueryURL,
            let data = combinedQueryData(for: [url, parentURL]) {
+            return try? Query(language: language, data: data)
+        } else if let additionalHighlights = codeLanguage.additionalHighlights {
+            var addURLs = additionalHighlights.compactMap({ codeLanguage.queryURL(for: $0) })
+            addURLs.append(url)
+            guard let data = combinedQueryData(for: addURLs) else { return nil }
             return try? Query(language: language, data: data)
         } else {
             return try? language.query(contentsOf: url)

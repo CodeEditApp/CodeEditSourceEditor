@@ -53,7 +53,7 @@ struct ContentView: View {
 - [ ] Haskell
 - [x] [HTML](https://github.com/mattmassicotte/tree-sitter-html)
 - [x] [Java](https://github.com/tree-sitter/tree-sitter-java)
-- [x] [JavaScript](https://github.com/tree-sitter/tree-sitter-javascript)
+- [x] [JavaScript/JSX](https://github.com/tree-sitter/tree-sitter-javascript)
 - [ ] JSDoc
 - [x] [JSON](https://github.com/mattmassicotte/tree-sitter-json)
 - [ ] Julia
