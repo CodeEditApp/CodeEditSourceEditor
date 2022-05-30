@@ -41,24 +41,37 @@ struct ContentView: View {
 ```
 
 ## Currently Supported Languages
+- [ ] Agda
 - [ ] Bash
 - [x] C
 - [ ] C++
 - [ ] C#
+- [ ] CodeQL
 - [x] CSS
+- [ ] Embedded template (ERB, EJS)
 - [x] Go
+- [ ] Haskell
 - [x] HTML
 - [x] Java
 - [x] JavaScript
+- [ ] JSDoc
 - [x] JSON
+- [ ] Julia
+- [ ] OCaml
 - [ ] Markdown
+- [x] Plain Text
+- [ ] Perl
 - [x] PHP
 - [x] Python
 - [ ] Regex
 - [x] Ruby
 - [x] Rust
+- [ ] Scala
+- [ ] Sql
 - [x] Swift
+- [ ] Toml
 - [ ] TypeScript
+- [ ] Verilog
 - [x] YAML
 
 ## Dependencies
