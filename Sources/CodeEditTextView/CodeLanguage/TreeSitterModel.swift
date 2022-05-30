@@ -141,7 +141,7 @@ public class TreeSitterModel {
         guard let language = codeLanguage.language,
               let url = codeLanguage.queryURL else { return nil }
         if let parentURL = codeLanguage.parentQueryURL,
-           let data = combinedQueryData(for: [url, parentURL]){
+           let data = combinedQueryData(for: [url, parentURL]) {
             return try? Query(language: language, data: data)
         } else {
             return try? language.query(contentsOf: url)

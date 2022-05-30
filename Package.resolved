@@ -37,6 +37,24 @@
       }
     },
     {
+      "identity" : "tree-sitter-c-sharp",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lukepistrol/tree-sitter-c-sharp.git",
+      "state" : {
+        "branch" : "feature/spm",
+        "revision" : "18d9d8241d64e6ec2514f84d81528e44723da56a"
+      }
+    },
+    {
+      "identity" : "tree-sitter-cpp",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lukepistrol/tree-sitter-cpp.git",
+      "state" : {
+        "branch" : "feature/spm",
+        "revision" : "ff2cb310c6ee2f7d63de99fff6713f83915aa880"
+      }
+    },
+    {
       "identity" : "tree-sitter-css",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lukepistrol/tree-sitter-css.git",
@@ -82,12 +100,30 @@
       }
     },
     {
+      "identity" : "tree-sitter-javascript",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lukepistrol/tree-sitter-javascript.git",
+      "state" : {
+        "branch" : "feature/spm",
+        "revision" : "0e6310fa29b0b71daf2c38b08f538571bd79357b"
+      }
+    },
+    {
       "identity" : "tree-sitter-json",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mattmassicotte/tree-sitter-json.git",
       "state" : {
         "branch" : "feature/spm",
         "revision" : "07fd294fe05a3d726ab9191e504db5f7648fa3fd"
+      }
+    },
+    {
+      "identity" : "tree-sitter-php",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lukepistrol/tree-sitter-php.git",
+      "state" : {
+        "branch" : "feature/spm",
+        "revision" : "e068da18701e00b5bebcbebdfad0c6205fad8b9b"
       }
     },
     {
@@ -106,6 +142,15 @@
       "state" : {
         "branch" : "feature/swift",
         "revision" : "e0923bfc25cadb2d5fd0a07c3b55e4b2d1501cb8"
+      }
+    },
+    {
+      "identity" : "tree-sitter-rust",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lukepistrol/tree-sitter-rust.git",
+      "state" : {
+        "branch" : "feature/spm",
+        "revision" : "ae1dc741893fa72afaa1f6f3a5bc59d074a77e96"
       }
     },
     {

@@ -45,7 +45,7 @@ public struct CodeLanguage {
     }
 
     /// The query URL of a language this language inherits from. (e.g.: C for C++)
-    public var parentQueryURL: URL? = nil
+    public var parentQueryURL: URL?
 
     private var bundle: String {
         "TreeSitter\(displayName)_TreeSitter\(displayName).bundle"
@@ -151,7 +151,10 @@ public extension CodeLanguage {
     static let c: CodeLanguage = .init(id: .c, displayName: "C", extensions: ["c", "h", "o"])
 
     /// A language structure for `C++`
-    static let cpp: CodeLanguage = .init(id: .cpp, displayName: "CPP", extensions: ["cpp", "h", "cc"], parentQueryURL: CodeLanguage.c.queryURL)
+    static let cpp: CodeLanguage = .init(id: .cpp,
+                                         displayName: "CPP",
+                                         extensions: ["cpp", "h", "cc"],
+                                         parentQueryURL: CodeLanguage.c.queryURL)
 
     /// A language structure for `C#`
     static let cSharp: CodeLanguage = .init(id: .cSharp, displayName: "CSharp", extensions: ["cs"])
