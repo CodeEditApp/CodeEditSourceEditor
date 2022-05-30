@@ -1,5 +1,5 @@
 ![Github Tests](https://img.shields.io/github/workflow/status/CodeEditApp/CodeEditTextView/tests/main?label=tests&style=flat-square)
-![Documentation](https://img.shields.io/github/workflow/status/CodeEditApp/CodeEditTextView/build-documentation/main?label=docs)
+![Documentation](https://img.shields.io/github/workflow/status/CodeEditApp/CodeEditTextView/build-documentation/main?label=docs&style=flat-square)
 ![GitHub Repo stars](https://img.shields.io/github/stars/CodeEditApp/CodeEditTextView?style=flat-square)
 ![GitHub forks](https://img.shields.io/github/forks/CodeEditApp/CodeEditTextView?style=flat-square)
 [![Discord Badge](https://img.shields.io/discord/951544472238444645?color=5865F2&label=Discord&logo=discord&logoColor=white&style=flat-square)](https://discord.gg/vChUXVf9Em)
@@ -41,24 +41,37 @@ struct ContentView: View {
 ```
 
 ## Currently Supported Languages
+- [ ] Agda
 - [ ] Bash
 - [x] C
 - [x] C++
 - [x] C#
+- [ ] CodeQL
 - [x] CSS
+- [ ] Embedded template (ERB, EJS)
 - [x] Go
+- [ ] Haskell
 - [x] HTML
 - [x] Java
 - [x] JavaScript
+- [ ] JSDoc
 - [x] JSON
+- [ ] Julia
+- [ ] OCaml
 - [ ] Markdown
+- [x] Plain Text
+- [ ] Perl
 - [x] PHP
 - [x] Python
 - [ ] Regex
 - [x] Ruby
 - [x] Rust
+- [ ] Scala
+- [ ] Sql
 - [x] Swift
+- [ ] Toml
 - [ ] TypeScript
+- [ ] Verilog
 - [x] YAML
 
 ## Dependencies
