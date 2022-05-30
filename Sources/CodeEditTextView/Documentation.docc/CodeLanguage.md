@@ -19,6 +19,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 
 ### Supported Languages
 
+- C
 - CSS
 - Go 
 - HTML
@@ -26,6 +27,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 - JSON
 - Python
 - Ruby
+- Rust
 - Swift
 - YAML
 
@@ -43,6 +45,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 
 - ``knownLanguages``
 - ``default``
+- ``c``
 - ``css``
 - ``go``
 - ``goMod``
@@ -51,6 +54,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 - ``json``
 - ``python``
 - ``ruby``
+- ``rust``
 - ``swift``
 - ``yaml``
 

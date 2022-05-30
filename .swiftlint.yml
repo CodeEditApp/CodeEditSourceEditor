@@ -11,5 +11,6 @@ identifier_name:
   min_length: 2
   allowed_symbols: ['_']
   excluded:
+    - c
     - id
     - vc
