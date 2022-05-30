@@ -22,6 +22,10 @@ public class TreeSitterModel {
         switch language {
         case .c:
             return cQuery
+        case .cpp:
+            return cppQuery
+        case .cSharp:
+            return cSharpQuery
         case .css:
             return cssQuery
         case .go:
@@ -56,6 +60,16 @@ public class TreeSitterModel {
     /// Query for `C` files.
     public lazy var cQuery: Query? = {
         return queryFor(.c)
+    }()
+
+    /// Query for `C++` files.
+    public lazy var cppQuery: Query? = {
+        return queryFor(.cpp)
+    }()
+
+    /// Query for `C#` files.
+    public lazy var cSharpQuery: Query? = {
+        return queryFor(.cSharp)
     }()
 
     /// Query for `CSS` files.
@@ -126,7 +140,21 @@ public class TreeSitterModel {
     private func queryFor(_ codeLanguage: CodeLanguage) -> Query? {
         guard let language = codeLanguage.language,
               let url = codeLanguage.queryURL else { return nil }
-        return try? language.query(contentsOf: url)
+        if let parentURL = codeLanguage.parentQueryURL,
+           let data = combinedQueryData(for: [url, parentURL]) {
+            return try? Query(language: language, data: data)
+        } else {
+            return try? language.query(contentsOf: url)
+        }
+    }
+
+    private func combinedQueryData(for fileURLs: [URL]) -> Data? {
+        let rawQuery = fileURLs.compactMap { try? String(contentsOf: $0) }.joined(separator: "\n")
+        if !rawQuery.isEmpty {
+            return rawQuery.data(using: .utf8)
+        } else {
+            return nil
+        }
     }
 
     private init() {}

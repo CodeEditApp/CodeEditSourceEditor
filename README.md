@@ -44,8 +44,8 @@ struct ContentView: View {
 - [ ] Agda
 - [ ] Bash
 - [x] C
-- [ ] C++
-- [ ] C#
+- [x] C++
+- [x] C#
 - [ ] CodeQL
 - [x] CSS
 - [ ] Embedded template (ERB, EJS)

@@ -10,6 +10,8 @@ import tree_sitter
 import SwiftTreeSitter
 
 import TreeSitterC
+import TreeSitterCPP
+import TreeSitterCSharp
 import TreeSitterCSS
 import TreeSitterGo
 import TreeSitterGoMod
@@ -26,21 +28,24 @@ import TreeSitterYAML
 
 /// A structure holding metadata for code languages
 public struct CodeLanguage {
-    /// The ID of the ``CodeLanguage``
+    /// The ID of the language
     public let id: TreeSitterLanguage
 
-    /// The display name of the ``CodeLanguage``
+    /// The display name of the language
     public let displayName: String
 
-    /// A set of file extensions for the ``CodeLanguage``
+    /// A set of file extensions for the language
     public let extensions: Set<String>
 
-    /// The query URL for the ``CodeLanguage`` if available
+    /// The query URL for the language if available
     public var queryURL: URL? {
         Bundle.main.resourceURL?
             .appendingPathComponent(bundle)
             .appendingPathComponent(highlights)
     }
+
+    /// The query URL of a language this language inherits from. (e.g.: C for C++)
+    public var parentQueryURL: URL?
 
     private var bundle: String {
         "TreeSitter\(displayName)_TreeSitter\(displayName).bundle"
@@ -50,7 +55,7 @@ public struct CodeLanguage {
         "Contents/Resources/queries/highlights.scm"
     }
 
-    /// The tree-sitter language for the ``CodeLanguage`` if available
+    /// The tree-sitter language for the language if available
     public var language: Language? {
         guard let ts_language = ts_language else { return nil }
         return Language(language: ts_language)
@@ -60,6 +65,10 @@ public struct CodeLanguage {
         switch id {
         case .c:
             return tree_sitter_c()
+        case .cpp:
+            return tree_sitter_cpp()
+        case .cSharp:
+            return tree_sitter_c_sharp()
         case .css:
             return tree_sitter_css()
         case .go:
@@ -91,11 +100,11 @@ public struct CodeLanguage {
         }
     }
 
-    /// Gets the corresponding ``CodeLanguage`` for the given file URL
+    /// Gets the corresponding language for the given file URL
     ///
-    /// Uses the `pathExtension` URL component to detect the ``CodeLanguage``
-    /// - Parameter url: The URL to get the ``CodeLanguage`` for.
-    /// - Returns: A ``CodeLanguage`` structure
+    /// Uses the `pathExtension` URL component to detect the language
+    /// - Parameter url: The URL to get the language for.
+    /// - Returns: A language structure
     public static func detectLanguageFrom(url: URL) -> CodeLanguage {
         let fileExtension = url.pathExtension.lowercased()
         let fileName = url.pathComponents.last?.lowercased()
@@ -108,7 +117,7 @@ public struct CodeLanguage {
         }
     }
 
-    /// The default ``CodeLanguage`` (plain text)
+    /// The default language (plain text)
     public static let `default` = CodeLanguage(
         id: .plainText,
         displayName: "Plain Text",
@@ -118,9 +127,11 @@ public struct CodeLanguage {
 
 public extension CodeLanguage {
 
-    /// A collection of available ``CodeLanguage`` structures.
+    /// A collection of available language structures.
     static let knownLanguages: [CodeLanguage] = [
         .c,
+        .cpp,
+        .cSharp,
         .css,
         .go,
         .goMod,
@@ -136,45 +147,54 @@ public extension CodeLanguage {
         .yaml
     ]
 
-    /// A ``CodeLanguage`` structure for `C`
+    /// A language structure for `C`
     static let c: CodeLanguage = .init(id: .c, displayName: "C", extensions: ["c", "h", "o"])
 
-    /// A ``CodeLanguage`` structure for `CSS`
+    /// A language structure for `C++`
+    static let cpp: CodeLanguage = .init(id: .cpp,
+                                         displayName: "CPP",
+                                         extensions: ["cpp", "h", "cc"],
+                                         parentQueryURL: CodeLanguage.c.queryURL)
+
+    /// A language structure for `C#`
+    static let cSharp: CodeLanguage = .init(id: .cSharp, displayName: "CSharp", extensions: ["cs"])
+
+    /// A language structure for `CSS`
     static let css: CodeLanguage = .init(id: .css, displayName: "CSS", extensions: ["css"])
 
-    /// A ``CodeLanguage`` structure for `Go`
+    /// A language structure for `Go`
     static let go: CodeLanguage = .init(id: .go, displayName: "Go", extensions: ["go"])
 
-    /// A ``CodeLanguage`` structure for `GoMod`
+    /// A language structure for `GoMod`
     static let goMod: CodeLanguage = .init(id: .goMod, displayName: "GoMod", extensions: ["mod"])
 
-    /// A ``CodeLanguage`` structure for `HTML`
+    /// A language structure for `HTML`
     static let html: CodeLanguage = .init(id: .html, displayName: "HTML", extensions: ["html", "htm"])
 
-    /// A ``CodeLanguage`` structure for `Java`
+    /// A language structure for `Java`
     static let java: CodeLanguage = .init(id: .java, displayName: "Java", extensions: ["java"])
 
-    /// A ``CodeLanguage`` structure for `JavaScript`
+    /// A language structure for `JavaScript`
     static let javascript: CodeLanguage = .init(id: .javascript, displayName: "JS", extensions: ["js"])
 
-    /// A ``CodeLanguage`` structure for `JSON`
+    /// A language structure for `JSON`
     static let json: CodeLanguage = .init(id: .json, displayName: "JSON", extensions: ["json"])
 
-    /// A ``CodeLanguage`` structure for `PHP`
+    /// A language structure for `PHP`
     static let php: CodeLanguage = .init(id: .php, displayName: "PHP", extensions: ["php"])
 
-    /// A ``CodeLanguage`` structure for `Python`
+    /// A language structure for `Python`
     static let python: CodeLanguage = .init(id: .python, displayName: "Python", extensions: ["py"])
 
-    /// A ``CodeLanguage`` structure for `Ruby`
+    /// A language structure for `Ruby`
     static let ruby: CodeLanguage = .init(id: .ruby, displayName: "Ruby", extensions: ["rb"])
 
-    /// A ``CodeLanguage`` structure for `Rust`
+    /// A language structure for `Rust`
     static let rust: CodeLanguage = .init(id: .rust, displayName: "Rust", extensions: ["rs"])
 
-    /// A ``CodeLanguage`` structure for `Swift`
+    /// A language structure for `Swift`
     static let swift: CodeLanguage = .init(id: .swift, displayName: "Swift", extensions: ["swift"])
 
-    /// A ``CodeLanguage`` structure for `YAML`
+    /// A language structure for `YAML`
     static let yaml: CodeLanguage = .init(id: .yaml, displayName: "YAML", extensions: ["yml", "yaml"])
 }
