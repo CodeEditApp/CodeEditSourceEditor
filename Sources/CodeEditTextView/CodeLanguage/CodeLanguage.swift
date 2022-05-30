@@ -39,13 +39,15 @@ public struct CodeLanguage {
 
     /// The query URL for the language if available
     public var queryURL: URL? {
-        Bundle.main.resourceURL?
+        resourceURL?
             .appendingPathComponent(bundle)
             .appendingPathComponent(highlights)
     }
 
     /// The query URL of a language this language inherits from. (e.g.: C for C++)
     public var parentQueryURL: URL?
+
+    internal var resourceURL: URL? = Bundle.main.resourceURL
 
     private var bundle: String {
         "TreeSitter\(displayName)_TreeSitter\(displayName).bundle"

@@ -30,19 +30,19 @@
     {
       "identity" : "tree-sitter-c",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lukepistrol/tree-sitter-c.git",
+      "location" : "https://github.com/tree-sitter/tree-sitter-c.git",
       "state" : {
-        "branch" : "feature/spm",
-        "revision" : "beb15168446b6ac4b0c451b64a2bfaa621341b7e"
+        "branch" : "master",
+        "revision" : "3ced8d6cd212a6f576cd4ef3d533bcb9c09eface"
       }
     },
     {
       "identity" : "tree-sitter-c-sharp",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lukepistrol/tree-sitter-c-sharp.git",
+      "location" : "https://github.com/tree-sitter/tree-sitter-c-sharp.git",
       "state" : {
-        "branch" : "feature/spm",
-        "revision" : "18d9d8241d64e6ec2514f84d81528e44723da56a"
+        "branch" : "master",
+        "revision" : "49716ffc113a51c567a9442c69b42c7d1fa08c7b"
       }
     },
     {
@@ -93,19 +93,19 @@
     {
       "identity" : "tree-sitter-java",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lukepistrol/tree-sitter-java.git",
+      "location" : "https://github.com/tree-sitter/tree-sitter-java.git",
       "state" : {
-        "branch" : "feature/spm",
-        "revision" : "4140d566eb446658187cdd0b72de7581cc686408"
+        "branch" : "master",
+        "revision" : "ac14b4b1884102839455d32543ab6d53ae089ab7"
       }
     },
     {
       "identity" : "tree-sitter-javascript",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lukepistrol/tree-sitter-javascript.git",
+      "location" : "https://github.com/tree-sitter/tree-sitter-javascript.git",
       "state" : {
-        "branch" : "feature/spm",
-        "revision" : "0e6310fa29b0b71daf2c38b08f538571bd79357b"
+        "branch" : "master",
+        "revision" : "785831303ce3d36f5dd8ada7c4c7d63518d4d2f5"
       }
     },
     {
@@ -120,10 +120,10 @@
     {
       "identity" : "tree-sitter-php",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lukepistrol/tree-sitter-php.git",
+      "location" : "https://github.com/tree-sitter/tree-sitter-php.git",
       "state" : {
-        "branch" : "feature/spm",
-        "revision" : "e068da18701e00b5bebcbebdfad0c6205fad8b9b"
+        "branch" : "master",
+        "revision" : "6c1edb96fdbce5b44c2ecebe15cf9adfb8fed06a"
       }
     },
     {
@@ -147,10 +147,10 @@
     {
       "identity" : "tree-sitter-rust",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lukepistrol/tree-sitter-rust.git",
+      "location" : "https://github.com/tree-sitter/tree-sitter-rust.git",
       "state" : {
-        "branch" : "feature/spm",
-        "revision" : "ae1dc741893fa72afaa1f6f3a5bc59d074a77e96"
+        "branch" : "master",
+        "revision" : "36ae187ed6dd3803a8a89dbb54f3124c8ee74662"
       }
     },
     {
