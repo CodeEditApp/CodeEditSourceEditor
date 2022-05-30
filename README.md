@@ -43,36 +43,36 @@ struct ContentView: View {
 ## Currently Supported Languages
 - [ ] Agda
 - [ ] Bash
-- [x] C
-- [x] C++
-- [x] C#
+- [x] [C](https://github.com/tree-sitter/tree-sitter-c)
+- [x] [C++](https://github.com/tree-sitter/tree-sitter-cpp)
+- [x] [C#](https://github.com/tree-sitter/tree-sitter-c-sharp)
 - [ ] CodeQL
-- [x] CSS
+- [x] [CSS](https://github.com/lukepistrol/tree-sitter-css)
 - [ ] Embedded template (ERB, EJS)
-- [x] Go
+- [x] [Go](https://github.com/tree-sitter/tree-sitter-go)
 - [ ] Haskell
-- [x] HTML
-- [x] Java
-- [x] JavaScript
+- [x] [HTML](https://github.com/mattmassicotte/tree-sitter-html)
+- [x] [Java](https://github.com/tree-sitter/tree-sitter-java)
+- [x] [JavaScript](https://github.com/tree-sitter/tree-sitter-javascript)
 - [ ] JSDoc
-- [x] JSON
+- [x] [JSON](https://github.com/mattmassicotte/tree-sitter-json)
 - [ ] Julia
 - [ ] OCaml
 - [ ] Markdown
 - [x] Plain Text
 - [ ] Perl
-- [x] PHP
-- [x] Python
+- [x] [PHP](https://github.com/tree-sitter/tree-sitter-php)
+- [x] [Python](https://github.com/lukepistrol/tree-sitter-python)
 - [ ] Regex
-- [x] Ruby
-- [x] Rust
+- [x] [Ruby](https://github.com/mattmassicotte/tree-sitter-ruby)
+- [x] [Rust](https://github.com/tree-sitter/tree-sitter-rust)
 - [ ] Scala
 - [ ] Sql
-- [x] Swift
+- [x] [Swift](https://github.com/mattmassicotte/tree-sitter-swift)
 - [ ] Toml
 - [ ] TypeScript
 - [ ] Verilog
-- [x] YAML
+- [x] [YAML](https://github.com/mattmassicotte/tree-sitter-yaml)
 
 ## Dependencies
 
