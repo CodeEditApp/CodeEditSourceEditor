@@ -41,6 +41,15 @@ final class CodeEditTextViewTests: XCTestCase {
         XCTAssertEqual(result, expected)
     }
 
+    // MARK: Bash
+
+    func test_CodeLanguageBash() throws {
+        let url = URL(fileURLWithPath: "~/path/to/file.sh")
+        let language = CodeLanguage.detectLanguageFrom(url: url)
+
+        XCTAssertEqual(language.id, .bash)
+    }
+
     // MARK: C
 
     func test_CodeLanguageC() throws {
@@ -239,6 +248,16 @@ final class CodeEditTextViewTests: XCTestCase {
     }
 
     let bundleURL = Bundle(for: TreeSitterModel.self).resourceURL
+
+    func test_FetchQueryBash() throws {
+        var language = CodeLanguage.bash
+        language.resourceURL = bundleURL
+
+        let data = try Data(contentsOf: language.queryURL!)
+        let query = try? Query(language: language.language!, data: data)
+        XCTAssertNotNil(query)
+        XCTAssertNotEqual(query?.patternCount, 0)
+    }
 
     func test_FetchQueryC() throws {
         var language = CodeLanguage.c

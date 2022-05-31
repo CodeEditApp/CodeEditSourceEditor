@@ -42,7 +42,7 @@ struct ContentView: View {
 
 ## Currently Supported Languages
 - [ ] Agda
-- [ ] Bash
+- [x] [Bash](https://github.com/lukepistrol/tree-sitter-bash)
 - [x] [C](https://github.com/tree-sitter/tree-sitter-c)
 - [x] [C++](https://github.com/tree-sitter/tree-sitter-cpp)
 - [x] [C#](https://github.com/tree-sitter/tree-sitter-c-sharp)

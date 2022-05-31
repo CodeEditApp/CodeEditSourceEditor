@@ -19,6 +19,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 
 ### Supported Languages
 
+- Bash
 - C
 - C++
 - C#
@@ -54,6 +55,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 
 - ``allLanguages``
 - ``default``
+- ``bash``
 - ``c``
 - ``cpp``
 - ``cSharp``

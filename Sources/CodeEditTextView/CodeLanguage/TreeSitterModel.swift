@@ -20,6 +20,8 @@ public class TreeSitterModel {
     // swiftlint:disable:next cyclomatic_complexity
     public func query(for language: TreeSitterLanguage) -> Query? {
         switch language {
+        case .bash:
+            return bashQuery
         case .c:
             return cQuery
         case .cpp:
@@ -58,6 +60,11 @@ public class TreeSitterModel {
             return nil
         }
     }
+
+    /// Query for `Bash` files.
+    public private(set) lazy var bashQuery: Query? = {
+        return queryFor(.bash)
+    }()
 
     /// Query for `C` files.
     public private(set) lazy var cQuery: Query? = {

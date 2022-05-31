@@ -28,6 +28,15 @@
       }
     },
     {
+      "identity" : "tree-sitter-bash",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/lukepistrol/tree-sitter-bash.git",
+      "state" : {
+        "branch" : "feature/spm",
+        "revision" : "13af3b5b2c40d560aefeac28361d64f525d1869f"
+      }
+    },
+    {
       "identity" : "tree-sitter-c",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/tree-sitter/tree-sitter-c.git",

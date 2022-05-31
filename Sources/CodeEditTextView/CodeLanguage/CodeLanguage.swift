@@ -9,6 +9,7 @@ import Foundation
 import tree_sitter
 import SwiftTreeSitter
 
+import TreeSitterBash
 import TreeSitterC
 import TreeSitterCPP
 import TreeSitterCSharp
@@ -80,6 +81,8 @@ public struct CodeLanguage {
     /// Gets the TSLanguage from `tree-sitter`
     private var tsLanguage: UnsafeMutablePointer<TSLanguage>? {
         switch id {
+        case .bash:
+            return tree_sitter_bash()
         case .c:
             return tree_sitter_c()
         case .cpp:
@@ -141,6 +144,7 @@ public extension CodeLanguage {
 
     /// An array of all language structures.
     static let allLanguages: [CodeLanguage] = [
+        .bash,
         .c,
         .cpp,
         .cSharp,
@@ -159,6 +163,9 @@ public extension CodeLanguage {
         .swift,
         .yaml
     ]
+
+    /// A language structure for `Bash`
+    static let bash: CodeLanguage = .init(id: .bash, tsName: "Bash", extensions: ["sh"])
 
     /// A language structure for `C`
     static let c: CodeLanguage = .init(id: .c, tsName: "C", extensions: ["c", "h", "o"])
