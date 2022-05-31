@@ -9,6 +9,7 @@ import Foundation
 
 /// A collection of languages that are supported by `tree-sitter`
 public enum TreeSitterLanguage: String {
+    case bash
     case c
     case cpp
     case cSharp
