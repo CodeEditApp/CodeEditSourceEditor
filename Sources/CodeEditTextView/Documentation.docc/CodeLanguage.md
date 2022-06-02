@@ -40,6 +40,10 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 
 ## Topics
 
+### Guides
+
+- <doc:Add-Languages>
+
 ### Instance Properties
 
 - ``id``
