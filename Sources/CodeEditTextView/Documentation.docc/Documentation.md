@@ -17,6 +17,10 @@ Special thanks to both [Marcin Krzyzanowski](https://twitter.com/krzyzanowskim) 
 
 ## Topics
 
+### Guides
+
+- <doc:Add-Languages>
+
 ### Text View
 
 - ``CodeEditTextView/CodeEditTextView``
