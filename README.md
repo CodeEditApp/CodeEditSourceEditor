@@ -41,38 +41,8 @@ struct ContentView: View {
 ```
 
 ## Currently Supported Languages
-- [ ] Agda
-- [x] [Bash](https://github.com/lukepistrol/tree-sitter-bash)
-- [x] [C](https://github.com/tree-sitter/tree-sitter-c)
-- [x] [C++](https://github.com/tree-sitter/tree-sitter-cpp)
-- [x] [C#](https://github.com/tree-sitter/tree-sitter-c-sharp)
-- [ ] CodeQL
-- [x] [CSS](https://github.com/lukepistrol/tree-sitter-css)
-- [ ] Embedded template (ERB, EJS)
-- [x] [Go](https://github.com/tree-sitter/tree-sitter-go)
-- [ ] Haskell
-- [x] [HTML](https://github.com/mattmassicotte/tree-sitter-html)
-- [x] [Java](https://github.com/tree-sitter/tree-sitter-java)
-- [x] [JavaScript/JSX](https://github.com/tree-sitter/tree-sitter-javascript)
-- [ ] JSDoc
-- [x] [JSON](https://github.com/mattmassicotte/tree-sitter-json)
-- [ ] Julia
-- [ ] OCaml
-- [ ] Markdown
-- [x] Plain Text
-- [ ] Perl
-- [x] [PHP](https://github.com/tree-sitter/tree-sitter-php)
-- [x] [Python](https://github.com/lukepistrol/tree-sitter-python)
-- [ ] Regex
-- [x] [Ruby](https://github.com/mattmassicotte/tree-sitter-ruby)
-- [x] [Rust](https://github.com/tree-sitter/tree-sitter-rust)
-- [ ] Scala
-- [ ] Sql
-- [x] [Swift](https://github.com/mattmassicotte/tree-sitter-swift)
-- [ ] Toml
-- [ ] TypeScript
-- [ ] Verilog
-- [x] [YAML](https://github.com/mattmassicotte/tree-sitter-yaml)
+
+See issue https://github.com/CodeEditApp/CodeEditTextView/issues/15 for informations on supported languages
 
 ## Dependencies
 
