@@ -8,8 +8,6 @@
 
 The Editor Text View for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit)
 
-> This is currently only implemented in the [`feature/new-editor`](https://github.com/CodeEditApp/CodeEdit/tree/feature/new-editor) branch!
-
 ## Documentation
 
 This package is fully documented. Check out the documentation [here](https://codeeditapp.github.io/CodeEditTextView/documentation/codeedittextview/)!
