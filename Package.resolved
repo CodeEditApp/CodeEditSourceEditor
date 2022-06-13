@@ -5,8 +5,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/krzyzanowskim/STTextView",
       "state" : {
-        "branch" : "main",
-        "revision" : "8b5f3c67c28ee4157f135f761696f69cde528dfb"
+        "revision" : "c4f3d18da9e9c3660cf4d6660c34fa887dd1b852"
       }
     },
     {
