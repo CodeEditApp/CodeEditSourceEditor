@@ -14,6 +14,8 @@
 
 The Editor Text View for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit)
 
+<img width="1012" alt="github-cover-CodeEditTextView" src="https://user-images.githubusercontent.com/806104/175662200-03db9e06-14b7-46ac-9cbd-07facb7bddb9.png">
+
 ![Github Tests](https://img.shields.io/github/workflow/status/CodeEditApp/CodeEditTextView/tests/main?label=tests&style=flat-square)
 ![Documentation](https://img.shields.io/github/workflow/status/CodeEditApp/CodeEditTextView/build-documentation/main?label=docs&style=flat-square)
 ![GitHub Repo stars](https://img.shields.io/github/stars/CodeEditApp/CodeEditTextView?style=flat-square)
