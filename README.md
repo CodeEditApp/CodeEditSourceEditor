@@ -12,7 +12,7 @@
   </a>
 </p>
 
-The Editor Text View for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit)
+A code editor view written in Swift powered by tree-sitter for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit). Features include syntax highlighting (based on with provided theme), code completion, find and replace, text diff, validation, current line highlighting, minimap, inline messages (warnings and errors), bracket matching, and more.
 
 <img width="1012" alt="github-cover-CodeEditTextView" src="https://user-images.githubusercontent.com/806104/175662200-03db9e06-14b7-46ac-9cbd-07facb7bddb9.png">
 
@@ -22,9 +22,12 @@ The Editor Text View for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit)
 ![GitHub forks](https://img.shields.io/github/forks/CodeEditApp/CodeEditTextView?style=flat-square)
 [![Discord Badge](https://img.shields.io/discord/951544472238444645?color=5865F2&label=Discord&logo=discord&logoColor=white&style=flat-square)](https://discord.gg/vChUXVf9Em)
 
+| :warning: | **CodeEditTextView is currently in development and it is not ready for production use.** <br> Please check back later for updates on this project. Contributors are welcome as we build out the features mentioned above! |
+| - |:-|
+
 ## Documentation
 
-This package is fully documented. Check out the documentation [here](https://codeeditapp.github.io/CodeEditTextView/documentation/codeedittextview/).
+This package is fully documented [here](https://codeeditapp.github.io/CodeEditTextView/documentation/codeedittextview/).
 
 ## Usage
 
