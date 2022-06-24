@@ -54,7 +54,7 @@ struct ContentView: View {
 
 ## Currently Supported Languages
 
-See issue https://github.com/CodeEditApp/CodeEditTextView/issues/15 for informations on supported languages
+See issue https://github.com/CodeEditApp/CodeEditTextView/issues/15 for more information on supported languages.
 
 ## Dependencies
 
