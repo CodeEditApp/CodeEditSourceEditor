@@ -12,7 +12,7 @@
   </a>
 </p>
 
-A code editor view written in Swift powered by tree-sitter for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit). Features include syntax highlighting (based on the provided theme), code completion, find and replace, text diff, validation, current line highlighting, minimap, inline messages (warnings and errors), bracket matching, and more.
+An Xcode-inspired code editor view written in Swift powered by tree-sitter for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit). Features include syntax highlighting (based on the provided theme), code completion, find and replace, text diff, validation, current line highlighting, minimap, inline messages (warnings and errors), bracket matching, and more.
 
 <img width="1012" alt="github-cover-CodeEditTextView" src="https://user-images.githubusercontent.com/806104/175662200-03db9e06-14b7-46ac-9cbd-07facb7bddb9.png">
 
