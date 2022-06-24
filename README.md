@@ -1,16 +1,28 @@
+<p align="center">
+  <img src="https://user-images.githubusercontent.com/806104/175655252-d77cef62-31f5-4f40-a2ad-c1406a6dd1b9.png" height="128">
+  <h1 align="center">CodeEditTextView</h1>
+</p>
+
+<p align="center">
+  <a aria-label="Follow CodeEdit on Twitter" href="https://twitter.com/CodeEditApp" target="_blank">
+    <img alt="" src="https://img.shields.io/badge/Follow%20@CodeEditApp-black.svg?style=for-the-badge&logo=Twitter">
+  </a>
+  <a aria-label="Join the community on Discord" href="https://discord.gg/vChUXVf9Em" target="_blank">
+    <img alt="" src="https://img.shields.io/badge/Join%20the%20community-black.svg?style=for-the-badge&logo=Discord">
+  </a>
+</p>
+
+The Editor Text View for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit)
+
 ![Github Tests](https://img.shields.io/github/workflow/status/CodeEditApp/CodeEditTextView/tests/main?label=tests&style=flat-square)
 ![Documentation](https://img.shields.io/github/workflow/status/CodeEditApp/CodeEditTextView/build-documentation/main?label=docs&style=flat-square)
 ![GitHub Repo stars](https://img.shields.io/github/stars/CodeEditApp/CodeEditTextView?style=flat-square)
 ![GitHub forks](https://img.shields.io/github/forks/CodeEditApp/CodeEditTextView?style=flat-square)
 [![Discord Badge](https://img.shields.io/discord/951544472238444645?color=5865F2&label=Discord&logo=discord&logoColor=white&style=flat-square)](https://discord.gg/vChUXVf9Em)
 
-# CodeEditTextView
-
-The Editor Text View for [`CodeEdit`](https://github.com/CodeEditApp/CodeEdit)
-
 ## Documentation
 
-This package is fully documented. Check out the documentation [here](https://codeeditapp.github.io/CodeEditTextView/documentation/codeedittextview/)!
+This package is fully documented. Check out the documentation [here](https://codeeditapp.github.io/CodeEditTextView/documentation/codeedittextview/).
 
 ## Usage
 
