@@ -154,6 +154,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
         guard let textView = textView else { return }
         textView.addAttributes([
             .font: font,
+            .foregroundColor: theme.text,
             .baselineOffset: baselineOffset
         ], range: .init(0..<textView.string.count))
     }
