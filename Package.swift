@@ -32,7 +32,7 @@ let package = Package(
         .package(url: "https://github.com/lukepistrol/tree-sitter-python.git", branch: "feature/spm"),
         .package(url: "https://github.com/mattmassicotte/tree-sitter-ruby.git", branch: "feature/swift"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-rust.git", branch: "master"),
-        .package(url: "https://github.com/mattmassicotte/tree-sitter-swift.git", branch: "feature/spm"),
+        .package(url: "https://github.com/alex-pinkus/tree-sitter-swift", branch: "with-generated-files"),
         .package(url: "https://github.com/mattmassicotte/tree-sitter-yaml.git", branch: "feature/spm"),
     ],
     targets: [
