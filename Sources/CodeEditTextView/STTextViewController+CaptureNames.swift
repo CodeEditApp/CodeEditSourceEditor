@@ -8,7 +8,7 @@
 import Foundation
 
 internal extension STTextViewController {
-    
+
     /// A collection of possible capture names for `tree-sitter` with their respected raw values.
     enum CaptureNames: String, CaseIterable {
         case include
