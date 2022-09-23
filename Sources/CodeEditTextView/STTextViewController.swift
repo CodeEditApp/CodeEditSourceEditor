@@ -11,7 +11,7 @@ import STTextView
 import SwiftTreeSitter
 
 /// A View Controller managing and displaying a `STTextView`
-public class STTextViewController: NSViewController, STTextViewDelegate {
+public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAttributesProviding {
 
     internal var textView: STTextView!
 
@@ -22,12 +22,13 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
 
     /// The associated `CodeLanguage`
     public var language: CodeLanguage { didSet {
-        self.setupTreeSitter()
+        // TODO: Decide how to handle errors thrown here
+        try? highlighter?.setLanguage(language: language)
     }}
 
     /// The associated `Theme` used for highlighting.
     public var theme: EditorTheme { didSet {
-        highlight()
+        highlighter?.invalidate()
     }}
 
     /// The number of spaces to use for a `tab '\t'` character
@@ -39,11 +40,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
     /// The font to use in the `textView`
     public var font: NSFont
 
-    // MARK: Tree-Sitter
+    // MARK: - Highlighting
 
-    internal var parser: Parser?
-    internal var query: Query?
-    internal var tree: Tree?
+    internal var highlighter: Highlighter?
+    private var hasSetStandardAttributes: Bool = false
 
     // MARK: Init
 
@@ -53,6 +53,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
         self.font = font
         self.theme = theme
         self.tabWidth = tabWidth
+
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -65,6 +66,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
     public override func loadView() {
         let scrollView = STTextView.scrollableTextView()
         textView = scrollView.documentView as? STTextView
+
+        // By default this is always null but is required for a couple operations
+        // during highlighting so we make a new one manually.
+        textView.textContainer.replaceLayoutManager(NSLayoutManager())
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
@@ -115,11 +120,28 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
             self.keyUp(with: event)
             return event
         }
+
+        setUpHighlighting()
+    }
+
+    internal func setUpHighlighting() {
+        let textProvider: ResolvingQueryCursor.TextProvider = { [weak self] range, _ -> String? in
+            return self?.textView.textContentStorage.textStorage?.attributedSubstring(from: range).string
+        }
+
+        let treeSitterClient = try! TreeSitterClient(codeLanguage: language, textProvider: textProvider)
+        self.highlighter = Highlighter(textView: textView,
+                                       treeSitterClient: treeSitterClient,
+                                       theme: theme,
+                                       attributeProvider: self)
     }
 
     public override func viewDidLoad() {
         super.viewDidLoad()
-        setupTreeSitter()
+    }
+
+    public override func viewDidAppear() {
+        super.viewDidAppear()
     }
 
     // MARK: UI
@@ -152,11 +174,20 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
     /// Sets the standard attributes (`font`, `baselineOffset`) to the whole text
     internal func setStandardAttributes() {
         guard let textView = textView else { return }
-        textView.addAttributes([
+        guard !hasSetStandardAttributes else { return }
+        hasSetStandardAttributes = true
+        textView.addAttributes(attributesFor(nil), range: .init(0..<textView.string.count))
+    }
+
+    /// Gets all attributes for the given capture including the line height, background color, and text color.
+    /// - Parameter capture: The capture to use for syntax highlighting.
+    /// - Returns: All attributes to be applied.
+    public func attributesFor(_ capture: CaptureName?) -> [NSAttributedString.Key: Any] {
+        return [
             .font: font,
-            .foregroundColor: theme.text,
+            .foregroundColor: theme.colorFor(capture),
             .baselineOffset: baselineOffset
-        ], range: .init(0..<textView.string.count))
+        ]
     }
 
     /// Calculated line height depending on ``STTextViewController/lineHeightMultiple``
@@ -188,5 +219,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate {
     /// Handles `keyUp` events in the `textView`
     override public func keyUp(with event: NSEvent) {
         keyIsDown = false
+    }
+
+    deinit {
+        textView = nil
+        highlighter = nil
     }
 }
