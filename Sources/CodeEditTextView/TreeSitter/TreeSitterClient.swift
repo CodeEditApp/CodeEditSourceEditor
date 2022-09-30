@@ -138,7 +138,9 @@ extension TreeSitterClient {
     /// processed edit.
     /// - Parameter edit: The edit to apply.
     /// - Returns: (The old state, the new state).
-    private func calculateNewState(edit: InputEdit, text: String, readBlock: @escaping Parser.ReadBlock) -> (Tree?, Tree?) {
+    private func calculateNewState(edit: InputEdit,
+                                   text: String,
+                                   readBlock: @escaping Parser.ReadBlock) -> (Tree?, Tree?) {
         guard let oldTree = self.tree else {
             self.tree = self.parser.parse(text)
             return (nil, self.tree)

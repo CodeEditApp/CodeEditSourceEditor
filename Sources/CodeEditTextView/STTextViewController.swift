@@ -63,6 +63,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     // MARK: VC Lifecycle
 
+    // swiftlint:disable function_body_length
     public override func loadView() {
         let scrollView = STTextView.scrollableTextView()
         textView = scrollView.documentView as? STTextView
@@ -129,7 +130,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
             return self?.textView.textContentStorage.textStorage?.attributedSubstring(from: range).string
         }
 
-        let treeSitterClient = try! TreeSitterClient(codeLanguage: language, textProvider: textProvider)
+        let treeSitterClient = try? TreeSitterClient(codeLanguage: language, textProvider: textProvider)
         self.highlighter = Highlighter(textView: textView,
                                        treeSitterClient: treeSitterClient,
                                        theme: theme,

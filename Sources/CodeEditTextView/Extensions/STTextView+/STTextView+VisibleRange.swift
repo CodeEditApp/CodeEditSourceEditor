@@ -24,8 +24,6 @@ extension STTextView {
     }
 
     var visibleTextRange: NSRange {
-        get {
-            return textRange(for: visibleRect)
-        }
+        return textRange(for: visibleRect)
     }
 }

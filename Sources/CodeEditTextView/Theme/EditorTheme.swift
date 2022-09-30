@@ -85,7 +85,7 @@ public struct EditorTheme {
 }
 
 extension EditorTheme: Equatable {
-    public static func ==(lhs: EditorTheme, rhs: EditorTheme) -> Bool {
+    public static func == (lhs: EditorTheme, rhs: EditorTheme) -> Bool {
         return lhs.text == rhs.text &&
         lhs.insertionPoint == rhs.insertionPoint &&
         lhs.invisibles == rhs.invisibles &&

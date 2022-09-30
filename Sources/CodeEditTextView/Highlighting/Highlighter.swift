@@ -36,9 +36,7 @@ class Highlighter: NSObject {
 
     /// The range of the entire document
     private var entireTextRange: Range<Int> {
-        get {
-            return 0..<(textView.textContentStorage.textStorage?.length ?? 0)
-        }
+        return 0..<(textView.textContentStorage.textStorage?.length ?? 0)
     }
 
     /// The set of visible indexes in tht text view
@@ -56,7 +54,7 @@ class Highlighter: NSObject {
     // MARK: - TreeSitter Client
 
     /// Calculates invalidated ranges given an edit.
-    private var treeSitterClient: TreeSitterClient
+    private var treeSitterClient: TreeSitterClient?
 
     // MARK: - Init
 
@@ -66,7 +64,7 @@ class Highlighter: NSObject {
     ///   - treeSitterClient: The tree-sitter client to handle tree updates and highlight queries.
     ///   - theme: The theme to use for highlights.
     init(textView: STTextView,
-         treeSitterClient: TreeSitterClient,
+         treeSitterClient: TreeSitterClient?,
          theme: EditorTheme,
          attributeProvider: ThemeAttributesProviding) {
         self.textView = textView
@@ -76,7 +74,7 @@ class Highlighter: NSObject {
 
         super.init()
 
-        treeSitterClient.setText(text: textView.string)
+        treeSitterClient?.setText(text: textView.string)
 
         guard textView.textContentStorage.textStorage != nil else {
             assertionFailure("Text view does not have a textStorage")
@@ -102,8 +100,8 @@ class Highlighter: NSObject {
 
     /// Invalidates all text in the textview. Useful for updating themes.
     func invalidate() {
-        if !treeSitterClient.hasSetText {
-            treeSitterClient.setText(text: textView.string)
+        if !(treeSitterClient?.hasSetText ?? true) {
+            treeSitterClient?.setText(text: textView.string)
         }
         invalidate(range: entireTextRange)
     }
@@ -111,7 +109,7 @@ class Highlighter: NSObject {
     /// Sets the language and causes a re-highlight of the entire text.
     /// - Parameter language: The language to update to.
     func setLanguage(language: CodeLanguage) throws {
-        try treeSitterClient.setLanguage(codeLanguage: language, text: textView.string)
+        try treeSitterClient?.setLanguage(codeLanguage: language, text: textView.string)
         invalidate()
     }
 
@@ -163,14 +161,23 @@ private extension Highlighter {
         let range = Range(nsRange)!
         pendingSet.insert(integersIn: range)
 
-        treeSitterClient.queryColorsFor(range: nsRange) { [weak self] highlightRanges in
+        treeSitterClient?.queryColorsFor(range: nsRange) { [weak self] highlightRanges in
             guard let attributeProvider = self?.attributeProvider,
                   let textView = self?.textView else { return }
             self?.pendingSet.remove(integersIn: range)
             self?.validSet.formUnion(IndexSet(integersIn: range))
-            highlightRanges.forEach { highlight in
-                textView.addAttributes(attributeProvider.attributesFor(highlight.capture), range: highlight.range, updateLayout: false)
+            if !(self?.visibleSet ?? .init()).contains(integersIn: range) {
+                return
             }
+
+            textView.textContentStorage.textStorage?.beginEditing()
+            for highlight in highlightRanges {
+                textView.textContentStorage.textStorage?.setAttributes(
+                    attributeProvider.attributesFor(highlight.capture),
+                    range: highlight.range
+                )
+            }
+            textView.textContentStorage.textStorage?.endEditing()
         }
     }
 
@@ -190,7 +197,6 @@ private extension Highlighter {
     }
 
 }
-
 
 // MARK: - Visible Content Updates
 
@@ -212,7 +218,8 @@ private extension Highlighter {
 // MARK: - NSTextStorageDelegate
 
 extension Highlighter: NSTextStorageDelegate {
-    /// Processes an edited range in the text. Will query tree-sitter for any updated indices and re-highlight only the ranges that need it.
+    /// Processes an edited range in the text.
+    /// Will query tree-sitter for any updated indices and re-highlight only the ranges that need it.
     func textStorage(_ textStorage: NSTextStorage,
                      didProcessEditing editedMask: NSTextStorageEditActions,
                      range editedRange: NSRange,
@@ -230,7 +237,7 @@ extension Highlighter: NSTextStorageDelegate {
             return
         }
 
-        treeSitterClient.applyEdit(edit,
+        treeSitterClient?.applyEdit(edit,
                                    text: textStorage.string) { [weak self] invalidatedIndexSet in
             let indexSet = invalidatedIndexSet
                 .union(IndexSet(integersIn: Range(editedRange)!))
