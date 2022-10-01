@@ -56,6 +56,8 @@ public class TreeSitterModel {
             return swiftQuery
         case .yaml:
             return yamlQuery
+        case .zig:
+            return zigQuery
         case .plainText:
             return nil
         }
@@ -149,6 +151,11 @@ public class TreeSitterModel {
     /// Query for `YAML` files.
     public private(set) lazy var yamlQuery: Query? = {
         return queryFor(.yaml)
+    }()
+
+    /// Query for `Zig` files.
+    public private(set) lazy var zigQuery: Query? = {
+        return queryFor(.zig)
     }()
 
     private func queryFor(_ codeLanguage: CodeLanguage) -> Query? {
