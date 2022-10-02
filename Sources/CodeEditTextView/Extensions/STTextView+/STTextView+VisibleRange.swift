@@ -17,7 +17,6 @@ extension STTextView {
         }
         let container = self.textContainer
 
-        let origin = self.enclosingScrollView?.documentVisibleRect.origin ?? .zero
         let glyphRange = layoutManager.glyphRange(forBoundingRect: rect, in: container)
 
         return layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)

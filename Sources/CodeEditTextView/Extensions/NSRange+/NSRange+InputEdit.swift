@@ -10,7 +10,6 @@ import SwiftTreeSitter
 
 extension InputEdit {
     init?(range: NSRange, delta: Int, oldEndPoint: Point) {
-        let startLocation = range.location
         let newEndLocation = NSMaxRange(range) + delta
 
         if newEndLocation < 0 {
