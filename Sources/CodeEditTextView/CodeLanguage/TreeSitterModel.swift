@@ -17,7 +17,7 @@ public class TreeSitterModel {
     /// Get a query for a specific language
     /// - Parameter language: The language to request the query for.
     /// - Returns: A Query if available. Returns `nil` for not implemented languages
-    // swiftlint:disable:next cyclomatic_complexity
+    // swiftlint:disable:next cyclomatic_complexity function_body_length
     public func query(for language: TreeSitterLanguage) -> Query? {
         switch language {
         case .bash:
@@ -56,6 +56,8 @@ public class TreeSitterModel {
             return swiftQuery
         case .yaml:
             return yamlQuery
+        case .zig:
+            return zigQuery
         case .plainText:
             return nil
         }
@@ -149,6 +151,11 @@ public class TreeSitterModel {
     /// Query for `YAML` files.
     public private(set) lazy var yamlQuery: Query? = {
         return queryFor(.yaml)
+    }()
+
+    /// Query for `Zig` files.
+    public private(set) lazy var zigQuery: Query? = {
+        return queryFor(.zig)
     }()
 
     private func queryFor(_ codeLanguage: CodeLanguage) -> Query? {
