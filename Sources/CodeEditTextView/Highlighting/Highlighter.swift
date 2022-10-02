@@ -164,12 +164,23 @@ private extension Highlighter {
         treeSitterClient?.queryColorsFor(range: nsRange) { [weak self] highlightRanges in
             guard let attributeProvider = self?.attributeProvider,
                   let textView = self?.textView else { return }
+
+            // Mark these indices as not pending and valid
             self?.pendingSet.remove(integersIn: range)
             self?.validSet.formUnion(IndexSet(integersIn: range))
+
+            // If this range does not exist in the visible set, we can exit.
             if !(self?.visibleSet ?? .init()).contains(integersIn: range) {
                 return
             }
 
+            // Try to create a text range for invalidating. If this fails we fail silently
+            guard let textContentManager = textView.textLayoutManager.textContentManager,
+                  let textRange = NSTextRange(nsRange, provider: textContentManager) else {
+                return
+            }
+
+            // Loop through each highlight and modify the textStorage accordingly.
             textView.textContentStorage.textStorage?.beginEditing()
             for highlight in highlightRanges {
                 textView.textContentStorage.textStorage?.setAttributes(
@@ -178,6 +189,10 @@ private extension Highlighter {
                 )
             }
             textView.textContentStorage.textStorage?.endEditing()
+
+            // After applying edits to the text storage we need to invalidate the layout
+            // of the highlighted text.
+            textView.textLayoutManager.invalidateLayout(for: textRange)
         }
     }
 
@@ -211,7 +226,6 @@ private extension Highlighter {
         for range in newlyInvalidSet.rangeView.map({ NSRange($0) }) {
             invalidate(range: range)
         }
-
     }
 }
 
