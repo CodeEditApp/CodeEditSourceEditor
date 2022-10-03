@@ -1,6 +1,7 @@
 import XCTest
 @testable import CodeEditTextView
 import SwiftTreeSitter
+import AppKit
 
 final class STTextViewControllerTests: XCTestCase {
 
@@ -38,25 +39,25 @@ final class STTextViewControllerTests: XCTestCase {
     func test_captureNames() throws {
         // test for "keyword"
         let captureName1 = "keyword"
-        let color1 = controller.colorForCapture(captureName1)
-        XCTAssertEqual(color1, .systemPink)
+        let color1 = controller.attributesFor(CaptureName(rawValue: captureName1))[.foregroundColor] as? NSColor
+        XCTAssertEqual(color1, NSColor.systemPink)
 
         // test for "comment"
         let captureName2 = "comment"
-        let color2 = controller.colorForCapture(captureName2)
-        XCTAssertEqual(color2, .systemGreen)
+        let color2 = controller.attributesFor(CaptureName(rawValue: captureName2))[.foregroundColor] as? NSColor
+        XCTAssertEqual(color2, NSColor.systemGreen)
 
         /* ... additional tests here ... */
 
         // test for empty case
         let captureName3 = ""
-        let color3 = controller.colorForCapture(captureName3)
-        XCTAssertEqual(color3, .textColor)
+        let color3 = controller.attributesFor(CaptureName(rawValue: captureName3))[.foregroundColor] as? NSColor
+        XCTAssertEqual(color3, NSColor.textColor)
 
         // test for random case
         let captureName4 = "abc123"
-        let color4 = controller.colorForCapture(captureName4)
-        XCTAssertEqual(color4, .textColor)
+        let color4 = controller.attributesFor(CaptureName(rawValue: captureName4))[.foregroundColor] as? NSColor
+        XCTAssertEqual(color4, NSColor.textColor)
     }
 
 }
