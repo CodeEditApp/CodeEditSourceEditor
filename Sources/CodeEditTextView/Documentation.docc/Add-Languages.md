@@ -204,3 +204,7 @@ When everything is working correctly push your `tree-sitter-{lang}` changes to `
 > Take [this PR description](https://github.com/tree-sitter/tree-sitter-javascript/pull/223) as a template and cross-reference it with your Pull Request.
 
 Now you can remove the local dependencies and replace it with the actual package URLs and submit a Pull Request for ``CodeEditTextView``.
+
+## Documentation
+
+Please make sure to add the newly created properties to the documentation `*.md` files.

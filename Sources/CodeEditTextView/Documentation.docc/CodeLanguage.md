@@ -24,6 +24,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 - C++
 - C#
 - CSS
+- Elixir
 - Go
 - Go Mod
 - Haskell
@@ -38,6 +39,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 - Rust
 - Swift
 - YAML
+- Zig
 
 ## Topics
 
@@ -65,6 +67,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 - ``cpp``
 - ``cSharp``
 - ``css``
+- ``elixir``
 - ``go``
 - ``goMod``
 - ``haskell``
@@ -79,6 +82,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 - ``rust``
 - ``swift``
 - ``yaml``
+- ``zig``
 
 ### Type Methods
 

@@ -14,6 +14,7 @@ import TreeSitterC
 import TreeSitterCPP
 import TreeSitterCSharp
 import TreeSitterCSS
+import TreeSitterElixir
 import TreeSitterGo
 import TreeSitterGoMod
 import TreeSitterHaskell
@@ -93,6 +94,8 @@ public struct CodeLanguage {
             return tree_sitter_c_sharp()
         case .css:
             return tree_sitter_css()
+        case .elixir:
+            return tree_sitter_elixir()
         case .go:
             return tree_sitter_go()
         case .goMod:
@@ -155,6 +158,7 @@ public extension CodeLanguage {
         .cpp,
         .cSharp,
         .css,
+        .elixir,
         .go,
         .goMod,
         .haskell,
@@ -189,6 +193,9 @@ public extension CodeLanguage {
 
     /// A language structure for `CSS`
     static let css: CodeLanguage = .init(id: .css, tsName: "CSS", extensions: ["css"])
+
+    /// A language structure for `Elixir`
+    static let elixir: CodeLanguage = .init(id: .elixir, tsName: "Elixir", extensions: ["ex", "exs"])
 
     /// A language structure for `Go`
     static let go: CodeLanguage = .init(id: .go, tsName: "Go", extensions: ["go"])
