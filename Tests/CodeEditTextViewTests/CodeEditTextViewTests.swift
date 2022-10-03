@@ -125,6 +125,15 @@ final class CodeEditTextViewTests: XCTestCase {
         XCTAssertEqual(language.id, .goMod)
     }
 
+    // MARK: Haskell
+
+    func test_CodeLanguageHaskell() throws {
+        let url = URL(fileURLWithPath: "~/path/to/file.hs")
+        let language = CodeLanguage.detectLanguageFrom(url: url)
+
+        XCTAssertEqual(language.id, .haskell)
+    }
+
     // MARK: HTML
 
     func test_CodeLanguageHTML() throws {

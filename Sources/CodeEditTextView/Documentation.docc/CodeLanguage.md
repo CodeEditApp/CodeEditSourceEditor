@@ -26,6 +26,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 - CSS
 - Go
 - Go Mod
+- Haskell
 - HTML
 - Java
 - JavaScript
@@ -66,6 +67,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 - ``css``
 - ``go``
 - ``goMod``
+- ``haskell``
 - ``html``
 - ``java``
 - ``javascript``
