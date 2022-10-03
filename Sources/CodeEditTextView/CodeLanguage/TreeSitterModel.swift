@@ -30,6 +30,8 @@ public class TreeSitterModel {
             return cSharpQuery
         case .css:
             return cssQuery
+        case .elixir:
+            return elixirQuery
         case .go:
             return goQuery
         case .goMod:
@@ -86,6 +88,11 @@ public class TreeSitterModel {
     /// Query for `CSS` files.
     public private(set) lazy var cssQuery: Query? = {
         return queryFor(.css)
+    }()
+
+    /// Query for `Elixir` files.
+    public private(set) lazy var elixirQuery: Query? = {
+        return queryFor(.elixir)
     }()
 
     /// Query for `Go` files.
