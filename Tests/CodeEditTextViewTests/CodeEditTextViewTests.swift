@@ -238,6 +238,15 @@ final class CodeEditTextViewTests: XCTestCase {
         XCTAssertEqual(language.id, .yaml)
     }
 
+    // MARK: Zig
+
+    func test_CodeLanguageZig() throws {
+        let url = URL(fileURLWithPath: "~/path/to/file.zig")
+        let language = CodeLanguage.detectLanguageFrom(url: url)
+
+        XCTAssertEqual(language.id, .zig)
+    }
+
     // MARK: Unsupported
 
     func test_CodeLanguageUnsupported() throws {
