@@ -33,6 +33,7 @@ let package = Package(
         .package(url: "https://github.com/alex-pinkus/tree-sitter-swift", branch: "with-generated-files"),
         .package(url: "https://github.com/mattmassicotte/tree-sitter-yaml.git", branch: "feature/spm"),
         .package(url: "https://github.com/maxxnino/tree-sitter-zig.git", branch: "main"),
+        .package(url: "https://github.com/tree-sitter/tree-sitter-typescript", branch: "master" ),
     ],
     targets: [
         .target(
@@ -58,6 +59,7 @@ let package = Package(
                 .product(name: "TreeSitterSwift", package: "tree-sitter-swift"),
                 .product(name: "TreeSitterYAML", package: "tree-sitter-yaml"),
                 .product(name: "TreeSitterZig", package: "tree-sitter-zig"),
+                .product(name: "TreeSitterTypescript", package: "tree-sitter-typescript")
             ]),
         .testTarget(
             name: "CodeEditTextViewTests",
