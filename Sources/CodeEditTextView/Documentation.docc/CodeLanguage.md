@@ -37,6 +37,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 - Rust
 - Swift
 - YAML
+- Zig
 
 ## Topics
 
@@ -77,6 +78,7 @@ let language = CodeLanguage.detectLanguageFrom(url: fileURL)
 - ``rust``
 - ``swift``
 - ``yaml``
+- ``zig``
 
 ### Type Methods
 
