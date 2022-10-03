@@ -27,5 +27,6 @@ public enum TreeSitterLanguage: String {
     case rust
     case swift
     case yaml
+    case zig
     case plainText
 }

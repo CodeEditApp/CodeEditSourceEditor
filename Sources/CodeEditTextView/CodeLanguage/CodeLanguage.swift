@@ -26,6 +26,7 @@ import TreeSitterRuby
 import TreeSitterRust
 import TreeSitterSwift
 import TreeSitterYAML
+import TreeSitterZig
 
 /// A structure holding metadata for code languages
 public struct CodeLanguage {
@@ -117,6 +118,8 @@ public struct CodeLanguage {
             return tree_sitter_swift()
         case .yaml:
             return tree_sitter_yaml()
+        case .zig:
+            return tree_sitter_zig()
         case .plainText:
             return nil
         }
@@ -161,7 +164,8 @@ public extension CodeLanguage {
         .ruby,
         .rust,
         .swift,
-        .yaml
+        .yaml,
+        .zig
     ]
 
     /// A language structure for `Bash`
@@ -220,6 +224,9 @@ public extension CodeLanguage {
 
     /// A language structure for `YAML`
     static let yaml: CodeLanguage = .init(id: .yaml, tsName: "YAML", extensions: ["yml", "yaml"])
+
+    /// A language structure for `Zig`
+    static let zig: CodeLanguage = .init(id: .zig, tsName: "Zig", extensions: ["zig"])
 
     /// The default language (plain text)
     static let `default`: CodeLanguage = .init(id: .plainText, tsName: "Plain Text", extensions: ["txt"])
