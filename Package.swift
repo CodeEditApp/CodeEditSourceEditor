@@ -13,8 +13,8 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
-        .package(url: "https://github.com/krzyzanowskim/STTextView", branch: "main"),
-        .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", from: "0.6.0"),
+        .package(url: "https://github.com/krzyzanowskim/STTextView", exact: "0.0.20"),
+        .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", exact: "0.6.1"),
         .package(url: "https://github.com/lukepistrol/tree-sitter-bash.git", branch: "feature/spm"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-c.git", branch: "master"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-cpp.git", branch: "master"),
