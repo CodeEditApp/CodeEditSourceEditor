@@ -37,6 +37,7 @@ let query = TreeSitterModel.shared.swiftQuery
 - ``cppQuery``
 - ``cSharpQuery``
 - ``cssQuery``
+- ``elixirQuery``
 - ``goQuery``
 - ``goModQuery``
 - ``htmlQuery``
