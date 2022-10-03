@@ -16,6 +16,7 @@ public enum TreeSitterLanguage: String {
     case css
     case go
     case goMod
+    case haskell
     case html
     case java
     case javascript

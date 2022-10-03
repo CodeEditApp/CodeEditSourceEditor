@@ -16,6 +16,7 @@ import TreeSitterCSharp
 import TreeSitterCSS
 import TreeSitterGo
 import TreeSitterGoMod
+import TreeSitterHaskell
 import TreeSitterHTML
 import TreeSitterJava
 import TreeSitterJS
@@ -96,6 +97,8 @@ public struct CodeLanguage {
             return tree_sitter_go()
         case .goMod:
             return tree_sitter_gomod()
+        case .haskell:
+            return tree_sitter_haskell()
         case .html:
             return tree_sitter_html()
         case .java:
@@ -154,6 +157,7 @@ public extension CodeLanguage {
         .css,
         .go,
         .goMod,
+        .haskell,
         .html,
         .java,
         .javascript,
@@ -191,6 +195,9 @@ public extension CodeLanguage {
 
     /// A language structure for `GoMod`
     static let goMod: CodeLanguage = .init(id: .goMod, tsName: "GoMod", extensions: ["mod"])
+
+    /// A language structure for `Haskell`
+    static let haskell: CodeLanguage = .init(id: .haskell, tsName: "Haskell", extensions: ["hs"])
 
     /// A language structure for `HTML`
     static let html: CodeLanguage = .init(id: .html, tsName: "HTML", extensions: ["html", "htm"])
