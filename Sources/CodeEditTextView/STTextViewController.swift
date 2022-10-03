@@ -78,8 +78,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
         rulerView.backgroundColor = theme.background
         rulerView.textColor = .systemGray
-        rulerView.separatorColor = theme.invisibles
+        rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
+        rulerView.font = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .regular)
 
         scrollView.verticalRulerView = rulerView
         scrollView.rulersVisible = true
