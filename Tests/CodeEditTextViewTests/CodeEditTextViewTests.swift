@@ -107,6 +107,22 @@ final class CodeEditTextViewTests: XCTestCase {
         XCTAssertEqual(language.id, .css)
     }
 
+    // MARK: Elixir
+
+    func test_CodeLanguageElixir() throws {
+        let url = URL(fileURLWithPath: "~/path/to/file.ex")
+        let language = CodeLanguage.detectLanguageFrom(url: url)
+
+        XCTAssertEqual(language.id, .elixir)
+    }
+
+    func test_CodeLanguageElixir2() throws {
+        let url = URL(fileURLWithPath: "~/path/to/file.exs")
+        let language = CodeLanguage.detectLanguageFrom(url: url)
+
+        XCTAssertEqual(language.id, .elixir)
+    }
+
     // MARK: Go
 
     func test_CodeLanguageGo() throws {
