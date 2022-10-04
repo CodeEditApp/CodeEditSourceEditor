@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/SwiftTreeSitter",
       "state" : {
-        "revision" : "824aa62ccfeb9bed62a6abd42ba1f06f9a75e99c",
-        "version" : "0.6.1"
+        "branch" : "main",
+        "revision" : "8f903d0f9f88075398bb5e9e300195b688324724"
       }
     },
     {
