@@ -71,3 +71,23 @@ Special thanks to both [Marcin Krzyzanowski](https://twitter.com/krzyzanowskim) 
 ## License
 
 Licensed under the [MIT license](https://github.com/CodeEditApp/CodeEdit/blob/main/LICENSE.md).
+
+## Related Repositories
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/CodeEditApp/CodeEdit">
+        <img src="https://user-images.githubusercontent.com/806104/163099605-4eaedd33-8441-4125-9ca1-a7ccb2f62a74.png" height="128">
+        <p>CodeEdit</p>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/CodeEditApp/CodeEditKit">
+        <img src="https://user-images.githubusercontent.com/806104/193877051-c60d255d-0b6a-408c-bb21-6fabc5e0e60c.png" height="128">
+        <p>CodeEditKit</p>
+      </a>
+    </td>
+  </tr>
+</table>
+
