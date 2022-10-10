@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/krzyzanowskim/STTextView",
       "state" : {
-        "revision" : "9174178a128cc23c569596f400d3cd7e658c197b",
-        "version" : "0.0.20"
+        "revision" : "9164f84b14b6315d9aaad0fb100b35f0c236db5a",
+        "version" : "0.1.0"
       }
     },
     {
@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/SwiftTreeSitter",
       "state" : {
-        "branch" : "0.6.1",
-        "revision" : "824aa62ccfeb9bed62a6abd42ba1f06f9a75e99c"
+        "revision" : "3b1599ba9f466d8269cea2474beb5c9f0a3d7a5e",
+        "version" : "0.7.0"
       }
     },
     {
@@ -42,7 +42,7 @@
       "location" : "https://github.com/tree-sitter/tree-sitter-c.git",
       "state" : {
         "branch" : "master",
-        "revision" : "3ced8d6cd212a6f576cd4ef3d533bcb9c09eface"
+        "revision" : "7175a6dd5fc1cee660dce6fe23f6043d75af424a"
       }
     },
     {
@@ -51,7 +51,7 @@
       "location" : "https://github.com/tree-sitter/tree-sitter-c-sharp.git",
       "state" : {
         "branch" : "master",
-        "revision" : "49716ffc113a51c567a9442c69b42c7d1fa08c7b"
+        "revision" : "5b60f99545fea00a33bbfae5be956f684c4c69e2"
       }
     },
     {
@@ -60,7 +60,7 @@
       "location" : "https://github.com/tree-sitter/tree-sitter-cpp.git",
       "state" : {
         "branch" : "master",
-        "revision" : "38d8b495bd43977498f0eb122e0f9cfef8526d18"
+        "revision" : "d5e90fba898f320db48d81ddedd78d52c67c1fed"
       }
     },
     {
@@ -123,7 +123,7 @@
       "location" : "https://github.com/tree-sitter/tree-sitter-java.git",
       "state" : {
         "branch" : "master",
-        "revision" : "ac14b4b1884102839455d32543ab6d53ae089ab7"
+        "revision" : "09d650def6cdf7f479f4b78f595e9ef5b58ce31e"
       }
     },
     {
@@ -132,7 +132,7 @@
       "location" : "https://github.com/tree-sitter/tree-sitter-javascript.git",
       "state" : {
         "branch" : "master",
-        "revision" : "785831303ce3d36f5dd8ada7c4c7d63518d4d2f5"
+        "revision" : "936d976a782e75395d9b1c8c7c7bf4ba6fe0d86b"
       }
     },
     {
@@ -141,7 +141,7 @@
       "location" : "https://github.com/mattmassicotte/tree-sitter-json.git",
       "state" : {
         "branch" : "feature/spm",
-        "revision" : "07fd294fe05a3d726ab9191e504db5f7648fa3fd"
+        "revision" : "46528daf985e5ce73f0f9ad4eb3e5638bba9e069"
       }
     },
     {
@@ -150,7 +150,7 @@
       "location" : "https://github.com/tree-sitter/tree-sitter-php.git",
       "state" : {
         "branch" : "master",
-        "revision" : "6c1edb96fdbce5b44c2ecebe15cf9adfb8fed06a"
+        "revision" : "ab2e72179ceb8bb0b249c8ac9162a148e911b3dc"
       }
     },
     {
@@ -159,7 +159,7 @@
       "location" : "https://github.com/lukepistrol/tree-sitter-python.git",
       "state" : {
         "branch" : "feature/spm",
-        "revision" : "78ab3c3dd69a571156ffd1c7ace7c49fb2e284ef"
+        "revision" : "6a74b1a2de12c90218cbace9c6b896d137cd5201"
       }
     },
     {
@@ -168,7 +168,7 @@
       "location" : "https://github.com/mattmassicotte/tree-sitter-ruby.git",
       "state" : {
         "branch" : "feature/swift",
-        "revision" : "e0923bfc25cadb2d5fd0a07c3b55e4b2d1501cb8"
+        "revision" : "5e75ef7cbd18d96178cabb7979086f84ad51106b"
       }
     },
     {
@@ -177,16 +177,16 @@
       "location" : "https://github.com/tree-sitter/tree-sitter-rust.git",
       "state" : {
         "branch" : "master",
-        "revision" : "36ae187ed6dd3803a8a89dbb54f3124c8ee74662"
+        "revision" : "47b061c1e1ba3a7e9c2f450363a50e87de3f7c61"
       }
     },
     {
       "identity" : "tree-sitter-swift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/alex-pinkus/tree-sitter-swift",
+      "location" : "https://github.com/alex-pinkus/tree-sitter-swift.git",
       "state" : {
         "branch" : "with-generated-files",
-        "revision" : "0abae4d0edc53c882321f85088d435ac4c2fb2cb"
+        "revision" : "50b8c5e61c29fa30e760c7a1cbf24b59970e6233"
       }
     },
     {
