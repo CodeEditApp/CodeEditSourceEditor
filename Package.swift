@@ -12,28 +12,28 @@ let package = Package(
             targets: ["CodeEditTextView"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-docc-plugin", from: "1.0.0"),
-        .package(url: "https://github.com/krzyzanowskim/STTextView", exact: "0.1.0"),
-        .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter", exact: "0.7.0"),
-        .package(url: "https://github.com/lukepistrol/tree-sitter-bash.git", branch: "feature/spm"),
+        .package(url: "https://github.com/apple/swift-docc-plugin.git", from: "1.0.0"),
+        .package(url: "https://github.com/krzyzanowskim/STTextView.git", exact: "0.1.0"),
+        .package(url: "https://github.com/ChimeHQ/SwiftTreeSitter.git", exact: "0.7.0"),
+        .package(url: "https://github.com/lukepistrol/tree-sitter-bash.git", branch: "feature/spm"), // non-official
         .package(url: "https://github.com/tree-sitter/tree-sitter-c.git", branch: "master"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-cpp.git", branch: "master"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-c-sharp.git", branch: "master"),
-        .package(url: "https://github.com/lukepistrol/tree-sitter-css.git", branch: "feature/spm"),
+        .package(url: "https://github.com/lukepistrol/tree-sitter-css.git", branch: "feature/spm"), // non-official
         .package(url: "https://github.com/elixir-lang/tree-sitter-elixir.git", branch: "main"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-go.git", branch: "master"),
         .package(url: "https://github.com/camdencheek/tree-sitter-go-mod.git", branch: "main"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-haskell.git", branch: "master"),
-        .package(url: "https://github.com/mattmassicotte/tree-sitter-html.git", branch: "feature/spm"),
+        .package(url: "https://github.com/mattmassicotte/tree-sitter-html.git", branch: "feature/spm"), // non-official
         .package(url: "https://github.com/tree-sitter/tree-sitter-java.git", branch: "master"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-javascript.git", branch: "master"),
-        .package(url: "https://github.com/mattmassicotte/tree-sitter-json.git", branch: "feature/spm"),
+        .package(url: "https://github.com/tree-sitter/tree-sitter-json.git", branch: "master"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-php.git", branch: "master"),
-        .package(url: "https://github.com/lukepistrol/tree-sitter-python.git", branch: "feature/spm"),
-        .package(url: "https://github.com/mattmassicotte/tree-sitter-ruby.git", branch: "feature/swift"),
+        .package(url: "https://github.com/lukepistrol/tree-sitter-python.git", branch: "feature/spm"), // non-official
+        .package(url: "https://github.com/tree-sitter/tree-sitter-ruby.git", branch: "master"),
         .package(url: "https://github.com/tree-sitter/tree-sitter-rust.git", branch: "master"),
         .package(url: "https://github.com/alex-pinkus/tree-sitter-swift.git", branch: "with-generated-files"),
-        .package(url: "https://github.com/mattmassicotte/tree-sitter-yaml.git", branch: "feature/spm"),
+        .package(url: "https://github.com/mattmassicotte/tree-sitter-yaml.git", branch: "feature/spm"), // non-official
         .package(url: "https://github.com/maxxnino/tree-sitter-zig.git", branch: "main"),
     ],
     targets: [
