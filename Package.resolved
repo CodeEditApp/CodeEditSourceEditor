@@ -138,10 +138,10 @@
     {
       "identity" : "tree-sitter-json",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mattmassicotte/tree-sitter-json.git",
+      "location" : "https://github.com/tree-sitter/tree-sitter-json.git",
       "state" : {
-        "branch" : "feature/spm",
-        "revision" : "46528daf985e5ce73f0f9ad4eb3e5638bba9e069"
+        "branch" : "master",
+        "revision" : "73076754005a460947cafe8e03a8cf5fa4fa2938"
       }
     },
     {
@@ -165,10 +165,10 @@
     {
       "identity" : "tree-sitter-ruby",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mattmassicotte/tree-sitter-ruby.git",
+      "location" : "https://github.com/tree-sitter/tree-sitter-ruby.git",
       "state" : {
-        "branch" : "feature/swift",
-        "revision" : "5e75ef7cbd18d96178cabb7979086f84ad51106b"
+        "branch" : "master",
+        "revision" : "252ca18be76b0918fb6b34c302292b6931876c25"
       }
     },
     {
