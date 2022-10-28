@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CodeEditLanguages
 import SwiftTreeSitter
 
 /// `TreeSitterClient` is a class that manages applying edits for and querying captures for a syntax tree.

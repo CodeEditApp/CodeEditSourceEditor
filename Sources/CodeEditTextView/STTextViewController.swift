@@ -9,6 +9,7 @@ import AppKit
 import SwiftUI
 import STTextView
 import SwiftTreeSitter
+import CodeEditLanguages
 
 /// A View Controller managing and displaying a `STTextView`
 public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAttributesProviding {

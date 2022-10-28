@@ -9,6 +9,7 @@ import Foundation
 import AppKit
 import STTextView
 import SwiftTreeSitter
+import CodeEditLanguages
 
 /// Classes conforming to this protocol can provide attributes for text given a capture type.
 public protocol ThemeAttributesProviding {

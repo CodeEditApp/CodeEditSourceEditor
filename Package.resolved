@@ -1,6 +1,15 @@
 {
   "pins" : [
     {
+      "identity" : "codeeditlanguages",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CodeEditApp/CodeEditLanguages.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "bb97af51b7c384fbb8e2cc2837d87a553eb88c8c"
+      }
+    },
+    {
       "identity" : "sttextview",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/krzyzanowskim/STTextView",
@@ -25,186 +34,6 @@
       "state" : {
         "revision" : "3b1599ba9f466d8269cea2474beb5c9f0a3d7a5e",
         "version" : "0.7.0"
-      }
-    },
-    {
-      "identity" : "tree-sitter-bash",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lukepistrol/tree-sitter-bash.git",
-      "state" : {
-        "branch" : "feature/spm",
-        "revision" : "13af3b5b2c40d560aefeac28361d64f525d1869f"
-      }
-    },
-    {
-      "identity" : "tree-sitter-c",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-c.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "7175a6dd5fc1cee660dce6fe23f6043d75af424a"
-      }
-    },
-    {
-      "identity" : "tree-sitter-c-sharp",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-c-sharp.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "5b60f99545fea00a33bbfae5be956f684c4c69e2"
-      }
-    },
-    {
-      "identity" : "tree-sitter-cpp",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-cpp.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "d5e90fba898f320db48d81ddedd78d52c67c1fed"
-      }
-    },
-    {
-      "identity" : "tree-sitter-css",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lukepistrol/tree-sitter-css.git",
-      "state" : {
-        "branch" : "feature/spm",
-        "revision" : "baf1fadcac4f7b7c0f0f273feec4ad68864bc783"
-      }
-    },
-    {
-      "identity" : "tree-sitter-elixir",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/elixir-lang/tree-sitter-elixir.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "3b8eb02597599ee38cfcc2c0fea76dc37a7472eb"
-      }
-    },
-    {
-      "identity" : "tree-sitter-go",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-go.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "aeb2f33b366fd78d5789ff104956ce23508b85db"
-      }
-    },
-    {
-      "identity" : "tree-sitter-go-mod",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/camdencheek/tree-sitter-go-mod.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "4a65743dbc2bb3094114dd2b43da03c820aa5234"
-      }
-    },
-    {
-      "identity" : "tree-sitter-haskell",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-haskell.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "bee6b49543e34c2967c6294a4b05e8bd2bf2da59"
-      }
-    },
-    {
-      "identity" : "tree-sitter-html",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mattmassicotte/tree-sitter-html.git",
-      "state" : {
-        "branch" : "feature/spm",
-        "revision" : "68b8bed0c1ebecbaf1919d0a7ae4b27592e6cc45"
-      }
-    },
-    {
-      "identity" : "tree-sitter-java",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-java.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "09d650def6cdf7f479f4b78f595e9ef5b58ce31e"
-      }
-    },
-    {
-      "identity" : "tree-sitter-javascript",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-javascript.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "936d976a782e75395d9b1c8c7c7bf4ba6fe0d86b"
-      }
-    },
-    {
-      "identity" : "tree-sitter-json",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-json.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "73076754005a460947cafe8e03a8cf5fa4fa2938"
-      }
-    },
-    {
-      "identity" : "tree-sitter-php",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-php.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "ab2e72179ceb8bb0b249c8ac9162a148e911b3dc"
-      }
-    },
-    {
-      "identity" : "tree-sitter-python",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/lukepistrol/tree-sitter-python.git",
-      "state" : {
-        "branch" : "feature/spm",
-        "revision" : "6a74b1a2de12c90218cbace9c6b896d137cd5201"
-      }
-    },
-    {
-      "identity" : "tree-sitter-ruby",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-ruby.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "252ca18be76b0918fb6b34c302292b6931876c25"
-      }
-    },
-    {
-      "identity" : "tree-sitter-rust",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/tree-sitter/tree-sitter-rust.git",
-      "state" : {
-        "branch" : "master",
-        "revision" : "47b061c1e1ba3a7e9c2f450363a50e87de3f7c61"
-      }
-    },
-    {
-      "identity" : "tree-sitter-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/alex-pinkus/tree-sitter-swift.git",
-      "state" : {
-        "branch" : "with-generated-files",
-        "revision" : "50b8c5e61c29fa30e760c7a1cbf24b59970e6233"
-      }
-    },
-    {
-      "identity" : "tree-sitter-yaml",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mattmassicotte/tree-sitter-yaml.git",
-      "state" : {
-        "branch" : "feature/spm",
-        "revision" : "bd633dc67bd71934961610ca8bd832bf2153883e"
-      }
-    },
-    {
-      "identity" : "tree-sitter-zig",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/maxxnino/tree-sitter-zig.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "433574f2a086a13cb30463f1f9c72a9be4f88a57"
       }
     }
   ],
