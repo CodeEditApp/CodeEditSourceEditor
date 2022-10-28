@@ -48,7 +48,14 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     // MARK: Init
 
-    public init(text: Binding<String>, language: CodeLanguage, font: NSFont, theme: EditorTheme, tabWidth: Int, cursorPosition: Published<(Int, Int)>.Publisher) {
+    public init(
+        text: Binding<String>,
+        language: CodeLanguage,
+        font: NSFont,
+        theme: EditorTheme,
+        tabWidth: Int,
+        cursorPosition: Published<(Int, Int)>.Publisher?
+    ) {
         self.text = text
         self.language = language
         self.font = font
@@ -126,7 +133,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
         setUpHighlighting()
 
-        self.cursorPositionCancellable = self.cursorPosition.sink(receiveValue: { value in
+        self.cursorPositionCancellable = self.cursorPosition?.sink(receiveValue: { value in
             self.setCursorPosition(value)
         })
     }
@@ -230,7 +237,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     // MARK: Cursor Position
 
-    private var cursorPosition: Published<(Int, Int)>.Publisher
+    private var cursorPosition: Published<(Int, Int)>.Publisher?
     private var cursorPositionCancellable: AnyCancellable?
 
     private func setCursorPosition(_ position: (Int, Int)) {
@@ -240,12 +247,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
         var (line, column) = position
         let string = textView.string
-        if (line > 0) {
-            string.enumerateSubstrings(in: string.startIndex..<string.endIndex) { substring, substringRange, _, done in
+        if line > 0 {
+            string.enumerateSubstrings(in: string.startIndex..<string.endIndex) { _, lineRange, _, done in
                 line -= 1
                 if line < 1 {
                     // If `column` exceeds the line length, set cursor to the end of the line.
-                    let index = min(substringRange.upperBound, string.index(substringRange.lowerBound, offsetBy: column - 1))
+                    let index = min(lineRange.upperBound, string.index(lineRange.lowerBound, offsetBy: column - 1))
                     if let newRange = NSTextRange(NSRange(index..<index, in: string), provider: provider) {
                         self.textView.setSelectedRange(newRange)
                     }
