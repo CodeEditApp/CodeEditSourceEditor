@@ -54,7 +54,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         font: NSFont,
         theme: EditorTheme,
         tabWidth: Int,
-        cursorPosition: Published<(Int, Int)>.Publisher?
+        cursorPosition: Published<(Int, Int)>.Publisher? = nil
     ) {
         self.text = text
         self.language = language
