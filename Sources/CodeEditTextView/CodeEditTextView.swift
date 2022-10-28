@@ -25,7 +25,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         theme: Binding<EditorTheme>,
         font: Binding<NSFont>,
         tabWidth: Binding<Int>,
-        lineHeight: Binding<Double>
+        lineHeight: Binding<Double>,
+        cursorPosition: Published<(Int, Int)>.Publisher? = nil
     ) {
         self._text = text
         self.language = language
@@ -33,6 +34,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self._font = font
         self._tabWidth = tabWidth
         self._lineHeight = lineHeight
+        self.cursorPosition = cursorPosition
     }
 
     @Binding private var text: String
@@ -41,6 +43,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     @Binding private var font: NSFont
     @Binding private var tabWidth: Int
     @Binding private var lineHeight: Double
+    private var cursorPosition: Published<(Int, Int)>.Publisher?
 
     public typealias NSViewControllerType = STTextViewController
 
@@ -50,7 +53,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             language: language,
             font: font,
             theme: theme,
-            tabWidth: tabWidth
+            tabWidth: tabWidth,
+            cursorPosition: cursorPosition
         )
         controller.lineHeightMultiple = lineHeight
         return controller
