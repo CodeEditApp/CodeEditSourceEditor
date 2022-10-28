@@ -11,12 +11,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v1
-      - uses: actions/cache@v3
-        with:
-          path: '.build'
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
-          restore-keys: |
-            ${{ runner.os }}-spm-
       - uses: fwcd/swift-docc-action@v1.0.2
         with:
           target: CodeEditTextView
