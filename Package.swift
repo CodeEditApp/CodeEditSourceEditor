@@ -23,7 +23,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/CodeEditApp/CodeEditLanguages.git",
-            exact: "0.1.0"
+            exact: "0.1.1"
         ),
     ],
     targets: [
