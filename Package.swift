@@ -9,12 +9,22 @@ let package = Package(
     products: [
         .library(
             name: "CodeEditTextView",
-            targets: ["CodeEditTextView"]),
+            targets: ["CodeEditTextView"]
+        ),
     ],
     dependencies: [
-        .package(url: "https://github.com/apple/swift-docc-plugin.git", from: "1.0.0"),
-        .package(url: "https://github.com/krzyzanowskim/STTextView.git", exact: "0.1.0"),
-        .package(url: "https://github.com/CodeEditApp/CodeEditLanguages.git", branch: "main"),
+        .package(
+            url: "https://github.com/apple/swift-docc-plugin.git",
+            from: "1.0.0"
+        ),
+        .package(
+            url: "https://github.com/krzyzanowskim/STTextView.git",
+            exact: "0.1.0"
+        ),
+        .package(
+            url: "https://github.com/CodeEditApp/CodeEditLanguages.git",
+            exact: "0.1.0"
+        ),
     ],
     targets: [
         .target(
@@ -22,12 +32,15 @@ let package = Package(
             dependencies: [
                 "STTextView",
                 "CodeEditLanguages",
-            ]),
+            ]
+        ),
+
         .testTarget(
             name: "CodeEditTextViewTests",
             dependencies: [
                 "CodeEditTextView",
                 "CodeEditLanguages",
-            ]),
+            ]
+        ),
     ]
 )
