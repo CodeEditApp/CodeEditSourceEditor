@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/krzyzanowskim/STTextView",
       "state" : {
-        "revision" : "9164f84b14b6315d9aaad0fb100b35f0c236db5a",
-        "version" : "0.1.0"
+        "revision" : "21bd12695d52b306e5b9074e61fc7ed63fbf1eff",
+        "version" : "0.1.1"
       }
     },
     {
