@@ -5,6 +5,7 @@ on:
       - 'main'
     paths:
       - 'Sources/**'
+  workflow_dispatch:
 jobs:
   build-docc:
     runs-on: macos-12
