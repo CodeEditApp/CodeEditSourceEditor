@@ -4,6 +4,8 @@ A code editor with syntax highlighting powered by tree-sitter.
 
 ## Overview
 
+![logo](codeedittextview-logo)
+
 This package includes both `AppKit` and `SwiftUI` components. It also relies on the `CodeEditLanguages` and `Theme` module. 
 
 ## Dependencies
