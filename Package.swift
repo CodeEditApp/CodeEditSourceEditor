@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/krzyzanowskim/STTextView.git",
-            exact: "0.1.1"
+            from: "0.1.1"
         ),
         .package(
             url: "https://github.com/CodeEditApp/CodeEditLanguages.git",
