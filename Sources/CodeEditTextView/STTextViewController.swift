@@ -72,7 +72,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     // MARK: VC Lifecycle
 
-    // swiftlint:disable function_body_length
     public override func loadView() {
         let scrollView = STTextView.scrollableTextView()
         textView = scrollView.documentView as? STTextView
