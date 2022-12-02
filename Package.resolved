@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CodeEditApp/CodeEditLanguages.git",
       "state" : {
-        "revision" : "6b412f6eb6f5d7bdfa91f2d92105b4d6dae12df3",
-        "version" : "0.1.3"
+        "revision" : "6890198b9738e1b60c867294eee446aca85a9d8b",
+        "version" : "0.1.4"
       }
     },
     {
@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/SwiftTreeSitter",
       "state" : {
-        "revision" : "3b1599ba9f466d8269cea2474beb5c9f0a3d7a5e",
-        "version" : "0.7.0"
+        "revision" : "df25a52f72ebc5b50ae20d26d1363793408bb28b",
+        "version" : "0.7.1"
       }
     }
   ],
