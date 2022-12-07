@@ -42,6 +42,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// The font to use in the `textView`
     public var font: NSFont
 
+    /// The overScrollLineCount to use for the textView over scroll
+    public var overScrollLineCount: Int
+
     // MARK: - Highlighting
 
     internal var highlighter: Highlighter?
@@ -55,7 +58,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         font: NSFont,
         theme: EditorTheme,
         tabWidth: Int,
-        cursorPosition: Published<(Int, Int)>.Publisher? = nil
+        cursorPosition: Published<(Int, Int)>.Publisher? = nil,
+        overScrollLineCount: Int
     ) {
         self.text = text
         self.language = language
@@ -63,6 +67,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.theme = theme
         self.tabWidth = tabWidth
         self.cursorPosition = cursorPosition
+        self.overScrollLineCount = overScrollLineCount
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -111,6 +116,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         scrollView.documentView = textView
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+
+        scrollView.contentInsets.bottom = Double(overScrollLineCount) * lineHeight
 
         self.view = scrollView
 
@@ -181,6 +188,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView?.backgroundColor = theme.background
         rulerView?.separatorColor = theme.invisibles
         rulerView?.baselineOffset = baselineOffset
+
+        (view as? NSScrollView)?.contentInsets.bottom = Double(overScrollLineCount) * lineHeight
 
         setStandardAttributes()
     }

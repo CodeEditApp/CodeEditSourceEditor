@@ -27,6 +27,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         font: Binding<NSFont>,
         tabWidth: Binding<Int>,
         lineHeight: Binding<Double>,
+        overScrollLineCount: Binding<Int> = .constant(0),
         cursorPosition: Published<(Int, Int)>.Publisher? = nil
     ) {
         self._text = text
@@ -35,6 +36,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self._font = font
         self._tabWidth = tabWidth
         self._lineHeight = lineHeight
+        self._overScrollLineCount = overScrollLineCount
         self.cursorPosition = cursorPosition
     }
 
@@ -44,6 +46,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     @Binding private var font: NSFont
     @Binding private var tabWidth: Int
     @Binding private var lineHeight: Double
+    @Binding private var overScrollLineCount: Int
     private var cursorPosition: Published<(Int, Int)>.Publisher?
 
     public typealias NSViewControllerType = STTextViewController
@@ -55,7 +58,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             font: font,
             theme: theme,
             tabWidth: tabWidth,
-            cursorPosition: cursorPosition
+            cursorPosition: cursorPosition,
+            overScrollLineCount: overScrollLineCount
         )
         controller.lineHeightMultiple = lineHeight
         return controller
@@ -67,6 +71,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         controller.theme = theme
         controller.tabWidth = tabWidth
         controller.lineHeightMultiple = lineHeight
+        controller.overScrollLineCount = overScrollLineCount
         controller.reloadUI()
         return
     }
