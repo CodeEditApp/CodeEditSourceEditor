@@ -43,7 +43,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     public var font: NSFont
 
     /// The overScrollLineCount to use for the textView over scroll
-    public var overScrollLineCount: Int
+    public var overScrollRatio: Double
 
     // MARK: - Highlighting
 
@@ -59,7 +59,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         theme: EditorTheme,
         tabWidth: Int,
         cursorPosition: Published<(Int, Int)>.Publisher? = nil,
-        overScrollLineCount: Int
+        overScrollRatio: Double
     ) {
         self.text = text
         self.language = language
@@ -67,7 +67,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.theme = theme
         self.tabWidth = tabWidth
         self.cursorPosition = cursorPosition
-        self.overScrollLineCount = overScrollLineCount
+        self.overScrollRatio = overScrollRatio
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -117,8 +117,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
 
-        scrollView.contentInsets.bottom = Double(overScrollLineCount) * lineHeight
-
         self.view = scrollView
 
         NSLayoutConstraint.activate([
@@ -143,6 +141,11 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.cursorPositionCancellable = self.cursorPosition?.sink(receiveValue: { value in
             self.setCursorPosition(value)
         })
+
+        NotificationCenter.default.addObserver(forName: NSWindow.didResizeNotification, object: nil, queue: .main) { [weak self] _ in
+            guard let self = self else { return }
+            (self.view as? NSScrollView)?.contentView.contentInsets.bottom = self.bottomContentInsets
+        }
     }
 
     internal func setUpHighlighting() {
@@ -176,6 +179,18 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         return paragraph
     }
 
+    /// ScrollView's bottom inset using as editor overscroll
+    private var bottomContentInsets: CGFloat {
+        let height = view.frame.height
+        var inset = overScrollRatio * height
+
+        if height - inset < lineHeight {
+            inset = height - lineHeight
+        }
+
+        return max(inset, .zero)
+    }
+
     /// Reloads the UI to apply changes to ``STTextViewController/font``, ``STTextViewController/theme``, ...
     internal func reloadUI() {
         textView?.font = font
@@ -189,7 +204,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView?.separatorColor = theme.invisibles
         rulerView?.baselineOffset = baselineOffset
 
-        (view as? NSScrollView)?.contentInsets.bottom = Double(overScrollLineCount) * lineHeight
+        (view as? NSScrollView)?.contentView.contentInsets.bottom = bottomContentInsets
 
         setStandardAttributes()
     }
