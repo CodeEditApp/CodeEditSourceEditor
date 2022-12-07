@@ -141,11 +141,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.cursorPositionCancellable = self.cursorPosition?.sink(receiveValue: { value in
             self.setCursorPosition(value)
         })
-
-        NotificationCenter.default.addObserver(forName: NSWindow.didResizeNotification, object: nil, queue: .main) { [weak self] _ in
-            guard let self = self else { return }
-            (self.view as? NSScrollView)?.contentView.contentInsets.bottom = self.bottomContentInsets
-        }
     }
 
     internal func setUpHighlighting() {
@@ -162,6 +157,13 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     public override func viewDidLoad() {
         super.viewDidLoad()
+
+        NotificationCenter.default.addObserver(forName: NSWindow.didResizeNotification,
+                                               object: nil,
+                                               queue: .main) { [weak self] _ in
+            guard let self = self else { return }
+            (self.view as? NSScrollView)?.contentView.contentInsets.bottom = self.bottomContentInsets
+        }
     }
 
     public override func viewDidAppear() {
