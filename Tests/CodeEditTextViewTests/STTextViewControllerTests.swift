@@ -32,7 +32,8 @@ final class STTextViewControllerTests: XCTestCase {
             language: .default,
             font: .monospacedSystemFont(ofSize: 11, weight: .medium),
             theme: theme,
-            tabWidth: 4
+            tabWidth: 4,
+            overScrollLineCount: 5
         )
     }
 
@@ -58,6 +59,27 @@ final class STTextViewControllerTests: XCTestCase {
         let captureName4 = "abc123"
         let color4 = controller.attributesFor(CaptureName(rawValue: captureName4))[.foregroundColor] as? NSColor
         XCTAssertEqual(color4, NSColor.textColor)
+    }
+
+    func test_editorOverScroll() throws {
+        let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
+
+        // overScrollLineCount: 5, lineHeight: 13
+        XCTAssertEqual(scrollView.contentInsets.bottom, 65)
+    }
+
+
+    func test_editorOverScroll_AfterUpdate() throws {
+        let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
+
+        // overScrollLineCount: 5, lineHeight: 13
+        XCTAssertEqual(scrollView.contentInsets.bottom, 65)
+
+        controller.overScrollLineCount = 10
+        controller.reloadUI()
+
+        // overScrollLineCount: 10, lineHeight: 13
+        XCTAssertEqual(scrollView.contentInsets.bottom, 130)
     }
 
 }
