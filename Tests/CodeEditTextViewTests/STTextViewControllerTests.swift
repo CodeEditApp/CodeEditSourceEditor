@@ -33,7 +33,7 @@ final class STTextViewControllerTests: XCTestCase {
             font: .monospacedSystemFont(ofSize: 11, weight: .medium),
             theme: theme,
             tabWidth: 4,
-            overScrollLineCount: 5
+            overScrollRatio: 0.5
         )
     }
 
@@ -63,23 +63,32 @@ final class STTextViewControllerTests: XCTestCase {
 
     func test_editorOverScroll() throws {
         let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
+        scrollView.frame = .init(x: .zero,
+                                 y: .zero,
+                                 width: 100,
+                                 height: 100)
 
-        // overScrollLineCount: 5, lineHeight: 13
-        XCTAssertEqual(scrollView.contentInsets.bottom, 65)
-    }
+        // overScrollRatio: 0
+        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 0)
 
-
-    func test_editorOverScroll_AfterUpdate() throws {
-        let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
-
-        // overScrollLineCount: 5, lineHeight: 13
-        XCTAssertEqual(scrollView.contentInsets.bottom, 65)
-
-        controller.overScrollLineCount = 10
+        controller.overScrollRatio = 0.5
         controller.reloadUI()
 
-        // overScrollLineCount: 10, lineHeight: 13
-        XCTAssertEqual(scrollView.contentInsets.bottom, 130)
+        // overScrollRatio: 0.5
+        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 50.0)
+
+        controller.overScrollRatio = 1.0
+        controller.reloadUI()
+
+        // overScrollRatio: 1.0
+        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 87.0)
     }
 
+    func test_editorOverScroll_ZeroCondition() throws {
+        let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
+        scrollView.frame = .zero
+
+        // overScrollRatio: 0
+        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 0)
+    }
 }
