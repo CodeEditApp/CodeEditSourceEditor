@@ -42,7 +42,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// The font to use in the `textView`
     public var font: NSFont
 
-    /// The overScrollLineCount to use for the textView over scroll
+    /// The overScrollRatio to use for the textView over scroll
     public var overScrollRatio: Double
 
     // MARK: - Highlighting
