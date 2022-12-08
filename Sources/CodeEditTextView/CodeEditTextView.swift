@@ -20,6 +20,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - font: The default font
     ///   - tabWidth: The tab width
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
+    ///   - overScrollRatio: The ratio for overscroll, between 0-1 (default: `0.0`)
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
