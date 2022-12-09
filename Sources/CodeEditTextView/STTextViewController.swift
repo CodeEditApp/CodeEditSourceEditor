@@ -42,6 +42,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// The font to use in the `textView`
     public var font: NSFont
 
+    /// The editorOverscroll to use for the textView over scroll
+    public var editorOverscroll: Double
+
     // MARK: - Highlighting
 
     internal var highlighter: Highlighter?
@@ -55,7 +58,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         font: NSFont,
         theme: EditorTheme,
         tabWidth: Int,
-        cursorPosition: Published<(Int, Int)>.Publisher? = nil
+        cursorPosition: Published<(Int, Int)>.Publisher? = nil,
+        editorOverscroll: Double
     ) {
         self.text = text
         self.language = language
@@ -63,6 +67,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.theme = theme
         self.tabWidth = tabWidth
         self.cursorPosition = cursorPosition
+        self.editorOverscroll = editorOverscroll
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -152,6 +157,13 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     public override func viewDidLoad() {
         super.viewDidLoad()
+
+        NotificationCenter.default.addObserver(forName: NSWindow.didResizeNotification,
+                                               object: nil,
+                                               queue: .main) { [weak self] _ in
+            guard let self = self else { return }
+            (self.view as? NSScrollView)?.contentView.contentInsets.bottom = self.bottomContentInsets
+        }
     }
 
     public override func viewDidAppear() {
@@ -169,6 +181,18 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         return paragraph
     }
 
+    /// ScrollView's bottom inset using as editor overscroll
+    private var bottomContentInsets: CGFloat {
+        let height = view.frame.height
+        var inset = editorOverscroll * height
+
+        if height - inset < lineHeight {
+            inset = height - lineHeight
+        }
+
+        return max(inset, .zero)
+    }
+
     /// Reloads the UI to apply changes to ``STTextViewController/font``, ``STTextViewController/theme``, ...
     internal func reloadUI() {
         textView?.font = font
@@ -181,6 +205,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView?.backgroundColor = theme.background
         rulerView?.separatorColor = theme.invisibles
         rulerView?.baselineOffset = baselineOffset
+
+        (view as? NSScrollView)?.contentView.contentInsets.bottom = bottomContentInsets
 
         setStandardAttributes()
     }

@@ -32,7 +32,8 @@ final class STTextViewControllerTests: XCTestCase {
             language: .default,
             font: .monospacedSystemFont(ofSize: 11, weight: .medium),
             theme: theme,
-            tabWidth: 4
+            tabWidth: 4,
+            editorOverscroll: 0.5
         )
     }
 
@@ -60,4 +61,34 @@ final class STTextViewControllerTests: XCTestCase {
         XCTAssertEqual(color4, NSColor.textColor)
     }
 
+    func test_editorOverScroll() throws {
+        let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
+        scrollView.frame = .init(x: .zero,
+                                 y: .zero,
+                                 width: 100,
+                                 height: 100)
+
+        // editorOverscroll: 0
+        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 0)
+
+        controller.editorOverscroll = 0.5
+        controller.reloadUI()
+
+        // editorOverscroll: 0.5
+        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 50.0)
+
+        controller.editorOverscroll = 1.0
+        controller.reloadUI()
+
+        // editorOverscroll: 1.0
+        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 87.0)
+    }
+
+    func test_editorOverScroll_ZeroCondition() throws {
+        let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
+        scrollView.frame = .zero
+
+        // editorOverscroll: 0
+        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 0)
+    }
 }
