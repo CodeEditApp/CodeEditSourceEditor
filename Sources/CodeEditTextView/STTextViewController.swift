@@ -42,8 +42,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// The font to use in the `textView`
     public var font: NSFont
 
-    /// The overScrollRatio to use for the textView over scroll
-    public var overScrollRatio: Double
+    /// The editorOverscroll to use for the textView over scroll
+    public var editorOverscroll: Double
 
     // MARK: - Highlighting
 
@@ -59,7 +59,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         theme: EditorTheme,
         tabWidth: Int,
         cursorPosition: Published<(Int, Int)>.Publisher? = nil,
-        overScrollRatio: Double
+        editorOverscroll: Double
     ) {
         self.text = text
         self.language = language
@@ -67,7 +67,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.theme = theme
         self.tabWidth = tabWidth
         self.cursorPosition = cursorPosition
-        self.overScrollRatio = overScrollRatio
+        self.editorOverscroll = editorOverscroll
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -184,7 +184,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// ScrollView's bottom inset using as editor overscroll
     private var bottomContentInsets: CGFloat {
         let height = view.frame.height
-        var inset = overScrollRatio * height
+        var inset = editorOverscroll * height
 
         if height - inset < lineHeight {
             inset = height - lineHeight

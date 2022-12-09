@@ -44,7 +44,7 @@ struct ContentView: View {
     @State var font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
     @State var tabWidth = 4
     @State var lineHeight = 1.2
-    @State var overScrollRatio = 0.3
+    @State var editorOverscroll = 0.3
 
     var body: some View { 
         CodeEditTextView(
@@ -54,7 +54,7 @@ struct ContentView: View {
             font: $font,
             tabWidth: $tabWidth,
             lineHeight: $lineHeight,
-            overScrollRatio: $overScrollRatio
+            editorOverscroll: $editorOverscroll
         )
     }
 }
