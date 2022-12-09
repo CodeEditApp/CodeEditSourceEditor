@@ -20,7 +20,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - font: The default font
     ///   - tabWidth: The tab width
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
-    ///   - overScrollRatio: The ratio for overscroll, between 0-1 (default: `0.0`)
+    ///   - editorOverscroll: The percentage for overscroll, between 0-1 (default: `0.0`)
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
@@ -28,7 +28,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         font: Binding<NSFont>,
         tabWidth: Binding<Int>,
         lineHeight: Binding<Double>,
-        overScrollRatio: Binding<Double> = .constant(0.0),
+        editorOverscroll: Binding<Double> = .constant(0.0),
         cursorPosition: Published<(Int, Int)>.Publisher? = nil
     ) {
         self._text = text
@@ -37,7 +37,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self._font = font
         self._tabWidth = tabWidth
         self._lineHeight = lineHeight
-        self._overScrollRatio = overScrollRatio
+        self._editorOverscroll = editorOverscroll
         self.cursorPosition = cursorPosition
     }
 
@@ -47,7 +47,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     @Binding private var font: NSFont
     @Binding private var tabWidth: Int
     @Binding private var lineHeight: Double
-    @Binding private var overScrollRatio: Double
+    @Binding private var editorOverscroll: Double
     private var cursorPosition: Published<(Int, Int)>.Publisher?
 
     public typealias NSViewControllerType = STTextViewController
@@ -60,7 +60,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             theme: theme,
             tabWidth: tabWidth,
             cursorPosition: cursorPosition,
-            overScrollRatio: overScrollRatio
+            editorOverscroll: editorOverscroll
         )
         controller.lineHeightMultiple = lineHeight
         return controller
@@ -72,7 +72,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         controller.theme = theme
         controller.tabWidth = tabWidth
         controller.lineHeightMultiple = lineHeight
-        controller.overScrollRatio = overScrollRatio
+        controller.editorOverscroll = editorOverscroll
         controller.reloadUI()
         return
     }

@@ -33,7 +33,7 @@ final class STTextViewControllerTests: XCTestCase {
             font: .monospacedSystemFont(ofSize: 11, weight: .medium),
             theme: theme,
             tabWidth: 4,
-            overScrollRatio: 0.5
+            editorOverscroll: 0.5
         )
     }
 
@@ -68,19 +68,19 @@ final class STTextViewControllerTests: XCTestCase {
                                  width: 100,
                                  height: 100)
 
-        // overScrollRatio: 0
+        // editorOverscroll: 0
         XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 0)
 
-        controller.overScrollRatio = 0.5
+        controller.editorOverscroll = 0.5
         controller.reloadUI()
 
-        // overScrollRatio: 0.5
+        // editorOverscroll: 0.5
         XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 50.0)
 
-        controller.overScrollRatio = 1.0
+        controller.editorOverscroll = 1.0
         controller.reloadUI()
 
-        // overScrollRatio: 1.0
+        // editorOverscroll: 1.0
         XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 87.0)
     }
 
@@ -88,7 +88,7 @@ final class STTextViewControllerTests: XCTestCase {
         let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
         scrollView.frame = .zero
 
-        // overScrollRatio: 0
+        // editorOverscroll: 0
         XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 0)
     }
 }

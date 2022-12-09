@@ -10,4 +10,4 @@
 - ``font``
 - ``tabWidth``
 - ``lineHeightMultiple``
-- ``overScrollRatio``
+- ``editorOverscroll``
