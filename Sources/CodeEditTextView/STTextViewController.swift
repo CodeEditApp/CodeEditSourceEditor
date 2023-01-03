@@ -44,6 +44,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     /// The editorOverscroll to use for the textView over scroll
     public var editorOverscroll: Double
+    
+    /// Whether lines wrap to the width of the editor
+    public var wrapLines: Bool
+    
+    /// The number of spaces to indent wrapped lines
+    public var wrappedIndent: Int
 
     // MARK: - Highlighting
 
@@ -58,6 +64,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         font: NSFont,
         theme: EditorTheme,
         tabWidth: Int,
+        wrapLines: Bool,
+        wrappedIndent: Int,
         cursorPosition: Published<(Int, Int)>.Publisher? = nil,
         editorOverscroll: Double
     ) {
@@ -66,6 +74,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.font = font
         self.theme = theme
         self.tabWidth = tabWidth
+        self.wrapLines = wrapLines
+        self.wrappedIndent = wrappedIndent
         self.cursorPosition = cursorPosition
         self.editorOverscroll = editorOverscroll
         super.init(nibName: nil, bundle: nil)
@@ -83,7 +93,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
         // By default this is always null but is required for a couple operations
         // during highlighting so we make a new one manually.
-        textView.textContainer.replaceLayoutManager(NSLayoutManager())
+        // textView.textContainer.replaceLayoutManager(NSLayoutManager())
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
