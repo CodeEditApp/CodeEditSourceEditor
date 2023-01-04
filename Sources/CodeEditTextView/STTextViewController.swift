@@ -169,7 +169,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     public override func viewDidAppear() {
         super.viewDidAppear()
     }
-    
+
     public func textDidChange(_ notification: Notification) {
         self.text.wrappedValue = textView.string
     }
