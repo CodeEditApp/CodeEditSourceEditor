@@ -47,9 +47,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     
     /// Whether lines wrap to the width of the editor
     public var wrapLines: Bool
-    
-    /// The number of spaces to indent wrapped lines
-    public var wrappedIndent: Int
 
     // MARK: - Highlighting
 
@@ -65,7 +62,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         theme: EditorTheme,
         tabWidth: Int,
         wrapLines: Bool,
-        wrappedIndent: Int,
         cursorPosition: Published<(Int, Int)>.Publisher? = nil,
         editorOverscroll: Double
     ) {
@@ -75,7 +71,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.theme = theme
         self.tabWidth = tabWidth
         self.wrapLines = wrapLines
-        self.wrappedIndent = wrappedIndent
         self.cursorPosition = cursorPosition
         self.editorOverscroll = editorOverscroll
         super.init(nibName: nil, bundle: nil)
