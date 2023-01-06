@@ -44,7 +44,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     /// The editorOverscroll to use for the textView over scroll
     public var editorOverscroll: Double
-    
+
     /// Whether lines wrap to the width of the editor
     public var wrapLines: Bool
 
@@ -84,7 +84,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     public override func loadView() {
         textView = STTextView()
-        
+
         let scrollView = NSScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
