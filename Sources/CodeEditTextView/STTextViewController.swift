@@ -95,8 +95,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.textColor = .systemGray
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
-        rulerView.font = NSFont(descriptor: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular).fontDescriptor, textTransform: AffineTransform(scaleByX: 1, byY: 1.1)) ?? .monospacedDigitSystemFont(ofSize: 11, weight: .regular)
-
+        rulerView.font = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .regular)
         scrollView.verticalRulerView = rulerView
         scrollView.rulersVisible = true
 
