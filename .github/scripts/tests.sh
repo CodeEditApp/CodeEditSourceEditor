@@ -17,4 +17,5 @@ set -o pipefail && arch -"${ARCH}" xcodebuild  \
            -scheme CodeEditTextView \
            -derivedDataPath ".build" \
            -destination "platform=macos,arch=${ARCH}" \
+           -skipPackagePluginValidation \
            clean test | xcpretty
