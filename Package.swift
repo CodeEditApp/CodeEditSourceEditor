@@ -21,6 +21,10 @@ let package = Package(
             url: "https://github.com/CodeEditApp/CodeEditLanguages.git",
             exact: "0.1.5"
         ),
+        .package(
+            url: "https://github.com/lukepistrol/SwiftLintPlugin",
+            from: "0.2.2"
+        ),
     ],
     targets: [
         .target(
@@ -28,6 +32,9 @@ let package = Package(
             dependencies: [
                 "STTextView",
                 "CodeEditLanguages",
+            ],
+            plugins: [
+                .plugin(name: "SwiftLint", package: "SwiftLintPlugin")
             ]
         ),
 
