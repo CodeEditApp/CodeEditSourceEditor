@@ -83,22 +83,19 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     // MARK: VC Lifecycle
 
     public override func loadView() {
-        let scrollView = STTextView.scrollableTextView()
-        textView = scrollView.documentView as? STTextView
-
-        // By default this is always null but is required for a couple operations
-        // during highlighting so we make a new one manually.
-        // textView.textContainer.replaceLayoutManager(NSLayoutManager())
-
+        textView = STTextView()
+        
+        let scrollView = NSScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
+        scrollView.documentView = textView
 
         rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
         rulerView.backgroundColor = theme.background
         rulerView.textColor = .systemGray
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
-        rulerView.font = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .regular)
+        rulerView.font = NSFont(descriptor: NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular).fontDescriptor, textTransform: AffineTransform(scaleByX: 1, byY: 1.1)) ?? .monospacedDigitSystemFont(ofSize: 11, weight: .regular)
 
         scrollView.verticalRulerView = rulerView
         scrollView.rulersVisible = true
@@ -112,7 +109,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.selectionBackgroundColor = theme.selection
         textView.selectedLineHighlightColor = theme.lineHighlight
         textView.string = self.text.wrappedValue
-        textView.widthTracksTextView = true
+        textView.widthTracksTextView = self.wrapLines
         textView.highlightSelectedLine = true
         textView.allowsUndo = true
         textView.setupMenus()
