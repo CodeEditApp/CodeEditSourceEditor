@@ -171,6 +171,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         super.viewDidAppear()
     }
 
+    public func textDidChange(_ notification: Notification) {
+        self.text.wrappedValue = textView.string
+    }
+
     // MARK: UI
 
     /// A default `NSParagraphStyle` with a set `lineHeight`
