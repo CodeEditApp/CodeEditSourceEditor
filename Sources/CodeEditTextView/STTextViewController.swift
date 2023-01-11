@@ -45,6 +45,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// The editorOverscroll to use for the textView over scroll
     public var editorOverscroll: Double
 
+    /// Whether lines wrap to the width of the editor
+    public var wrapLines: Bool
+
     // MARK: - Highlighting
 
     internal var highlighter: Highlighter?
@@ -58,6 +61,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         font: NSFont,
         theme: EditorTheme,
         tabWidth: Int,
+        wrapLines: Bool,
         cursorPosition: Published<(Int, Int)>.Publisher? = nil,
         editorOverscroll: Double
     ) {
@@ -66,6 +70,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.font = font
         self.theme = theme
         self.tabWidth = tabWidth
+        self.wrapLines = wrapLines
         self.cursorPosition = cursorPosition
         self.editorOverscroll = editorOverscroll
         super.init(nibName: nil, bundle: nil)
@@ -78,15 +83,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     // MARK: VC Lifecycle
 
     public override func loadView() {
-        let scrollView = STTextView.scrollableTextView()
-        textView = scrollView.documentView as? STTextView
+        textView = STTextView()
 
-        // By default this is always null but is required for a couple operations
-        // during highlighting so we make a new one manually.
-        textView.textContainer.replaceLayoutManager(NSLayoutManager())
-
+        let scrollView = NSScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
+        scrollView.documentView = textView
 
         rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
         rulerView.backgroundColor = theme.background
@@ -94,7 +96,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
         rulerView.font = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .regular)
-
         scrollView.verticalRulerView = rulerView
         scrollView.rulersVisible = true
 
@@ -107,7 +108,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.selectionBackgroundColor = theme.selection
         textView.selectedLineHighlightColor = theme.lineHighlight
         textView.string = self.text.wrappedValue
-        textView.widthTracksTextView = true
+        textView.widthTracksTextView = self.wrapLines
         textView.highlightSelectedLine = true
         textView.allowsUndo = true
         textView.setupMenus()

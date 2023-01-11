@@ -20,6 +20,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - font: The default font
     ///   - tabWidth: The tab width
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
+    ///   - wrapLines: Whether lines wrap to the width of the editor
     ///   - editorOverscroll: The percentage for overscroll, between 0-1 (default: `0.0`)
     public init(
         _ text: Binding<String>,
@@ -28,6 +29,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         font: Binding<NSFont>,
         tabWidth: Binding<Int>,
         lineHeight: Binding<Double>,
+        wrapLines: Binding<Bool>,
         editorOverscroll: Binding<Double> = .constant(0.0),
         cursorPosition: Published<(Int, Int)>.Publisher? = nil
     ) {
@@ -37,6 +39,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self._font = font
         self._tabWidth = tabWidth
         self._lineHeight = lineHeight
+        self._wrapLines = wrapLines
         self._editorOverscroll = editorOverscroll
         self.cursorPosition = cursorPosition
     }
@@ -47,6 +50,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     @Binding private var font: NSFont
     @Binding private var tabWidth: Int
     @Binding private var lineHeight: Double
+    @Binding private var wrapLines: Bool
     @Binding private var editorOverscroll: Double
     private var cursorPosition: Published<(Int, Int)>.Publisher?
 
@@ -59,6 +63,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             font: font,
             theme: theme,
             tabWidth: tabWidth,
+            wrapLines: wrapLines,
             cursorPosition: cursorPosition,
             editorOverscroll: editorOverscroll
         )
@@ -71,6 +76,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         controller.language = language
         controller.theme = theme
         controller.tabWidth = tabWidth
+        controller.wrapLines = wrapLines
         controller.lineHeightMultiple = lineHeight
         controller.editorOverscroll = editorOverscroll
         controller.reloadUI()
