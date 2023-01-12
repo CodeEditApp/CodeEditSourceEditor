@@ -21,4 +21,17 @@ public extension NSTextRange {
 
         self.init(location: start, end: end)
     }
+
+    /// Creates an `NSRange` using document information from the given provider.
+    /// - Parameter provider: The `NSTextElementProvider` to use to convert this range into an `NSRange`
+    /// - Returns: An `NSRange` if possible
+    func nsRange(using provider: NSTextElementProvider) -> NSRange? {
+        guard let location = provider.offset?(from: provider.documentRange.location, to: location) else {
+            return nil
+        }
+        guard let length = provider.offset?(from: self.location, to: endLocation) else {
+            return nil
+        }
+        return NSRange(location: location, length: length)
+    }
 }

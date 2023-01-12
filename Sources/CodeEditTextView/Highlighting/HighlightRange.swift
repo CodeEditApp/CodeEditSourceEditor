@@ -1,6 +1,6 @@
 //
 //  HighlightRange.swift
-//  
+//
 //
 //  Created by Khan Winter on 9/14/22.
 //

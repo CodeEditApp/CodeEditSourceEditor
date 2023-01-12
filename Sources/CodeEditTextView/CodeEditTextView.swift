@@ -73,12 +73,19 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
 
     public func updateNSViewController(_ controller: NSViewControllerType, context: Context) {
         controller.font = font
-        controller.language = language
-        controller.theme = theme
         controller.tabWidth = tabWidth
         controller.wrapLines = wrapLines
         controller.lineHeightMultiple = lineHeight
         controller.editorOverscroll = editorOverscroll
+
+        // Updating the language and theme needlessly can cause highlights to be re-calculated.
+        if controller.language.id != language.id {
+            controller.language = language
+        }
+        if controller.theme != theme {
+            controller.theme = theme
+        }
+
         controller.reloadUI()
         return
     }
