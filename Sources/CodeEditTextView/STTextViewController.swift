@@ -17,6 +17,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     internal var textView: STTextView!
 
+    internal var scrollView: NSScrollView!
+
     internal var rulerView: STLineNumberRulerView!
 
     /// Binding for the `textView`s string
@@ -85,7 +87,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     public override func loadView() {
         textView = STTextView()
 
-        let scrollView = NSScrollView()
+        scrollView = NSScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
         scrollView.documentView = textView
@@ -210,6 +212,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView?.backgroundColor = theme.background
         rulerView?.separatorColor = theme.invisibles
         rulerView?.baselineOffset = baselineOffset
+
+        scrollView?.backgroundColor = theme.background
 
         (view as? NSScrollView)?.contentView.contentInsets.bottom = bottomContentInsets
 
