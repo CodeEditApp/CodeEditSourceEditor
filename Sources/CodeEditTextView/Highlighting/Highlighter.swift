@@ -42,10 +42,7 @@ class Highlighter: NSObject {
 
     /// The set of visible indexes in tht text view
     lazy private var visibleSet: IndexSet = {
-        guard let range = textView.visibleTextRange else {
-            return IndexSet()
-        }
-        return IndexSet(integersIn: Range(range)!)
+        return IndexSet(integersIn: textView.visibleTextRange ?? NSRange())
     }()
 
     // MARK: - UI
@@ -107,7 +104,7 @@ class Highlighter: NSObject {
         if !(treeSitterClient?.hasSetText ?? true) {
             treeSitterClient?.setText(text: textView.string)
         }
-        invalidate(range: entireTextRange)
+        invalidate(range: NSRange(entireTextRange))
     }
 
     /// Sets the language and causes a re-highlight of the entire text.
@@ -129,12 +126,6 @@ private extension Highlighter {
     /// Invalidates a given range and adds it to the queue to be highlighted.
     /// - Parameter range: The range to invalidate.
     func invalidate(range: NSRange) {
-        invalidate(range: Range(range)!)
-    }
-
-    /// Invalidates a given range and adds it to the queue to be highlighted.
-    /// - Parameter range: The range to invalidate.
-    func invalidate(range: Range<Int>) {
         let set = IndexSet(integersIn: range)
 
         if set.isEmpty {
@@ -161,31 +152,35 @@ private extension Highlighter {
 
     /// Highlights the given range
     /// - Parameter range: The range to request highlights for.
-    func highlight(range nsRange: NSRange) {
-        let range = Range(nsRange)!
-        pendingSet.insert(integersIn: range)
+    func highlight(range rangeToHighlight: NSRange) {
+        pendingSet.insert(integersIn: rangeToHighlight)
 
-        treeSitterClient?.queryColorsFor(range: nsRange) { [weak self] highlightRanges in
+        treeSitterClient?.queryColorsFor(range: rangeToHighlight) { [weak self] highlightRanges in
             guard let attributeProvider = self?.attributeProvider,
                   let textView = self?.textView else { return }
 
             // Mark these indices as not pending and valid
-            self?.pendingSet.remove(integersIn: range)
-            self?.validSet.formUnion(IndexSet(integersIn: range))
+            self?.pendingSet.remove(integersIn: rangeToHighlight)
+            self?.validSet.formUnion(IndexSet(integersIn: rangeToHighlight))
 
             // If this range does not exist in the visible set, we can exit.
-            if !(self?.visibleSet ?? .init()).contains(integersIn: range) {
+            if !(self?.visibleSet ?? .init()).contains(integersIn: rangeToHighlight) {
                 return
             }
 
             // Try to create a text range for invalidating. If this fails we fail silently
             guard let textContentManager = textView.textLayoutManager.textContentManager,
-                  let textRange = NSTextRange(nsRange, provider: textContentManager) else {
+                  let textRange = NSTextRange(rangeToHighlight, provider: textContentManager) else {
                 return
             }
 
             // Loop through each highlight and modify the textStorage accordingly.
             textView.textContentStorage.textStorage?.beginEditing()
+
+            // Create a set of indexes that were not highlighted.
+            var ignoredIndexes = IndexSet(integersIn: rangeToHighlight)
+
+            // Apply all highlights that need color
             for highlight in highlightRanges {
                 // Does not work:
 //                textView.textLayoutManager.setRenderingAttributes(attributeProvider.attributesFor(highlight.capture),
@@ -196,7 +191,21 @@ private extension Highlighter {
                     attributeProvider.attributesFor(highlight.capture),
                     range: highlight.range
                 )
+
+                // Remove highlighted indexes from the "ignored" indexes.
+                ignoredIndexes.remove(integersIn: highlight.range)
             }
+
+            // For any indices left over, we need to apply normal attributes to them
+            // This fixes the case where characters are changed to have a non-text color, and then are skipped when
+            // they need to be changed back.
+            for ignoredRange in ignoredIndexes.rangeView {
+                textView.textContentStorage.textStorage?.setAttributes(
+                    attributeProvider.attributesFor(nil),
+                    range: NSRange(ignoredRange)
+                )
+            }
+
             textView.textContentStorage.textStorage?.endEditing()
 
             // After applying edits to the text storage we need to invalidate the layout
@@ -227,7 +236,7 @@ private extension Highlighter {
 private extension Highlighter {
     /// Updates the view to highlight newly visible text when the textview is scrolled or bounds change.
     @objc func visibleTextChanged(_ notification: Notification) {
-        visibleSet = IndexSet(integersIn: Range(textView.visibleTextRange ?? NSRange())!)
+        visibleSet = IndexSet(integersIn: textView.visibleTextRange ?? NSRange())
 
         // Any indices that are both *not* valid and in the visible text range should be invalidated
         let newlyInvalidSet = visibleSet.subtracting(validSet)
@@ -263,7 +272,7 @@ extension Highlighter: NSTextStorageDelegate {
         treeSitterClient?.applyEdit(edit,
                                    text: textStorage.string) { [weak self] invalidatedIndexSet in
             let indexSet = invalidatedIndexSet
-                .union(IndexSet(integersIn: Range(editedRange)!))
+                .union(IndexSet(integersIn: editedRange))
                 // Only invalidate indices that aren't visible.
                 .intersection(self?.visibleSet ?? .init())
 
