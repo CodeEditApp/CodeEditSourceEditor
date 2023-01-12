@@ -211,6 +211,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView?.separatorColor = theme.invisibles
         rulerView?.baselineOffset = baselineOffset
 
+        (view as? NSScrollView)?.backgroundColor = theme.background
         (view as? NSScrollView)?.contentView.contentInsets.bottom = bottomContentInsets
 
         setStandardAttributes()
