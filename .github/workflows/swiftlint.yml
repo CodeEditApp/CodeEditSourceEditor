@@ -16,10 +16,11 @@ on:
       - '**/*.swift'
 jobs:
   SwiftLint:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, macOS]
     steps:
       - uses: actions/checkout@v1
       - name: GitHub Action for SwiftLint with --strict
-        uses: norio-nomura/action-swiftlint@3.2.1
-        with:
-          args: --strict
+        run: swiftlint --strict
+        # uses: norio-nomura/action-swiftlint@3.2.1
+        # with:
+        #   args: --strict

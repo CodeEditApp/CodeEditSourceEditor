@@ -12,11 +12,9 @@ on:
 jobs:
   code-edit-text-view-tests:
     name: Testing CodeEditTextView
-    runs-on: macos-12
+    runs-on: [self-hosted, macOS]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v1
-      - name: Make executeable
-        run: chmod +x ./.github/scripts/tests.sh
       - name: Testing Package
-        run: exec ./.github/scripts/tests.sh
+        run: exec ./.github/scripts/tests.sh arm
