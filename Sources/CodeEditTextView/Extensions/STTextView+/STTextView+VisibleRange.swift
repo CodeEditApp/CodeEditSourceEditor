@@ -7,22 +7,32 @@
 
 import Foundation
 import STTextView
+import AppKit
 
 extension STTextView {
-    func textRange(for rect: CGRect) -> NSRange {
-        let length = self.textContentStorage.textStorage?.length ?? 0
+    /// A helper for calculating the visible range on the text view with some small vertical padding.
+    var visibleTextRange: NSRange? {
+        // This helper finds the visible rect of the text using the enclosing scroll view, then finds the nearest
+        // `NSTextElement`s to those points and uses those elements to create the returned range.
 
-        guard let layoutManager = self.textContainer.layoutManager else {
-            return NSRange(0..<length)
+        // Get visible rect
+        guard let bounds = enclosingScrollView?.documentVisibleRect else {
+            return textLayoutManager.documentRange.nsRange(using: textContentStorage)
         }
-        let container = self.textContainer
 
-        let glyphRange = layoutManager.glyphRange(forBoundingRect: rect, in: container)
+        // Calculate min & max points w/ a small amount of padding vertically.
+        let minPoint = CGPoint(x: bounds.minX,
+                               y: bounds.minY - 100)
+        let maxPoint = CGPoint(x: bounds.maxX,
+                               y: bounds.maxY + 100)
 
-        return layoutManager.characterRange(forGlyphRange: glyphRange, actualGlyphRange: nil)
-    }
+        // Get text fragments for both the min and max points
+        guard let start = textLayoutManager.textLayoutFragment(for: minPoint)?.rangeInElement.location,
+              let end = textLayoutManager.textLayoutFragment(for: maxPoint)?.rangeInElement.endLocation else {
+            return textLayoutManager.documentRange.nsRange(using: textContentStorage)
+        }
 
-    var visibleTextRange: NSRange {
-        return textRange(for: visibleRect)
+        // Calculate a range and return it as an `NSRange`
+        return NSTextRange(location: start, end: end)?.nsRange(using: textContentStorage)
     }
 }

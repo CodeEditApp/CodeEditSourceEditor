@@ -42,7 +42,10 @@ class Highlighter: NSObject {
 
     /// The set of visible indexes in tht text view
     lazy private var visibleSet: IndexSet = {
-        return IndexSet(integersIn: Range(textView.visibleTextRange)!)
+        guard let range = textView.visibleTextRange else {
+            return IndexSet()
+        }
+        return IndexSet(integersIn: Range(range)!)
     }()
 
     // MARK: - UI
@@ -184,6 +187,11 @@ private extension Highlighter {
             // Loop through each highlight and modify the textStorage accordingly.
             textView.textContentStorage.textStorage?.beginEditing()
             for highlight in highlightRanges {
+                // Does not work:
+//                textView.textLayoutManager.setRenderingAttributes(attributeProvider.attributesFor(highlight.capture),
+//                                                                  for: NSTextRange(highlight.range,
+//                                                                       provider: textView.textContentStorage)!)
+                // Temp solution (until Apple fixes above)
                 textView.textContentStorage.textStorage?.setAttributes(
                     attributeProvider.attributesFor(highlight.capture),
                     range: highlight.range
@@ -219,7 +227,7 @@ private extension Highlighter {
 private extension Highlighter {
     /// Updates the view to highlight newly visible text when the textview is scrolled or bounds change.
     @objc func visibleTextChanged(_ notification: Notification) {
-        visibleSet = IndexSet(integersIn: Range(textView.visibleTextRange)!)
+        visibleSet = IndexSet(integersIn: Range(textView.visibleTextRange ?? NSRange())!)
 
         // Any indices that are both *not* valid and in the visible text range should be invalidated
         let newlyInvalidSet = visibleSet.subtracting(validSet)
