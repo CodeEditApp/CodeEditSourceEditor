@@ -6,6 +6,6 @@ jobs:
   SwiftLint:
     runs-on: [self-hosted, macOS]
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v3
       - name: GitHub Action for SwiftLint with --strict
         run: swiftlint --strict
