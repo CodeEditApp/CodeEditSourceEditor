@@ -1,14 +1,7 @@
 name: tests
 on:
-  push:
-    branches:
-      - 'main'
-    paths:
-      - 'Sources/**'
-      - 'Tests/**'
-  pull_request:
-    branches:
-      - 'main'
+  workflow_dispatch:
+  workflow_call:
 jobs:
   code-edit-text-view-tests:
     name: Testing CodeEditTextView

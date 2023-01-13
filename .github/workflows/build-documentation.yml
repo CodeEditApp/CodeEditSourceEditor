@@ -1,11 +1,7 @@
 name: build-documentation
-on: 
-  push:
-    branches:
-      - 'main'
-    paths:
-      - 'Sources/**'
+on:
   workflow_dispatch:
+  workflow_call:
 jobs:
   build-docc:
     runs-on: [self-hosted, macOS]
