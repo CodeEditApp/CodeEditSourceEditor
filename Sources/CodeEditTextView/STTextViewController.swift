@@ -200,7 +200,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     /// Reloads the UI to apply changes to ``STTextViewController/font``, ``STTextViewController/theme``, ...
     internal func reloadUI() {
-        textView?.font = font
+        // if font or baseline has been modified, set the hasSetStandardAttributesFlag
+        // to false to ensure attributes are updated. This allows live UI updates when changing preferences.
+        if textView?.font != font || rulerView.baselineOffset != baselineOffset {
+            hasSetStandardAttributes = false
+        }
+
         textView?.textColor = theme.text
         textView?.backgroundColor = theme.background
         textView?.insertionPointColor = theme.insertionPoint
@@ -223,6 +228,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         guard !hasSetStandardAttributes else { return }
         hasSetStandardAttributes = true
         textView.addAttributes(attributesFor(nil), range: .init(0..<textView.string.count))
+        highlighter?.invalidate()
     }
 
     /// Gets all attributes for the given capture including the line height, background color, and text color.
