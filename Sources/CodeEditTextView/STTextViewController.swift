@@ -228,6 +228,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         guard !hasSetStandardAttributes else { return }
         hasSetStandardAttributes = true
         textView.addAttributes(attributesFor(nil), range: .init(0..<textView.string.count))
+        highlighter?.invalidate()
     }
 
     /// Gets all attributes for the given capture including the line height, background color, and text color.
