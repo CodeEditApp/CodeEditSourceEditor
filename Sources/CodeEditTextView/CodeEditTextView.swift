@@ -17,6 +17,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - text: The text content
     ///   - language: The language for syntax highlighting
     ///   - theme: The theme for syntax highlighting
+    ///   - useThemeBackground: Whether CodeEditTextView uses theme background color or is transparent
     ///   - font: The default font
     ///   - tabWidth: The tab width
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
@@ -26,6 +27,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         _ text: Binding<String>,
         language: CodeLanguage,
         theme: Binding<EditorTheme>,
+        useThemeBackground: Binding<Bool>,
         font: Binding<NSFont>,
         tabWidth: Binding<Int>,
         lineHeight: Binding<Double>,
@@ -36,6 +38,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self._text = text
         self.language = language
         self._theme = theme
+        self._useThemeBackground = useThemeBackground
         self._font = font
         self._tabWidth = tabWidth
         self._lineHeight = lineHeight
@@ -47,6 +50,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     @Binding private var text: String
     private var language: CodeLanguage
     @Binding private var theme: EditorTheme
+    @Binding private var useThemeBackground: Bool
     @Binding private var font: NSFont
     @Binding private var tabWidth: Int
     @Binding private var lineHeight: Double
@@ -62,6 +66,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             language: language,
             font: font,
             theme: theme,
+            useThemeBackground: useThemeBackground,
             tabWidth: tabWidth,
             wrapLines: wrapLines,
             cursorPosition: cursorPosition,
@@ -75,6 +80,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         controller.font = font
         controller.tabWidth = tabWidth
         controller.wrapLines = wrapLines
+        controller.useThemeBackground = useThemeBackground
         controller.lineHeightMultiple = lineHeight
         controller.editorOverscroll = editorOverscroll
 

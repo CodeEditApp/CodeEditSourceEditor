@@ -33,6 +33,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         highlighter?.invalidate()
     }}
 
+    /// Whether the code editor should use the theme background color or be transparent
+    public var useThemeBackground: Bool
+
     /// The number of spaces to use for a `tab '\t'` character
     public var tabWidth: Int
 
@@ -60,6 +63,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         language: CodeLanguage,
         font: NSFont,
         theme: EditorTheme,
+        useThemeBackground: Bool,
         tabWidth: Int,
         wrapLines: Bool,
         cursorPosition: Published<(Int, Int)>.Publisher? = nil,
@@ -69,6 +73,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.language = language
         self.font = font
         self.theme = theme
+        self.useThemeBackground = useThemeBackground
         self.tabWidth = tabWidth
         self.wrapLines = wrapLines
         self.cursorPosition = cursorPosition
@@ -89,9 +94,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
         scrollView.documentView = textView
+        scrollView.drawsBackground = useThemeBackground
 
         rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
-        rulerView.backgroundColor = theme.background
+        rulerView.backgroundColor = useThemeBackground ? theme.background : .clear
         rulerView.textColor = .systemGray
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
@@ -102,7 +108,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.defaultParagraphStyle = self.paragraphStyle
         textView.font = self.font
         textView.textColor = theme.text
-        textView.backgroundColor = theme.background
+        textView.backgroundColor = useThemeBackground ? theme.background : .clear
         textView.insertionPointColor = theme.insertionPoint
         textView.insertionPointWidth = 1.0
         textView.selectionBackgroundColor = theme.selection
@@ -207,16 +213,17 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         }
 
         textView?.textColor = theme.text
-        textView?.backgroundColor = theme.background
+        textView.backgroundColor = useThemeBackground ? theme.background : .clear
         textView?.insertionPointColor = theme.insertionPoint
         textView?.selectionBackgroundColor = theme.selection
         textView?.selectedLineHighlightColor = theme.lineHighlight
 
-        rulerView?.backgroundColor = theme.background
+        rulerView?.backgroundColor = useThemeBackground ? theme.background : .clear
         rulerView?.separatorColor = theme.invisibles
         rulerView?.baselineOffset = baselineOffset
 
-        (view as? NSScrollView)?.backgroundColor = theme.background
+        (view as? NSScrollView)?.drawsBackground = useThemeBackground
+        (view as? NSScrollView)?.backgroundColor = useThemeBackground ? theme.background : .clear
         (view as? NSScrollView)?.contentView.contentInsets.bottom = bottomContentInsets
 
         setStandardAttributes()
