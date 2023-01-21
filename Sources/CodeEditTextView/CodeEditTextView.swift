@@ -27,18 +27,18 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         _ text: Binding<String>,
         language: CodeLanguage,
         theme: Binding<EditorTheme>,
-        useThemeBackground: Binding<Bool>,
         font: Binding<NSFont>,
         tabWidth: Binding<Int>,
         lineHeight: Binding<Double>,
         wrapLines: Binding<Bool>,
         editorOverscroll: Binding<Double> = .constant(0.0),
-        cursorPosition: Published<(Int, Int)>.Publisher? = nil
+        cursorPosition: Published<(Int, Int)>.Publisher? = nil,
+        useThemeBackground: Bool = true
     ) {
         self._text = text
         self.language = language
         self._theme = theme
-        self._useThemeBackground = useThemeBackground
+        self.useThemeBackground = useThemeBackground
         self._font = font
         self._tabWidth = tabWidth
         self._lineHeight = lineHeight
@@ -50,13 +50,13 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     @Binding private var text: String
     private var language: CodeLanguage
     @Binding private var theme: EditorTheme
-    @Binding private var useThemeBackground: Bool
     @Binding private var font: NSFont
     @Binding private var tabWidth: Int
     @Binding private var lineHeight: Double
     @Binding private var wrapLines: Bool
     @Binding private var editorOverscroll: Double
     private var cursorPosition: Published<(Int, Int)>.Publisher?
+    private var useThemeBackground: Bool
 
     public typealias NSViewControllerType = STTextViewController
 
@@ -66,11 +66,11 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             language: language,
             font: font,
             theme: theme,
-            useThemeBackground: useThemeBackground,
             tabWidth: tabWidth,
             wrapLines: wrapLines,
             cursorPosition: cursorPosition,
-            editorOverscroll: editorOverscroll
+            editorOverscroll: editorOverscroll,
+            useThemeBackground: useThemeBackground
         )
         controller.lineHeightMultiple = lineHeight
         return controller

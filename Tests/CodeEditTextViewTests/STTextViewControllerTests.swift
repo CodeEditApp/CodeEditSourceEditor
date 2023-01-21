@@ -32,10 +32,10 @@ final class STTextViewControllerTests: XCTestCase {
             language: .default,
             font: .monospacedSystemFont(ofSize: 11, weight: .medium),
             theme: theme,
-            useThemeBackground: true,
             tabWidth: 4,
             wrapLines: true,
-            editorOverscroll: 0.5
+            editorOverscroll: 0.5,
+            useThemeBackground: true
         )
     }
 

@@ -63,21 +63,21 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         language: CodeLanguage,
         font: NSFont,
         theme: EditorTheme,
-        useThemeBackground: Bool,
         tabWidth: Int,
         wrapLines: Bool,
         cursorPosition: Published<(Int, Int)>.Publisher? = nil,
-        editorOverscroll: Double
+        editorOverscroll: Double,
+        useThemeBackground: Bool
     ) {
         self.text = text
         self.language = language
         self.font = font
         self.theme = theme
-        self.useThemeBackground = useThemeBackground
         self.tabWidth = tabWidth
         self.wrapLines = wrapLines
         self.cursorPosition = cursorPosition
         self.editorOverscroll = editorOverscroll
+        self.useThemeBackground = useThemeBackground
         super.init(nibName: nil, bundle: nil)
     }
 
