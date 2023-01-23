@@ -22,6 +22,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - tabWidth: The tab width
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
     ///   - wrapLines: Whether lines wrap to the width of the editor
+    ///   - lineNumbers: Whether to display line numbers
     ///   - editorOverscroll: The percentage for overscroll, between 0-1 (default: `0.0`)
     public init(
         _ text: Binding<String>,
@@ -31,6 +32,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         tabWidth: Binding<Int>,
         lineHeight: Binding<Double>,
         wrapLines: Binding<Bool>,
+        lineNumbers: Binding<Bool>,
         editorOverscroll: Binding<Double> = .constant(0.0),
         cursorPosition: Published<(Int, Int)>.Publisher? = nil,
         useThemeBackground: Bool = true
@@ -43,6 +45,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self._tabWidth = tabWidth
         self._lineHeight = lineHeight
         self._wrapLines = wrapLines
+        self._lineNumbers = lineNumbers
         self._editorOverscroll = editorOverscroll
         self.cursorPosition = cursorPosition
     }
@@ -54,6 +57,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     @Binding private var tabWidth: Int
     @Binding private var lineHeight: Double
     @Binding private var wrapLines: Bool
+    @Binding private var lineNumbers: Bool
     @Binding private var editorOverscroll: Double
     private var cursorPosition: Published<(Int, Int)>.Publisher?
     private var useThemeBackground: Bool
@@ -68,6 +72,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             theme: theme,
             tabWidth: tabWidth,
             wrapLines: wrapLines,
+            lineNumbers: lineNumbers,
             cursorPosition: cursorPosition,
             editorOverscroll: editorOverscroll,
             useThemeBackground: useThemeBackground
@@ -83,6 +88,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         controller.useThemeBackground = useThemeBackground
         controller.lineHeightMultiple = lineHeight
         controller.editorOverscroll = editorOverscroll
+        controller.lineNumbers = lineNumbers
 
         // Updating the language and theme needlessly can cause highlights to be re-calculated.
         if controller.language.id != language.id {

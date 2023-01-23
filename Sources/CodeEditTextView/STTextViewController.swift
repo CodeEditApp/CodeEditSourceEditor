@@ -51,6 +51,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Whether lines wrap to the width of the editor
     public var wrapLines: Bool
 
+    /// Whether to display line numbers in the editor
+    public var lineNumbers: Bool = true
+
     // MARK: - Highlighting
 
     internal var highlighter: Highlighter?
@@ -65,6 +68,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         theme: EditorTheme,
         tabWidth: Int,
         wrapLines: Bool,
+        lineNumbers: Bool,
         cursorPosition: Published<(Int, Int)>.Publisher? = nil,
         editorOverscroll: Double,
         useThemeBackground: Bool
@@ -75,6 +79,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.theme = theme
         self.tabWidth = tabWidth
         self.wrapLines = wrapLines
+        self.lineNumbers = lineNumbers
         self.cursorPosition = cursorPosition
         self.editorOverscroll = editorOverscroll
         self.useThemeBackground = useThemeBackground
@@ -102,6 +107,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
         rulerView.font = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .regular)
+        rulerView.isHidden = !lineNumbers
+
         scrollView.verticalRulerView = rulerView
         scrollView.rulersVisible = true
 
@@ -221,6 +228,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView?.backgroundColor = useThemeBackground ? theme.background : .clear
         rulerView?.separatorColor = theme.invisibles
         rulerView?.baselineOffset = baselineOffset
+        rulerView.isHidden = !lineNumbers
 
         (view as? NSScrollView)?.drawsBackground = useThemeBackground
         (view as? NSScrollView)?.backgroundColor = useThemeBackground ? theme.background : .clear
