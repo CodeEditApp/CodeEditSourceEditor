@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CodeEditApp/CodeEditLanguages.git",
       "state" : {
-        "revision" : "28cf9d50f0bc27fd217bc77b0578d80b9074b252",
-        "version" : "0.1.8"
+        "revision" : "d101d58d615e5ace892a9f006d8b4bb779a9fcb5",
+        "version" : "0.1.9"
       }
     },
     {
