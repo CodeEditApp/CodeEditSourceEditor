@@ -19,7 +19,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/CodeEditApp/CodeEditLanguages.git",
-            exact: "0.1.9"
+            exact: "0.1.10"
         ),
         .package(
             url: "https://github.com/lukepistrol/SwiftLintPlugin",
