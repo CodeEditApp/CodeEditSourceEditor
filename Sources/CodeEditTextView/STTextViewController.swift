@@ -403,11 +403,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
             }
 
             /// Translate to line and column value
-            textLayoutManager.enumerateTextSegments(in: NSTextRange(location: insertionPointLocation),
-                                                    type: .standard,
-                                                    options:
-                                                        [.rangeNotRequired,
-                                                         .upstreamAffinity]
+            textLayoutManager.enumerateTextSegments(
+                in: NSTextRange(location: insertionPointLocation),
+                type: .standard,
+                options: [.rangeNotRequired, .upstreamAffinity]
             ) { _, textSegmentFrame, _, _ -> Bool
                 in
                 var line = Int(textSegmentFrame.maxY / textSegmentFrame.height)
