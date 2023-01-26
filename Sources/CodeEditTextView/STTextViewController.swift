@@ -80,7 +80,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         theme: EditorTheme,
         tabWidth: Int,
         wrapLines: Bool,
-        cursorPosition: Published<(Int, Int)>.Publisher? = nil,
+        cursorPosition: Binding<(Int, Int)>,
         editorOverscroll: Double,
         useThemeBackground: Bool,
         highlightProvider: HighlightProviding? = nil,
@@ -175,9 +175,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         setHighlightProvider(self.highlightProvider)
         setUpTextFormation()
 
-        self.cursorPositionCancellable = self.cursorPosition?.sink(receiveValue: { value in
-            self.setCursorPosition(value)
-        })
+        self.setCursorPosition(self.cursorPosition.wrappedValue)
     }
 
     public override func viewDidLoad() {
@@ -188,6 +186,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
                                                queue: .main) { [weak self] _ in
             guard let self = self else { return }
             (self.view as? NSScrollView)?.contentView.contentInsets.bottom = self.bottomContentInsets
+        }
+
+        NotificationCenter.default.addObserver(forName: STTextView.didChangeSelectionNotification,
+                                                       object: nil, queue: .main) { [weak self] _ in
+            guard let textLayoutManager = self?.textView.textLayoutManager else { return }
+            self?.updateCursorPosition(with: textLayoutManager)
         }
     }
 
@@ -325,8 +329,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     // MARK: Cursor Position
 
-    private var cursorPosition: Published<(Int, Int)>.Publisher?
-    private var cursorPositionCancellable: AnyCancellable?
+    private var cursorPosition: Binding<(Int, Int)>
 
     private func setCursorPosition(_ position: (Int, Int)) {
         guard let provider = textView.textLayoutManager.textContentManager else {
@@ -361,6 +364,67 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
             }
         }
     }
+
+    private func updateCursorPosition(with textLayoutManager: NSTextLayoutManager) {
+            /// Current cursor location as NSTextLocation
+            guard let insertionPointLocation = textLayoutManager.insertionPointLocation else { return }
+
+            var lineWrapsCount = 0
+
+            // TODO: Find a more performant approach, that does not scale with line count
+            /// Count the line wraps prior to the cursor line
+            textLayoutManager.enumerateTextLayoutFragments(from: textLayoutManager.documentRange.location,
+                                                           options: [.ensuresLayout, .ensuresExtraLineFragment]
+            ) { textLayoutFragment in
+
+                guard let cursorTextLineFragment = textLayoutManager.textLineFragment(at: insertionPointLocation)
+                else { return false }
+
+                /// Check whether the textLayoutFragment has line wraps
+                if textLayoutFragment.textLineFragments.count > 1 {
+                    for lineFragment in textLayoutFragment.textLineFragments {
+                        lineWrapsCount += 1
+                        /// Do not count lineFragments after the lineFragment where the cursor is placed
+                        if lineFragment == cursorTextLineFragment { break }
+                    }
+
+                    /// The first lineFragment will be counted as an actual line
+                        lineWrapsCount -= 1
+                }
+
+                if textLayoutFragment.textLineFragments.contains(cursorTextLineFragment) {
+                    return false
+                }
+                return true
+            }
+
+            /// Translate to line and column value
+            textLayoutManager.enumerateTextSegments(in: NSTextRange(location: insertionPointLocation),
+                                                    type: .standard,
+                                                    options:
+                                                        [.rangeNotRequired,
+                                                         .upstreamAffinity]
+            ) { _, textSegmentFrame, _, _ -> Bool
+                in
+                var line = Int(textSegmentFrame.maxY / textSegmentFrame.height)
+
+                line -= lineWrapsCount
+
+                guard let cursorTextLineFragment = textLayoutManager.textLineFragment(at: insertionPointLocation)
+                else { return false }
+
+                /// +1, because we start with the first character with 1
+                var col = cursorTextLineFragment.characterIndex(for: textSegmentFrame.origin) + 1
+                /// If the cursor is at the last character of the line
+                if textSegmentFrame.origin.x + 5.0 == cursorTextLineFragment.typographicBounds.size.width {
+                    col += 1
+                }
+
+                self.cursorPosition.wrappedValue = (line, col)
+
+               return false
+            }
+        }
 
     deinit {
         textView = nil

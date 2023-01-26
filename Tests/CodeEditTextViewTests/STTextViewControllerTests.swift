@@ -34,6 +34,7 @@ final class STTextViewControllerTests: XCTestCase {
             theme: theme,
             tabWidth: 4,
             wrapLines: true,
+            cursorPosition: .constant((1, 1)),
             editorOverscroll: 0.5,
             useThemeBackground: true,
             isEditable: true
