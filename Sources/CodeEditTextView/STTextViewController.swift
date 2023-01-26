@@ -376,8 +376,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
             // TODO: Find a more performant approach, that does not scale with line count
             /// Count the line wraps prior to the cursor line
-            textLayoutManager.enumerateTextLayoutFragments(from: textLayoutManager.documentRange.location,
-                                                           options: [.ensuresLayout, .ensuresExtraLineFragment]
+            textLayoutManager.enumerateTextLayoutFragments(
+                from: textLayoutManager.documentRange.location,
+                options: [.ensuresLayout, .ensuresExtraLineFragment]
             ) { textLayoutFragment in
 
                 guard let cursorTextLineFragment = textLayoutManager.textLineFragment(at: insertionPointLocation)
