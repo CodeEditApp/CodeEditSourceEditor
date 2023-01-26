@@ -188,8 +188,11 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
             (self.view as? NSScrollView)?.contentView.contentInsets.bottom = self.bottomContentInsets
         }
 
-        NotificationCenter.default.addObserver(forName: STTextView.didChangeSelectionNotification,
-                                                       object: nil, queue: .main) { [weak self] _ in
+        NotificationCenter.default.addObserver(
+            forName: STTextView.didChangeSelectionNotification,
+            object: nil, 
+            queue: .main
+        ) { [weak self] _ in
             guard let textLayoutManager = self?.textView.textLayoutManager else { return }
             self?.updateCursorPosition(with: textLayoutManager)
         }
