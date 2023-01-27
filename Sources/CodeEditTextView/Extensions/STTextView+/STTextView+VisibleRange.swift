@@ -31,6 +31,9 @@ extension STTextView {
               let end = textLayoutManager.textLayoutFragment(for: maxPoint)?.rangeInElement.endLocation else {
             return textLayoutManager.documentRange.nsRange(using: textContentStorage)
         }
+        guard start.compare(end) != .orderedDescending else {
+            return NSTextRange(location: end, end: start)?.nsRange(using: textContentStorage)
+        }
 
         // Calculate a range and return it as an `NSRange`
         return NSTextRange(location: start, end: end)?.nsRange(using: textContentStorage)

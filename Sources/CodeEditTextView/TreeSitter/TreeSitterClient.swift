@@ -16,7 +16,12 @@ import SwiftTreeSitter
 /// Use the `init` method to set up the client initially. If text changes it should be able to be read through the
 /// `textProvider` callback. You can optionally update the text manually using the `setText` method.
 /// However, the `setText` method will re-compile the entire corpus so should be used sparingly.
-final class TreeSitterClient {
+final class TreeSitterClient: HighlightProviding {
+
+    public var identifier: String {
+        "CodeEdit.TreeSitterClient"
+    }
+
     internal var parser: Parser
     internal var tree: Tree?
     internal var languageQuery: Query?
@@ -46,43 +51,51 @@ final class TreeSitterClient {
         }
     }
 
-    /// Set when the tree-sitter has text set.
-    public var hasSetText: Bool = false
-
-    /// Reparses the tree-sitter tree using the given text.
-    /// - Parameter text: The text to parse.
-    public func setText(text: String) {
-        tree = self.parser.parse(text)
-        hasSetText = true
-    }
-
-    /// Sets the language for the parser. Will cause a complete invalidation of the code, so use sparingly.
-    /// - Parameters:
-    ///   - codeLanguage: The code language to use.
-    ///   - text: The text to use to re-parse.
-    public func setLanguage(codeLanguage: CodeLanguage, text: String) throws {
-        parser = Parser()
-        languageQuery = TreeSitterModel.shared.query(for: codeLanguage.id)
-
+    func setLanguage(codeLanguage: CodeLanguage) {
         if let treeSitterLanguage = codeLanguage.language {
-            try parser.setLanguage(treeSitterLanguage)
+            try? parser.setLanguage(treeSitterLanguage)
         }
 
-        tree = self.parser.parse(text)
-        hasSetText = true
+        // Get rid of the current tree, it needs to be re-parsed.
+        tree = nil
     }
 
-    /// Applies an edit to the code tree and calls the completion handler with any affected ranges.
+    /// Notifies the highlighter of an edit and in exchange gets a set of indices that need to be re-highlighted.
+    /// The returned `IndexSet` should include all indexes that need to be highlighted, including any inserted text.
     /// - Parameters:
-    ///   - edit: The edit to apply.
-    ///   - text: The text content with the edit applied.
-    ///   - completion: Called when affected ranges are found.
-    public func applyEdit(_ edit: InputEdit, text: String, completion: @escaping ((IndexSet) -> Void)) {
-        let readFunction = Parser.readFunction(for: text)
+    ///   - textView:The text view to use.
+    ///   - range: The range of the edit.
+    ///   - delta: The length of the edit, can be negative for deletions.
+    ///   - completion: The function to call with an `IndexSet` containing all Indices to invalidate.
+    func applyEdit(textView: HighlighterTextView,
+                   range: NSRange,
+                   delta: Int,
+                   completion: @escaping ((IndexSet) -> Void)) {
+        guard let edit = InputEdit(range: range, delta: delta, oldEndPoint: .zero) else {
+            return
+        }
+
+        let readFunction: Parser.ReadBlock = { byteOffset, _ in
+            let limit = textView.documentRange.length
+            let location = byteOffset / 2
+            let end = min(location + (1024), limit)
+            if location > end {
+                assertionFailure("location is greater than end")
+                return nil
+            }
+            let range = NSRange(location..<end)
+            return textView.stringForRange(range)?.data(using: String.nativeUTF16Encoding)
+        }
 
         let (oldTree, newTree) = self.calculateNewState(edit: edit,
-                                                        text: text,
                                                         readBlock: readFunction)
+
+        if oldTree == nil && newTree == nil {
+            // There was no existing tree, make a new one and return all indexes.
+            createTree(textView: textView)
+            completion(IndexSet(integersIn: textView.documentRange.intRange))
+            return
+        }
 
         let effectedRanges = self.changedByteRanges(oldTree, rhs: newTree).map { $0.range }
 
@@ -93,19 +106,37 @@ final class TreeSitterClient {
         completion(rangeSet)
     }
 
-    /// Queries highlights for a given range. Will return on the main thread.
-    /// - Parameters:
-    ///   - range: The range to query
-    ///   - completion: Called with any highlights found in the query.
-    public func queryColorsFor(range: NSRange, completion: @escaping (([HighlightRange]) -> Void)) {
+    func queryColorsFor(textView: HighlighterTextView,
+                        range: NSRange,
+                        completion: @escaping (([HighlightRange]) -> Void)) {
+        // Make sure we dont accidentally change the tree while we copy it.
         self.semaphore.wait()
         guard let tree = self.tree?.copy() else {
+            // In this case, we don't have a tree to work with already, so we need to make it and try to
+            // return some highlights
+            createTree(textView: textView)
+
+            // This is slightly redundant but we're only doing one check.
+            guard let treeRetry = self.tree?.copy() else {
+                // Now we can return nothing for real.
+                self.semaphore.signal()
+                completion([])
+                return
+            }
             self.semaphore.signal()
-            completion([])
+
+            _queryColorsFor(tree: treeRetry, range: range, completion: completion)
             return
         }
+
         self.semaphore.signal()
 
+        _queryColorsFor(tree: tree, range: range, completion: completion)
+    }
+
+    private func _queryColorsFor(tree: Tree,
+                                 range: NSRange,
+                                 completion: @escaping (([HighlightRange]) -> Void)) {
         guard let rootNode = tree.rootNode else {
             completion([])
             return
@@ -118,8 +149,16 @@ final class TreeSitterClient {
             return
         }
         cursor.setRange(range)
+
         let highlights = self.highlightsFromCursor(cursor: ResolvingQueryCursor(cursor: cursor))
+
         completion(highlights)
+    }
+
+    /// Creates a tree.
+    /// - Parameter textView: The text provider to use.
+    private func createTree(textView: HighlighterTextView) {
+        self.tree = self.parser.parse(textView.stringForRange(textView.documentRange) ?? "")
     }
 
     /// Resolves a query cursor to the highlight ranges it contains.
@@ -130,24 +169,24 @@ final class TreeSitterClient {
         cursor.prepare(with: self.textProvider)
         return cursor
             .flatMap { $0.captures }
-            .map { HighlightRange(range: $0.range, capture: CaptureName(rawValue: $0.name ?? "")) }
+            .map { HighlightRange(range: $0.range, capture: CaptureName.fromString($0.name ?? "")) }
     }
 }
 
 extension TreeSitterClient {
     /// Applies the edit to the current `tree` and returns the old tree and a copy of the current tree with the
     /// processed edit.
-    /// - Parameter edit: The edit to apply.
+    /// - Parameters:
+    ///   - edit: The edit to apply.
+    ///   - readBlock:  The block to use to read text.
     /// - Returns: (The old state, the new state).
     private func calculateNewState(edit: InputEdit,
-                                   text: String,
                                    readBlock: @escaping Parser.ReadBlock) -> (Tree?, Tree?) {
         guard let oldTree = self.tree else {
-            self.tree = self.parser.parse(text)
-            return (nil, self.tree)
+            return (nil, nil)
         }
         self.semaphore.wait()
-
+        
         // Apply the edit to the old tree
         oldTree.edit(edit)
 

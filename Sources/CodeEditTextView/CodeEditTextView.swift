@@ -23,6 +23,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
     ///   - wrapLines: Whether lines wrap to the width of the editor
     ///   - editorOverscroll: The percentage for overscroll, between 0-1 (default: `0.0`)
+    ///   - highlightProvider: A class you provide to perform syntax highlighting. Leave this as `nil` to use the
+    ///                        built-in `TreeSitterClient` highlighter.
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
@@ -33,7 +35,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         wrapLines: Binding<Bool>,
         editorOverscroll: Binding<Double> = .constant(0.0),
         cursorPosition: Published<(Int, Int)>.Publisher? = nil,
-        useThemeBackground: Bool = true
+        useThemeBackground: Bool = true,
+        highlightProvider: HighlightProviding? = nil
     ) {
         self._text = text
         self.language = language
@@ -45,6 +48,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self._wrapLines = wrapLines
         self._editorOverscroll = editorOverscroll
         self.cursorPosition = cursorPosition
+        self.highlightProvider = highlightProvider
     }
 
     @Binding private var text: String
@@ -57,6 +61,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     @Binding private var editorOverscroll: Double
     private var cursorPosition: Published<(Int, Int)>.Publisher?
     private var useThemeBackground: Bool
+    private var highlightProvider: HighlightProviding?
 
     public typealias NSViewControllerType = STTextViewController
 
@@ -70,7 +75,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             wrapLines: wrapLines,
             cursorPosition: cursorPosition,
             editorOverscroll: editorOverscroll,
-            useThemeBackground: useThemeBackground
+            useThemeBackground: useThemeBackground,
+            highlightProvider: highlightProvider
         )
         controller.lineHeightMultiple = lineHeight
         return controller

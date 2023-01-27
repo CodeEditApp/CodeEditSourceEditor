@@ -8,7 +8,7 @@
 import Foundation
 
 /// This class represents a range to highlight, as well as the capture name for syntax coloring.
-class HighlightRange {
+public class HighlightRange {
     init(range: NSRange, capture: CaptureName?) {
         self.range = range
         self.capture = capture
