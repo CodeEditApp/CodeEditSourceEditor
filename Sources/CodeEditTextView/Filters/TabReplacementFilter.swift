@@ -9,6 +9,8 @@ import Foundation
 import TextFormation
 import TextStory
 
+/// Filter for replacing tab characters with the user-defined indentation unit.
+/// - Note: The undentation unit can be another tab character, this is merely a point at which this can be configured.
 struct TabReplacementFilter: Filter {
     let indentationUnit: String
 

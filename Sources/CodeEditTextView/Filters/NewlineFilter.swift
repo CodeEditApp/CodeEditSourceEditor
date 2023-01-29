@@ -11,6 +11,14 @@ import TextStory
 
 /// A newline filter almost entirely similar to `TextFormation`s standard implementation.
 struct NewlineFilter: Filter {
+    private let recognizer: ConsecutiveCharacterRecognizer
+    let providers: WhitespaceProviders
+
+    init(whitespaceProviders: WhitespaceProviders) {
+        self.recognizer = ConsecutiveCharacterRecognizer(matching: "\n")
+        self.providers = whitespaceProviders
+    }
+
     func processMutation(_ mutation: TextStory.TextMutation,
                          in interface: TextFormation.TextInterface) -> TextFormation.FilterAction {
         recognizer.processMutation(mutation)
@@ -21,14 +29,6 @@ struct NewlineFilter: Filter {
         case .tracking, .idle:
             return .none
         }
-    }
-
-    private let recognizer: ConsecutiveCharacterRecognizer
-    let providers: WhitespaceProviders
-
-    init(whitespaceProviders: WhitespaceProviders) {
-        self.recognizer = ConsecutiveCharacterRecognizer(matching: "\n")
-        self.providers = whitespaceProviders
     }
 
     private func filterHandler(_ mutation: TextMutation, in interface: TextInterface) -> FilterAction {

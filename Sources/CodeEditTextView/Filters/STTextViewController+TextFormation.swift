@@ -12,102 +12,86 @@ import TextStory
 
 extension STTextViewController {
 
+    // MARK: - Filter Configuration
+
     /// Initializes any filters for text editing.
     internal func setUpTextFormation() {
+        textFilters = []
+
         let indentationUnit = String(repeating: " ", count: tabWidth)
 
-        // Indentation
+        let pairsToHandle: [(String, String)] = [
+            ("{","}"),
+            ("[","]"),
+            ("(",")"),
+            ("<",">")
+        ]
 
-        let indenter: TextualIndenter
-        switch language.id {
-        case .python:
-            indenter = TextualIndenter(patterns: TextualIndenter.pythonPatterns)
-        case .ruby:
-            indenter = TextualIndenter(patterns: TextualIndenter.rubyPatterns)
-        default:
-            indenter = TextualIndenter(patterns: TextualIndenter.basicPatterns)
-        }
-
-        let whitepaceProvider = WhitespaceProviders(
+        let indenter: TextualIndenter = getTextIndenter()
+        let whitespaceProvider = WhitespaceProviders(
             leadingWhitespace: indenter.substitionProvider(indentationUnit: indentationUnit,
                                                            width: tabWidth),
             trailingWhitespace: { _, _ in "" }
         )
 
-        // Bracket Pairs
+        // Filters
 
-        let bracketPairFilter = StandardOpenPairFilter(open: "{", close: "}", whitespaceProviders: whitepaceProvider)
-        let bracePairFilter = StandardOpenPairFilter(open: "[", close: "]", whitespaceProviders: whitepaceProvider)
-        let parenthesesPairFilter = StandardOpenPairFilter(
-            open: "(",
-            close: ")",
-            whitespaceProviders: whitepaceProvider
-        )
-        let tagFilter = StandardOpenPairFilter(open: "<", close: ">", whitespaceProviders: whitepaceProvider)
-
-        textFilters.append(contentsOf: [
-            bracketPairFilter,
-            bracePairFilter,
-            parenthesesPairFilter,
-            tagFilter
-        ])
-
-        // Newline & Tabs
-
-        let newlineFilter = NewlineFilter(whitespaceProviders: whitepaceProvider)
-
-        textFilters.append(newlineFilter)
-
-        let tabReplacementFilter = TabReplacementFilter(indentationUnit: indentationUnit)
-
-        textFilters.append(tabReplacementFilter)
-
-        // Deleting Bracket Pairs
-
-        let deleteBracketFilter = DeleteCloseFilter(open: "{", close: "}")
-        let deleteBraceFilter = DeleteCloseFilter(open: "{", close: "}")
-        let deleteParenthesesFilter = DeleteCloseFilter(open: "{", close: "}")
-        let deleteTagFilter = DeleteCloseFilter(open: "<", close: ">")
-
-        textFilters.append(contentsOf: [
-            deleteBracketFilter,
-            deleteBraceFilter,
-            deleteParenthesesFilter,
-            deleteTagFilter
-        ])
-
-        let deleteWhitespaceFilter = DeleteWhitespaceFilter(indentationUnit: indentationUnit)
-
-        textFilters.append(deleteWhitespaceFilter)
+        setUpOpenPairFilters(pairs: pairsToHandle, whitespaceProvider: whitespaceProvider)
+        setUpNewlineTabFilters(whitespaceProvider: whitespaceProvider,
+                               indentationUnit: indentationUnit)
+        setUpDeletePairFilters(pairs: pairsToHandle)
+        setUpDeleteWhitespaceFilter(indentationUnit: indentationUnit)
     }
 
-    /// Determines whether or not a text mutation should be applied.
-    /// - Parameters:
-    ///   - mutation: The text mutation.
-    ///   - textView: The textView to use.
-    /// - Returns: Return whether or not the mutation should be applied.
-    private func shouldApplyMutation(_ mutation: TextMutation, to textView: STTextView) -> Bool {
-        // don't perform any kind of filtering during undo operations
-        // TODO: - STTextView.undoActive is private. Need alternative.
-//        if textView.undoActive {
-//            return true
-//        }
-
-        for filter in textFilters {
-            let action = filter.processMutation(mutation, in: textView)
-
-            switch action {
-            case .none:
-                break
-            case .stop:
-                return true
-            case .discard:
-                return false
-            }
+    /// Returns a `TextualIndenter` based on available language configuration.
+    private func getTextIndenter() -> TextualIndenter {
+        switch language.id {
+        case .python:
+            return TextualIndenter(patterns: TextualIndenter.pythonPatterns)
+        case .ruby:
+            return TextualIndenter(patterns: TextualIndenter.rubyPatterns)
+        default:
+            return TextualIndenter(patterns: TextualIndenter.basicPatterns)
         }
-
-        return true
     }
+
+    /// Configures pair filters and adds them to the `textFilters` array.
+    /// - Parameters:
+    ///   - pairs: The pairs to configure. Eg: `{` and `}`
+    ///   - whitespaceProvider: The whitespace providers to use.
+    private func setUpOpenPairFilters(pairs: [(String, String)], whitespaceProvider: WhitespaceProviders) {
+        for pair in pairs {
+            let filter = StandardOpenPairFilter(open: pair.0, close: pair.1, whitespaceProviders: whitespaceProvider)
+            textFilters.append(filter)
+        }
+    }
+
+    /// Configures newline and tab replacement filters.
+    /// - Parameters:
+    ///   - whitespaceProvider: The whitespace providers to use.
+    ///   - indentationUnit: The unit of indentation to use.
+    private func setUpNewlineTabFilters(whitespaceProvider: WhitespaceProviders, indentationUnit: String) {
+        let newlineFilter: Filter = NewlineFilter(whitespaceProviders: whitespaceProvider)
+        let tabReplacementFilter: Filter = TabReplacementFilter(indentationUnit: indentationUnit)
+
+        textFilters.append(contentsOf: [newlineFilter, tabReplacementFilter])
+    }
+
+    /// Configures delete pair filters.
+    private func setUpDeletePairFilters(pairs: [(String, String)]) {
+        for pair in pairs {
+            let filter = DeleteCloseFilter(open: pair.0, close: pair.1)
+            textFilters.append(filter)
+        }
+    }
+
+    /// Configures up the delete whitespace filter.
+    private func setUpDeleteWhitespaceFilter(indentationUnit: String) {
+        let filter = DeleteWhitespaceFilter(indentationUnit: indentationUnit)
+        textFilters.append(filter)
+    }
+
+    // MARK: - Delegate Methods
 
     public func textView(_ textView: STTextView,
                          shouldChangeTextIn affectedCharRange: NSTextRange,
@@ -127,5 +111,33 @@ extension STTextViewController {
         textView.undoManager?.endUndoGrouping()
 
         return result
+    }
+
+    /// Determines whether or not a text mutation should be applied.
+    /// - Parameters:
+    ///   - mutation: The text mutation.
+    ///   - textView: The textView to use.
+    /// - Returns: Return whether or not the mutation should be applied.
+    private func shouldApplyMutation(_ mutation: TextMutation, to textView: STTextView) -> Bool {
+        // don't perform any kind of filtering during undo operations
+        // TODO: - STTextView.undoActive is private. Need alternative.
+        //        if textView.undoActive {
+        //            return true
+        //        }
+
+        for filter in textFilters {
+            let action = filter.processMutation(mutation, in: textView)
+
+            switch action {
+            case .none:
+                break
+            case .stop:
+                return true
+            case .discard:
+                return false
+            }
+        }
+
+        return true
     }
 }
