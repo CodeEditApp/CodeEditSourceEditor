@@ -15,7 +15,7 @@ struct DeleteWhitespaceFilter: Filter {
 
     func processMutation(_ mutation: TextMutation, in interface: TextInterface) -> FilterAction {
         guard mutation.string == ""
-                && mutation.range.length > 0 else {
+                && mutation.range.length == 1 else {
             return .none
         }
 
