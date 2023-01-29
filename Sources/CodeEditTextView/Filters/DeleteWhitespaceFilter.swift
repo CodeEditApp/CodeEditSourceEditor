@@ -12,13 +12,13 @@ import TextStory
 /// Filter for quickly deleting indent whitespace
 struct DeleteWhitespaceFilter: Filter {
     let indentationUnit: String
-    
+
     func processMutation(_ mutation: TextMutation, in interface: TextInterface) -> FilterAction {
         guard mutation.string == ""
                 && mutation.range.length == 1 else {
             return .none
         }
-        
+
         // Walk backwards from the mutation, grabbing as much whitespace as possible
         guard let preceedingNonWhitespace = interface.findPrecedingOccurrenceOfCharacter(
             in: CharacterSet.whitespaces.inverted,
@@ -26,10 +26,10 @@ struct DeleteWhitespaceFilter: Filter {
         ) else {
             return .none
         }
-        
+
         let length = mutation.range.max - preceedingNonWhitespace
         let numberOfExtraSpaces = length % indentationUnit.count
-        
+
         if numberOfExtraSpaces == 0
             && length >= indentationUnit.count {
             interface.applyMutation(
@@ -39,7 +39,7 @@ struct DeleteWhitespaceFilter: Filter {
             )
             return .discard
         }
-        
+
         return .none
     }
 }
