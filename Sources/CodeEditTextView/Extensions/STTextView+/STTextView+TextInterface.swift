@@ -40,7 +40,7 @@ extension STTextView: TextInterface {
         }
 
         textContentStorage.performEditingTransaction {
-            textContentStorage.textStorage?.replaceCharacters(in: mutation.range, with: mutation.string)
+            textContentStorage.applyMutation(mutation)
         }
     }
 }
