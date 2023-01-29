@@ -43,11 +43,13 @@ extension STTextViewController {
             close: ")",
             whitespaceProviders: whitepaceProvider
         )
+        let tagFilter = StandardOpenPairFilter(open: "<", close: ">", whitespaceProviders: whitepaceProvider)
 
         textFilters.append(contentsOf: [
             bracketPairFilter,
             bracePairFilter,
-            parenthesesPairFilter
+            parenthesesPairFilter,
+            tagFilter
         ])
 
         // Newline & Tabs
@@ -65,11 +67,13 @@ extension STTextViewController {
         let deleteBracketFilter = DeleteCloseFilter(open: "{", close: "}")
         let deleteBraceFilter = DeleteCloseFilter(open: "{", close: "}")
         let deleteParenthesesFilter = DeleteCloseFilter(open: "{", close: "}")
+        let deleteTagFilter = DeleteCloseFilter(open: "<", close: ">")
 
         textFilters.append(contentsOf: [
             deleteBracketFilter,
             deleteBraceFilter,
-            deleteParenthesesFilter
+            deleteParenthesesFilter,
+            deleteTagFilter
         ])
 
         let deleteWhitespaceFilter = DeleteWhitespaceFilter(indentationUnit: indentationUnit)
