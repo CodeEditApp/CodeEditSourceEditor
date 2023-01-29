@@ -21,10 +21,10 @@ extension STTextViewController {
         let indentationUnit = String(repeating: " ", count: tabWidth)
 
         let pairsToHandle: [(String, String)] = [
-            ("{","}"),
-            ("[","]"),
-            ("(",")"),
-            ("<",">")
+            ("{", "}"),
+            ("[", "]"),
+            ("(", ")"),
+            ("<", ">")
         ]
 
         let indenter: TextualIndenter = getTextIndenter()
@@ -71,7 +71,8 @@ extension STTextViewController {
     ///   - whitespaceProvider: The whitespace providers to use.
     ///   - indentationUnit: The unit of indentation to use.
     private func setUpNewlineTabFilters(whitespaceProvider: WhitespaceProviders, indentationUnit: String) {
-        let newlineFilter: Filter = NewlineFilter(whitespaceProviders: whitespaceProvider)
+//        let newlineFilter: Filter = NewlineFilter(whitespaceProviders: whitespaceProvider)
+        let newlineFilter: Filter = NewlineProcessingFilter(whitespaceProviders: whitespaceProvider)
         let tabReplacementFilter: Filter = TabReplacementFilter(indentationUnit: indentationUnit)
 
         textFilters.append(contentsOf: [newlineFilter, tabReplacementFilter])
