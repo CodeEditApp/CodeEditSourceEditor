@@ -190,11 +190,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
         NotificationCenter.default.addObserver(
             forName: STTextView.didChangeSelectionNotification,
-            object: nil, 
+            object: nil,
             queue: .main
         ) { [weak self] _ in
-            guard let textLayoutManager = self?.textView.textLayoutManager else { return }
-            self?.updateCursorPosition(with: textLayoutManager)
+            self?.updateCursorPosition()
         }
     }
 
@@ -368,9 +367,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         }
     }
 
-    private func updateCursorPosition(with textLayoutManager: NSTextLayoutManager) {
+    private func updateCursorPosition() {
             /// Current cursor location as NSTextLocation
-            guard let insertionPointLocation = textLayoutManager.insertionPointLocation else { return }
+            guard let textLayoutManager = textView.textLayoutManager as NSTextLayoutManager?,
+                  let insertionPointLocation = textLayoutManager.insertionPointLocation else {
+                return
+            }
 
             var lineWrapsCount = 0
 
@@ -409,9 +411,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
                 options: [.rangeNotRequired, .upstreamAffinity]
             ) { _, textSegmentFrame, _, _ -> Bool
                 in
-                var line = Int(textSegmentFrame.maxY / textSegmentFrame.height)
-
-                line -= lineWrapsCount
+                var line = Int(textSegmentFrame.maxY / textSegmentFrame.height) - lineWrapsCount
 
                 guard let cursorTextLineFragment = textLayoutManager.textLineFragment(at: insertionPointLocation)
                 else { return false }
@@ -419,13 +419,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
                 /// +1, because we start with the first character with 1
                 var col = cursorTextLineFragment.characterIndex(for: textSegmentFrame.origin) + 1
                 /// If the cursor is at the last character of the line
-                if textSegmentFrame.origin.x + 5.0 == cursorTextLineFragment.typographicBounds.size.width {
-                    col += 1
-                }
+                if textSegmentFrame.origin.x + 5.0 == cursorTextLineFragment.typographicBounds.size.width { col += 1 }
 
                 self.cursorPosition.wrappedValue = (line, col)
-
-               return false
+                return false
             }
         }
 

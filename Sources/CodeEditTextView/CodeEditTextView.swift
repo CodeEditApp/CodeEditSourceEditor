@@ -17,7 +17,6 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - text: The text content
     ///   - language: The language for syntax highlighting
     ///   - theme: The theme for syntax highlighting
-    ///   - useThemeBackground: Whether CodeEditTextView uses theme background color or is transparent
     ///   - font: The default font
     ///   - tabWidth: The tab width
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
