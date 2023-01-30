@@ -120,10 +120,9 @@ extension STTextViewController {
     /// - Returns: Return whether or not the mutation should be applied.
     private func shouldApplyMutation(_ mutation: TextMutation, to textView: STTextView) -> Bool {
         // don't perform any kind of filtering during undo operations
-        // TODO: - STTextView.undoActive is private. Need alternative.
-        //        if textView.undoActive {
-        //            return true
-        //        }
+        if textView.undoManager?.isUndoing ?? false || textView.undoManager?.isRedoing ?? false {
+            return true
+        }
 
         for filter in textFilters {
             let action = filter.processMutation(mutation, in: textView)

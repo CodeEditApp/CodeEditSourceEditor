@@ -14,8 +14,7 @@ struct DeleteWhitespaceFilter: Filter {
     let indentationUnit: String
 
     func processMutation(_ mutation: TextMutation, in interface: TextInterface) -> FilterAction {
-        guard mutation.string == ""
-                && mutation.range.length == 1 else {
+        guard mutation.string == "" && mutation.range.length == 1 else {
             return .none
         }
 
@@ -30,8 +29,7 @@ struct DeleteWhitespaceFilter: Filter {
         let length = mutation.range.max - preceedingNonWhitespace
         let numberOfExtraSpaces = length % indentationUnit.count
 
-        if numberOfExtraSpaces == 0
-            && length >= indentationUnit.count {
+        if numberOfExtraSpaces == 0 && length >= indentationUnit.count {
             interface.applyMutation(
                 TextMutation(delete: NSRange(location: mutation.range.max - indentationUnit.count,
                                              length: indentationUnit.count),
