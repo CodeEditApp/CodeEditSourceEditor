@@ -10,6 +10,15 @@
       }
     },
     {
+      "identity" : "rearrange",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ChimeHQ/Rearrange",
+      "state" : {
+        "revision" : "8f97f721d8a08c6e01ab9f7460e53819bef72dfa",
+        "version" : "1.5.3"
+      }
+    },
+    {
       "identity" : "sttextview",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/krzyzanowskim/STTextView",
@@ -34,6 +43,24 @@
       "state" : {
         "revision" : "df25a52f72ebc5b50ae20d26d1363793408bb28b",
         "version" : "0.7.1"
+      }
+    },
+    {
+      "identity" : "textformation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ChimeHQ/TextFormation",
+      "state" : {
+        "revision" : "78d0911ef1827957c836f312212cc111b9232046",
+        "version" : "0.6.7"
+      }
+    },
+    {
+      "identity" : "textstory",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ChimeHQ/TextStory",
+      "state" : {
+        "revision" : "b7b3fc551bd0177c32b3dc46d0478e9f0b6f8c6f",
+        "version" : "0.7.2"
       }
     }
   ],

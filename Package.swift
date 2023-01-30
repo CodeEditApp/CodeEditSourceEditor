@@ -25,6 +25,10 @@ let package = Package(
             url: "https://github.com/lukepistrol/SwiftLintPlugin",
             from: "0.2.2"
         ),
+        .package(
+            url: "https://github.com/ChimeHQ/TextFormation",
+            from: "0.6.7"
+        )
     ],
     targets: [
         .target(
@@ -32,6 +36,7 @@ let package = Package(
             dependencies: [
                 "STTextView",
                 "CodeEditLanguages",
+                "TextFormation"
             ],
             plugins: [
                 .plugin(name: "SwiftLint", package: "SwiftLintPlugin")

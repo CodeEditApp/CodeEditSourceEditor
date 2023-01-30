@@ -11,6 +11,7 @@ import Combine
 import STTextView
 import SwiftTreeSitter
 import CodeEditLanguages
+import TextFormation
 
 /// A View Controller managing and displaying a `STTextView`
 public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAttributesProviding {
@@ -50,6 +51,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     /// Whether lines wrap to the width of the editor
     public var wrapLines: Bool
+
+    /// Filters used when applying edits..
+    internal var textFilters: [TextFormation.Filter] = []
 
     // MARK: - Highlighting
 
@@ -138,12 +142,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
             return event
         }
 
-        NSEvent.addLocalMonitorForEvents(matching: .keyUp) { event in
-            self.keyUp(with: event)
-            return event
-        }
-
         setUpHighlighting()
+        setUpTextFormation()
 
         self.cursorPositionCancellable = self.cursorPosition?.sink(receiveValue: { value in
             self.setCursorPosition(value)
@@ -261,23 +261,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     // MARK: Key Presses
 
-    private var keyIsDown: Bool = false
-
     /// Handles `keyDown` events in the `textView`
     override public func keyDown(with event: NSEvent) {
-        if keyIsDown { return }
-        keyIsDown = true
-
-        // handle tab insertation
-        if event.specialKey == .tab {
-            textView?.insertText(String(repeating: " ", count: tabWidth))
-        }
-//        print(event.keyCode)
-    }
-
-    /// Handles `keyUp` events in the `textView`
-    override public func keyUp(with event: NSEvent) {
-        keyIsDown = false
+        // TODO: - This should be uncessecary
     }
 
     // MARK: Cursor Position
