@@ -238,7 +238,8 @@ private extension Highlighter {
         }
 
         // Chunk the ranges in sets of rangeChunkLimit characters.
-        return NSRange(location: range.lowerBound, length: min(rangeChunkLimit, range.upperBound))
+        return NSRange(location: range.lowerBound,
+                       length: min(rangeChunkLimit, range.upperBound - range.lowerBound))
     }
 
 }
