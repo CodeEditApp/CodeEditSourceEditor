@@ -149,7 +149,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
             return event
         }
 
-        setUpHighlighting()
+        setUpHighlighter()
         setHighlightProvider(self.highlightProvider)
         setUpTextFormation()
 
