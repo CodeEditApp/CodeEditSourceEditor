@@ -20,7 +20,8 @@ public protocol HighlighterTextView {
 /// A default implementation for `STTextView` to be passed to `HighlightProviding` objects.
 extension STTextView: HighlighterTextView {
     public var documentRange: NSRange {
-        return textLayoutManager.documentRange.nsRange(using: textContentStorage) ?? NSRange()
+        return NSRange(location: 0,
+                       length: textContentStorage.textStorage?.length ?? 0)
     }
 
     public func stringForRange(_ nsRange: NSRange) -> String? {
