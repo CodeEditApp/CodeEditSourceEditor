@@ -106,9 +106,9 @@ final class TreeSitterClient: HighlightProviding {
         completion(rangeSet)
     }
 
-    func queryColorsFor(textView: HighlighterTextView,
-                        range: NSRange,
-                        completion: @escaping (([HighlightRange]) -> Void)) {
+    func queryHighlightsFor(textView: HighlighterTextView,
+                            range: NSRange,
+                            completion: @escaping (([HighlightRange]) -> Void)) {
         // Make sure we dont accidentally change the tree while we copy it.
         self.semaphore.wait()
         guard let tree = self.tree?.copy() else {

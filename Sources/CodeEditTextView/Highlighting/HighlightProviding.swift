@@ -41,7 +41,7 @@ public protocol HighlightProviding {
     ///   - textView: The text view to use.
     ///   - range: The range to operate on.
     ///   - completion: Function to call with all ranges to highlight
-    func queryColorsFor(textView: HighlighterTextView,
-                        range: NSRange,
-                        completion: @escaping (([HighlightRange]) -> Void))
+    func queryHighlightsFor(textView: HighlighterTextView,
+                            range: NSRange,
+                            completion: @escaping (([HighlightRange]) -> Void))
 }

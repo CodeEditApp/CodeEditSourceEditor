@@ -165,8 +165,8 @@ private extension Highlighter {
     func highlight(range rangeToHighlight: NSRange) {
         pendingSet.insert(integersIn: rangeToHighlight)
 
-        highlightProvider?.queryColorsFor(textView: self.textView,
-                                          range: rangeToHighlight) { [weak self] highlightRanges in
+        highlightProvider?.queryHighlightsFor(textView: self.textView,
+                                              range: rangeToHighlight) { [weak self] highlightRanges in
             guard let attributeProvider = self?.attributeProvider,
                   let textView = self?.textView else { return }
 
