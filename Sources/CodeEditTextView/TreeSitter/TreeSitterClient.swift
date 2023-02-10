@@ -178,7 +178,7 @@ extension TreeSitterClient {
     /// processed edit.
     /// - Parameters:
     ///   - edit: The edit to apply.
-    ///   - readBlock:  The block to use to read text.
+    ///   - readBlock: The block to use to read text.
     /// - Returns: (The old state, the new state).
     private func calculateNewState(edit: InputEdit,
                                    readBlock: @escaping Parser.ReadBlock) -> (Tree?, Tree?) {
@@ -186,7 +186,7 @@ extension TreeSitterClient {
             return (nil, nil)
         }
         self.semaphore.wait()
-        
+
         // Apply the edit to the old tree
         oldTree.edit(edit)
 
