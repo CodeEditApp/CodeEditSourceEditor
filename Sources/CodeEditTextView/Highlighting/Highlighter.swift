@@ -11,11 +11,6 @@ import STTextView
 import SwiftTreeSitter
 import CodeEditLanguages
 
-/// Classes conforming to this protocol can provide attributes for text given a capture type.
-public protocol ThemeAttributesProviding {
-    func attributesFor(_ capture: CaptureName?) -> [NSAttributedString.Key: Any]
-}
-
 /// The `Highlighter` class handles efficiently highlighting the `STTextView` it's provided with.
 /// It will listen for text and visibility changes, and highlight syntax as needed.
 ///
@@ -49,13 +44,21 @@ class Highlighter: NSObject {
 
     /// The text view to highlight
     private var textView: STTextView
+
+    /// The editor theme
     private var theme: EditorTheme
+
+    /// The object providing attributes for captures.
     private var attributeProvider: ThemeAttributesProviding!
 
-    // MARK: - TreeSitter Client
+    /// The current language of the editor.
+    private var language: CodeLanguage
 
     /// Calculates invalidated ranges given an edit.
-    private var treeSitterClient: TreeSitterClient?
+    private var highlightProvider: HighlightProviding?
+
+    /// The length to chunk ranges into when passing to the highlighter.
+    fileprivate let rangeChunkLimit = 256
 
     // MARK: - Init
 
@@ -65,17 +68,19 @@ class Highlighter: NSObject {
     ///   - treeSitterClient: The tree-sitter client to handle tree updates and highlight queries.
     ///   - theme: The theme to use for highlights.
     init(textView: STTextView,
-         treeSitterClient: TreeSitterClient?,
+         highlightProvider: HighlightProviding?,
          theme: EditorTheme,
-         attributeProvider: ThemeAttributesProviding) {
+         attributeProvider: ThemeAttributesProviding,
+         language: CodeLanguage) {
         self.textView = textView
-        self.treeSitterClient = treeSitterClient
+        self.highlightProvider = highlightProvider
         self.theme = theme
         self.attributeProvider = attributeProvider
+        self.language = language
 
         super.init()
 
-        treeSitterClient?.setText(text: textView.string)
+        highlightProvider?.setLanguage(codeLanguage: language)
 
         guard textView.textContentStorage.textStorage != nil else {
             assertionFailure("Text view does not have a textStorage")
@@ -100,17 +105,22 @@ class Highlighter: NSObject {
     // MARK: - Public
 
     /// Invalidates all text in the textview. Useful for updating themes.
-    func invalidate() {
-        if !(treeSitterClient?.hasSetText ?? true) {
-            treeSitterClient?.setText(text: textView.string)
-        }
+    public func invalidate() {
         invalidate(range: NSRange(entireTextRange))
     }
 
     /// Sets the language and causes a re-highlight of the entire text.
     /// - Parameter language: The language to update to.
-    func setLanguage(language: CodeLanguage) throws {
-        try treeSitterClient?.setLanguage(codeLanguage: language, text: textView.string)
+    public func setLanguage(language: CodeLanguage) {
+        highlightProvider?.setLanguage(codeLanguage: language)
+        invalidate()
+    }
+
+    /// Sets the highlight provider. Will cause a re-highlight of the entire text.
+    /// - Parameter provider: The provider to use for future syntax highlights.
+    public func setHighlightProvider(_ provider: HighlightProviding) {
+        self.highlightProvider = provider
+        highlightProvider?.setLanguage(codeLanguage: language)
         invalidate()
     }
 
@@ -155,7 +165,8 @@ private extension Highlighter {
     func highlight(range rangeToHighlight: NSRange) {
         pendingSet.insert(integersIn: rangeToHighlight)
 
-        treeSitterClient?.queryColorsFor(range: rangeToHighlight) { [weak self] highlightRanges in
+        highlightProvider?.queryHighlightsFor(textView: self.textView,
+                                              range: rangeToHighlight) { [weak self] highlightRanges in
             guard let attributeProvider = self?.attributeProvider,
                   let textView = self?.textView else { return }
 
@@ -222,11 +233,13 @@ private extension Highlighter {
             .intersection(visibleSet) // Only visible indexes
             .subtracting(pendingSet) // Don't include pending indexes
 
-        guard let range = set.rangeView.map({ NSRange($0) }).first else {
+        guard let range = set.rangeView.first else {
             return nil
         }
 
-        return range
+        // Chunk the ranges in sets of rangeChunkLimit characters.
+        return NSRange(location: range.lowerBound,
+                       length: min(rangeChunkLimit, range.upperBound - range.lowerBound))
     }
 
 }
@@ -256,7 +269,6 @@ extension Highlighter: NSTextStorageDelegate {
                      didProcessEditing editedMask: NSTextStorageEditActions,
                      range editedRange: NSRange,
                      changeInLength delta: Int) {
-
         // This method is called whenever attributes are updated, so to avoid re-highlighting the entire document
         // each time an attribute is applied, we check to make sure this is in response to an edit.
         guard editedMask.contains(.editedCharacters) else {
@@ -265,12 +277,9 @@ extension Highlighter: NSTextStorageDelegate {
 
         let range = NSRange(location: editedRange.location, length: editedRange.length - delta)
 
-        guard let edit = InputEdit(range: range, delta: delta, oldEndPoint: .zero) else {
-            return
-        }
-
-        treeSitterClient?.applyEdit(edit,
-                                   text: textStorage.string) { [weak self] invalidatedIndexSet in
+        highlightProvider?.applyEdit(textView: self.textView,
+                                     range: range,
+                                     delta: delta) { [weak self] invalidatedIndexSet in
             let indexSet = invalidatedIndexSet
                 .union(IndexSet(integersIn: editedRange))
                 // Only invalidate indices that aren't visible.

@@ -26,7 +26,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// The associated `CodeLanguage`
     public var language: CodeLanguage { didSet {
         // TODO: Decide how to handle errors thrown here
-        try? highlighter?.setLanguage(language: language)
+        highlighter?.setLanguage(language: language)
     }}
 
     /// The associated `Theme` used for highlighting.
@@ -58,7 +58,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     // MARK: - Highlighting
 
     internal var highlighter: Highlighter?
+
+    /// Internal variable for tracking whether or not the textView has the correct standard attributes.
     private var hasSetStandardAttributes: Bool = false
+
+    /// The provided highlight provider.
+    private var highlightProvider: HighlightProviding?
 
     // MARK: Init
 
@@ -71,7 +76,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         wrapLines: Bool,
         cursorPosition: Published<(Int, Int)>.Publisher? = nil,
         editorOverscroll: Double,
-        useThemeBackground: Bool
+        useThemeBackground: Bool,
+        highlightProvider: HighlightProviding? = nil
     ) {
         self.text = text
         self.language = language
@@ -82,6 +88,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.cursorPosition = cursorPosition
         self.editorOverscroll = editorOverscroll
         self.useThemeBackground = useThemeBackground
+        self.highlightProvider = highlightProvider
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -142,24 +149,13 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
             return event
         }
 
-        setUpHighlighting()
+        setUpHighlighter()
+        setHighlightProvider(self.highlightProvider)
         setUpTextFormation()
 
         self.cursorPositionCancellable = self.cursorPosition?.sink(receiveValue: { value in
             self.setCursorPosition(value)
         })
-    }
-
-    internal func setUpHighlighting() {
-        let textProvider: ResolvingQueryCursor.TextProvider = { [weak self] range, _ -> String? in
-            return self?.textView.textContentStorage.textStorage?.attributedSubstring(from: range).string
-        }
-
-        let treeSitterClient = try? TreeSitterClient(codeLanguage: language, textProvider: textProvider)
-        self.highlighter = Highlighter(textView: textView,
-                                       treeSitterClient: treeSitterClient,
-                                       theme: theme,
-                                       attributeProvider: self)
     }
 
     public override func viewDidLoad() {
@@ -257,6 +253,37 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Calculated baseline offset depending on `lineHeight`.
     internal var baselineOffset: Double {
         ((self.lineHeight) - font.lineHeight) / 2
+    }
+
+    // MARK: - Highlighting
+
+    /// Configures the `Highlighter` object
+    private func setUpHighlighter() {
+        self.highlighter = Highlighter(textView: textView,
+                                       highlightProvider: highlightProvider,
+                                       theme: theme,
+                                       attributeProvider: self,
+                                       language: language)
+    }
+
+    /// Sets the highlight provider and re-highlights all text. This method should be used sparingly.
+    public func setHighlightProvider(_ highlightProvider: HighlightProviding? = nil) {
+        var provider: HighlightProviding?
+
+        if let highlightProvider = highlightProvider {
+            provider = highlightProvider
+        } else {
+            let textProvider: ResolvingQueryCursor.TextProvider = { [weak self] range, _ -> String? in
+                return self?.textView.textContentStorage.textStorage?.mutableString.substring(with: range)
+            }
+
+            provider = try? TreeSitterClient(codeLanguage: language, textProvider: textProvider)
+        }
+
+        if let provider = provider {
+            self.highlightProvider = provider
+            highlighter?.setHighlightProvider(provider)
+        }
     }
 
     // MARK: Key Presses
