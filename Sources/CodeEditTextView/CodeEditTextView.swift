@@ -27,7 +27,6 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///                        built-in `TreeSitterClient` highlighter.
     ///   - contentInsets: Insets to use to offset the content in the enclosing scroll view. Leave as `nil` to let the
     ///                    scroll view automatically adjust content insets.
-    ///                    **NOTE**: Left insets currently do not work and will be set to 0. This is a known bug.
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
