@@ -25,6 +25,9 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - editorOverscroll: The percentage for overscroll, between 0-1 (default: `0.0`)
     ///   - highlightProvider: A class you provide to perform syntax highlighting. Leave this as `nil` to use the
     ///                        built-in `TreeSitterClient` highlighter.
+    ///   - contentInsets: Insets to use to offset the content in the enclosing scroll view. Leave as `nil` to let the
+    ///                    scroll view automatically adjust content insets.
+    ///                    **NOTE**: Left insets currently do not work and will be set to 0. This is a known bug.
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
@@ -36,7 +39,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         editorOverscroll: Binding<Double> = .constant(0.0),
         cursorPosition: Published<(Int, Int)>.Publisher? = nil,
         useThemeBackground: Bool = true,
-        highlightProvider: HighlightProviding? = nil
+        highlightProvider: HighlightProviding? = nil,
+        contentInsets: NSEdgeInsets? = nil
     ) {
         self._text = text
         self.language = language
@@ -49,6 +53,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self._editorOverscroll = editorOverscroll
         self.cursorPosition = cursorPosition
         self.highlightProvider = highlightProvider
+        self.contentInsets = contentInsets
     }
 
     @Binding private var text: String
@@ -62,6 +67,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     private var cursorPosition: Published<(Int, Int)>.Publisher?
     private var useThemeBackground: Bool
     private var highlightProvider: HighlightProviding?
+    private var contentInsets: NSEdgeInsets?
 
     public typealias NSViewControllerType = STTextViewController
 
@@ -76,7 +82,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             cursorPosition: cursorPosition,
             editorOverscroll: editorOverscroll,
             useThemeBackground: useThemeBackground,
-            highlightProvider: highlightProvider
+            highlightProvider: highlightProvider,
+            contentInsets: contentInsets
         )
         controller.lineHeightMultiple = lineHeight
         return controller
@@ -89,6 +96,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         controller.useThemeBackground = useThemeBackground
         controller.lineHeightMultiple = lineHeight
         controller.editorOverscroll = editorOverscroll
+        controller.contentInsets = contentInsets
 
         // Updating the language and theme needlessly can cause highlights to be re-calculated.
         if controller.language.id != language.id {
