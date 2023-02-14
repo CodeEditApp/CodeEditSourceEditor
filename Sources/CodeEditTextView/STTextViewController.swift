@@ -81,7 +81,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         editorOverscroll: Double,
         useThemeBackground: Bool,
         highlightProvider: HighlightProviding? = nil,
-        contentInsets: NSEdgeInsets?
+        contentInsets: NSEdgeInsets? = nil
     ) {
         self.text = text
         self.language = language
