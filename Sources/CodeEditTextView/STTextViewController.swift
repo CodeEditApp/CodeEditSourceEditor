@@ -228,13 +228,13 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView?.separatorColor = theme.invisibles
         rulerView?.baselineOffset = baselineOffset
 
-        if let view = view as? NSScrollView {
-            view.drawsBackground = useThemeBackground
-            view.backgroundColor = useThemeBackground ? theme.background : .clear
+        if let scrollView = view as? NSScrollView {
+            scrollView.drawsBackground = useThemeBackground
+            scrollView.backgroundColor = useThemeBackground ? theme.background : .clear
             if let contentInsets = contentInsets {
-                view.contentInsets = contentInsets
+                scrollView.contentInsets = contentInsets
             }
-            view.contentView.contentInsets.bottom = bottomContentInsets + (contentInsets?.bottom ?? 0)
+            scrollView.contentInsets.bottom = bottomContentInsets + (contentInsets?.bottom ?? 0)
         }
 
         setStandardAttributes()
