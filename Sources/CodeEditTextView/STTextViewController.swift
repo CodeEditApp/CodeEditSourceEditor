@@ -55,6 +55,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Filters used when applying edits..
     internal var textFilters: [TextFormation.Filter] = []
 
+    /// Optional insets to offset the text view in the scroll view by.
+    public var contentInsets: NSEdgeInsets?
+
     // MARK: - Highlighting
 
     internal var highlighter: Highlighter?
@@ -77,7 +80,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         cursorPosition: Published<(Int, Int)>.Publisher? = nil,
         editorOverscroll: Double,
         useThemeBackground: Bool,
-        highlightProvider: HighlightProviding? = nil
+        highlightProvider: HighlightProviding? = nil,
+        contentInsets: NSEdgeInsets? = nil
     ) {
         self.text = text
         self.language = language
@@ -89,6 +93,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.editorOverscroll = editorOverscroll
         self.useThemeBackground = useThemeBackground
         self.highlightProvider = highlightProvider
+        self.contentInsets = contentInsets
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -98,6 +103,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     // MARK: VC Lifecycle
 
+    // swiftlint:disable function_body_length
     public override func loadView() {
         textView = STTextView()
 
@@ -106,6 +112,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         scrollView.hasVerticalScroller = true
         scrollView.documentView = textView
         scrollView.drawsBackground = useThemeBackground
+        scrollView.automaticallyAdjustsContentInsets = contentInsets == nil
+        if let contentInsets = contentInsets {
+            scrollView.contentInsets = contentInsets
+        }
 
         rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
         rulerView.backgroundColor = useThemeBackground ? theme.background : .clear
@@ -218,9 +228,14 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView?.separatorColor = theme.invisibles
         rulerView?.baselineOffset = baselineOffset
 
-        (view as? NSScrollView)?.drawsBackground = useThemeBackground
-        (view as? NSScrollView)?.backgroundColor = useThemeBackground ? theme.background : .clear
-        (view as? NSScrollView)?.contentView.contentInsets.bottom = bottomContentInsets
+        if let scrollView = view as? NSScrollView {
+            scrollView.drawsBackground = useThemeBackground
+            scrollView.backgroundColor = useThemeBackground ? theme.background : .clear
+            if let contentInsets = contentInsets {
+                scrollView.contentInsets = contentInsets
+            }
+            scrollView.contentInsets.bottom = bottomContentInsets + (contentInsets?.bottom ?? 0)
+        }
 
         setStandardAttributes()
     }

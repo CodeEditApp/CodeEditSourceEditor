@@ -70,6 +70,10 @@ final class STTextViewControllerTests: XCTestCase {
                                  width: 100,
                                  height: 100)
 
+        controller.editorOverscroll = 0
+        controller.contentInsets = nil
+        controller.reloadUI()
+
         // editorOverscroll: 0
         XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 0)
 
@@ -84,6 +88,48 @@ final class STTextViewControllerTests: XCTestCase {
 
         // editorOverscroll: 1.0
         XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 87.0)
+    }
+
+    func test_editorInsets() throws {
+        let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
+        scrollView.frame = .init(x: .zero,
+                                 y: .zero,
+                                 width: 100,
+                                 height: 100)
+
+        func assertInsetsEqual(_ lhs: NSEdgeInsets, _ rhs: NSEdgeInsets) throws {
+            XCTAssertEqual(lhs.top, rhs.top)
+            XCTAssertEqual(lhs.right, rhs.right)
+            XCTAssertEqual(lhs.bottom, rhs.bottom)
+            XCTAssertEqual(lhs.left, rhs.left)
+        }
+
+        controller.editorOverscroll = 0
+        controller.contentInsets = nil
+        controller.reloadUI()
+
+        // contentInsets: 0
+        try assertInsetsEqual(scrollView.contentInsets, NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0))
+
+        // contentInsets: 16
+        controller.contentInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        controller.reloadUI()
+
+        try assertInsetsEqual(scrollView.contentInsets, NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16))
+
+        // contentInsets: different
+        controller.contentInsets = NSEdgeInsets(top: 32.5, left: 12.3, bottom: 20, right: 1)
+        controller.reloadUI()
+
+        try assertInsetsEqual(scrollView.contentInsets, NSEdgeInsets(top: 32.5, left: 12.3, bottom: 20, right: 1))
+
+        // contentInsets: 16
+        // editorOverscroll: 0.5
+        controller.contentInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        controller.editorOverscroll = 0.5
+        controller.reloadUI()
+
+        try assertInsetsEqual(scrollView.contentInsets, NSEdgeInsets(top: 16, left: 16, bottom: 16 + 50, right: 16))
     }
 
     func test_editorOverScroll_ZeroCondition() throws {
