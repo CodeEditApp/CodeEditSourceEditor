@@ -32,7 +32,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         language: CodeLanguage,
         theme: Binding<EditorTheme>,
         font: Binding<NSFont>,
-        tabWidth: Binding<Int>,
+        indentationWidth: Binding<Int>,
+        indentationUnit: Binding<String>,
         lineHeight: Binding<Double>,
         wrapLines: Binding<Bool>,
         editorOverscroll: Binding<Double> = .constant(0.0),
@@ -47,7 +48,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self._theme = theme
         self.useThemeBackground = useThemeBackground
         self._font = font
-        self._tabWidth = tabWidth
+        self._indentationWidth = indentationWidth
+        self._indentationUnit = indentationUnit
         self._lineHeight = lineHeight
         self._wrapLines = wrapLines
         self._editorOverscroll = editorOverscroll
@@ -61,7 +63,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     private var language: CodeLanguage
     @Binding private var theme: EditorTheme
     @Binding private var font: NSFont
-    @Binding private var tabWidth: Int
+    @Binding private var indentationWidth: Int
+    @Binding private var indentationUnit: String
     @Binding private var lineHeight: Double
     @Binding private var wrapLines: Bool
     @Binding private var editorOverscroll: Double
@@ -79,7 +82,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             language: language,
             font: font,
             theme: theme,
-            tabWidth: tabWidth,
+            indentationWidth: indentationWidth,
+            indentationUnit: indentationUnit,
             wrapLines: wrapLines,
             cursorPosition: $cursorPosition,
             editorOverscroll: editorOverscroll,
@@ -94,7 +98,6 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
 
     public func updateNSViewController(_ controller: NSViewControllerType, context: Context) {
         controller.font = font
-        controller.tabWidth = tabWidth
         controller.wrapLines = wrapLines
         controller.useThemeBackground = useThemeBackground
         controller.lineHeightMultiple = lineHeight
@@ -107,6 +110,13 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         }
         if controller.theme != theme {
             controller.theme = theme
+        }
+
+        // Updating the indentation width/unit causes regeneration of text filters.
+        if controller.indentationWidth != indentationWidth ||
+            controller.indentationUnit != indentationUnit {
+            controller.indentationWidth = indentationWidth
+            controller.indentationUnit = indentationUnit
         }
 
         controller.reloadUI()

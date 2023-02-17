@@ -18,7 +18,7 @@ extension STTextViewController {
     internal func setUpTextFormation() {
         textFilters = []
 
-        let indentationUnit = String(repeating: " ", count: tabWidth)
+        let indent = String(repeating: self.indentationUnit, count: indentationWidth)
 
         let pairsToHandle: [(String, String)] = [
             ("{", "}"),
@@ -29,8 +29,8 @@ extension STTextViewController {
 
         let indenter: TextualIndenter = getTextIndenter()
         let whitespaceProvider = WhitespaceProviders(
-            leadingWhitespace: indenter.substitionProvider(indentationUnit: indentationUnit,
-                                                           width: tabWidth),
+            leadingWhitespace: indenter.substitionProvider(indentationUnit: indent,
+                                                           width: indentationWidth),
             trailingWhitespace: { _, _ in "" }
         )
 
@@ -38,9 +38,9 @@ extension STTextViewController {
 
         setUpOpenPairFilters(pairs: pairsToHandle, whitespaceProvider: whitespaceProvider)
         setUpNewlineTabFilters(whitespaceProvider: whitespaceProvider,
-                               indentationUnit: indentationUnit)
+                               indentationUnit: indent)
         setUpDeletePairFilters(pairs: pairsToHandle)
-        setUpDeleteWhitespaceFilter(indentationUnit: indentationUnit)
+        setUpDeleteWhitespaceFilter(indentationUnit: indent)
     }
 
     /// Returns a `TextualIndenter` based on available language configuration.

@@ -38,7 +38,20 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     public var useThemeBackground: Bool
 
     /// The number of spaces to use for a `tab '\t'` character
-    public var tabWidth: Int
+    /// - Note: When set, text filters will be re-generated. Try to avoid setting this parameter needlessly.
+    public var indentationWidth: Int {
+        didSet {
+            setUpTextFormation()
+        }
+    }
+
+    /// The string to use for tabs. Will by multiplied by `tabWidth` when inserted as an indent.
+    /// - Note: When set, text filters will be re-generated. Try to avoid setting this parameter needlessly.
+    public var indentationUnit: String {
+        didSet {
+            setUpTextFormation()
+        }
+    }
 
     /// A multiplier for setting the line height. Defaults to `1.0`
     public var lineHeightMultiple: Double = 1.0
@@ -81,7 +94,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         language: CodeLanguage,
         font: NSFont,
         theme: EditorTheme,
-        tabWidth: Int,
+        indentationWidth: Int,
+        indentationUnit: String,
         wrapLines: Bool,
         cursorPosition: Binding<(Int, Int)>,
         editorOverscroll: Double,
@@ -94,7 +108,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.language = language
         self.font = font
         self.theme = theme
-        self.tabWidth = tabWidth
+        self.indentationWidth = indentationWidth
+        self.indentationUnit = indentationUnit
         self.wrapLines = wrapLines
         self.cursorPosition = cursorPosition
         self.editorOverscroll = editorOverscroll
