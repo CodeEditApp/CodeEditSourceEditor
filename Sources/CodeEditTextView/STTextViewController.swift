@@ -321,6 +321,16 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         var (line, column) = position
         let string = textView.string
         if line > 0 {
+            if string.isEmpty {
+                // If the file is blank, automatically place the cursor in the first index.
+                let range = NSRange(string.startIndex..<string.endIndex, in: string)
+                if let newRange = NSTextRange(range, provider: provider) {
+                    _ = self.textView.becomeFirstResponder()
+                    self.textView.setSelectedRange(newRange)
+                    return
+                }
+            }
+
             string.enumerateSubstrings(in: string.startIndex..<string.endIndex) { _, lineRange, _, done in
                 line -= 1
                 if line < 1 {
