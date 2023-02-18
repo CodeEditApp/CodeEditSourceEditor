@@ -16,7 +16,7 @@ class CEScrollView: NSScrollView {
             !textView.visibleRect.contains(event.locationInWindow) {
             // If the `scrollView` was clicked, but the click did not happen within the `textView`,
             // set cursor to the last index of the `textView`.
-            
+
             let endLocation = textView.textLayoutManager.documentRange.endLocation
             let range = NSTextRange(location: endLocation)
             _ = textView.becomeFirstResponder()
