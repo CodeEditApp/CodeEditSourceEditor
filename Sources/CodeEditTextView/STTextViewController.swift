@@ -342,30 +342,3 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         highlighter = nil
     }
 }
-
-class CEScrollView: NSScrollView {
-
-    override func mouseDown(with event: NSEvent) {
-
-        if let textView = self.documentView as? STTextView,
-            !textView.visibleRect.contains(event.locationInWindow) {
-            // If the `scrollView` was clicked, but the click did not happen within the `textView`,
-            // set cursor to the last index of the `textView`.
-
-            guard let provider = textView.textLayoutManager.textContentManager else {
-                return
-            }
-
-            let string = textView.string
-
-            let range = NSRange(string.endIndex..<string.endIndex, in: string)
-            if let newRange = NSTextRange(range, provider: provider) {
-                _ = textView.becomeFirstResponder()
-                textView.setSelectedRange(newRange)
-                return
-            }
-        }
-
-        super.mouseDown(with: event)
-    }
-}
