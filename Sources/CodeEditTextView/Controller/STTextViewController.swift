@@ -90,7 +90,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         font: NSFont,
         theme: EditorTheme,
         tabWidth: Int,
-        indentationUnit: String,
+        indentationUnit: String = String(repeating: " ", count: 4),
         wrapLines: Bool,
         cursorPosition: Binding<(Int, Int)>,
         editorOverscroll: Double,
