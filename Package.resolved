@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CodeEditApp/CodeEditLanguages.git",
       "state" : {
-        "revision" : "cbf494d5a0080d7b49ba2bc1e2e8dbfac7ed863a",
-        "version" : "0.1.10"
+        "revision" : "02595fb02841568b9befcbfcdaf9be88280c49aa",
+        "version" : "0.1.11"
       }
     },
     {
@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/krzyzanowskim/STTextView",
       "state" : {
-        "revision" : "3df7ce1829a9277f427daa794e8a0d1aaeacfbb7",
-        "version" : "0.1.2"
+        "revision" : "41c7c87a552e6286ebea5f348e820b529c6f5662",
+        "version" : "0.4.2"
       }
     },
     {
