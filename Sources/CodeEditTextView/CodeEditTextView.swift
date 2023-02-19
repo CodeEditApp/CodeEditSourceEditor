@@ -34,7 +34,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         theme: Binding<EditorTheme>,
         font: Binding<NSFont>,
         tabWidth: Binding<Int>,
-        indentationUnit: Binding<String>,
+        indentationUnit: Binding<String> = .constant(String(repeating: " ", count: 4)),
         lineHeight: Binding<Double>,
         wrapLines: Binding<Bool>,
         editorOverscroll: Binding<Double> = .constant(0.0),
