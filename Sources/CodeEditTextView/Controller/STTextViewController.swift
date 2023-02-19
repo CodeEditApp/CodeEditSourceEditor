@@ -37,13 +37,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Whether the code editor should use the theme background color or be transparent
     public var useThemeBackground: Bool
 
-    /// The number of spaces to use for a `tab '\t'` character
-    /// - Note: When set, text filters will be re-generated. Try to avoid setting this parameter needlessly.
-    public var indentationWidth: Int {
-        didSet {
-            setUpTextFormation()
-        }
-    }
+    /// The number of visual spaces to use for a `tab '\t'` character
+    public var tabWidth: Int
 
     /// The string to use for tabs. Will by multiplied by `tabWidth` when inserted as an indent.
     /// - Note: When set, text filters will be re-generated. Try to avoid setting this parameter needlessly.
@@ -94,7 +89,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         language: CodeLanguage,
         font: NSFont,
         theme: EditorTheme,
-        indentationWidth: Int,
+        tabWidth: Int,
         indentationUnit: String,
         wrapLines: Bool,
         cursorPosition: Binding<(Int, Int)>,
@@ -108,7 +103,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.language = language
         self.font = font
         self.theme = theme
-        self.indentationWidth = indentationWidth
+        self.tabWidth = tabWidth
         self.indentationUnit = indentationUnit
         self.wrapLines = wrapLines
         self.cursorPosition = cursorPosition
@@ -234,6 +229,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
         paragraph.minimumLineHeight = lineHeight
         paragraph.maximumLineHeight = lineHeight
+//        paragraph.tabStops.removeAll()
+//        paragraph.defaultTabInterval = CGFloat(tabWidth) * " ".size(withAttributes: [.font: self.font]).width
         return paragraph
     }
 
