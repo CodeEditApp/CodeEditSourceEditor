@@ -368,58 +368,36 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     }
 
     private func updateCursorPosition() {
-            /// Current cursor location as NSTextLocation
-            guard let textLayoutManager = textView.textLayoutManager as NSTextLayoutManager?,
-                  let insertionPointLocation = textLayoutManager.insertionPointLocation else {
-                return
-            }
+        guard let textLayoutManager = textView.textLayoutManager as NSTextLayoutManager?,
+              let textContentManager = textLayoutManager.textContentManager as NSTextContentManager?,
+              let insertionPointLocation = textLayoutManager.insertionPointLocation,
+              let cursorTextLineFragment = textLayoutManager.textLineFragment(at: insertionPointLocation)
+        else {
+            return
+        }
 
-            var lineWrapsCount = 0
+        let textElements = textContentManager.textElements(
+            for: NSTextRange(location: textLayoutManager.documentRange.location, end: insertionPointLocation)!)
+        var line = textElements.count
 
-            // TODO: Find a more performant approach, that does not scale with line count
-            /// Count the line wraps prior to the cursor line
-            textLayoutManager.enumerateTextLayoutFragments(
-                from: textLayoutManager.documentRange.location,
-                options: [.ensuresLayout, .ensuresExtraLineFragment]
-            ) { textLayoutFragment in
-
-                guard let cursorTextLineFragment = textLayoutManager.textLineFragment(at: insertionPointLocation)
-                else { return false }
-
-                /// Check whether the textLayoutFragment has line wraps
-                if textLayoutFragment.textLineFragments.count > 1 {
-                    for lineFragment in textLayoutFragment.textLineFragments {
-                        lineWrapsCount += 1
-                        /// Do not count lineFragments after the lineFragment where the cursor is placed
-                        if lineFragment == cursorTextLineFragment { break }
-                    }
-
-                    /// The first lineFragment will be counted as an actual line
-                        lineWrapsCount -= 1
-                }
-
-                if textLayoutFragment.textLineFragments.contains(cursorTextLineFragment) {
-                    return false
-                }
-                return true
-            }
-
-            /// Translate to line and column value
-            textLayoutManager.enumerateTextSegments(
+        textLayoutManager.enumerateTextSegments(
                 in: NSTextRange(location: insertionPointLocation),
                 type: .standard,
                 options: [.rangeNotRequired, .upstreamAffinity]
             ) { _, textSegmentFrame, _, _ -> Bool
                 in
-                var line = Int(textSegmentFrame.maxY / textSegmentFrame.height) - lineWrapsCount
-
-                guard let cursorTextLineFragment = textLayoutManager.textLineFragment(at: insertionPointLocation)
-                else { return false }
 
                 /// +1, because we start with the first character with 1
                 var col = cursorTextLineFragment.characterIndex(for: textSegmentFrame.origin) + 1
-                /// If the cursor is at the last character of the line
-                if textSegmentFrame.origin.x + 5.0 == cursorTextLineFragment.typographicBounds.size.width { col += 1 }
+
+                /// If cursor is at end of line add 1:
+                if cursorTextLineFragment.characterRange.length != 1 &&
+                    (cursorTextLineFragment.typographicBounds.width == (textSegmentFrame.maxX + 5.0)) {
+                    col += 1
+                }
+
+                /// If cursor is at first character of line, the current line is not being included
+                if col == 1 { line += 1 }
 
                 self.cursorPosition.wrappedValue = (line, col)
                 return false

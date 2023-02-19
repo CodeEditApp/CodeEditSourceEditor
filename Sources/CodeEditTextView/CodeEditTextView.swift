@@ -36,7 +36,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         lineHeight: Binding<Double>,
         wrapLines: Binding<Bool>,
         editorOverscroll: Binding<Double> = .constant(0.0),
-        cursorPosition: Published<(Int, Int)>.Publisher? = nil,
+        cursorPosition: Binding<(Int, Int)>,
         useThemeBackground: Bool = true,
         highlightProvider: HighlightProviding? = nil,
         contentInsets: NSEdgeInsets? = nil,
@@ -51,7 +51,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self._lineHeight = lineHeight
         self._wrapLines = wrapLines
         self._editorOverscroll = editorOverscroll
-        self.cursorPosition = cursorPosition
+        self._cursorPosition = cursorPosition
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
         self.isEditable = isEditable
