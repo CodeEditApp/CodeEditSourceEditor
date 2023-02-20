@@ -107,7 +107,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     public override func loadView() {
         textView = STTextView()
 
-        let scrollView = NSScrollView()
+        let scrollView = CEScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
         scrollView.documentView = textView
