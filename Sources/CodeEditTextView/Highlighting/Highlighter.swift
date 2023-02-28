@@ -282,7 +282,7 @@ extension Highlighter: NSTextStorageDelegate {
                                      delta: delta) { [weak self] invalidatedIndexSet in
             let indexSet = invalidatedIndexSet
                 .union(IndexSet(integersIn: editedRange))
-                // Only invalidate indices that aren't visible.
+                // Only invalidate indices that are visible.
                 .intersection(self?.visibleSet ?? .init())
 
             for range in indexSet.rangeView {

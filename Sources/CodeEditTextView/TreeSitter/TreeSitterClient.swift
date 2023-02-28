@@ -22,9 +22,25 @@ final class TreeSitterClient: HighlightProviding {
         "CodeEdit.TreeSitterClient"
     }
 
-    internal var parser: Parser
-    internal var tree: Tree?
-    internal var languageQuery: Query?
+    private var primaryLanguage: TreeSitterLanguage
+    private var languages: [TreeSitterLanguage: Language] = [:]
+
+    class Language {
+        init(id: TreeSitterLanguage,
+             parser: Parser,
+             tree: Tree? = nil,
+             languageQuery: Query? = nil) {
+            self.id = id
+            self.parser = parser
+            self.tree = tree
+            self.languageQuery = languageQuery
+        }
+
+        var id: TreeSitterLanguage
+        var parser: Parser
+        var tree: Tree?
+        var languageQuery: Query?
+    }
 
     private var textProvider: ResolvingQueryCursor.TextProvider
 
@@ -40,24 +56,29 @@ final class TreeSitterClient: HighlightProviding {
     ///   - codeLanguage: The language to set up the parser with.
     ///   - textProvider: The text provider callback to read any text.
     public init(codeLanguage: CodeLanguage, textProvider: @escaping ResolvingQueryCursor.TextProvider) throws {
-        parser = Parser()
-        languageQuery = TreeSitterModel.shared.query(for: codeLanguage.id)
-        tree = nil
+        primaryLanguage = codeLanguage.id
+        languages[codeLanguage.id] = Language(id: codeLanguage.id,
+                                              parser: Parser(),
+                                              tree: nil,
+                                              languageQuery: TreeSitterModel.shared.query(for: codeLanguage.id))
 
         self.textProvider = textProvider
 
         if let treeSitterLanguage = codeLanguage.language {
-            try parser.setLanguage(treeSitterLanguage)
+            try languages[codeLanguage.id]?.parser.setLanguage(treeSitterLanguage)
         }
     }
 
     func setLanguage(codeLanguage: CodeLanguage) {
-        if let treeSitterLanguage = codeLanguage.language {
-            try? parser.setLanguage(treeSitterLanguage)
+        // Remove all trees and languages, everything needs to be re-parsed.
+        for key in languages.keys where key != codeLanguage.id {
+            languages.removeValue(forKey: key)
         }
+        primaryLanguage = codeLanguage.id
 
-        // Get rid of the current tree, it needs to be re-parsed.
-        tree = nil
+        if let treeSitterLanguage = codeLanguage.language {
+            try? languages[codeLanguage.id]?.parser.setLanguage(treeSitterLanguage)
+        }
     }
 
     /// Notifies the highlighter of an edit and in exchange gets a set of indices that need to be re-highlighted.
@@ -87,17 +108,12 @@ final class TreeSitterClient: HighlightProviding {
             return textView.stringForRange(range)?.data(using: String.nativeUTF16Encoding)
         }
 
-        let (oldTree, newTree) = self.calculateNewState(edit: edit,
-                                                        readBlock: readFunction)
-
-        if oldTree == nil && newTree == nil {
-            // There was no existing tree, make a new one and return all indexes.
-            createTree(textView: textView)
-            completion(IndexSet(integersIn: textView.documentRange.intRange))
-            return
-        }
-
-        let effectedRanges = self.changedByteRanges(oldTree, rhs: newTree).map { $0.range }
+        let effectedRanges: [NSRange] = findChangedByteRanges(
+            textView: textView,
+            edit: edit,
+            language: languages[primaryLanguage]!,
+            readBlock: readFunction
+        )
 
         var rangeSet = IndexSet()
         effectedRanges.forEach { range in
@@ -106,18 +122,52 @@ final class TreeSitterClient: HighlightProviding {
         completion(rangeSet)
     }
 
+    /// Calculates a series of ranges that have been invalidated by a given edit.
+    /// - Parameters:
+    ///   - textView: The text view to use for text.
+    ///   - edit: The edit to act on.
+    ///   - language: The language to use.
+    ///   - readBlock: A callback for fetching blocks of text.
+    /// - Returns: An array of distinct `NSRanges` that need to be re-highlighted.
+    func findChangedByteRanges(textView: HighlighterTextView,
+                               edit: InputEdit,
+                               language: Language,
+                               readBlock: @escaping Parser.ReadBlock) -> [NSRange] {
+        let (oldTree, newTree) = calculateNewState(tree: language.tree,
+                                                   parser: language.parser,
+                                                   edit: edit,
+                                                   readBlock: readBlock)
+        if oldTree == nil && newTree == nil {
+            // There was no existing tree, make a new one and return all indexes.
+            languages[language.id]?.tree = createTree(textView: textView, parser: language.parser)
+            return [NSRange(textView.documentRange.intRange)]
+        }
+
+        let ranges = changedByteRanges(oldTree, rhs: newTree).map { $0.range }
+
+        languages[language.id]?.tree = newTree
+
+        return ranges
+    }
+
+    /// Initiates a highlight query.
+    /// - Parameters:
+    ///   - textView: The text view to use.
+    ///   - range: The range to limit the highlights to.
+    ///   - completion: Called when the query completes.
     func queryHighlightsFor(textView: HighlighterTextView,
                             range: NSRange,
                             completion: @escaping (([HighlightRange]) -> Void)) {
+        let language = languages[primaryLanguage]!
         // Make sure we dont accidentally change the tree while we copy it.
         self.semaphore.wait()
-        guard let tree = self.tree?.copy() else {
+        guard let tree = language.tree?.copy() else {
             // In this case, we don't have a tree to work with already, so we need to make it and try to
             // return some highlights
-            createTree(textView: textView)
+            language.tree = createTree(textView: textView, parser: language.parser)
 
             // This is slightly redundant but we're only doing one check.
-            guard let treeRetry = self.tree?.copy() else {
+            guard let treeRetry = language.tree?.copy() else {
                 // Now we can return nothing for real.
                 self.semaphore.signal()
                 completion([])
@@ -125,40 +175,109 @@ final class TreeSitterClient: HighlightProviding {
             }
             self.semaphore.signal()
 
-            _queryColorsFor(tree: treeRetry, range: range, completion: completion)
+            completion(
+                _queryColorsFor(textView: textView, language: language, tree: treeRetry, range: range) +
+                queryInjectedLanguages(textView: textView, language: language, tree: treeRetry, range: range)
+            )
             return
         }
 
         self.semaphore.signal()
 
-        _queryColorsFor(tree: tree, range: range, completion: completion)
+        completion(
+            _queryColorsFor(textView: textView, language: language, tree: tree, range: range) +
+            queryInjectedLanguages(textView: textView, language: language, tree: tree, range: range)
+        )
     }
 
-    private func _queryColorsFor(tree: Tree,
-                                 range: NSRange,
-                                 completion: @escaping (([HighlightRange]) -> Void)) {
+    private func _queryColorsFor(textView: HighlighterTextView,
+                                 language: Language,
+                                 tree: Tree,
+                                 range: NSRange) -> [HighlightRange] {
         guard let rootNode = tree.rootNode else {
-            completion([])
-            return
+            return []
         }
 
         // This needs to be on the main thread since we're going to use the `textProvider` in
         // the `highlightsFromCursor` method, which uses the textView's text storage.
-        guard let cursor = self.languageQuery?.execute(node: rootNode, in: tree) else {
-            completion([])
-            return
+        guard let cursor = language.languageQuery?.execute(node: rootNode, in: tree) else {
+            return []
         }
         cursor.setRange(range)
 
-        let highlights = self.highlightsFromCursor(cursor: ResolvingQueryCursor(cursor: cursor))
+        let highlights = highlightsFromCursor(cursor: ResolvingQueryCursor(cursor: cursor))
 
-        completion(highlights)
+        return highlights
+    }
+
+    private func queryInjectedLanguages(textView: HighlighterTextView,
+                                        language: Language,
+                                        tree: Tree,
+                                        range: NSRange) -> [HighlightRange] {
+        guard let rootNode = tree.rootNode else {
+            return []
+        }
+
+        guard let cursor = language.languageQuery?.execute(node: rootNode, in: tree) else {
+            return []
+        }
+        cursor.setRange(range)
+
+        let languageRanges = self.injectedLanguagesFrom(cursor: cursor) { range, _ in
+            return textView.stringForRange(range)
+        }
+        
+        var highlights: [HighlightRange] = []
+
+        for (languageName, ranges) in languageRanges {
+            guard let language = TreeSitterLanguage(rawValue: languageName) else {
+                continue
+            }
+
+            if language == primaryLanguage {
+                continue
+            }
+
+            languages[language] = Language(id: language,
+                                           parser: Parser(),
+                                           tree: nil,
+                                           languageQuery: TreeSitterModel.shared.query(for: language))
+
+            guard let parserLanguage = CodeLanguage
+                .allLanguages
+                .first(where: { $0.id == language })?
+                .language
+            else {
+                continue
+            }
+            try? languages[language]?.parser.setLanguage(parserLanguage)
+            languages[language]?.parser.includedRanges = ranges.map { $0.tsRange }
+            languages[language]?.tree = createTree(textView: textView, parser: languages[language]!.parser)
+
+            for range in ranges {
+                highlights.append(
+                    contentsOf: _queryColorsFor(textView: textView,
+                                                language: languages[language]!,
+                                                tree: languages[language]!.tree!,
+                                                range: range.range)
+                )
+            }
+
+            highlights.append(
+                contentsOf: queryInjectedLanguages(textView: textView,
+                                                   language: languages[language]!,
+                                                   tree: languages[language]!.tree!,
+                                                   range: range)
+            )
+        }
+
+        return highlights
     }
 
     /// Creates a tree.
     /// - Parameter textView: The text provider to use.
-    private func createTree(textView: HighlighterTextView) {
-        self.tree = self.parser.parse(textView.stringForRange(textView.documentRange) ?? "")
+    private func createTree(textView: HighlighterTextView, parser: Parser) -> Tree? {
+        return parser.parse(textView.stringForRange(textView.documentRange) ?? "")
     }
 
     /// Resolves a query cursor to the highlight ranges it contains.
@@ -169,7 +288,33 @@ final class TreeSitterClient: HighlightProviding {
         cursor.prepare(with: self.textProvider)
         return cursor
             .flatMap { $0.captures }
-            .map { HighlightRange(range: $0.range, capture: CaptureName.fromString($0.name ?? "")) }
+            .map {
+                HighlightRange(range: $0.range, capture: CaptureName.fromString($0.name ?? ""))
+            }
+    }
+
+    /// Returns all injected languages from a given cursor. The cursor must be new,
+    /// having not been used for normal highlight matching.
+    /// - Parameters:
+    ///   - cursor: The cursor to use for finding injected languages.
+    ///   - textProvider: A callback for efficiently fetching text.
+    /// - Returns: A map of each language to all the ranges they have been injected into.
+    private func injectedLanguagesFrom(
+        cursor: QueryCursor,
+        textProvider: @escaping ResolvingQueryCursor.TextProvider
+    ) -> [String: [NamedRange]] {
+        var languages: [String: [NamedRange]] = [:]
+
+        for match in cursor {
+            if let injection = match.injection(with: textProvider) {
+                if languages[injection.name] == nil {
+                    languages[injection.name] = []
+                }
+                languages[injection.name]?.append(injection)
+            }
+        }
+
+        return languages
     }
 }
 
@@ -180,21 +325,23 @@ extension TreeSitterClient {
     ///   - edit: The edit to apply.
     ///   - readBlock: The block to use to read text.
     /// - Returns: (The old state, the new state).
-    private func calculateNewState(edit: InputEdit,
+    private func calculateNewState(tree: Tree?,
+                                   parser: Parser,
+                                   edit: InputEdit,
                                    readBlock: @escaping Parser.ReadBlock) -> (Tree?, Tree?) {
-        guard let oldTree = self.tree else {
+        guard let oldTree = tree else {
             return (nil, nil)
         }
-        self.semaphore.wait()
+        semaphore.wait()
 
         // Apply the edit to the old tree
         oldTree.edit(edit)
 
-        self.tree = self.parser.parse(tree: oldTree, readBlock: readBlock)
+        let newTree = parser.parse(tree: oldTree, readBlock: readBlock)
 
-        self.semaphore.signal()
+        semaphore.signal()
 
-        return (oldTree.copy(), self.tree?.copy())
+        return (oldTree.copy(), newTree)
     }
 
     /// Calculates the changed byte ranges between two trees.
