@@ -226,7 +226,7 @@ final class TreeSitterClient: HighlightProviding {
         let languageRanges = self.injectedLanguagesFrom(cursor: cursor) { range, _ in
             return textView.stringForRange(range)
         }
-        
+
         var highlights: [HighlightRange] = []
 
         for (languageName, ranges) in languageRanges {
