@@ -96,23 +96,13 @@ final class TreeSitterClient: HighlightProviding {
             return
         }
 
-        let readFunction: Parser.ReadBlock = { byteOffset, _ in
-            let limit = textView.documentRange.length
-            let location = byteOffset / 2
-            let end = min(location + (1024), limit)
-            if location > end {
-                assertionFailure("location is greater than end")
-                return nil
-            }
-            let range = NSRange(location..<end)
-            return textView.stringForRange(range)?.data(using: String.nativeUTF16Encoding)
-        }
+        let readBlock = createReadBlock(textView: textView)
 
         let effectedRanges: [NSRange] = findChangedByteRanges(
             textView: textView,
             edit: edit,
             language: languages[primaryLanguage]!,
-            readBlock: readFunction
+            readBlock: readBlock
         )
 
         var rangeSet = IndexSet()
@@ -139,7 +129,7 @@ final class TreeSitterClient: HighlightProviding {
                                                    readBlock: readBlock)
         if oldTree == nil && newTree == nil {
             // There was no existing tree, make a new one and return all indexes.
-            languages[language.id]?.tree = createTree(textView: textView, parser: language.parser)
+            languages[language.id]?.tree = createTree(parser: language.parser, readBlock: readBlock)
             return [NSRange(textView.documentRange.intRange)]
         }
 
@@ -158,13 +148,15 @@ final class TreeSitterClient: HighlightProviding {
     func queryHighlightsFor(textView: HighlighterTextView,
                             range: NSRange,
                             completion: @escaping (([HighlightRange]) -> Void)) {
+        let readBlock = createReadBlock(textView: textView)
+
         let language = languages[primaryLanguage]!
         // Make sure we dont accidentally change the tree while we copy it.
         self.semaphore.wait()
         guard let tree = language.tree?.copy() else {
             // In this case, we don't have a tree to work with already, so we need to make it and try to
             // return some highlights
-            language.tree = createTree(textView: textView, parser: language.parser)
+            language.tree = createTree(parser: language.parser, readBlock: readBlock)
 
             // This is slightly redundant but we're only doing one check.
             guard let treeRetry = language.tree?.copy() else {
@@ -177,7 +169,11 @@ final class TreeSitterClient: HighlightProviding {
 
             completion(
                 _queryColorsFor(textView: textView, language: language, tree: treeRetry, range: range) +
-                queryInjectedLanguages(textView: textView, language: language, tree: treeRetry, range: range)
+                queryInjectedLanguages(textView: textView,
+                                       language: language,
+                                       tree: treeRetry,
+                                       range: range,
+                                       readBlock: readBlock)
             )
             return
         }
@@ -186,7 +182,11 @@ final class TreeSitterClient: HighlightProviding {
 
         completion(
             _queryColorsFor(textView: textView, language: language, tree: tree, range: range) +
-            queryInjectedLanguages(textView: textView, language: language, tree: tree, range: range)
+            queryInjectedLanguages(textView: textView,
+                                   language: language,
+                                   tree: tree,
+                                   range: range,
+                                   readBlock: readBlock)
         )
     }
 
@@ -213,14 +213,13 @@ final class TreeSitterClient: HighlightProviding {
     private func queryInjectedLanguages(textView: HighlighterTextView,
                                         language: Language,
                                         tree: Tree,
-                                        range: NSRange) -> [HighlightRange] {
-        guard let rootNode = tree.rootNode else {
+                                        range: NSRange,
+                                        readBlock: @escaping Parser.ReadBlock) -> [HighlightRange] {
+        guard let rootNode = tree.rootNode,
+              let cursor = language.languageQuery?.execute(node: rootNode, in: tree) else {
             return []
         }
 
-        guard let cursor = language.languageQuery?.execute(node: rootNode, in: tree) else {
-            return []
-        }
         cursor.setRange(range)
 
         let languageRanges = self.injectedLanguagesFrom(cursor: cursor) { range, _ in
@@ -238,10 +237,12 @@ final class TreeSitterClient: HighlightProviding {
                 continue
             }
 
-            languages[language] = Language(id: language,
-                                           parser: Parser(),
-                                           tree: nil,
-                                           languageQuery: TreeSitterModel.shared.query(for: language))
+            if languages[language] == nil {
+                languages[language] = Language(id: language,
+                                               parser: Parser(),
+                                               tree: nil,
+                                               languageQuery: TreeSitterModel.shared.query(for: language))
+            }
 
             guard let parserLanguage = CodeLanguage
                 .allLanguages
@@ -250,9 +251,11 @@ final class TreeSitterClient: HighlightProviding {
             else {
                 continue
             }
+
             try? languages[language]?.parser.setLanguage(parserLanguage)
             languages[language]?.parser.includedRanges = ranges.map { $0.tsRange }
-            languages[language]?.tree = createTree(textView: textView, parser: languages[language]!.parser)
+            languages[language]?.tree = createTree(parser: languages[language]!.parser,
+                                                   readBlock: readBlock)
 
             for range in ranges {
                 highlights.append(
@@ -267,17 +270,21 @@ final class TreeSitterClient: HighlightProviding {
                 contentsOf: queryInjectedLanguages(textView: textView,
                                                    language: languages[language]!,
                                                    tree: languages[language]!.tree!,
-                                                   range: range)
+                                                   range: range,
+                                                   readBlock: readBlock)
             )
         }
 
         return highlights
     }
 
-    /// Creates a tree.
-    /// - Parameter textView: The text provider to use.
-    private func createTree(textView: HighlighterTextView, parser: Parser) -> Tree? {
-        return parser.parse(textView.stringForRange(textView.documentRange) ?? "")
+    /// Creates a tree-sitter tree.
+    /// - Parameters:
+    ///   - parser: The parser object to use to parse text.
+    ///   - readBlock: A callback for fetching blocks of text.
+    /// - Returns: A tree if it could be parsed.
+    private func createTree(parser: Parser, readBlock: @escaping Parser.ReadBlock) -> Tree? {
+        return parser.parse(tree: nil, readBlock: readBlock)
     }
 
     /// Resolves a query cursor to the highlight ranges it contains.
@@ -319,6 +326,20 @@ final class TreeSitterClient: HighlightProviding {
 }
 
 extension TreeSitterClient {
+    private func createReadBlock(textView: HighlighterTextView) -> Parser.ReadBlock {
+        return { byteOffset, _ in
+            let limit = textView.documentRange.length
+            let location = byteOffset / 2
+            let end = min(location + (1024), limit)
+            if location > end {
+                assertionFailure("location is greater than end")
+                return nil
+            }
+            let range = NSRange(location..<end)
+            return textView.stringForRange(range)?.data(using: String.nativeUTF16Encoding)
+        }
+    }
+
     /// Applies the edit to the current `tree` and returns the old tree and a copy of the current tree with the
     /// processed edit.
     /// - Parameters:
