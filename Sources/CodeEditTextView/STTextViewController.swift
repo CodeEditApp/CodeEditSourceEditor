@@ -52,6 +52,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Whether lines wrap to the width of the editor
     public var wrapLines: Bool
 
+    /// Whether or not text view is editable by user
+    public var isEditable: Bool
+
     /// Filters used when applying edits..
     internal var textFilters: [TextFormation.Filter] = []
 
@@ -81,7 +84,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         editorOverscroll: Double,
         useThemeBackground: Bool,
         highlightProvider: HighlightProviding? = nil,
-        contentInsets: NSEdgeInsets? = nil
+        contentInsets: NSEdgeInsets? = nil,
+        isEditable: Bool
     ) {
         self.text = text
         self.language = language
@@ -94,6 +98,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.useThemeBackground = useThemeBackground
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
+        self.isEditable = isEditable
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -132,6 +137,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.backgroundColor = useThemeBackground ? theme.background : .clear
         textView.insertionPointColor = theme.insertionPoint
         textView.insertionPointWidth = 1.0
+        textView.isEditable = self.isEditable
         textView.selectionBackgroundColor = theme.selection
         textView.selectedLineHighlightColor = theme.lineHighlight
         textView.string = self.text.wrappedValue
