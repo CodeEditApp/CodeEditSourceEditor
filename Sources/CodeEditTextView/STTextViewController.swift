@@ -137,10 +137,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.backgroundColor = useThemeBackground ? theme.background : .clear
         textView.insertionPointColor = theme.insertionPoint
         textView.insertionPointWidth = 1.0
-        textView.isEditable = self.isEditable
         textView.selectionBackgroundColor = theme.selection
         textView.selectedLineHighlightColor = theme.lineHighlight
         textView.string = self.text.wrappedValue
+        textView.isEditable = self.isEditable
         textView.widthTracksTextView = self.wrapLines
         textView.highlightSelectedLine = true
         textView.allowsUndo = true
@@ -229,6 +229,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView?.insertionPointColor = theme.insertionPoint
         textView?.selectionBackgroundColor = theme.selection
         textView?.selectedLineHighlightColor = theme.lineHighlight
+        textView?.isEditable = isEditable
 
         rulerView?.backgroundColor = useThemeBackground ? theme.background : .clear
         rulerView?.separatorColor = theme.invisibles
