@@ -183,7 +183,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         super.viewDidAppear()
     }
 
-    public func textDidChange(_ notification: Notification) {
+    public func textViewDidChangeText(_ notification: Notification) {
         self.text.wrappedValue = textView.string
     }
 
