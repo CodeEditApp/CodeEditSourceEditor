@@ -10,6 +10,7 @@ import SwiftTreeSitter
 
 extension NSRange {
     var tsRange: TSRange {
-        return TSRange(points: .zero..<(.zero), bytes: (UInt32(self.lowerBound) * 2)..<(UInt32(self.upperBound) * 2))
+        return TSRange(points: .zero..<(.zero),
+                       bytes: (UInt32(self.location) * 2)..<(UInt32(self.location + self.length) * 2))
     }
 }

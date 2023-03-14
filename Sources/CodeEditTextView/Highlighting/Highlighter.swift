@@ -88,6 +88,7 @@ class Highlighter: NSObject {
         }
 
         textView.textContentStorage.textStorage?.delegate = self
+        highlightProvider?.setUp(textView: textView)
 
         if let scrollView = textView.enclosingScrollView {
             NotificationCenter.default.addObserver(self,
@@ -121,6 +122,7 @@ class Highlighter: NSObject {
     public func setHighlightProvider(_ provider: HighlightProviding) {
         self.highlightProvider = provider
         highlightProvider?.setLanguage(codeLanguage: language)
+        highlightProvider?.setUp(textView: textView)
         invalidate()
     }
 
