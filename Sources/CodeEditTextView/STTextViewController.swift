@@ -128,6 +128,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
         rulerView.font = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .regular)
+        rulerView.highlightSelectedLine = self.isEditable
+
         scrollView.verticalRulerView = rulerView
         scrollView.rulersVisible = true
 
@@ -146,6 +148,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.allowsUndo = true
         textView.setupMenus()
         textView.delegate = self
+        textView.highlightSelectedLine = self.isEditable
 
         scrollView.documentView = textView
 
@@ -230,10 +233,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView?.selectionBackgroundColor = theme.selection
         textView?.selectedLineHighlightColor = theme.lineHighlight
         textView?.isEditable = isEditable
+        textView.highlightSelectedLine = isEditable
 
         rulerView?.backgroundColor = useThemeBackground ? theme.background : .clear
         rulerView?.separatorColor = theme.invisibles
         rulerView?.baselineOffset = baselineOffset
+        rulerView.highlightSelectedLine = isEditable
 
         if let scrollView = view as? NSScrollView {
             scrollView.drawsBackground = useThemeBackground
