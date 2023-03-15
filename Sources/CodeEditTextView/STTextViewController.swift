@@ -52,6 +52,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Whether lines wrap to the width of the editor
     public var wrapLines: Bool
 
+    /// Whether or not text view is editable by user
+    public var isEditable: Bool
+
     /// Filters used when applying edits..
     internal var textFilters: [TextFormation.Filter] = []
 
@@ -81,7 +84,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         editorOverscroll: Double,
         useThemeBackground: Bool,
         highlightProvider: HighlightProviding? = nil,
-        contentInsets: NSEdgeInsets? = nil
+        contentInsets: NSEdgeInsets? = nil,
+        isEditable: Bool
     ) {
         self.text = text
         self.language = language
@@ -94,6 +98,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.useThemeBackground = useThemeBackground
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
+        self.isEditable = isEditable
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -123,6 +128,11 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
         rulerView.font = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .regular)
+
+        if self.isEditable == false {
+            rulerView.selectedLineTextColor = nil
+        }
+
         scrollView.verticalRulerView = rulerView
         scrollView.rulersVisible = true
 
@@ -135,11 +145,13 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.selectionBackgroundColor = theme.selection
         textView.selectedLineHighlightColor = theme.lineHighlight
         textView.string = self.text.wrappedValue
+        textView.isEditable = self.isEditable
         textView.widthTracksTextView = self.wrapLines
         textView.highlightSelectedLine = true
         textView.allowsUndo = true
         textView.setupMenus()
         textView.delegate = self
+        textView.highlightSelectedLine = self.isEditable
 
         scrollView.documentView = textView
 
@@ -223,10 +235,13 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView?.insertionPointColor = theme.insertionPoint
         textView?.selectionBackgroundColor = theme.selection
         textView?.selectedLineHighlightColor = theme.lineHighlight
+        textView?.isEditable = isEditable
+        textView.highlightSelectedLine = isEditable
 
         rulerView?.backgroundColor = useThemeBackground ? theme.background : .clear
         rulerView?.separatorColor = theme.invisibles
         rulerView?.baselineOffset = baselineOffset
+        rulerView.highlightSelectedLine = isEditable
 
         if let scrollView = view as? NSScrollView {
             scrollView.drawsBackground = useThemeBackground
