@@ -17,7 +17,6 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - text: The text content
     ///   - language: The language for syntax highlighting
     ///   - theme: The theme for syntax highlighting
-    ///   - useThemeBackground: Whether CodeEditTextView uses theme background color or is transparent
     ///   - font: The default font
     ///   - tabWidth: The tab width
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
@@ -37,7 +36,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         lineHeight: Binding<Double>,
         wrapLines: Binding<Bool>,
         editorOverscroll: Binding<Double> = .constant(0.0),
-        cursorPosition: Published<(Int, Int)>.Publisher? = nil,
+        cursorPosition: Binding<(Int, Int)>,
         useThemeBackground: Bool = true,
         highlightProvider: HighlightProviding? = nil,
         contentInsets: NSEdgeInsets? = nil,
@@ -52,7 +51,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self._lineHeight = lineHeight
         self._wrapLines = wrapLines
         self._editorOverscroll = editorOverscroll
-        self.cursorPosition = cursorPosition
+        self._cursorPosition = cursorPosition
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
         self.isEditable = isEditable
@@ -66,7 +65,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     @Binding private var lineHeight: Double
     @Binding private var wrapLines: Bool
     @Binding private var editorOverscroll: Double
-    private var cursorPosition: Published<(Int, Int)>.Publisher?
+    @Binding private var cursorPosition: (Int, Int)
     private var useThemeBackground: Bool
     private var highlightProvider: HighlightProviding?
     private var contentInsets: NSEdgeInsets?
@@ -82,7 +81,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             theme: theme,
             tabWidth: tabWidth,
             wrapLines: wrapLines,
-            cursorPosition: cursorPosition,
+            cursorPosition: $cursorPosition,
             editorOverscroll: editorOverscroll,
             useThemeBackground: useThemeBackground,
             highlightProvider: highlightProvider,

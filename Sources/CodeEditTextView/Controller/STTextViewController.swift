@@ -46,6 +46,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// The font to use in the `textView`
     public var font: NSFont
 
+    /// The current cursor position e.g. (1, 1)
+    public var cursorPosition: Binding<(Int, Int)>
+
     /// The editorOverscroll to use for the textView over scroll
     public var editorOverscroll: Double
 
@@ -80,7 +83,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         theme: EditorTheme,
         tabWidth: Int,
         wrapLines: Bool,
-        cursorPosition: Published<(Int, Int)>.Publisher? = nil,
+        cursorPosition: Binding<(Int, Int)>,
         editorOverscroll: Double,
         useThemeBackground: Bool,
         highlightProvider: HighlightProviding? = nil,
@@ -175,9 +178,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         setHighlightProvider(self.highlightProvider)
         setUpTextFormation()
 
-        self.cursorPositionCancellable = self.cursorPosition?.sink(receiveValue: { value in
-            self.setCursorPosition(value)
-        })
+        self.setCursorPosition(self.cursorPosition.wrappedValue)
     }
 
     public override func viewDidLoad() {
@@ -188,6 +189,14 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
                                                queue: .main) { [weak self] _ in
             guard let self = self else { return }
             (self.view as? NSScrollView)?.contentView.contentInsets.bottom = self.bottomContentInsets
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: STTextView.didChangeSelectionNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateCursorPosition()
         }
     }
 
@@ -321,45 +330,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Handles `keyDown` events in the `textView`
     override public func keyDown(with event: NSEvent) {
         // TODO: - This should be uncessecary
-    }
-
-    // MARK: Cursor Position
-
-    private var cursorPosition: Published<(Int, Int)>.Publisher?
-    private var cursorPositionCancellable: AnyCancellable?
-
-    private func setCursorPosition(_ position: (Int, Int)) {
-        guard let provider = textView.textLayoutManager.textContentManager else {
-            return
-        }
-
-        var (line, column) = position
-        let string = textView.string
-        if line > 0 {
-            if string.isEmpty {
-                // If the file is blank, automatically place the cursor in the first index.
-                let range = NSRange(string.startIndex..<string.endIndex, in: string)
-                if let newRange = NSTextRange(range, provider: provider) {
-                    _ = self.textView.becomeFirstResponder()
-                    self.textView.setSelectedRange(newRange)
-                    return
-                }
-            }
-
-            string.enumerateSubstrings(in: string.startIndex..<string.endIndex) { _, lineRange, _, done in
-                line -= 1
-                if line < 1 {
-                    // If `column` exceeds the line length, set cursor to the end of the line.
-                    let index = min(lineRange.upperBound, string.index(lineRange.lowerBound, offsetBy: column - 1))
-                    if let newRange = NSTextRange(NSRange(index..<index, in: string), provider: provider) {
-                        self.textView.setSelectedRange(newRange)
-                    }
-                    done = true
-                } else {
-                    done = false
-                }
-            }
-        }
     }
 
     deinit {
