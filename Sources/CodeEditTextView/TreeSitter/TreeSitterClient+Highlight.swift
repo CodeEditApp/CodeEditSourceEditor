@@ -78,14 +78,15 @@ extension TreeSitterClient {
                 continue
             }
 
-            // Add the language if not available
-            if let layerIndex = layers.firstIndex(where: { $0.id == treeSitterLanguage }) {
+            if let layer = layers.first(where: { $0.id == treeSitterLanguage }) {
                 // Add any ranges not included in the layer already
-                for range in ranges where !layers[layerIndex].ranges.contains(range.range) {
-                    updatedRanges.insert(range: range.range)
-                    layers[layerIndex].ranges.append(range.range)
+                for namedRange in ranges
+                where !layer.ranges.contains(where: { $0.intersection(namedRange.range) != nil }) {
+                    updatedRanges.insert(range: namedRange.range)
+                    layer.ranges.append(namedRange.range)
                 }
             } else {
+                // Add the language if not available
                 addLanguageLayer(layerId: treeSitterLanguage, readBlock: readBlock)
 
                 let layerIndex = layers.count - 1
@@ -95,6 +96,7 @@ extension TreeSitterClient {
 
                 layers[layerIndex].parser.includedRanges = ranges.map { $0.tsRange }
                 layers[layerIndex].ranges = ranges.map { $0.range }
+                layers[layerIndex].tree = createTree(parser: layers[layerIndex].parser, readBlock: readBlock)
             }
         }
         return updatedRanges

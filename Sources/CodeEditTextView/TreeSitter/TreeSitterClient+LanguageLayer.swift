@@ -28,6 +28,5 @@ extension TreeSitterClient {
         var tree: Tree?
         var languageQuery: Query?
         var ranges: [NSRange]
-        var color: CaptureName = [.string, .boolean, .number].randomElement()!
     }
 }

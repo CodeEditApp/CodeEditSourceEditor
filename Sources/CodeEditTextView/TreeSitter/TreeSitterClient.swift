@@ -53,22 +53,13 @@ final class TreeSitterClient: HighlightProviding {
     ///   - codeLanguage: The language to set up the parser with.
     ///   - textProvider: The text provider callback to read any text.
     public init(codeLanguage: CodeLanguage, textProvider: @escaping ResolvingQueryCursor.TextProvider) throws {
-        primaryLayer = codeLanguage.id
-        layers = [
-            LanguageLayer(id: codeLanguage.id,
-                          parser: Parser(),
-                          tree: nil,
-                          languageQuery: TreeSitterModel.shared.query(for: codeLanguage.id),
-                          ranges: [])
-        ]
-
         self.textProvider = textProvider
-
-        if let treeSitterLanguage = codeLanguage.language {
-            try? layers[0].parser.setLanguage(treeSitterLanguage)
-        }
+        self.primaryLayer = codeLanguage.id
+        setLanguage(codeLanguage: codeLanguage)
     }
 
+    /// Sets the primary language for the client. Will reset all layers, will not do any parsing work.
+    /// - Parameter codeLanguage: The new primary language.
     public func setLanguage(codeLanguage: CodeLanguage) {
         // Remove all trees and languages, everything needs to be re-parsed.
         layers.removeAll()
@@ -89,17 +80,24 @@ final class TreeSitterClient: HighlightProviding {
 
     // MARK: - HighlightProviding
 
-    /// Set up and parse the initial language tree
+    /// Set up and parse the initial language tree and all injected layers.
     func setUp(textView: HighlighterTextView) {
         let readBlock = createReadBlock(textView: textView)
 
         layers[0].tree = createTree(parser: layers[0].parser,
                                     readBlock: readBlock)
 
-        for layer in layers {
+        var idx = 0
+        while idx < layers.count {
+            if layers[idx].id != primaryLayer {
+                layers[idx].parser.includedRanges = layers[idx].ranges.map { $0.tsRange }
+                layers[idx].tree = createTree(parser: layers[idx].parser, readBlock: readBlock)
+            }
             updateInjectedLanguageLayers(textView: textView,
-                                         language: layer,
+                                         language: layers[idx],
                                          readBlock: readBlock)
+
+            idx += 1
         }
     }
 
@@ -121,12 +119,17 @@ final class TreeSitterClient: HighlightProviding {
         let readBlock = createReadBlock(textView: textView)
         var rangeSet = IndexSet()
 
-        for layer in layers {
+        // Loop through all layers and apply the edit, and query for any changed byte ranges.
+        // Using a while loop b/c `updateInjectedLanguageLayers` can append new layers during the loop.
+        var idx = 0
+        while idx < layers.count {
+            let layer = layers[idx]
+            // The primary layer's range is always the entire document, no need to modify.
             if layer.id != primaryLayer {
                 for idx in (0..<layer.ranges.count).reversed() {
                     layer.ranges[idx].applyInputEdit(edit)
                     // Remove any empty/negative ranges
-                    if layer.ranges[idx].length < 0 {
+                    if layer.ranges[idx].length <= 0 {
                         layer.ranges.remove(at: idx)
                     }
                 }
@@ -138,15 +141,17 @@ final class TreeSitterClient: HighlightProviding {
                                                        layer: layer,
                                                        readBlock: readBlock)
             rangeSet.insert(ranges: effectedRanges)
-        }
 
-        for layer in layers {
+            // Find any injected languages & update the `layers` array.
             rangeSet.formUnion(
                 updateInjectedLanguageLayers(textView: textView,
                                              language: layer,
                                              readBlock: readBlock)
             )
+
+            idx += 1
         }
+
         completion(rangeSet)
     }
 
@@ -158,7 +163,7 @@ final class TreeSitterClient: HighlightProviding {
     func queryHighlightsFor(textView: HighlighterTextView,
                             range: NSRange,
                             completion: @escaping ((([HighlightRange]) -> Void))) {
-        var highlights: [(TreeSitterLanguage, HighlightRange)] = []
+        var highlights: [HighlightRange] = []
         var injectedSet = IndexSet(integersIn: range)
 
         for layer in layers where layer.id != primaryLayer {
@@ -172,7 +177,7 @@ final class TreeSitterClient: HighlightProviding {
                 highlights.append(
                     contentsOf: queryLayerHighlights(layer: layer,
                                                      textView: textView,
-                                                     range: rangeIntersection).map { (layer.id, $0) }
+                                                     range: rangeIntersection)
                 )
 
                 injectedSet.remove(integersIn: rangeIntersection)
@@ -183,10 +188,10 @@ final class TreeSitterClient: HighlightProviding {
         for range in injectedSet.rangeView {
             highlights.append(contentsOf: queryLayerHighlights(layer: layers[0],
                                                                textView: textView,
-                                                               range: NSRange(range)).map { (layers[0].id, $0) })
+                                                               range: NSRange(range)))
         }
 
-        completion(highlights.map { $0.1 })
+        completion(highlights)
     }
 
     // MARK: - Helpers
@@ -209,8 +214,6 @@ final class TreeSitterClient: HighlightProviding {
         }
 
         try? newLayer.parser.setLanguage(parserLanguage)
-        newLayer.tree = createTree(parser: newLayer.parser,
-                                   readBlock: readBlock)
 
         layers.append(newLayer)
     }
