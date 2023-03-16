@@ -131,9 +131,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
         rulerView.font = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .regular)
+        rulerView.selectedLineHighlightColor = theme.lineHighlight
+        rulerView.rulerInsets = STRulerInsets(leading: 20, trailing: 8)
 
         if self.isEditable == false {
             rulerView.selectedLineTextColor = nil
+            rulerView.selectedLineHighlightColor = theme.background
         }
 
         scrollView.verticalRulerView = rulerView
