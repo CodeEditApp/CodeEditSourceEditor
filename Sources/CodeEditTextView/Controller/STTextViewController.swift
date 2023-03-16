@@ -252,6 +252,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
         rulerView?.backgroundColor = useThemeBackground ? theme.background : .clear
         rulerView?.separatorColor = theme.invisibles
+        rulerView?.selectedLineHighlightColor = theme.lineHighlight
         rulerView?.baselineOffset = baselineOffset
         rulerView.highlightSelectedLine = isEditable
 
