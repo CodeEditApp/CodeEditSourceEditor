@@ -83,4 +83,78 @@ extension TreeSitterClient {
             return []
         }
     }
+
+    /// Performs an injections query on the given language layer.
+    /// Updates any existing layers with new ranges and adds new layers if needed.
+    /// - Parameters:
+    ///   - textView: The text view to use.
+    ///   - language: The language layer to perform the query on.
+    ///   - readBlock: A completion block for reading from text storage efficiently.
+    /// - Returns: An index set of any updated indexes.
+    @discardableResult
+    internal func updateInjectedLanguageLayers(textView: HighlighterTextView,
+                                               language: LanguageLayer,
+                                               readBlock: @escaping Parser.ReadBlock) -> IndexSet {
+        guard let tree = language.tree,
+              let rootNode = tree.rootNode,
+              let cursor = language.languageQuery?.execute(node: rootNode, in: tree) else {
+            return IndexSet()
+        }
+
+        cursor.matchLimit = Constants.treeSitterMatchLimit
+
+        let languageRanges = self.injectedLanguagesFrom(cursor: cursor) { range, _ in
+            return textView.stringForRange(range)
+        }
+
+        var updatedRanges = IndexSet()
+        for (languageName, ranges) in languageRanges {
+            guard let treeSitterLanguage = TreeSitterLanguage(rawValue: languageName) else {
+                continue
+            }
+
+            if treeSitterLanguage == primaryLayer {
+                continue
+            }
+
+            if let layer = layers.first(where: { $0.id == treeSitterLanguage }) {
+                // Add any ranges not included in the layer already
+                // and update any overlapping ones.
+                for namedRange in ranges where namedRange.range.length > 0 {
+                    var wasRangeFound = false
+
+                    for (idx, layerRange) in layer.ranges.enumerated().reversed()
+                    where namedRange.range.intersection(layerRange) != nil {
+                        wasRangeFound = true
+                        layer.ranges[idx] = namedRange.range
+                        break
+                    }
+
+                    if !wasRangeFound {
+                        layer.ranges.append(namedRange.range)
+                        updatedRanges.insert(range: namedRange.range)
+                    }
+                }
+
+                // Required for tree-sitter to work. Assumes no ranges are overlapping.
+                layer.ranges.sort()
+            } else {
+                // Add the language if not available
+                addLanguageLayer(layerId: treeSitterLanguage, readBlock: readBlock)
+
+                let layerIndex = layers.count - 1
+                guard layers.last?.id == treeSitterLanguage else {
+                    continue
+                }
+
+                layers[layerIndex].parser.includedRanges = ranges
+                    .filter { $0.range.length > 0 }
+                    .map { $0.tsRange }
+                    .sorted()
+                layers[layerIndex].ranges = ranges.filter { $0.range.length > 0 }.map { $0.range }
+                layers[layerIndex].tree = createTree(parser: layers[layerIndex].parser, readBlock: readBlock)
+            }
+        }
+        return updatedRanges
+    }
 }

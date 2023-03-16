@@ -23,8 +23,8 @@ extension TreeSitterClient {
             self.ranges = ranges
         }
 
-        var id: TreeSitterLanguage
-        var parser: Parser
+        let id: TreeSitterLanguage
+        let parser: Parser
         var tree: Tree?
         var languageQuery: Query?
         var ranges: [NSRange]

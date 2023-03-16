@@ -45,63 +45,6 @@ extension TreeSitterClient {
         return highlightsFromCursor(cursor: ResolvingQueryCursor(cursor: cursor))
     }
 
-    /// Performs an injections query on the given language layer.
-    /// Updates any existing layers with new ranges and adds new layers if needed.
-    /// - Parameters:
-    ///   - textView: The text view to use.
-    ///   - language: The language layer to perform the query on.
-    ///   - readBlock: A completion block for reading from text storage efficiently.
-    /// - Returns: An index set of any updated indexes.
-    @discardableResult
-    internal func updateInjectedLanguageLayers(textView: HighlighterTextView,
-                                               language: LanguageLayer,
-                                               readBlock: @escaping Parser.ReadBlock) -> IndexSet {
-        guard let tree = language.tree,
-              let rootNode = tree.rootNode,
-              let cursor = language.languageQuery?.execute(node: rootNode, in: tree) else {
-            return IndexSet()
-        }
-
-        cursor.matchLimit = Constants.treeSitterMatchLimit
-
-        let languageRanges = self.injectedLanguagesFrom(cursor: cursor) { range, _ in
-            return textView.stringForRange(range)
-        }
-
-        var updatedRanges = IndexSet()
-        for (languageName, ranges) in languageRanges {
-            guard let treeSitterLanguage = TreeSitterLanguage(rawValue: languageName) else {
-                continue
-            }
-
-            if treeSitterLanguage == primaryLayer {
-                continue
-            }
-
-            if let layer = layers.first(where: { $0.id == treeSitterLanguage }) {
-                // Add any ranges not included in the layer already
-                for namedRange in ranges
-                where !layer.ranges.contains(where: { $0.intersection(namedRange.range) != nil }) {
-                    updatedRanges.insert(range: namedRange.range)
-                    layer.ranges.append(namedRange.range)
-                }
-            } else {
-                // Add the language if not available
-                addLanguageLayer(layerId: treeSitterLanguage, readBlock: readBlock)
-
-                let layerIndex = layers.count - 1
-                guard layers.last?.id == treeSitterLanguage else {
-                    continue
-                }
-
-                layers[layerIndex].parser.includedRanges = ranges.map { $0.tsRange }
-                layers[layerIndex].ranges = ranges.map { $0.range }
-                layers[layerIndex].tree = createTree(parser: layers[layerIndex].parser, readBlock: readBlock)
-            }
-        }
-        return updatedRanges
-    }
-
     /// Resolves a query cursor to the highlight ranges it contains.
     /// **Must be called on the main thread**
     /// - Parameter cursor: The cursor to resolve.

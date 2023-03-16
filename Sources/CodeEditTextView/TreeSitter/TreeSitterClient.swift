@@ -52,7 +52,7 @@ final class TreeSitterClient: HighlightProviding {
     /// - Parameters:
     ///   - codeLanguage: The language to set up the parser with.
     ///   - textProvider: The text provider callback to read any text.
-    public init(codeLanguage: CodeLanguage, textProvider: @escaping ResolvingQueryCursor.TextProvider) throws {
+    public init(codeLanguage: CodeLanguage, textProvider: @escaping ResolvingQueryCursor.TextProvider) {
         self.textProvider = textProvider
         self.primaryLayer = codeLanguage.id
         setLanguage(codeLanguage: codeLanguage)
@@ -89,10 +89,6 @@ final class TreeSitterClient: HighlightProviding {
 
         var idx = 0
         while idx < layers.count {
-            if layers[idx].id != primaryLayer {
-                layers[idx].parser.includedRanges = layers[idx].ranges.map { $0.tsRange }
-                layers[idx].tree = createTree(parser: layers[idx].parser, readBlock: readBlock)
-            }
             updateInjectedLanguageLayers(textView: textView,
                                          language: layers[idx],
                                          readBlock: readBlock)
@@ -124,16 +120,6 @@ final class TreeSitterClient: HighlightProviding {
         var idx = 0
         while idx < layers.count {
             let layer = layers[idx]
-            // The primary layer's range is always the entire document, no need to modify.
-            if layer.id != primaryLayer {
-                for idx in (0..<layer.ranges.count).reversed() {
-                    layer.ranges[idx].applyInputEdit(edit)
-                    // Remove any empty/negative ranges
-                    if layer.ranges[idx].length <= 0 {
-                        layer.ranges.remove(at: idx)
-                    }
-                }
-            }
 
             layer.parser.includedRanges = layer.ranges.map { $0.tsRange }
             let effectedRanges = findChangedByteRanges(textView: textView,
@@ -142,7 +128,7 @@ final class TreeSitterClient: HighlightProviding {
                                                        readBlock: readBlock)
             rangeSet.insert(ranges: effectedRanges)
 
-            // Find any injected languages & update the `layers` array.
+            // Find any injected languages & update any `layers` arrays.
             rangeSet.formUnion(
                 updateInjectedLanguageLayers(textView: textView,
                                              language: layer,
