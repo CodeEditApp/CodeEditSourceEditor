@@ -85,13 +85,13 @@ Licensed under the [MIT license](https://github.com/CodeEditApp/CodeEdit/blob/ma
     <td align="center">
       <a href="https://github.com/CodeEditApp/CodeEdit">
         <img src="https://user-images.githubusercontent.com/806104/163099605-4eaedd33-8441-4125-9ca1-a7ccb2f62a74.png" height="128">
-        <p>CodeEdit</p>
+        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CodeEdit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
       </a>
     </td>
     <td align="center">
       <a href="https://github.com/CodeEditApp/CodeEditKit">
         <img src="https://user-images.githubusercontent.com/806104/193877051-c60d255d-0b6a-408c-bb21-6fabc5e0e60c.png" height="128">
-        <p>CodeEditKit</p>
+        <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CodeEditKit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
       </a>
     </td>
     <td align="center">
@@ -103,7 +103,7 @@ Licensed under the [MIT license](https://github.com/CodeEditApp/CodeEdit/blob/ma
     <td align="center">
       <a href="https://github.com/CodeEditApp/CodeEditCLI">
         <img src="https://user-images.githubusercontent.com/806104/205848006-f2654778-21f1-4f97-b292-32849cc1eff6.png" height="128">
-        <p>CodeEdit CLI</p>
+        <p>&nbsp;&nbsp;&nbsp;&nbsp;CodeEdit&nbsp;CLI&nbsp;&nbsp;&nbsp;&nbsp;</p>
       </a>
     </td>
   </tr>
