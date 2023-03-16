@@ -17,7 +17,6 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - text: The text content
     ///   - language: The language for syntax highlighting
     ///   - theme: The theme for syntax highlighting
-    ///   - useThemeBackground: Whether CodeEditTextView uses theme background color or is transparent
     ///   - font: The default font
     ///   - tabWidth: The tab width
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
@@ -27,6 +26,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///                        built-in `TreeSitterClient` highlighter.
     ///   - contentInsets: Insets to use to offset the content in the enclosing scroll view. Leave as `nil` to let the
     ///                    scroll view automatically adjust content insets.
+    ///   - isEditable: A Boolean value that controls whether the text view allows the user to edit text.
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
@@ -36,10 +36,11 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         lineHeight: Binding<Double>,
         wrapLines: Binding<Bool>,
         editorOverscroll: Binding<Double> = .constant(0.0),
-        cursorPosition: Published<(Int, Int)>.Publisher? = nil,
+        cursorPosition: Binding<(Int, Int)>,
         useThemeBackground: Bool = true,
         highlightProvider: HighlightProviding? = nil,
-        contentInsets: NSEdgeInsets? = nil
+        contentInsets: NSEdgeInsets? = nil,
+        isEditable: Bool = true
     ) {
         self._text = text
         self.language = language
@@ -50,9 +51,10 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self._lineHeight = lineHeight
         self._wrapLines = wrapLines
         self._editorOverscroll = editorOverscroll
-        self.cursorPosition = cursorPosition
+        self._cursorPosition = cursorPosition
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
+        self.isEditable = isEditable
     }
 
     @Binding private var text: String
@@ -63,10 +65,11 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     @Binding private var lineHeight: Double
     @Binding private var wrapLines: Bool
     @Binding private var editorOverscroll: Double
-    private var cursorPosition: Published<(Int, Int)>.Publisher?
+    @Binding private var cursorPosition: (Int, Int)
     private var useThemeBackground: Bool
     private var highlightProvider: HighlightProviding?
     private var contentInsets: NSEdgeInsets?
+    private var isEditable: Bool
 
     public typealias NSViewControllerType = STTextViewController
 
@@ -78,11 +81,12 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             theme: theme,
             tabWidth: tabWidth,
             wrapLines: wrapLines,
-            cursorPosition: cursorPosition,
+            cursorPosition: $cursorPosition,
             editorOverscroll: editorOverscroll,
             useThemeBackground: useThemeBackground,
             highlightProvider: highlightProvider,
-            contentInsets: contentInsets
+            contentInsets: contentInsets,
+            isEditable: isEditable
         )
         controller.lineHeightMultiple = lineHeight
         return controller
