@@ -19,12 +19,14 @@ extension TreeSitterClient {
         ///   - tree: The tree-sitter tree generated while editing/parsing a document.
         ///   - languageQuery: The language query used for fetching the associated `queries.scm` file
         ///   - ranges: All ranges this layer acts on. Must be kept in order and w/o overlap.
-        init(id: TreeSitterLanguage,
-             parser: Parser,
-             supportsInjections: Bool,
-             tree: Tree? = nil,
-             languageQuery: Query? = nil,
-             ranges: [NSRange]) {
+        init(
+            id: TreeSitterLanguage,
+            parser: Parser,
+            supportsInjections: Bool,
+            tree: Tree? = nil,
+            languageQuery: Query? = nil,
+            ranges: [NSRange]
+        ) {
             self.id = id
             self.parser = parser
             self.supportsInjections = supportsInjections

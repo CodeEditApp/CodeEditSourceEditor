@@ -18,14 +18,18 @@ extension TreeSitterClient {
     ///   - language: The language to use.
     ///   - readBlock: A callback for fetching blocks of text.
     /// - Returns: An array of distinct `NSRanges` that need to be re-highlighted.
-    func findChangedByteRanges(textView: HighlighterTextView,
-                               edit: InputEdit,
-                               layer: LanguageLayer,
-                               readBlock: @escaping Parser.ReadBlock) -> [NSRange] {
-        let (oldTree, newTree) = calculateNewState(tree: layer.tree,
-                                                   parser: layer.parser,
-                                                   edit: edit,
-                                                   readBlock: readBlock)
+    func findChangedByteRanges(
+        textView: HighlighterTextView,
+        edit: InputEdit,
+        layer: LanguageLayer,
+        readBlock: @escaping Parser.ReadBlock
+    ) -> [NSRange] {
+        let (oldTree, newTree) = calculateNewState(
+            tree: layer.tree,
+            parser: layer.parser,
+            edit: edit,
+            readBlock: readBlock
+        )
         if oldTree == nil && newTree == nil {
             // There was no existing tree, make a new one and return all indexes.
             layer.tree = createTree(parser: layer.parser, readBlock: readBlock)
@@ -47,10 +51,12 @@ extension TreeSitterClient {
     ///   - edit: The edit to apply.
     ///   - readBlock: The block to use to read text.
     /// - Returns: (The old state, the new state).
-    internal func calculateNewState(tree: Tree?,
-                                    parser: Parser,
-                                    edit: InputEdit,
-                                    readBlock: @escaping Parser.ReadBlock) -> (Tree?, Tree?) {
+    internal func calculateNewState(
+        tree: Tree?,
+        parser: Parser,
+        edit: InputEdit,
+        readBlock: @escaping Parser.ReadBlock
+    ) -> (Tree?, Tree?) {
         guard let oldTree = tree else {
             return (nil, nil)
         }
@@ -96,11 +102,13 @@ extension TreeSitterClient {
     ///   - readBlock: A completion block for reading from text storage efficiently.
     /// - Returns: An index set of any updated indexes.
     @discardableResult
-    internal func updateInjectedLanguageLayers(textView: HighlighterTextView,
-                                               layer: LanguageLayer,
-                                               layerSet: inout Set<LanguageLayer>,
-                                               touchedLayers: inout Set<LanguageLayer>,
-                                               readBlock: @escaping Parser.ReadBlock) -> IndexSet {
+    internal func updateInjectedLanguageLayers(
+        textView: HighlighterTextView,
+        layer: LanguageLayer,
+        layerSet: inout Set<LanguageLayer>,
+        touchedLayers: inout Set<LanguageLayer>,
+        readBlock: @escaping Parser.ReadBlock
+    ) -> IndexSet {
         guard let tree = layer.tree,
               let rootNode = tree.rootNode,
               let cursor = layer.languageQuery?.execute(node: rootNode, in: tree) else {
@@ -126,10 +134,12 @@ extension TreeSitterClient {
 
             for range in ranges {
                 // Temp layer object for
-                let layer = LanguageLayer(id: treeSitterLanguage,
-                                          parser: Parser(),
-                                          supportsInjections: false,
-                                          ranges: [range.range])
+                let layer = LanguageLayer(
+                    id: treeSitterLanguage,
+                    parser: Parser(),
+                    supportsInjections: false,
+                    ranges: [range.range]
+                )
 
                 if layerSet.contains(layer) {
                     // If we've found this layer, it means it should exist after an edit.

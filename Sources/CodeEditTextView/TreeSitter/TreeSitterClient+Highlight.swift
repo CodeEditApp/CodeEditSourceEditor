@@ -17,9 +17,11 @@ extension TreeSitterClient {
     ///   - textView: A text view to use for contextual data.
     ///   - range: The range to query for.
     /// - Returns: Any ranges to highlight.
-    internal func queryLayerHighlights(layer: LanguageLayer,
-                                       textView: HighlighterTextView,
-                                       range: NSRange) -> [HighlightRange] {
+    internal func queryLayerHighlights(
+        layer: LanguageLayer,
+        textView: HighlighterTextView,
+        range: NSRange
+    ) -> [HighlightRange] {
         // Make sure we don't change the tree while we copy it.
         self.semaphore.wait()
 
