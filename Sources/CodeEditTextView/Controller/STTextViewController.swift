@@ -320,7 +320,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
                 return self?.textView.textContentStorage.textStorage?.mutableString.substring(with: range)
             }
 
-            provider = try? TreeSitterClient(codeLanguage: language, textProvider: textProvider)
+            provider = TreeSitterClient(codeLanguage: language, textProvider: textProvider)
         }
 
         if let provider = provider {

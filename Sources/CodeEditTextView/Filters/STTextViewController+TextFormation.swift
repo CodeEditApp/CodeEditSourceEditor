@@ -71,7 +71,7 @@ extension STTextViewController {
     ///   - whitespaceProvider: The whitespace providers to use.
     ///   - indentationUnit: The unit of indentation to use.
     private func setUpNewlineTabFilters(whitespaceProvider: WhitespaceProviders, indentationUnit: String) {
-        let newlineFilter: Filter = NewlineFilter(whitespaceProviders: whitespaceProvider)
+        let newlineFilter: Filter = NewlineProcessingFilter(whitespaceProviders: whitespaceProvider)
         let tabReplacementFilter: Filter = TabReplacementFilter(indentationUnit: indentationUnit)
 
         textFilters.append(contentsOf: [newlineFilter, tabReplacementFilter])

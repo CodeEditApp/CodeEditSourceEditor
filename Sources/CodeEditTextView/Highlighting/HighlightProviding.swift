@@ -17,6 +17,9 @@ public protocol HighlightProviding {
     /// - Note: This does not need to be *globally* unique, merely unique across all the highlighters used.
     var identifier: String { get }
 
+    /// Called once at editor initialization.
+    func setUp(textView: HighlighterTextView)
+
     /// Updates the highlighter's code language.
     /// - Parameters:
     ///   - codeLanguage: The langugage that should be used by the highlighter.

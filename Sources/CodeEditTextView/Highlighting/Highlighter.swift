@@ -88,6 +88,7 @@ class Highlighter: NSObject {
         }
 
         textView.textContentStorage.textStorage?.delegate = self
+        highlightProvider?.setUp(textView: textView)
 
         if let scrollView = textView.enclosingScrollView {
             NotificationCenter.default.addObserver(self,
@@ -121,6 +122,7 @@ class Highlighter: NSObject {
     public func setHighlightProvider(_ provider: HighlightProviding) {
         self.highlightProvider = provider
         highlightProvider?.setLanguage(codeLanguage: language)
+        highlightProvider?.setUp(textView: textView)
         invalidate()
     }
 
@@ -282,7 +284,7 @@ extension Highlighter: NSTextStorageDelegate {
                                      delta: delta) { [weak self] invalidatedIndexSet in
             let indexSet = invalidatedIndexSet
                 .union(IndexSet(integersIn: editedRange))
-                // Only invalidate indices that aren't visible.
+                // Only invalidate indices that are visible.
                 .intersection(self?.visibleSet ?? .init())
 
             for range in indexSet.rangeView {
