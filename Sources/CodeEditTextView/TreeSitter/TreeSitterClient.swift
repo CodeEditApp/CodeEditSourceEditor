@@ -29,10 +29,6 @@ final class TreeSitterClient: HighlightProviding {
 
     internal var textProvider: ResolvingQueryCursor.TextProvider
 
-    /// The queue to do  tree-sitter work on for large edits/queries
-    internal let queue: DispatchQueue = DispatchQueue(label: "CodeEdit.CodeEditTextView.TreeSitter",
-                                                      qos: .userInteractive)
-
     /// Used to ensure safe use of the shared tree-sitter tree state in different sync/async contexts.
     internal let semaphore: DispatchSemaphore = DispatchSemaphore(value: 1)
 
@@ -68,6 +64,7 @@ final class TreeSitterClient: HighlightProviding {
         layers = [
             LanguageLayer(id: codeLanguage.id,
                           parser: Parser(),
+                          supportsInjections: codeLanguage.additionalHighlights?.contains("injections") ?? false,
                           tree: nil,
                           languageQuery: TreeSitterModel.shared.query(for: codeLanguage.id),
                           ranges: [])
@@ -87,10 +84,15 @@ final class TreeSitterClient: HighlightProviding {
         layers[0].tree = createTree(parser: layers[0].parser,
                                     readBlock: readBlock)
 
+        var layerSet = Set<LanguageLayer>(arrayLiteral: layers[0])
+        var touchedLayers = Set<LanguageLayer>()
+
         var idx = 0
         while idx < layers.count {
             updateInjectedLanguageLayers(textView: textView,
-                                         language: layers[idx],
+                                         layer: layers[idx],
+                                         layerSet: &layerSet,
+                                         touchedLayers: &touchedLayers,
                                          readBlock: readBlock)
 
             idx += 1
@@ -115,27 +117,66 @@ final class TreeSitterClient: HighlightProviding {
         let readBlock = createReadBlock(textView: textView)
         var rangeSet = IndexSet()
 
-        // Loop through all layers and apply the edit, and query for any changed byte ranges.
-        // Using a while loop b/c `updateInjectedLanguageLayers` can append new layers during the loop.
+        // Helper data structure for finding existing layers in O(1) when adding injected layers
+        var layerSet = Set<LanguageLayer>(minimumCapacity: layers.count)
+        // Tracks which layers were not touched at some point during the edit. Any layers left in this set
+        // after the second loop are removed.
+        var touchedLayers = Set<LanguageLayer>(minimumCapacity: layers.count)
+
+        // Loop through all layers, apply edits & find changed byte ranges.
+        for layerIdx in (0..<layers.count).reversed() {
+            let layer = layers[layerIdx]
+
+            if layer.id != primaryLayer {
+                // Reversed for safe removal while looping
+                for rangeIdx in (0..<layer.ranges.count).reversed() {
+                    layer.ranges[rangeIdx].applyInputEdit(edit)
+
+                    if layer.ranges[rangeIdx].length <= 0 {
+                        layer.ranges.remove(at: rangeIdx)
+                    }
+                }
+                if layer.ranges.isEmpty {
+                    layers.remove(at: layerIdx)
+                    continue
+                }
+
+                touchedLayers.insert(layer)
+            }
+
+            layer.parser.includedRanges = layer.ranges.map { $0.tsRange }
+            rangeSet.insert(
+                ranges: findChangedByteRanges(textView: textView,
+                                              edit: edit,
+                                              layer: layer,
+                                              readBlock: readBlock)
+            )
+
+            layerSet.insert(layer)
+        }
+
+        // Loop again and apply injections query, add any ranges not previously found
+        // using while loop because `updateInjectedLanguageLayers` can add to `layers` during the loop
         var idx = 0
         while idx < layers.count {
             let layer = layers[idx]
 
-            layer.parser.includedRanges = layer.ranges.map { $0.tsRange }
-            let effectedRanges = findChangedByteRanges(textView: textView,
-                                                       edit: edit,
-                                                       layer: layer,
-                                                       readBlock: readBlock)
-            rangeSet.insert(ranges: effectedRanges)
-
-            // Find any injected languages & update any `layers` arrays.
-            rangeSet.formUnion(
-                updateInjectedLanguageLayers(textView: textView,
-                                             language: layer,
-                                             readBlock: readBlock)
-            )
+            if layer.supportsInjections {
+                rangeSet.formUnion(
+                    updateInjectedLanguageLayers(textView: textView,
+                                                 layer: layer,
+                                                 layerSet: &layerSet,
+                                                 touchedLayers: &touchedLayers,
+                                                 readBlock: readBlock)
+                )
+            }
 
             idx += 1
+        }
+
+        // Delete any layers that weren't touched at some point during the edit.
+        for layerIdx in (0..<layers.count).reversed() where touchedLayers.contains(layers[layerIdx]) {
+            layers.remove(at: layerIdx)
         }
 
         completion(rangeSet)
@@ -154,19 +195,16 @@ final class TreeSitterClient: HighlightProviding {
 
         for layer in layers where layer.id != primaryLayer {
             // Query injected only if a layer's ranges intersects with `range`
-            for layerRange in layer.ranges
-            where layerRange.location <= NSMaxRange(range) && range.location <= NSMaxRange(layerRange) {
-                let location = max(layerRange.location, range.location)
-                let length = min(NSMaxRange(layerRange), NSMaxRange(range)) - location
-                let rangeIntersection = NSRange(location: location,
-                                                length: length)
-                highlights.append(
-                    contentsOf: queryLayerHighlights(layer: layer,
-                                                     textView: textView,
-                                                     range: rangeIntersection)
-                )
+            for layerRange in layer.ranges {
+                if let rangeIntersection = range.intersection(layerRange) {
+                    highlights.append(
+                        contentsOf: queryLayerHighlights(layer: layer,
+                                                         textView: textView,
+                                                         range: rangeIntersection)
+                    )
 
-                injectedSet.remove(integersIn: rangeIntersection)
+                    injectedSet.remove(integersIn: rangeIntersection)
+                }
             }
         }
 
@@ -182,26 +220,36 @@ final class TreeSitterClient: HighlightProviding {
 
     // MARK: - Helpers
 
-    /// Attempts to add a language to the `languages` dictionary.
-    /// - Parameter language: The language to add.
-    internal func addLanguageLayer(layerId: TreeSitterLanguage, readBlock: @escaping Parser.ReadBlock) {
-        let newLayer = LanguageLayer(id: layerId,
-                                     parser: Parser(),
-                                     tree: nil,
-                                     languageQuery: TreeSitterModel.shared.query(for: layerId),
-                                     ranges: [])
-
-        guard let parserLanguage = CodeLanguage
-            .allLanguages
-            .first(where: { $0.id == layerId })?
-            .language
+    /// Attempts to create a language layer and load a highlights file.
+    /// Adds the layer to the `layers` array if successful.
+    /// - Parameters:
+    ///   - layerId: A language ID to add as a layer.
+    ///   - readBlock: Completion called for efficient string lookup.
+    internal func addLanguageLayer(layerId: TreeSitterLanguage,
+                                   readBlock: @escaping Parser.ReadBlock) -> LanguageLayer? {
+        guard let language = CodeLanguage.allLanguages.first(where: { $0.id == layerId }),
+              let parserLanguage = language.language
         else {
-            return
+            return nil
         }
 
-        try? newLayer.parser.setLanguage(parserLanguage)
+        let newLayer = LanguageLayer(
+            id: layerId,
+            parser: Parser(),
+            supportsInjections: language.additionalHighlights?.contains("injections") ?? false,
+            tree: nil,
+            languageQuery: TreeSitterModel.shared.query(for: layerId),
+            ranges: []
+        )
+
+        do {
+            try newLayer.parser.setLanguage(parserLanguage)
+        } catch {
+            return nil
+        }
 
         layers.append(newLayer)
+        return newLayer
     }
 
     /// Creates a tree-sitter tree.
@@ -219,7 +267,7 @@ final class TreeSitterClient: HighlightProviding {
             let location = byteOffset / 2
             let end = min(location + (1024), limit)
             if location > end {
-                assertionFailure("location is greater than end")
+                // Ignore and return nothing, tree-sitter's internal tree can be incorrect in some situations.
                 return nil
             }
             let range = NSRange(location..<end)

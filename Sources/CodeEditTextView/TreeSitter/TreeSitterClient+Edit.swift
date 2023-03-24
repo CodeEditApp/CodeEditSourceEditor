@@ -88,16 +88,22 @@ extension TreeSitterClient {
     /// Updates any existing layers with new ranges and adds new layers if needed.
     /// - Parameters:
     ///   - textView: The text view to use.
-    ///   - language: The language layer to perform the query on.
+    ///   - layer: The language layer to perform the query on.
+    ///   - layerSet: The set of layers that exist in the document.
+    ///               Used for efficient lookup of existing `(language, range)` pairs
+    ///   - touchedLayers: The set of layers that existed before updating injected layers.
+    ///                    Will have items removed as they are found.
     ///   - readBlock: A completion block for reading from text storage efficiently.
     /// - Returns: An index set of any updated indexes.
     @discardableResult
     internal func updateInjectedLanguageLayers(textView: HighlighterTextView,
-                                               language: LanguageLayer,
+                                               layer: LanguageLayer,
+                                               layerSet: inout Set<LanguageLayer>,
+                                               touchedLayers: inout Set<LanguageLayer>,
                                                readBlock: @escaping Parser.ReadBlock) -> IndexSet {
-        guard let tree = language.tree,
+        guard let tree = layer.tree,
               let rootNode = tree.rootNode,
-              let cursor = language.languageQuery?.execute(node: rootNode, in: tree) else {
+              let cursor = layer.languageQuery?.execute(node: rootNode, in: tree) else {
             return IndexSet()
         }
 
@@ -108,6 +114,7 @@ extension TreeSitterClient {
         }
 
         var updatedRanges = IndexSet()
+
         for (languageName, ranges) in languageRanges {
             guard let treeSitterLanguage = TreeSitterLanguage(rawValue: languageName) else {
                 continue
@@ -117,44 +124,30 @@ extension TreeSitterClient {
                 continue
             }
 
-            if let layer = layers.first(where: { $0.id == treeSitterLanguage }) {
-                // Add any ranges not included in the layer already
-                // and update any overlapping ones.
-                for namedRange in ranges where namedRange.range.length > 0 {
-                    var wasRangeFound = false
+            for range in ranges {
+                // Temp layer object for
+                let layer = LanguageLayer(id: treeSitterLanguage,
+                                          parser: Parser(),
+                                          supportsInjections: false,
+                                          ranges: [range.range])
 
-                    for (idx, layerRange) in layer.ranges.enumerated().reversed()
-                    where namedRange.range.intersection(layerRange) != nil {
-                        wasRangeFound = true
-                        layer.ranges[idx] = namedRange.range
-                        break
-                    }
+                if layerSet.contains(layer) {
+                    // If we've found this layer, it means it should exist after an edit.
+                    touchedLayers.remove(layer)
+                } else {
+                    // New range, make a new layer!
+                    if let addedLayer = addLanguageLayer(layerId: treeSitterLanguage, readBlock: readBlock) {
+                        addedLayer.ranges = [range.range]
+                        addedLayer.parser.includedRanges = addedLayer.ranges.map { $0.tsRange }
+                        addedLayer.tree = createTree(parser: addedLayer.parser, readBlock: readBlock)
 
-                    if !wasRangeFound {
-                        layer.ranges.append(namedRange.range)
-                        updatedRanges.insert(range: namedRange.range)
+                        layerSet.insert(addedLayer)
+                        updatedRanges.insert(range: range.range)
                     }
                 }
-
-                // Required for tree-sitter to work. Assumes no ranges are overlapping.
-                layer.ranges.sort()
-            } else {
-                // Add the language if not available
-                addLanguageLayer(layerId: treeSitterLanguage, readBlock: readBlock)
-
-                let layerIndex = layers.count - 1
-                guard layers.last?.id == treeSitterLanguage else {
-                    continue
-                }
-
-                layers[layerIndex].parser.includedRanges = ranges
-                    .filter { $0.range.length > 0 }
-                    .map { $0.tsRange }
-                    .sorted()
-                layers[layerIndex].ranges = ranges.filter { $0.range.length > 0 }.map { $0.range }
-                layers[layerIndex].tree = createTree(parser: layers[layerIndex].parser, readBlock: readBlock)
             }
         }
+
         return updatedRanges
     }
 }
