@@ -35,8 +35,7 @@ extension STTextViewController {
         // Filters
 
         setUpOpenPairFilters(pairs: pairsToHandle, whitespaceProvider: whitespaceProvider)
-        setUpNewlineTabFilters(whitespaceProvider: whitespaceProvider,
-                               indentationUnit: indentOption.stringValue)
+        setUpNewlineFilter(whitespaceProvider: whitespaceProvider)
         setUpDeletePairFilters(pairs: pairsToHandle)
         setUpDeleteWhitespaceFilter(indentationUnit: indentOption.stringValue)
     }
@@ -65,14 +64,11 @@ extension STTextViewController {
     }
 
     /// Configures newline and tab replacement filters.
-    /// - Parameters:
-    ///   - whitespaceProvider: The whitespace providers to use.
-    ///   - indentationUnit: The unit of indentation to use.
-    private func setUpNewlineTabFilters(whitespaceProvider: WhitespaceProviders, indentationUnit: String) {
+    /// - Parameter whitespaceProvider: The whitespace providers to use.
+    private func setUpNewlineFilter(whitespaceProvider: WhitespaceProviders) {
         let newlineFilter: Filter = NewlineProcessingFilter(whitespaceProviders: whitespaceProvider)
-        let tabReplacementFilter: Filter = TabReplacementFilter(indentationUnit: indentationUnit)
 
-        textFilters.append(contentsOf: [newlineFilter, tabReplacementFilter])
+        textFilters.append(contentsOf: [newlineFilter])
     }
 
     /// Configures delete pair filters.
