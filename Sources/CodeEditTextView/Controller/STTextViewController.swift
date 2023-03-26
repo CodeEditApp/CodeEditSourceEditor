@@ -130,7 +130,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.textColor = .systemGray.blended(
             withFraction: 0.5,
             of: .darkGray
-        )!
+        ) ?? .darkGray
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
         rulerView.font = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .regular)
