@@ -23,7 +23,7 @@ extension STTextViewController {
             .typeIdentifier: kStylisticAlternativesType
         ]
 
-        /// Set alternate styling four 6 and 9
+        /// Set alternate styling for 6 and 9
         let alt6and9: [NSFontDescriptor.FeatureKey: Int] = [
             .selectorIdentifier: kStylisticAltTwoOnSelector,
             .typeIdentifier: kStylisticAlternativesType
