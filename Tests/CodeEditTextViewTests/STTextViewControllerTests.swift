@@ -33,6 +33,7 @@ final class STTextViewControllerTests: XCTestCase {
             font: .monospacedSystemFont(ofSize: 11, weight: .medium),
             theme: theme,
             tabWidth: 4,
+            indentOption: .string(count: 4),
             wrapLines: true,
             cursorPosition: .constant((1, 1)),
             editorOverscroll: 0.5,

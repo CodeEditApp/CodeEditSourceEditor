@@ -37,12 +37,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Whether the code editor should use the theme background color or be transparent
     public var useThemeBackground: Bool
 
-    /// The number of visual spaces to use for a `tab '\t'` character
+    /// The number of visual spaces to use for a tab `'\t'` character
     public var tabWidth: Int
 
-    /// The string to use for tabs. Will by multiplied by `tabWidth` when inserted as an indent.
+    /// The configuration to use when the tab key is pressed.
     /// - Note: When set, text filters will be re-generated. Try to avoid setting this parameter needlessly.
-    public var indentationUnit: String {
+    public var indentOption: IndentOption {
         didSet {
             setUpTextFormation()
         }
@@ -90,7 +90,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         font: NSFont,
         theme: EditorTheme,
         tabWidth: Int,
-        indentationUnit: String = String(repeating: " ", count: 4),
+        indentOption: IndentOption,
         wrapLines: Bool,
         cursorPosition: Binding<(Int, Int)>,
         editorOverscroll: Double,
@@ -104,7 +104,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.font = font
         self.theme = theme
         self.tabWidth = tabWidth
-        self.indentationUnit = indentationUnit
+        self.indentOption = indentOption
         self.wrapLines = wrapLines
         self.cursorPosition = cursorPosition
         self.editorOverscroll = editorOverscroll

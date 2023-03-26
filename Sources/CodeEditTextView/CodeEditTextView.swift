@@ -18,8 +18,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - language: The language for syntax highlighting
     ///   - theme: The theme for syntax highlighting
     ///   - font: The default font
-    ///   - tabWidth: The tab width
-    ///   - indentationUnit: The string to use for indents.
+    ///   - tabWidth: The visual tab width in number of spaces
+    ///   - indentOption: The option to use for indentation when the tab key is pressed. Defaults to 4 spaces
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
     ///   - wrapLines: Whether lines wrap to the width of the editor
     ///   - editorOverscroll: The percentage for overscroll, between 0-1 (default: `0.0`)
@@ -34,7 +34,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         theme: Binding<EditorTheme>,
         font: Binding<NSFont>,
         tabWidth: Binding<Int>,
-        indentationUnit: Binding<String> = .constant(String(repeating: " ", count: 4)),
+        indentOption: Binding<IndentOption> = .constant(.string(count: 4)),
         lineHeight: Binding<Double>,
         wrapLines: Binding<Bool>,
         editorOverscroll: Binding<Double> = .constant(0.0),
@@ -50,7 +50,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self.useThemeBackground = useThemeBackground
         self._font = font
         self._tabWidth = tabWidth
-        self._indentationUnit = indentationUnit
+        self._indentOption = indentOption
         self._lineHeight = lineHeight
         self._wrapLines = wrapLines
         self._editorOverscroll = editorOverscroll
@@ -65,7 +65,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     @Binding private var theme: EditorTheme
     @Binding private var font: NSFont
     @Binding private var tabWidth: Int
-    @Binding private var indentationUnit: String
+    @Binding private var indentOption: IndentOption
     @Binding private var lineHeight: Double
     @Binding private var wrapLines: Bool
     @Binding private var editorOverscroll: Double
@@ -84,7 +84,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             font: font,
             theme: theme,
             tabWidth: tabWidth,
-            indentationUnit: indentationUnit,
+            indentOption: indentOption,
             wrapLines: wrapLines,
             cursorPosition: $cursorPosition,
             editorOverscroll: editorOverscroll,
@@ -119,8 +119,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         }
 
         // Updating the indentation unit causes regeneration of text filters.
-        if controller.indentationUnit != indentationUnit {
-            controller.indentationUnit = indentationUnit
+        if controller.indentOption != indentOption {
+            controller.indentOption = indentOption
         }
 
         controller.reloadUI()
