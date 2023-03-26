@@ -130,9 +130,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.textColor = .secondaryLabelColor
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
-        rulerView.font = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .regular)
+        rulerView.font = rulerFont
         rulerView.selectedLineHighlightColor = theme.lineHighlight
-        rulerView.rulerInsets = STRulerInsets(leading: 20, trailing: 8)
+        rulerView.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
 
         if self.isEditable == false {
             rulerView.selectedLineTextColor = nil
@@ -255,6 +255,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView?.selectedLineHighlightColor = theme.lineHighlight
         rulerView?.baselineOffset = baselineOffset
         rulerView.highlightSelectedLine = isEditable
+        rulerView?.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
+        rulerView?.font = rulerFont
 
         if let scrollView = view as? NSScrollView {
             scrollView.drawsBackground = useThemeBackground
