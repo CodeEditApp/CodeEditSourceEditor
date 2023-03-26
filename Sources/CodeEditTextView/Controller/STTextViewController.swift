@@ -129,7 +129,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.backgroundColor = useThemeBackground ? theme.background : .clear
         rulerView.textColor = .systemGray.blended(
             withFraction: 0.5,
-            of: .systemGray
+            of: .darkGray
         )!
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
