@@ -20,6 +20,13 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     internal var rulerView: STLineNumberRulerView!
 
+    private var rulerTextColor: NSColor {
+        return .systemGray.blended(
+            withFraction: 0.5
+            of: .darkGray
+        ) ?? .darkGray
+    }
+
     /// Binding for the `textView`s string
     public var text: Binding<String>
 
@@ -127,10 +134,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
         rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
         rulerView.backgroundColor = useThemeBackground ? theme.background : .clear
-        rulerView.textColor = .systemGray.blended(
-            withFraction: 0.5,
-            of: .darkGray
-        ) ?? .darkGray
+        rulerView.textColor = rulerTextColor
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
         rulerView.font = NSFont.monospacedDigitSystemFont(ofSize: 9.5, weight: .regular)
