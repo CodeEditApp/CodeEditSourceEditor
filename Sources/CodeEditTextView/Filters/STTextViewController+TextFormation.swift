@@ -10,6 +10,7 @@ import STTextView
 import TextFormation
 import TextStory
 
+@available(macOS 13.0, *)
 extension STTextViewController {
 
     // MARK: - Filter Configuration
