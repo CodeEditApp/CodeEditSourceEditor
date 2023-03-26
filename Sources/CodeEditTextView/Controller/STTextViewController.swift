@@ -22,7 +22,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     private var rulerTextColor: NSColor {
         return .systemGray.blended(
-            withFraction: 0.5
+            withFraction: 0.5,
             of: .darkGray
         ) ?? .darkGray
     }
