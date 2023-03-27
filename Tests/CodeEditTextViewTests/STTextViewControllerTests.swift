@@ -187,7 +187,6 @@ final class STTextViewControllerTests: XCTestCase {
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, "\t")
 
-
         // Insert lots of spaces
         controller.indentOption = .spaces(count: 1000)
         controller.textView.string = ""
