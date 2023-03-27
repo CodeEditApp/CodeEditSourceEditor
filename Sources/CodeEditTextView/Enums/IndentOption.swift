@@ -19,7 +19,7 @@
 /// ```json
 /// { "tab": { } }
 /// ```
-public enum IndentOption: Equatable, Codable {
+public enum IndentOption: Equatable, Codable, Hashable {
     case spaces(count: Int)
     case tab
 
@@ -41,5 +41,9 @@ public enum IndentOption: Equatable, Codable {
         default:
             return false
         }
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(stringValue)
     }
 }
