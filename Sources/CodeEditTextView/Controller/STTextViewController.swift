@@ -37,8 +37,20 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Whether the code editor should use the theme background color or be transparent
     public var useThemeBackground: Bool
 
-    /// The number of spaces to use for a `tab '\t'` character
-    public var tabWidth: Int
+    /// The visual width of tab characters in the text view measured in number of spaces.
+    public var tabWidth: Int {
+        didSet {
+            paragraphStyle = generateParagraphStyle()
+            reloadUI()
+        }
+    }
+
+    /// The behavior to use when the tab key is pressed.
+    public var indentOption: IndentOption {
+        didSet {
+            setUpTextFormation()
+        }
+    }
 
     /// A multiplier for setting the line height. Defaults to `1.0`
     public var lineHeightMultiple: Double = 1.0
@@ -68,9 +80,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     internal var highlighter: Highlighter?
 
-    /// Internal variable for tracking whether or not the textView has the correct standard attributes.
-    private var hasSetStandardAttributes: Bool = false
-
     /// The provided highlight provider.
     private var highlightProvider: HighlightProviding?
 
@@ -82,6 +91,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         font: NSFont,
         theme: EditorTheme,
         tabWidth: Int,
+        indentOption: IndentOption,
         wrapLines: Bool,
         cursorPosition: Binding<(Int, Int)>,
         editorOverscroll: Double,
@@ -95,6 +105,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.font = font
         self.theme = theme
         self.tabWidth = tabWidth
+        self.indentOption = indentOption
         self.wrapLines = wrapLines
         self.cursorPosition = cursorPosition
         self.editorOverscroll = editorOverscroll
@@ -142,6 +153,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         scrollView.verticalRulerView = rulerView
         scrollView.rulersVisible = true
 
+        textView.typingAttributes = attributesFor(nil)
         textView.defaultParagraphStyle = self.paragraphStyle
         textView.font = self.font
         textView.textColor = theme.text
@@ -214,11 +226,17 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     // MARK: UI
 
     /// A default `NSParagraphStyle` with a set `lineHeight`
-    private var paragraphStyle: NSMutableParagraphStyle {
+    private lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
+
+    private func generateParagraphStyle() -> NSMutableParagraphStyle {
         // swiftlint:disable:next force_cast
         let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
         paragraph.minimumLineHeight = lineHeight
         paragraph.maximumLineHeight = lineHeight
+        // TODO: Fix Tab widths
+        // This adds tab stops throughout the document instead of only changing the width of tab characters
+//        paragraph.tabStops = [NSTextTab(type: .decimalTabStopType, location: 0.0)]
+//        paragraph.defaultTabInterval = CGFloat(tabWidth) * (" " as NSString).size(withAttributes: [.font: font]).width
         return paragraph
     }
 
@@ -238,9 +256,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     internal func reloadUI() {
         // if font or baseline has been modified, set the hasSetStandardAttributesFlag
         // to false to ensure attributes are updated. This allows live UI updates when changing preferences.
-        if textView?.font != font || rulerView.baselineOffset != baselineOffset {
-            hasSetStandardAttributes = false
-        }
 
         textView?.textColor = theme.text
         textView.backgroundColor = useThemeBackground ? theme.background : .clear
@@ -249,6 +264,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView?.selectedLineHighlightColor = theme.lineHighlight
         textView?.isEditable = isEditable
         textView.highlightSelectedLine = isEditable
+        textView?.typingAttributes = attributesFor(nil)
+        textView?.defaultParagraphStyle = paragraphStyle
 
         rulerView?.backgroundColor = useThemeBackground ? theme.background : .clear
         rulerView?.separatorColor = theme.invisibles
@@ -267,15 +284,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
             scrollView.contentInsets.bottom = bottomContentInsets + (contentInsets?.bottom ?? 0)
         }
 
-        setStandardAttributes()
-    }
-
-    /// Sets the standard attributes (`font`, `baselineOffset`) to the whole text
-    internal func setStandardAttributes() {
-        guard let textView = textView else { return }
-        guard !hasSetStandardAttributes else { return }
-        hasSetStandardAttributes = true
-        textView.addAttributes(attributesFor(nil), range: .init(0..<textView.string.count))
         highlighter?.invalidate()
     }
 
@@ -286,7 +294,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         return [
             .font: font,
             .foregroundColor: theme.colorFor(capture),
-            .baselineOffset: baselineOffset
+            .baselineOffset: baselineOffset,
+            .paragraphStyle: paragraphStyle
         ]
     }
 
@@ -331,11 +340,14 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         }
     }
 
-    // MARK: Key Presses
+    // MARK: Selectors
 
-    /// Handles `keyDown` events in the `textView`
     override public func keyDown(with event: NSEvent) {
-        // TODO: - This should be uncessecary
+        // This should be uneccessary but if removed STTextView receives some `keydown`s twice.
+    }
+
+    public override func insertTab(_ sender: Any?) {
+        textView.insertText("\t", replacementRange: textView.selectedRange)
     }
 
     deinit {

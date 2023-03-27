@@ -42,5 +42,7 @@ extension STTextView: TextInterface {
         textContentStorage.performEditingTransaction {
             textContentStorage.applyMutation(mutation)
         }
+
+        didChangeText()
     }
 }

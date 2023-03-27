@@ -2,6 +2,7 @@ import XCTest
 @testable import CodeEditTextView
 import SwiftTreeSitter
 import AppKit
+import TextStory
 
 final class STTextViewControllerTests: XCTestCase {
 
@@ -33,12 +34,15 @@ final class STTextViewControllerTests: XCTestCase {
             font: .monospacedSystemFont(ofSize: 11, weight: .medium),
             theme: theme,
             tabWidth: 4,
+            indentOption: .spaces(count: 4),
             wrapLines: true,
             cursorPosition: .constant((1, 1)),
             editorOverscroll: 0.5,
             useThemeBackground: true,
             isEditable: true
         )
+
+        controller.loadView()
     }
 
     func test_captureNames() throws {
@@ -140,5 +144,54 @@ final class STTextViewControllerTests: XCTestCase {
 
         // editorOverscroll: 0
         XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 0)
+    }
+
+    func test_indentOptionString() {
+        XCTAssertEqual(" ", IndentOption.spaces(count: 1).stringValue)
+        XCTAssertEqual("  ", IndentOption.spaces(count: 2).stringValue)
+        XCTAssertEqual("   ", IndentOption.spaces(count: 3).stringValue)
+        XCTAssertEqual("    ", IndentOption.spaces(count: 4).stringValue)
+        XCTAssertEqual("     ", IndentOption.spaces(count: 5).stringValue)
+
+        XCTAssertEqual("\t", IndentOption.tab.stringValue)
+    }
+
+    func test_indentBehavior() {
+        // Insert 1 space
+        controller.indentOption = .spaces(count: 1)
+        controller.textView.string = ""
+        controller.insertTab(nil)
+        XCTAssertEqual(controller.textView.string, " ")
+
+        // Insert 2 spaces
+        controller.indentOption = .spaces(count: 2)
+        controller.textView.string = ""
+        controller.textView.insertText("\t", replacementRange: .zero)
+        XCTAssertEqual(controller.textView.string, "  ")
+
+        // Insert 3 spaces
+        controller.indentOption = .spaces(count: 3)
+        controller.textView.string = ""
+        controller.textView.insertText("\t", replacementRange: .zero)
+        XCTAssertEqual(controller.textView.string, "   ")
+
+        // Insert 4 spaces
+        controller.indentOption = .spaces(count: 4)
+        controller.textView.string = ""
+        controller.textView.insertText("\t", replacementRange: .zero)
+        XCTAssertEqual(controller.textView.string, "    ")
+
+        // Insert tab
+        controller.indentOption = .tab
+        controller.textView.string = ""
+        controller.textView.insertText("\t", replacementRange: .zero)
+        XCTAssertEqual(controller.textView.string, "\t")
+
+
+        // Insert lots of spaces
+        controller.indentOption = .spaces(count: 1000)
+        controller.textView.string = ""
+        controller.textView.insertText("\t", replacementRange: .zero)
+        XCTAssertEqual(controller.textView.string, String(repeating: " ", count: 1000))
     }
 }
