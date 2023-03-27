@@ -6,20 +6,7 @@
 //
 
 /// Represents what to insert on a tab key press.
-///
-/// Conforms to `Codable` with a JSON structure like below:
-/// ```json
-/// {
-///     "spaces": {
-///         "count": Int
-///     }
-/// }
-/// ```
-/// or
-/// ```json
-/// { "tab": { } }
-/// ```
-public enum IndentOption: Equatable, Codable, Hashable {
+public enum IndentOption: Equatable {
     case spaces(count: Int)
     case tab
 
@@ -41,9 +28,5 @@ public enum IndentOption: Equatable, Codable, Hashable {
         default:
             return false
         }
-    }
-
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(stringValue)
     }
 }
