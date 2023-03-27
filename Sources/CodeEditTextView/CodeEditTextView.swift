@@ -105,7 +105,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         controller.editorOverscroll = editorOverscroll
         controller.contentInsets = contentInsets
 
-        // Updating the language, theme, tab width and inden option needlessly can cause highlights to be re-calculated.
+        // Updating the language, theme, tab width and indent option needlessly can cause highlights to be re-calculated
         if controller.language.id != language.id {
             controller.language = language
         }
