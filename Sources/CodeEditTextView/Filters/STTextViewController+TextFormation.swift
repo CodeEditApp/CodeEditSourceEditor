@@ -18,7 +18,7 @@ extension STTextViewController {
     internal func setUpTextFormation() {
         textFilters = []
 
-        let indentationUnit = String(repeating: " ", count: tabWidth)
+        let indentationUnit = indentOption.stringValue
 
         let pairsToHandle: [(String, String)] = [
             ("{", "}"),
@@ -38,9 +38,9 @@ extension STTextViewController {
 
         setUpOpenPairFilters(pairs: pairsToHandle, whitespaceProvider: whitespaceProvider)
         setUpNewlineTabFilters(whitespaceProvider: whitespaceProvider,
-                               indentationUnit: indentationUnit)
+                               indentOption: indentOption)
         setUpDeletePairFilters(pairs: pairsToHandle)
-        setUpDeleteWhitespaceFilter(indentationUnit: indentationUnit)
+        setUpDeleteWhitespaceFilter(indentOption: indentOption)
     }
 
     /// Returns a `TextualIndenter` based on available language configuration.
@@ -70,9 +70,9 @@ extension STTextViewController {
     /// - Parameters:
     ///   - whitespaceProvider: The whitespace providers to use.
     ///   - indentationUnit: The unit of indentation to use.
-    private func setUpNewlineTabFilters(whitespaceProvider: WhitespaceProviders, indentationUnit: String) {
+    private func setUpNewlineTabFilters(whitespaceProvider: WhitespaceProviders, indentOption: IndentOption) {
         let newlineFilter: Filter = NewlineProcessingFilter(whitespaceProviders: whitespaceProvider)
-        let tabReplacementFilter: Filter = TabReplacementFilter(indentationUnit: indentationUnit)
+        let tabReplacementFilter: Filter = TabReplacementFilter(indentOption: indentOption)
 
         textFilters.append(contentsOf: [newlineFilter, tabReplacementFilter])
     }
@@ -86,8 +86,8 @@ extension STTextViewController {
     }
 
     /// Configures up the delete whitespace filter.
-    private func setUpDeleteWhitespaceFilter(indentationUnit: String) {
-        let filter = DeleteWhitespaceFilter(indentationUnit: indentationUnit)
+    private func setUpDeleteWhitespaceFilter(indentOption: IndentOption) {
+        let filter = DeleteWhitespaceFilter(indentOption: indentOption)
         textFilters.append(filter)
     }
 
