@@ -278,6 +278,9 @@ extension Highlighter: NSTextStorageDelegate {
         }
 
         let range = NSRange(location: editedRange.location, length: editedRange.length - delta)
+        if delta > 0 {
+            visibleSet.insert(range: editedRange)
+        }
 
         highlightProvider?.applyEdit(textView: self.textView,
                                      range: range,
