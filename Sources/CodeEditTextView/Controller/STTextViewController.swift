@@ -233,10 +233,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
         paragraph.minimumLineHeight = lineHeight
         paragraph.maximumLineHeight = lineHeight
-        // TODO: Fix Tab widths
-        // This adds tab stops throughout the document instead of only changing the width of tab characters
-//        paragraph.tabStops = [NSTextTab(type: .decimalTabStopType, location: 0.0)]
-//        paragraph.defaultTabInterval = CGFloat(tabWidth) * (" " as NSString).size(withAttributes: [.font: font]).width
+        paragraph.tabStops = [NSTextTab(type: .decimalTabStopType, location: 0.0)]
+        paragraph.defaultTabInterval = CGFloat(tabWidth) * (" " as NSString).size(withAttributes: [.font: font]).width
         return paragraph
     }
 
