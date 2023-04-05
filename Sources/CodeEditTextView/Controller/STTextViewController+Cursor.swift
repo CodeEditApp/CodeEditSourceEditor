@@ -96,7 +96,9 @@ extension STTextViewController {
                     if col == 1 { line += 1 }
                 }
 
-                self.cursorPosition.wrappedValue = (line, col)
+                DispatchQueue.main.async {
+                    self.cursorPosition.wrappedValue = (line, col)
+                }
                 return false
             }
         }

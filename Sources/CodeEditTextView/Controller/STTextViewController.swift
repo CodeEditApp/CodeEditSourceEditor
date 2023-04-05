@@ -76,6 +76,22 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Optional insets to offset the text view in the scroll view by.
     public var contentInsets: NSEdgeInsets?
 
+    /// A multiplier that determines the amount of space between characters. `1.0` indicates no space,
+    /// `2.0` indicates one character of space between other characters.
+    public var letterSpacing: Double = 1.0 {
+        didSet {
+            kern = fontCharWidth * (letterSpacing - 1.0)
+            reloadUI()
+        }
+    }
+
+    /// The kern to use for characters. Defaults to `0.0` and is updated when `letterSpacing` is set.
+    private var kern: CGFloat = 0.0
+
+    private var fontCharWidth: CGFloat {
+        (" " as NSString).size(withAttributes: [.font: font]).width
+    }
+
     // MARK: - Highlighting
 
     internal var highlighter: Highlighter?
@@ -92,13 +108,15 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         theme: EditorTheme,
         tabWidth: Int,
         indentOption: IndentOption,
+        lineHeight: Double,
         wrapLines: Bool,
         cursorPosition: Binding<(Int, Int)>,
         editorOverscroll: Double,
         useThemeBackground: Bool,
         highlightProvider: HighlightProviding? = nil,
         contentInsets: NSEdgeInsets? = nil,
-        isEditable: Bool
+        isEditable: Bool,
+        letterSpacing: Double
     ) {
         self.text = text
         self.language = language
@@ -106,6 +124,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.theme = theme
         self.tabWidth = tabWidth
         self.indentOption = indentOption
+        self.lineHeightMultiple = lineHeight
         self.wrapLines = wrapLines
         self.cursorPosition = cursorPosition
         self.editorOverscroll = editorOverscroll
@@ -234,7 +253,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         paragraph.minimumLineHeight = lineHeight
         paragraph.maximumLineHeight = lineHeight
         paragraph.tabStops.removeAll()
-        paragraph.defaultTabInterval = CGFloat(tabWidth) * (" " as NSString).size(withAttributes: [.font: font]).width
+        paragraph.defaultTabInterval = CGFloat(tabWidth) * fontCharWidth
         return paragraph
     }
 
@@ -252,9 +271,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     /// Reloads the UI to apply changes to ``STTextViewController/font``, ``STTextViewController/theme``, ...
     internal func reloadUI() {
-        // if font or baseline has been modified, set the hasSetStandardAttributesFlag
-        // to false to ensure attributes are updated. This allows live UI updates when changing preferences.
-
         textView?.textColor = theme.text
         textView.backgroundColor = useThemeBackground ? theme.background : .clear
         textView?.insertionPointColor = theme.insertionPoint
@@ -293,7 +309,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
             .font: font,
             .foregroundColor: theme.colorFor(capture),
             .baselineOffset: baselineOffset,
-            .paragraphStyle: paragraphStyle
+            .paragraphStyle: paragraphStyle,
+            .kern: kern
         ]
     }
 
