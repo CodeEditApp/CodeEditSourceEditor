@@ -141,7 +141,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     // MARK: VC Lifecycle
 
-    // swiftlint:disable function_body_length
+    // swiftlint:disable:next function_body_length
     public override func loadView() {
         textView = STTextView()
 
