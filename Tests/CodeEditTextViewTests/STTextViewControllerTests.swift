@@ -4,6 +4,7 @@ import SwiftTreeSitter
 import AppKit
 import TextStory
 
+// swiftlint:disable all
 final class STTextViewControllerTests: XCTestCase {
 
     var controller: STTextViewController!
@@ -35,11 +36,13 @@ final class STTextViewControllerTests: XCTestCase {
             theme: theme,
             tabWidth: 4,
             indentOption: .spaces(count: 4),
+            lineHeight: 1.0,
             wrapLines: true,
             cursorPosition: .constant((1, 1)),
             editorOverscroll: 0.5,
             useThemeBackground: true,
-            isEditable: true
+            isEditable: true,
+            letterSpacing: 1.0
         )
 
         controller.loadView()
@@ -193,4 +196,24 @@ final class STTextViewControllerTests: XCTestCase {
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, String(repeating: " ", count: 1000))
     }
+
+    func test_letterSpacing() {
+        let font: NSFont = .monospacedSystemFont(ofSize: 11, weight: .medium)
+
+        controller.letterSpacing = 1.0
+
+        XCTAssertEqual(
+            controller.attributesFor(nil)[.kern]! as! CGFloat,
+            (" " as NSString).size(withAttributes: [.font: font]).width * 0.0
+        )
+
+        controller.letterSpacing = 2.0
+        XCTAssertEqual(
+            controller.attributesFor(nil)[.kern]! as! CGFloat,
+            (" " as NSString).size(withAttributes: [.font: font]).width * 1.0
+        )
+
+        controller.letterSpacing = 1.0
+    }
 }
+// swiftlint:enable all
