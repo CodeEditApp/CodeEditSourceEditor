@@ -48,7 +48,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         highlightProvider: HighlightProviding? = nil,
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
-        letterSpacing: Double = 0.95
+        letterSpacing: Double = 1.0
     ) {
         self._text = text
         self.language = language
