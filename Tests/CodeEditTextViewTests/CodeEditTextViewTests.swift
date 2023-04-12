@@ -40,3 +40,4 @@ final class CodeEditTextViewTests: XCTestCase {
         XCTAssertEqual(result, expected)
     }
 }
+// swiftlint:enable all

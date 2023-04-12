@@ -23,11 +23,16 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
     ///   - wrapLines: Whether lines wrap to the width of the editor
     ///   - editorOverscroll: The percentage for overscroll, between 0-1 (default: `0.0`)
+    ///   - cursorPosition: The cursor's position in the editor, measured in `(lineNum, columnNum)`
+    ///   - useThemeBackground: Determines whether the editor uses the theme's background color, or a transparent
+    ///                         background color
     ///   - highlightProvider: A class you provide to perform syntax highlighting. Leave this as `nil` to use the
     ///                        built-in `TreeSitterClient` highlighter.
     ///   - contentInsets: Insets to use to offset the content in the enclosing scroll view. Leave as `nil` to let the
     ///                    scroll view automatically adjust content insets.
     ///   - isEditable: A Boolean value that controls whether the text view allows the user to edit text.
+    ///   - letterSpacing: The amount of space to use between letters, as a percent. Eg: `1.0` = no space, `1.5` = 1/2 a
+    ///                    character's width between characters, etc. Defaults to `1.0`
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
@@ -42,7 +47,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         useThemeBackground: Bool = true,
         highlightProvider: HighlightProviding? = nil,
         contentInsets: NSEdgeInsets? = nil,
-        isEditable: Bool = true
+        isEditable: Bool = true,
+        letterSpacing: Double = 1.0
     ) {
         self._text = text
         self.language = language
@@ -58,6 +64,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
         self.isEditable = isEditable
+        self.letterSpacing = letterSpacing
     }
 
     @Binding private var text: String
@@ -74,6 +81,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     private var highlightProvider: HighlightProviding?
     private var contentInsets: NSEdgeInsets?
     private var isEditable: Bool
+    private var letterSpacing: Double
 
     public typealias NSViewControllerType = STTextViewController
 
@@ -85,15 +93,16 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             theme: theme,
             tabWidth: tabWidth,
             indentOption: indentOption,
+            lineHeight: lineHeight,
             wrapLines: wrapLines,
             cursorPosition: $cursorPosition,
             editorOverscroll: editorOverscroll,
             useThemeBackground: useThemeBackground,
             highlightProvider: highlightProvider,
             contentInsets: contentInsets,
-            isEditable: isEditable
+            isEditable: isEditable,
+            letterSpacing: letterSpacing
         )
-        controller.lineHeightMultiple = lineHeight
         return controller
     }
 
@@ -117,6 +126,9 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         }
         if controller.tabWidth != tabWidth {
             controller.tabWidth = tabWidth
+        }
+        if controller.letterSpacing != letterSpacing {
+            controller.letterSpacing = letterSpacing
         }
 
         controller.reloadUI()
