@@ -9,7 +9,6 @@ import AppKit
 import SwiftUI
 import Combine
 import STTextView
-import SwiftTreeSitter
 import CodeEditLanguages
 import TextFormation
 
@@ -97,7 +96,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     internal var highlighter: Highlighter?
 
     /// The provided highlight provider.
-    private var highlightProvider: HighlightProviding?
+    internal var highlightProvider: HighlightProviding?
 
     // MARK: Init
 
@@ -251,34 +250,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.text.wrappedValue = textView.string
     }
 
-    /// Update the text view's text container if needed.
-    /// 
-    /// Effectively updates the container to reflect the `wrapLines` setting, and to reflect any updates to the ruler,
-    /// scroll view, or window frames.
-    private func updateTextContainerWidthIfNeeded() {
-        let previousTrackingSetting = textView.widthTracksTextView
-        textView.widthTracksTextView = wrapLines
-        if wrapLines {
-            var proposedSize = ((view as? NSScrollView)?.contentSize ?? .zero)
-            proposedSize.height = .greatestFiniteMagnitude
-
-            if textView.textContainer.size != proposedSize || textView.frame.size != proposedSize {
-                textView.textContainer.size = proposedSize
-                textView.setFrameSize(proposedSize)
-            }
-        } else {
-            var proposedSize = textView.frame.size
-            proposedSize.width = ((view as? NSScrollView)?.contentSize ?? .zero).width
-            if previousTrackingSetting != wrapLines {
-                textView.textContainer.size = CGSize(
-                    width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude
-                )
-                textView.setFrameSize(proposedSize)
-                textView.textLayoutManager.textViewportLayoutController.layoutViewport()
-            }
-        }
-    }
-
     // MARK: UI
 
     /// A default `NSParagraphStyle` with a set `lineHeight`
@@ -360,37 +331,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Calculated baseline offset depending on `lineHeight`.
     internal var baselineOffset: Double {
         ((self.lineHeight) - font.lineHeight) / 2
-    }
-
-    // MARK: - Highlighting
-
-    /// Configures the `Highlighter` object
-    private func setUpHighlighter() {
-        self.highlighter = Highlighter(textView: textView,
-                                       highlightProvider: highlightProvider,
-                                       theme: theme,
-                                       attributeProvider: self,
-                                       language: language)
-    }
-
-    /// Sets the highlight provider and re-highlights all text. This method should be used sparingly.
-    public func setHighlightProvider(_ highlightProvider: HighlightProviding? = nil) {
-        var provider: HighlightProviding?
-
-        if let highlightProvider = highlightProvider {
-            provider = highlightProvider
-        } else {
-            let textProvider: ResolvingQueryCursor.TextProvider = { [weak self] range, _ -> String? in
-                return self?.textView.textContentStorage.textStorage?.mutableString.substring(with: range)
-            }
-
-            provider = TreeSitterClient(codeLanguage: language, textProvider: textProvider)
-        }
-
-        if let provider = provider {
-            self.highlightProvider = provider
-            highlighter?.setHighlightProvider(provider)
-        }
     }
 
     // MARK: Selectors
