@@ -183,7 +183,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.selectedLineHighlightColor = theme.lineHighlight
         textView.string = self.text.wrappedValue
         textView.isEditable = self.isEditable
-        textView.widthTracksTextView = self.wrapLines
         textView.highlightSelectedLine = true
         textView.allowsUndo = true
         textView.setupMenus()
@@ -223,6 +222,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
                                                queue: .main) { [weak self] _ in
             guard let self = self else { return }
             (self.view as? NSScrollView)?.contentView.contentInsets.bottom = self.bottomContentInsets
+            self.updateTextContainerWidthIfNeeded()
         }
 
         NotificationCenter.default.addObserver(
@@ -232,14 +232,51 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         ) { [weak self] _ in
             self?.updateCursorPosition()
         }
+
+        NotificationCenter.default.addObserver(
+            forName: NSView.frameDidChangeNotification,
+            object: (self.view as? NSScrollView)?.verticalRulerView,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateTextContainerWidthIfNeeded()
+        }
     }
 
-    public override func viewDidAppear() {
-        super.viewDidAppear()
+    public override func viewWillAppear() {
+        super.viewWillAppear()
+        updateTextContainerWidthIfNeeded()
     }
 
     public func textViewDidChangeText(_ notification: Notification) {
         self.text.wrappedValue = textView.string
+    }
+
+    /// Update the text view's text container if needed.
+    /// 
+    /// Effectively updates the container to reflect the `wrapLines` setting, and to reflect any updates to the ruler,
+    /// scroll view, or window frames.
+    private func updateTextContainerWidthIfNeeded() {
+        let previousTrackingSetting = textView.widthTracksTextView
+        textView.widthTracksTextView = wrapLines
+        if wrapLines {
+            var proposedSize = ((view as? NSScrollView)?.contentSize ?? .zero)
+            proposedSize.height = .greatestFiniteMagnitude
+
+            if textView.textContainer.size != proposedSize || textView.frame.size != proposedSize {
+                textView.textContainer.size = proposedSize
+                textView.setFrameSize(proposedSize)
+            }
+        } else {
+            var proposedSize = textView.frame.size
+            proposedSize.width = ((view as? NSScrollView)?.contentSize ?? .zero).width
+            if previousTrackingSetting != wrapLines {
+                textView.textContainer.size = CGSize(
+                    width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude
+                )
+                textView.setFrameSize(proposedSize)
+                textView.textLayoutManager.textViewportLayoutController.layoutViewport()
+            }
+        }
     }
 
     // MARK: UI
@@ -299,6 +336,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         }
 
         highlighter?.invalidate()
+        updateTextContainerWidthIfNeeded()
     }
 
     /// Gets all attributes for the given capture including the line height, background color, and text color.
