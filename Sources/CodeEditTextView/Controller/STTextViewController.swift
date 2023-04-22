@@ -9,7 +9,6 @@ import AppKit
 import SwiftUI
 import Combine
 import STTextView
-import SwiftTreeSitter
 import CodeEditLanguages
 import TextFormation
 
@@ -97,7 +96,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     internal var highlighter: Highlighter?
 
     /// The provided highlight provider.
-    private var highlightProvider: HighlightProviding?
+    internal var highlightProvider: HighlightProviding?
 
     // MARK: Init
 
@@ -183,7 +182,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.selectedLineHighlightColor = theme.lineHighlight
         textView.string = self.text.wrappedValue
         textView.isEditable = self.isEditable
-        textView.widthTracksTextView = self.wrapLines
         textView.highlightSelectedLine = true
         textView.allowsUndo = true
         textView.setupMenus()
@@ -223,6 +221,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
                                                queue: .main) { [weak self] _ in
             guard let self = self else { return }
             (self.view as? NSScrollView)?.contentView.contentInsets.bottom = self.bottomContentInsets
+            self.updateTextContainerWidthIfNeeded()
         }
 
         NotificationCenter.default.addObserver(
@@ -232,10 +231,19 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         ) { [weak self] _ in
             self?.updateCursorPosition()
         }
+
+        NotificationCenter.default.addObserver(
+            forName: NSView.frameDidChangeNotification,
+            object: (self.view as? NSScrollView)?.verticalRulerView,
+            queue: .main
+        ) { [weak self] _ in
+            self?.updateTextContainerWidthIfNeeded()
+        }
     }
 
-    public override func viewDidAppear() {
-        super.viewDidAppear()
+    public override func viewWillAppear() {
+        super.viewWillAppear()
+        updateTextContainerWidthIfNeeded()
     }
 
     public func textViewDidChangeText(_ notification: Notification) {
@@ -299,6 +307,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         }
 
         highlighter?.invalidate()
+        updateTextContainerWidthIfNeeded()
     }
 
     /// Gets all attributes for the given capture including the line height, background color, and text color.
@@ -322,37 +331,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Calculated baseline offset depending on `lineHeight`.
     internal var baselineOffset: Double {
         ((self.lineHeight) - font.lineHeight) / 2
-    }
-
-    // MARK: - Highlighting
-
-    /// Configures the `Highlighter` object
-    private func setUpHighlighter() {
-        self.highlighter = Highlighter(textView: textView,
-                                       highlightProvider: highlightProvider,
-                                       theme: theme,
-                                       attributeProvider: self,
-                                       language: language)
-    }
-
-    /// Sets the highlight provider and re-highlights all text. This method should be used sparingly.
-    public func setHighlightProvider(_ highlightProvider: HighlightProviding? = nil) {
-        var provider: HighlightProviding?
-
-        if let highlightProvider = highlightProvider {
-            provider = highlightProvider
-        } else {
-            let textProvider: ResolvingQueryCursor.TextProvider = { [weak self] range, _ -> String? in
-                return self?.textView.textContentStorage.textStorage?.mutableString.substring(with: range)
-            }
-
-            provider = TreeSitterClient(codeLanguage: language, textProvider: textProvider)
-        }
-
-        if let provider = provider {
-            self.highlightProvider = provider
-            highlighter?.setHighlightProvider(provider)
-        }
     }
 
     // MARK: Selectors

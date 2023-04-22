@@ -10,6 +10,12 @@ import STTextView
 
 class CEScrollView: NSScrollView {
 
+    override open var contentSize: NSSize {
+        var proposedSize = super.contentSize
+        proposedSize.width -= verticalRulerView?.requiredThickness ?? 0.0
+        return proposedSize
+    }
+
     override func mouseDown(with event: NSEvent) {
 
         if let textView = self.documentView as? STTextView,
