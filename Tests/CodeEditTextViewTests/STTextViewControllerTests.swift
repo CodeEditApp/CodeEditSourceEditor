@@ -162,37 +162,37 @@ final class STTextViewControllerTests: XCTestCase {
     func test_indentBehavior() {
         // Insert 1 space
         controller.indentOption = .spaces(count: 1)
-        controller.textView.string = ""
+        controller.textView.textContentStorage?.textStorage?.replaceCharacters(in: NSRange(location: 0, length: controller.textView.textContentStorage?.textStorage?.length ?? 0), with: "")
         controller.insertTab(nil)
         XCTAssertEqual(controller.textView.string, " ")
 
         // Insert 2 spaces
         controller.indentOption = .spaces(count: 2)
-        controller.textView.string = ""
+        controller.textView.textContentStorage?.textStorage?.replaceCharacters(in: NSRange(location: 0, length: controller.textView.textContentStorage?.textStorage?.length ?? 0), with: "")
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, "  ")
 
         // Insert 3 spaces
         controller.indentOption = .spaces(count: 3)
-        controller.textView.string = ""
+        controller.textView.textContentStorage?.textStorage?.replaceCharacters(in: NSRange(location: 0, length: controller.textView.textContentStorage?.textStorage?.length ?? 0), with: "")
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, "   ")
 
         // Insert 4 spaces
         controller.indentOption = .spaces(count: 4)
-        controller.textView.string = ""
+        controller.textView.textContentStorage?.textStorage?.replaceCharacters(in: NSRange(location: 0, length: controller.textView.textContentStorage?.textStorage?.length ?? 0), with: "")
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, "    ")
 
         // Insert tab
         controller.indentOption = .tab
-        controller.textView.string = ""
+        controller.textView.textContentStorage?.textStorage?.replaceCharacters(in: NSRange(location: 0, length: controller.textView.textContentStorage?.textStorage?.length ?? 0), with: "")
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, "\t")
 
         // Insert lots of spaces
         controller.indentOption = .spaces(count: 1000)
-        controller.textView.string = ""
+        controller.textView.textContentStorage?.textStorage?.replaceCharacters(in: NSRange(location: 0, length: controller.textView.textContentStorage?.textStorage?.length ?? 0), with: "")
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, String(repeating: " ", count: 1000))
     }
