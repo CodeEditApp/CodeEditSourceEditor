@@ -31,7 +31,11 @@ extension STTextViewController {
                 line -= 1
                 if line < 1 {
                     // If `column` exceeds the line length, set cursor to the end of the line.
-                    let index = min(lineRange.upperBound, string.index(lineRange.lowerBound, offsetBy: column - 1))
+                    // min = line begining, max = line end.
+                    let index = max(
+                        lineRange.lowerBound,
+                        min(lineRange.upperBound, string.index(lineRange.lowerBound, offsetBy: column - 1))
+                    )
                     if let newRange = NSTextRange(NSRange(index..<index, in: string), provider: provider) {
                         self.textView.setSelectedRange(newRange)
                     }
@@ -46,7 +50,7 @@ extension STTextViewController {
     func updateCursorPosition() {
         guard let textLayoutManager = textView.textLayoutManager as NSTextLayoutManager?,
               let textContentManager = textLayoutManager.textContentManager as NSTextContentManager?,
-              let insertionPointLocation = textLayoutManager.insertionPointLocation,
+              let insertionPointLocation = textLayoutManager.insertionPointLocations.first,
               let documentStartLocation = textLayoutManager.documentRange.location as NSTextLocation?,
               let documentEndLocation = textLayoutManager.documentRange.endLocation as NSTextLocation?
         else {
@@ -96,7 +100,9 @@ extension STTextViewController {
                     if col == 1 { line += 1 }
                 }
 
-                self.cursorPosition.wrappedValue = (line, col)
+                DispatchQueue.main.async {
+                    self.cursorPosition.wrappedValue = (line, col)
+                }
                 return false
             }
         }

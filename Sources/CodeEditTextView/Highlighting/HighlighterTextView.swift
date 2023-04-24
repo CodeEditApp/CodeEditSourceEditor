@@ -21,10 +21,10 @@ public protocol HighlighterTextView {
 extension STTextView: HighlighterTextView {
     public var documentRange: NSRange {
         return NSRange(location: 0,
-                       length: textContentStorage.textStorage?.length ?? 0)
+                       length: textContentStorage?.textStorage?.length ?? 0)
     }
 
     public func stringForRange(_ nsRange: NSRange) -> String? {
-        return textContentStorage.textStorage?.mutableString.substring(with: nsRange)
+        return textContentStorage?.textStorage?.mutableString.substring(with: nsRange)
     }
 }

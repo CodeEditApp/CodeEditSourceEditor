@@ -163,6 +163,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.font = rulerFont
         rulerView.selectedLineHighlightColor = theme.lineHighlight
         rulerView.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
+        rulerView.allowsMarkers = false
 
         if self.isEditable == false {
             rulerView.selectedLineTextColor = nil
@@ -343,7 +344,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
             provider = highlightProvider
         } else {
             let textProvider: ResolvingQueryCursor.TextProvider = { [weak self] range, _ -> String? in
-                return self?.textView.textContentStorage.textStorage?.mutableString.substring(with: range)
+                return self?.textView.textContentStorage?.textStorage?.mutableString.substring(with: range)
             }
 
             provider = TreeSitterClient(codeLanguage: language, textProvider: textProvider)

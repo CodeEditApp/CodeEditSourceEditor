@@ -12,6 +12,10 @@ import AppKit
 extension STTextView {
     /// A helper for calculating the visible range on the text view with some small vertical padding.
     var visibleTextRange: NSRange? {
+        guard let textContentStorage = textContentStorage else {
+            return nil
+        }
+
         // This helper finds the visible rect of the text using the enclosing scroll view, then finds the nearest
         // `NSTextElement`s to those points and uses those elements to create the returned range.
 
