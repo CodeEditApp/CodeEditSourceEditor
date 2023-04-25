@@ -330,7 +330,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     /// Calculated baseline offset depending on `lineHeight`.
     internal var baselineOffset: Double {
-        ((self.lineHeight) - font.lineHeight) / 2
+        ((self.lineHeight) - font.lineHeight) / 2 + 2
     }
 
     // MARK: Selectors
