@@ -36,6 +36,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Whether the code editor should use the theme background color or be transparent
     public var useThemeBackground: Bool
 
+    public var systemAppearance: NSAppearance.Name?
+
+    var cancellables = Set<AnyCancellable>()
+
     /// The visual width of tab characters in the text view measured in number of spaces.
     public var tabWidth: Int {
         didSet {
@@ -160,7 +164,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
         rulerView.font = rulerFont
-        rulerView.selectedLineHighlightColor = theme.lineHighlight
+        rulerView.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
+            ? NSColor.quaternaryLabelColor
+            : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
         rulerView.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
 
         if self.isEditable == false {
@@ -179,7 +185,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.insertionPointColor = theme.insertionPoint
         textView.insertionPointWidth = 1.0
         textView.selectionBackgroundColor = theme.selection
-        textView.selectedLineHighlightColor = theme.lineHighlight
+        textView.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
+            ? NSColor.quaternaryLabelColor
+            : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
         textView.string = self.text.wrappedValue
         textView.isEditable = self.isEditable
         textView.highlightSelectedLine = true
@@ -239,6 +247,19 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         ) { [weak self] _ in
             self?.updateTextContainerWidthIfNeeded()
         }
+
+        systemAppearance = NSApp.effectiveAppearance.name
+
+        NSApp.publisher(for: \.effectiveAppearance)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] newValue in
+                guard let self = self else { return }
+
+                if self.systemAppearance != newValue.name {
+                    self.systemAppearance = newValue.name
+                }
+            }
+            .store(in: &cancellables)
     }
 
     public override func viewWillAppear() {
@@ -283,7 +304,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.backgroundColor = useThemeBackground ? theme.background : .clear
         textView?.insertionPointColor = theme.insertionPoint
         textView?.selectionBackgroundColor = theme.selection
-        textView?.selectedLineHighlightColor = theme.lineHighlight
+        textView?.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
+            ? NSColor.quaternaryLabelColor
+            : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
         textView?.isEditable = isEditable
         textView.highlightSelectedLine = isEditable
         textView?.typingAttributes = attributesFor(nil)
@@ -291,7 +314,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
         rulerView?.backgroundColor = useThemeBackground ? theme.background : .clear
         rulerView?.separatorColor = theme.invisibles
-        rulerView?.selectedLineHighlightColor = theme.lineHighlight
+        rulerView?.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
+            ? NSColor.quaternaryLabelColor
+            : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
         rulerView?.baselineOffset = baselineOffset
         rulerView.highlightSelectedLine = isEditable
         rulerView?.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
@@ -346,5 +371,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     deinit {
         textView = nil
         highlighter = nil
+        cancellables.forEach { $0.cancel() }
     }
 }
