@@ -32,7 +32,7 @@ class Highlighter: NSObject {
 
     /// The range of the entire document
     private var entireTextRange: Range<Int> {
-        return 0..<(textView.textContentStorage.textStorage?.length ?? 0)
+        return 0..<(textView.textContentStorage?.textStorage?.length ?? 0)
     }
 
     /// The set of visible indexes in tht text view
@@ -82,12 +82,12 @@ class Highlighter: NSObject {
 
         highlightProvider?.setLanguage(codeLanguage: language)
 
-        guard textView.textContentStorage.textStorage != nil else {
+        guard textView.textContentStorage?.textStorage != nil else {
             assertionFailure("Text view does not have a textStorage")
             return
         }
 
-        textView.textContentStorage.textStorage?.delegate = self
+        textView.textContentStorage?.textStorage?.delegate = self
         highlightProvider?.setUp(textView: textView)
 
         if let scrollView = textView.enclosingScrollView {
@@ -188,7 +188,7 @@ private extension Highlighter {
             }
 
             // Loop through each highlight and modify the textStorage accordingly.
-            textView.textContentStorage.textStorage?.beginEditing()
+            textView.textContentStorage?.textStorage?.beginEditing()
 
             // Create a set of indexes that were not highlighted.
             var ignoredIndexes = IndexSet(integersIn: rangeToHighlight)
@@ -200,7 +200,7 @@ private extension Highlighter {
 //                                                                  for: NSTextRange(highlight.range,
 //                                                                       provider: textView.textContentStorage)!)
                 // Temp solution (until Apple fixes above)
-                textView.textContentStorage.textStorage?.setAttributes(
+                textView.textContentStorage?.textStorage?.setAttributes(
                     attributeProvider.attributesFor(highlight.capture),
                     range: highlight.range
                 )
@@ -213,13 +213,13 @@ private extension Highlighter {
             // This fixes the case where characters are changed to have a non-text color, and then are skipped when
             // they need to be changed back.
             for ignoredRange in ignoredIndexes.rangeView {
-                textView.textContentStorage.textStorage?.setAttributes(
+                textView.textContentStorage?.textStorage?.setAttributes(
                     attributeProvider.attributesFor(nil),
                     range: NSRange(ignoredRange)
                 )
             }
 
-            textView.textContentStorage.textStorage?.endEditing()
+            textView.textContentStorage?.textStorage?.endEditing()
 
             // After applying edits to the text storage we need to invalidate the layout
             // of the highlighted text.

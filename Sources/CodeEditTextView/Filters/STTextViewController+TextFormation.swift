@@ -96,13 +96,14 @@ extension STTextViewController {
     public func textView(_ textView: STTextView,
                          shouldChangeTextIn affectedCharRange: NSTextRange,
                          replacementString: String?) -> Bool {
-        guard let range = affectedCharRange.nsRange(using: textView.textContentStorage) else {
+        guard let textContentStorage = textView.textContentStorage,
+              let range = affectedCharRange.nsRange(using: textContentStorage) else {
             return true
         }
 
         let mutation = TextMutation(string: replacementString ?? "",
                                     range: range,
-                                    limit: textView.textContentStorage.length)
+                                    limit: textView.textContentStorage?.length ?? 0)
 
         textView.undoManager?.beginUndoGrouping()
 

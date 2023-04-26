@@ -16,6 +16,9 @@ extension STTextView: TextInterface {
             return self.selectedRange()
         }
         set {
+            guard let textContentStorage = textContentStorage else {
+                return
+            }
             if let textRange = NSTextRange(newValue, provider: textContentStorage) {
                 self.setSelectedRange(textRange)
             }
@@ -23,11 +26,11 @@ extension STTextView: TextInterface {
     }
 
     public var length: Int {
-        textContentStorage.length
+        textContentStorage?.length ?? 0
     }
 
     public func substring(from range: NSRange) -> String? {
-        return textContentStorage.substring(from: range)
+        return textContentStorage?.substring(from: range)
     }
 
     public func applyMutation(_ mutation: TextStory.TextMutation) {
@@ -39,10 +42,10 @@ extension STTextView: TextInterface {
             })
         }
 
-        textContentStorage.performEditingTransaction {
-            textContentStorage.applyMutation(mutation)
+        textContentStorage?.performEditingTransaction {
+            textContentStorage?.applyMutation(mutation)
         }
 
-        didChangeText()
+        textDidChange(nil)
     }
 }

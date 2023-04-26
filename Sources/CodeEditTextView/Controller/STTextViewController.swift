@@ -168,6 +168,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
             ? NSColor.quaternaryLabelColor
             : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
         rulerView.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
+        rulerView.allowsMarkers = false
 
         if self.isEditable == false {
             rulerView.selectedLineTextColor = nil
@@ -310,6 +311,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView?.isEditable = isEditable
         textView.highlightSelectedLine = isEditable
         textView?.typingAttributes = attributesFor(nil)
+        paragraphStyle = generateParagraphStyle()
         textView?.defaultParagraphStyle = paragraphStyle
 
         rulerView?.backgroundColor = useThemeBackground ? theme.background : .clear
@@ -342,7 +344,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     /// Calculated baseline offset depending on `lineHeight`.
     internal var baselineOffset: Double {
-        ((self.lineHeight) - font.lineHeight) / 2
+        ((self.lineHeight) - font.lineHeight) / 2 + 2
     }
 
     // MARK: Selectors
