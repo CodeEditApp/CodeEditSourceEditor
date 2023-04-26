@@ -89,7 +89,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     }
 
     /// The kern to use for characters. Defaults to `0.0` and is updated when `letterSpacing` is set.
-    private var kern: CGFloat = 0.0
+    internal var kern: CGFloat = 0.0
 
     private var fontCharWidth: CGFloat {
         (" " as NSString).size(withAttributes: [.font: font]).width
@@ -274,7 +274,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     // MARK: UI
 
     /// A default `NSParagraphStyle` with a set `lineHeight`
-    private lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
+    internal lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
 
     private func generateParagraphStyle() -> NSMutableParagraphStyle {
         // swiftlint:disable:next force_cast
@@ -333,19 +333,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
         highlighter?.invalidate()
         updateTextContainerWidthIfNeeded()
-    }
-
-    /// Gets all attributes for the given capture including the line height, background color, and text color.
-    /// - Parameter capture: The capture to use for syntax highlighting.
-    /// - Returns: All attributes to be applied.
-    public func attributesFor(_ capture: CaptureName?) -> [NSAttributedString.Key: Any] {
-        return [
-            .font: font,
-            .foregroundColor: theme.colorFor(capture),
-            .baselineOffset: baselineOffset,
-            .paragraphStyle: paragraphStyle,
-            .kern: kern
-        ]
     }
 
     /// Calculated line height depending on ``STTextViewController/lineHeightMultiple``
