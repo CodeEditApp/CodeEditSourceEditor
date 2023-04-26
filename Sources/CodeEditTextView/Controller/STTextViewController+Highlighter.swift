@@ -39,4 +39,17 @@ extension STTextViewController {
             highlighter?.setHighlightProvider(provider)
         }
     }
+
+    /// Gets all attributes for the given capture including the line height, background color, and text color.
+    /// - Parameter capture: The capture to use for syntax highlighting.
+    /// - Returns: All attributes to be applied.
+    public func attributesFor(_ capture: CaptureName?) -> [NSAttributedString.Key: Any] {
+        return [
+            .font: font,
+            .foregroundColor: theme.colorFor(capture),
+            .baselineOffset: baselineOffset,
+            .paragraphStyle: paragraphStyle,
+            .kern: kern
+        ]
+    }
 }
