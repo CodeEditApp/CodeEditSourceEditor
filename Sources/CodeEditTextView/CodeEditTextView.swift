@@ -36,13 +36,13 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
-        theme: Binding<EditorTheme>,
-        font: Binding<NSFont>,
-        tabWidth: Binding<Int>,
-        indentOption: Binding<IndentOption> = .constant(.spaces(count: 4)),
-        lineHeight: Binding<Double>,
-        wrapLines: Binding<Bool>,
-        editorOverscroll: Binding<Double> = .constant(0.0),
+        theme: EditorTheme,
+        font: NSFont,
+        tabWidth: Int,
+        indentOption: IndentOption = .spaces(count: 4),
+        lineHeight: Double,
+        wrapLines: Bool,
+        editorOverscroll: Double = 0.0,
         cursorPosition: Binding<(Int, Int)>,
         useThemeBackground: Bool = true,
         highlightProvider: HighlightProviding? = nil,
@@ -52,14 +52,14 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ) {
         self._text = text
         self.language = language
-        self._theme = theme
+        self.theme = theme
         self.useThemeBackground = useThemeBackground
-        self._font = font
-        self._tabWidth = tabWidth
-        self._indentOption = indentOption
-        self._lineHeight = lineHeight
-        self._wrapLines = wrapLines
-        self._editorOverscroll = editorOverscroll
+        self.font = font
+        self.tabWidth = tabWidth
+        self.indentOption = indentOption
+        self.lineHeight = lineHeight
+        self.wrapLines = wrapLines
+        self.editorOverscroll = editorOverscroll
         self._cursorPosition = cursorPosition
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
@@ -69,13 +69,13 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
 
     @Binding private var text: String
     private var language: CodeLanguage
-    @Binding private var theme: EditorTheme
-    @Binding private var font: NSFont
-    @Binding private var tabWidth: Int
-    @Binding private var indentOption: IndentOption
-    @Binding private var lineHeight: Double
-    @Binding private var wrapLines: Bool
-    @Binding private var editorOverscroll: Double
+    private var theme: EditorTheme
+    private var font: NSFont
+    private var tabWidth: Int
+    private var indentOption: IndentOption
+    private var lineHeight: Double
+    private var wrapLines: Bool
+    private var editorOverscroll: Double
     @Binding private var cursorPosition: (Int, Int)
     private var useThemeBackground: Bool
     private var highlightProvider: HighlightProviding?
@@ -107,6 +107,12 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     }
 
     public func updateNSViewController(_ controller: NSViewControllerType, context: Context) {
+        // Do manual diffing to reduce the amount of reloads.
+        // This helps a lot in view performance, as it otherwise gets triggered on each environment change.
+        guard !paramsAreEqual(controller: controller) else {
+            return
+        }
+
         controller.font = font
         controller.wrapLines = wrapLines
         controller.useThemeBackground = useThemeBackground
@@ -133,5 +139,19 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
 
         controller.reloadUI()
         return
+    }
+
+    func paramsAreEqual(controller: NSViewControllerType) -> Bool {
+        controller.font == font &&
+        controller.wrapLines == wrapLines &&
+        controller.useThemeBackground == useThemeBackground &&
+        controller.lineHeightMultiple == lineHeight &&
+        controller.editorOverscroll == editorOverscroll &&
+        controller.contentInsets == contentInsets &&
+        controller.language.id == language.id &&
+        controller.theme == theme &&
+        controller.indentOption == indentOption &&
+        controller.tabWidth == tabWidth &&
+        controller.letterSpacing == letterSpacing
     }
 }
