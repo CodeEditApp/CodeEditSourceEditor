@@ -156,6 +156,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         if let contentInsets = contentInsets {
             scrollView.contentInsets = contentInsets
         }
+        // Fix: For whatever reason this line now causes the textview to freeze when first loaded
+        // It has something to do with getting view.frame.height in bottomContentInsets
+        // But if this line is not there the tests fail
+//        scrollView.contentInsets.bottom = bottomContentInsets + (contentInsets?.bottom ?? 0)
 
         rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
         rulerView.drawSeparator = false
@@ -308,8 +312,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView?.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
         rulerView?.font = rulerFont
         rulerView.textColor = .secondaryLabelColor
-
-        print("Reload UI")
 
         if let scrollView = view as? NSScrollView {
             scrollView.drawsBackground = useThemeBackground
