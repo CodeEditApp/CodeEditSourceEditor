@@ -151,25 +151,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
         scrollView.documentView = textView
-        scrollView.drawsBackground = useThemeBackground
         scrollView.automaticallyAdjustsContentInsets = contentInsets == nil
-        if let contentInsets = contentInsets {
-            scrollView.contentInsets = contentInsets
-        }
-        // Fix: For whatever reason this line now causes the textview to freeze when first loaded
-        // It has something to do with getting view.frame.height in bottomContentInsets
-        // But if this line is not there the tests fail
-//        scrollView.contentInsets.bottom = bottomContentInsets + (contentInsets?.bottom ?? 0)
 
         rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
         rulerView.allowsMarkers = false
-
-        if self.isEditable == false {
-            rulerView.selectedLineTextColor = nil
-            rulerView.selectedLineHighlightColor = .clear
-        }
 
         scrollView.verticalRulerView = rulerView
         scrollView.rulersVisible = true
@@ -183,7 +170,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.allowsUndo = true
         textView.setupMenus()
         textView.delegate = self
-        textView.highlightSelectedLine = self.isEditable
 
         scrollView.documentView = textView
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -203,12 +189,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
             return event
         }
 
+        reloadUI()
         setUpHighlighter()
         setHighlightProvider(self.highlightProvider)
         setUpTextFormation()
 
         self.setCursorPosition(self.cursorPosition.wrappedValue)
-        reloadUI()
     }
 
     public override func viewDidLoad() {
@@ -267,6 +253,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     internal lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
 
     private func generateParagraphStyle() -> NSMutableParagraphStyle {
+        print("computing paragraphStyle")
         // swiftlint:disable:next force_cast
         let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
         paragraph.minimumLineHeight = lineHeight
@@ -278,6 +265,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     /// ScrollView's bottom inset using as editor overscroll
     private var bottomContentInsets: CGFloat {
+        print("computing bottomContentInsets")
         let height = view.frame.height
         var inset = editorOverscroll * height
 
@@ -290,6 +278,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     /// Reloads the UI to apply changes to ``STTextViewController/font``, ``STTextViewController/theme``, ...
     internal func reloadUI() {
+        print("reloadUI called")
         textView?.textColor = theme.text
         textView.backgroundColor = .clear
         textView?.insertionPointColor = theme.insertionPoint
@@ -312,6 +301,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView?.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
         rulerView?.font = rulerFont
         rulerView.textColor = .secondaryLabelColor
+        if self.isEditable == false {
+            rulerView.selectedLineTextColor = nil
+            rulerView.selectedLineHighlightColor = .clear
+        }
 
         if let scrollView = view as? NSScrollView {
             scrollView.drawsBackground = useThemeBackground
