@@ -215,5 +215,68 @@ final class STTextViewControllerTests: XCTestCase {
 
         controller.letterSpacing = 1.0
     }
+
+    func test_braceHighlights() {
+        controller.viewDidLoad()
+        controller.bracePairHighlight = nil
+        controller.textView.string = "{ Loren Ipsum {} }"
+        controller.setCursorPosition((1, 2)) // After first opening {
+        XCTAssert(controller.highlightLayers.isEmpty, "Controller added highlight layer when setting is set to `nil`")
+
+        controller.bracePairHighlight = .box
+        controller.setCursorPosition((1, 2)) // After first opening {
+        XCTAssert(controller.highlightLayers.count == 2, "Controller created an incorrect number of layers for the box. Expected 2, found \(controller.highlightLayers.count)")
+        controller.setCursorPosition((1, 3))
+        XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove brace pair layers.")
+
+        controller.bracePairHighlight = .flash
+        controller.setCursorPosition((1, 2)) // After first opening {
+        XCTAssert(controller.highlightLayers.count == 1, "Controller created more than one layer for flash animation. Expected 1, found \(controller.highlightLayers.count)")
+        controller.setCursorPosition((1, 3))
+        XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove brace pair layers.")
+
+        controller.setCursorPosition((1, 2)) // After first opening {
+        XCTAssert(controller.highlightLayers.count == 1, "Controller created more than one layer for flash animation. Expected 1, found \(controller.highlightLayers.count)")
+        let exp = expectation(description: "Test after 0.8 seconds")
+        let result = XCTWaiter.wait(for: [exp], timeout: 0.8)
+        if result == XCTWaiter.Result.timedOut {
+            XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove layer after flash animation. Expected 0, found \(controller.highlightLayers.count)")
+        } else {
+            XCTFail("Delay interrupted")
+        }
+    }
+
+    func test_findClosingPair() {
+        controller.textView.string = "{ Loren Ipsum {} }"
+        var idx: Int?
+
+        // Test walking forwards
+        idx = controller.findClosingPair("{", "}", from: 1, limit: 18, reverse: false)
+        XCTAssert(idx == 17, "Walking forwards failed. Expected `17`, found: `\(String(describing: idx))`")
+
+        // Test walking backwards
+        idx = controller.findClosingPair("}", "{", from: 17, limit: 0, reverse: true)
+        XCTAssert(idx == 0, "Walking backwards failed. Expected `0`, found: `\(String(describing: idx))`")
+
+        // Test extra pair
+        controller.textView.string = "{ Loren Ipsum {}} }"
+        idx = controller.findClosingPair("{", "}", from: 1, limit: 19, reverse: false)
+        XCTAssert(idx == 16, "Walking forwards with extra brace pair failed. Expected `16`, found: `\(String(describing: idx))`")
+
+        // Text extra pair backwards
+        controller.textView.string = "{ Loren Ipsum {{} }"
+        idx = controller.findClosingPair("}", "{", from: 18, limit: 0, reverse: true)
+        XCTAssert(idx == 14, "Walking backwards with extra brace pair failed. Expected `14`, found: `\(String(describing: idx))`")
+
+        // Test missing pair
+        controller.textView.string = "{ Loren Ipsum { }"
+        idx = controller.findClosingPair("{", "}", from: 1, limit: 17, reverse: false)
+        XCTAssert(idx == nil, "Walking forwards with missing pair failed. Expected `nil`, found: `\(String(describing: idx))`")
+
+        // Test missing pair backwards
+        controller.textView.string = " Loren Ipsum {} }"
+        idx = controller.findClosingPair("}", "{", from: 17, limit: 0, reverse: true)
+        XCTAssert(idx == nil, "Walking backwards with missing pair failed. Expected `nil`, found: `\(String(describing: idx))`")
+    }
 }
 // swiftlint:enable all

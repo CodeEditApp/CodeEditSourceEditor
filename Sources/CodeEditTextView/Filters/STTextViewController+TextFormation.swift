@@ -12,6 +12,15 @@ import TextStory
 
 extension STTextViewController {
 
+    internal enum BracePairs {
+        static let allValues: [(String, String)] = [
+            ("{", "}"),
+            ("[", "]"),
+            ("(", ")"),
+            ("<", ">")
+        ]
+    }
+
     // MARK: - Filter Configuration
 
     /// Initializes any filters for text editing.
@@ -19,13 +28,6 @@ extension STTextViewController {
         textFilters = []
 
         let indentationUnit = indentOption.stringValue
-
-        let pairsToHandle: [(String, String)] = [
-            ("{", "}"),
-            ("[", "]"),
-            ("(", ")"),
-            ("<", ">")
-        ]
 
         let indenter: TextualIndenter = getTextIndenter()
         let whitespaceProvider = WhitespaceProviders(
@@ -36,10 +38,10 @@ extension STTextViewController {
 
         // Filters
 
-        setUpOpenPairFilters(pairs: pairsToHandle, whitespaceProvider: whitespaceProvider)
+        setUpOpenPairFilters(pairs: BracePairs.allValues, whitespaceProvider: whitespaceProvider)
         setUpNewlineTabFilters(whitespaceProvider: whitespaceProvider,
                                indentOption: indentOption)
-        setUpDeletePairFilters(pairs: pairsToHandle)
+        setUpDeletePairFilters(pairs: BracePairs.allValues)
         setUpDeleteWhitespaceFilter(indentOption: indentOption)
     }
 
