@@ -19,6 +19,13 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     internal var rulerView: STLineNumberRulerView!
 
+    /// Internal reference to any injected layers in the text view.
+    internal var highlightLayers: [CALayer] = []
+
+    /// Tracks the last text selections. Used to debounce `STTextView.didChangeSelectionNotification` being sent twice
+    /// for every new selection.
+    internal var lastTextSelections: [NSTextRange] = []
+
     /// Binding for the `textView`s string
     public var text: Binding<String>
 
@@ -88,6 +95,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         }
     }
 
+    /// The type of highlight to use when highlighting bracket pairs. Leave as `nil` to disable highlighting.
+    public var bracketPairHighlight: BracketPairHighlight?
+
     /// The kern to use for characters. Defaults to `0.0` and is updated when `letterSpacing` is set.
     internal var kern: CGFloat = 0.0
 
@@ -119,7 +129,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         highlightProvider: HighlightProviding? = nil,
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool,
-        letterSpacing: Double
+        letterSpacing: Double,
+        bracketPairHighlight: BracketPairHighlight? = nil
     ) {
         self.text = text
         self.language = language
@@ -135,137 +146,12 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
         self.isEditable = isEditable
+        self.bracketPairHighlight = bracketPairHighlight
         super.init(nibName: nil, bundle: nil)
     }
 
     required init(coder: NSCoder) {
         fatalError()
-    }
-
-    // MARK: VC Lifecycle
-
-    // swiftlint:disable:next function_body_length
-    public override func loadView() {
-        textView = STTextView()
-
-        let scrollView = CEScrollView()
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.hasVerticalScroller = true
-        scrollView.documentView = textView
-        scrollView.drawsBackground = useThemeBackground
-        scrollView.automaticallyAdjustsContentInsets = contentInsets == nil
-        if let contentInsets = contentInsets {
-            scrollView.contentInsets = contentInsets
-        }
-
-        rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
-        rulerView.backgroundColor = useThemeBackground ? theme.background : .clear
-        rulerView.textColor = .secondaryLabelColor
-        rulerView.drawSeparator = false
-        rulerView.baselineOffset = baselineOffset
-        rulerView.font = rulerFont
-        rulerView.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
-            ? NSColor.quaternaryLabelColor
-            : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
-        rulerView.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
-        rulerView.allowsMarkers = false
-
-        if self.isEditable == false {
-            rulerView.selectedLineTextColor = nil
-            rulerView.selectedLineHighlightColor = theme.background
-        }
-
-        scrollView.verticalRulerView = rulerView
-        scrollView.rulersVisible = true
-
-        textView.typingAttributes = attributesFor(nil)
-        textView.defaultParagraphStyle = self.paragraphStyle
-        textView.font = self.font
-        textView.textColor = theme.text
-        textView.backgroundColor = useThemeBackground ? theme.background : .clear
-        textView.insertionPointColor = theme.insertionPoint
-        textView.insertionPointWidth = 1.0
-        textView.selectionBackgroundColor = theme.selection
-        textView.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
-            ? NSColor.quaternaryLabelColor
-            : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
-        textView.string = self.text.wrappedValue
-        textView.isEditable = self.isEditable
-        textView.highlightSelectedLine = true
-        textView.allowsUndo = true
-        textView.setupMenus()
-        textView.delegate = self
-        textView.highlightSelectedLine = self.isEditable
-
-        scrollView.documentView = textView
-
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-
-        self.view = scrollView
-
-        NSLayoutConstraint.activate([
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            self.keyDown(with: event)
-            return event
-        }
-
-        setUpHighlighter()
-        setHighlightProvider(self.highlightProvider)
-        setUpTextFormation()
-
-        self.setCursorPosition(self.cursorPosition.wrappedValue)
-    }
-
-    public override func viewDidLoad() {
-        super.viewDidLoad()
-
-        NotificationCenter.default.addObserver(forName: NSWindow.didResizeNotification,
-                                               object: nil,
-                                               queue: .main) { [weak self] _ in
-            guard let self = self else { return }
-            (self.view as? NSScrollView)?.contentView.contentInsets.bottom = self.bottomContentInsets
-            self.updateTextContainerWidthIfNeeded()
-        }
-
-        NotificationCenter.default.addObserver(
-            forName: STTextView.didChangeSelectionNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.updateCursorPosition()
-        }
-
-        NotificationCenter.default.addObserver(
-            forName: NSView.frameDidChangeNotification,
-            object: (self.view as? NSScrollView)?.verticalRulerView,
-            queue: .main
-        ) { [weak self] _ in
-            self?.updateTextContainerWidthIfNeeded()
-        }
-
-        systemAppearance = NSApp.effectiveAppearance.name
-
-        NSApp.publisher(for: \.effectiveAppearance)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] newValue in
-                guard let self = self else { return }
-
-                if self.systemAppearance != newValue.name {
-                    self.systemAppearance = newValue.name
-                }
-            }
-            .store(in: &cancellables)
-    }
-
-    public override func viewWillAppear() {
-        super.viewWillAppear()
-        updateTextContainerWidthIfNeeded()
     }
 
     public func textViewDidChangeText(_ notification: Notification) {
@@ -288,7 +174,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     }
 
     /// ScrollView's bottom inset using as editor overscroll
-    private var bottomContentInsets: CGFloat {
+    internal var bottomContentInsets: CGFloat {
         let height = view.frame.height
         var inset = editorOverscroll * height
 
@@ -335,6 +221,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
         highlighter?.invalidate()
         updateTextContainerWidthIfNeeded()
+        highlightSelectionPairs()
     }
 
     /// Calculated line height depending on ``STTextViewController/lineHeightMultiple``
@@ -350,7 +237,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     // MARK: Selectors
 
     override public func keyDown(with event: NSEvent) {
-        // This should be uneccessary but if removed STTextView receives some `keydown`s twice.
+        if bracketPairHighlight == .flash {
+            removeHighlightLayers()
+        }
     }
 
     public override func insertTab(_ sender: Any?) {
@@ -358,6 +247,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     }
 
     deinit {
+        removeHighlightLayers()
         textView = nil
         highlighter = nil
         cancellables.forEach { $0.cancel() }
