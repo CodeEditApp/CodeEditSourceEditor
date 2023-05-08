@@ -223,9 +223,15 @@ final class STTextViewControllerTests: XCTestCase {
         controller.setCursorPosition((1, 2)) // After first opening {
         XCTAssert(controller.highlightLayers.isEmpty, "Controller added highlight layer when setting is set to `nil`")
 
-        controller.bracketPairHighlight = .bordered
+        controller.bracketPairHighlight = .bordered(color: .black)
         controller.setCursorPosition((1, 2)) // After first opening {
-        XCTAssert(controller.highlightLayers.count == 2, "Controller created an incorrect number of layers for the box. Expected 2, found \(controller.highlightLayers.count)")
+        XCTAssert(controller.highlightLayers.count == 2, "Controller created an incorrect number of layers for bordered. Expected 2, found \(controller.highlightLayers.count)")
+        controller.setCursorPosition((1, 3))
+        XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove bracket pair layers.")
+
+        controller.bracketPairHighlight = .underline(color: .black)
+        controller.setCursorPosition((1, 2)) // After first opening {
+        XCTAssert(controller.highlightLayers.count == 2, "Controller created an incorrect number of layers for underline. Expected 2, found \(controller.highlightLayers.count)")
         controller.setCursorPosition((1, 3))
         XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove bracket pair layers.")
 
