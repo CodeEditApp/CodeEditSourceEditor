@@ -12,7 +12,7 @@ import TextStory
 
 extension STTextViewController {
 
-    internal enum BracePairs {
+    internal enum BracketPairs {
         static let allValues: [(String, String)] = [
             ("{", "}"),
             ("[", "]"),
@@ -38,10 +38,10 @@ extension STTextViewController {
 
         // Filters
 
-        setUpOpenPairFilters(pairs: BracePairs.allValues, whitespaceProvider: whitespaceProvider)
+        setUpOpenPairFilters(pairs: BracketPairs.allValues, whitespaceProvider: whitespaceProvider)
         setUpNewlineTabFilters(whitespaceProvider: whitespaceProvider,
                                indentOption: indentOption)
-        setUpDeletePairFilters(pairs: BracePairs.allValues)
+        setUpDeletePairFilters(pairs: BracketPairs.allValues)
         setUpDeleteWhitespaceFilter(indentOption: indentOption)
     }
 

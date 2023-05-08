@@ -9,9 +9,9 @@ import AppKit
 import STTextView
 
 extension STTextViewController {
-    /// Highlights brace pairs using the current selection.
+    /// Highlights bracket pairs using the current selection.
     internal func highlightSelectionPairs() {
-        guard bracePairHighlight != nil else { return }
+        guard bracketPairHighlight != nil else { return }
         for selection in textView.textLayoutManager.textSelections.flatMap(\.textRanges) {
             if selection.isEmpty,
                let range = selection.nsRange(using: textView.textContentManager),
@@ -19,7 +19,7 @@ extension STTextViewController {
                let preceedingCharacter = textView.textContentStorage?.textStorage?.substring(
                 from: NSRange(location: range.location - 1, length: 1) // The preceeding character exists
                ) {
-                for pair in BracePairs.allValues {
+                for pair in BracketPairs.allValues {
                     if preceedingCharacter == pair.0 {
                         // Walk forwards
                         if let characterIndex = findClosingPair(
@@ -31,7 +31,7 @@ extension STTextViewController {
                             reverse: false
                         ) {
                             highlightRange(NSRange(location: characterIndex, length: 1))
-                            if bracePairHighlight == .box {
+                            if bracketPairHighlight?.highlightsSourceBracket ?? false {
                                 highlightRange(NSRange(location: range.location - 1, length: 1))
                             }
                         }
@@ -46,7 +46,7 @@ extension STTextViewController {
                             reverse: true
                         ) {
                             highlightRange(NSRange(location: characterIndex, length: 1))
-                            if bracePairHighlight == .box {
+                            if bracketPairHighlight?.highlightsSourceBracket ?? false {
                                 highlightRange(NSRange(location: range.location - 1, length: 1))
                             }
                         }
@@ -107,7 +107,7 @@ extension STTextViewController {
     ///   - range: The range to highlight
     ///   - scrollToRange: Set to true to scroll to the given range when highlighting. Defaults to `false`.
     private func highlightRange(_ range: NSTextRange, scrollToRange: Bool = false) {
-        guard let bracePairHighlight = bracePairHighlight,
+        guard let bracketPairHighlight = bracketPairHighlight,
               var rectToHighlight = textView.textLayoutManager.textSelectionSegmentFrame(
                 in: range, type: .highlight
         ) else {
@@ -115,7 +115,7 @@ extension STTextViewController {
         }
         let layer = CAShapeLayer()
 
-        switch bracePairHighlight {
+        switch bracketPairHighlight {
         case .flash:
             rectToHighlight.size.width += 4
             rectToHighlight.origin.x -= 2
@@ -127,18 +127,32 @@ extension STTextViewController {
             layer.shadowOffset = CGSize(width: 0, height: 1)
             layer.shadowRadius = 3.0
             layer.opacity = 0.0
-        case .box:
-            layer.borderColor = theme.text.cgColor
+        case .bordered(let borderColor):
+            layer.borderColor = borderColor.cgColor
+            layer.cornerRadius = 2.5
             layer.borderWidth = 0.5
-            layer.opacity = 0.5
+            layer.opacity = 1.0
+        case .underline(let underlineColor):
+            layer.lineWidth = 1.0
+            layer.lineCap = .round
+            layer.strokeColor = underlineColor.cgColor
+            layer.opacity = 1.0
         }
 
-        layer.frame = rectToHighlight
+        switch bracketPairHighlight {
+        case .flash, .bordered:
+            layer.frame = rectToHighlight
+        case .underline:
+            let path = CGMutablePath()
+            path.move(to: CGPoint(x: rectToHighlight.minX, y: rectToHighlight.maxY))
+            path.addLine(to: CGPoint(x: rectToHighlight.maxX, y: rectToHighlight.maxY))
+            layer.path = path
+        }
 
         // Insert above selection but below text
         textView.layer?.insertSublayer(layer, at: 1)
 
-        if bracePairHighlight == .flash {
+        if bracketPairHighlight == .flash {
             addFlashAnimation(to: layer, rectToHighlight: rectToHighlight)
         }
 

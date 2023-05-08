@@ -33,8 +33,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - isEditable: A Boolean value that controls whether the text view allows the user to edit text.
     ///   - letterSpacing: The amount of space to use between letters, as a percent. Eg: `1.0` = no space, `1.5` = 1/2 a
     ///                    character's width between characters, etc. Defaults to `1.0`
-    ///   - bracePairHighlight: The type of highlight to use to highlight brace pairs.
-    ///                         See `BracePairHighlight` for more information.
+    ///   - bracketPairHighlight: The type of highlight to use to highlight bracket pairs.
+    ///                           See `BracketPairHighlight` for more information. Defaults to `nil`
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
@@ -51,7 +51,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
         letterSpacing: Double = 1.0,
-        bracePairHighlight: BracePairHighlight? = nil
+        bracketPairHighlight: BracketPairHighlight? = nil
     ) {
         self._text = text
         self.language = language
@@ -68,7 +68,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self.contentInsets = contentInsets
         self.isEditable = isEditable
         self.letterSpacing = letterSpacing
-        self.bracePairHighlight = bracePairHighlight
+        self.bracketPairHighlight = bracketPairHighlight
     }
 
     @Binding private var text: String
@@ -86,7 +86,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     private var contentInsets: NSEdgeInsets?
     private var isEditable: Bool
     private var letterSpacing: Double
-    private var bracePairHighlight: BracePairHighlight?
+    private var bracketPairHighlight: BracketPairHighlight?
 
     public typealias NSViewControllerType = STTextViewController
 
@@ -107,7 +107,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             contentInsets: contentInsets,
             isEditable: isEditable,
             letterSpacing: letterSpacing,
-            bracePairHighlight: bracePairHighlight
+            bracketPairHighlight: bracketPairHighlight
         )
         return controller
     }
@@ -125,7 +125,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         controller.lineHeightMultiple = lineHeight
         controller.editorOverscroll = editorOverscroll
         controller.contentInsets = contentInsets
-        controller.bracePairHighlight = bracePairHighlight
+        controller.bracketPairHighlight = bracketPairHighlight
 
         // Updating the language, theme, tab width and indent option needlessly can cause highlights to be re-calculated
         if controller.language.id != language.id {
@@ -160,6 +160,6 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         controller.indentOption == indentOption &&
         controller.tabWidth == tabWidth &&
         controller.letterSpacing == letterSpacing &&
-        controller.bracePairHighlight == bracePairHighlight
+        controller.bracketPairHighlight == bracketPairHighlight
     }
 }

@@ -95,8 +95,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         }
     }
 
-    /// The type of highlight to use when highlighting brace pairs. Leave as `nil` to disable highlighting.
-    public var bracePairHighlight: BracePairHighlight? {
+    /// The type of highlight to use when highlighting bracket pairs. Leave as `nil` to disable highlighting.
+    public var bracketPairHighlight: BracketPairHighlight? {
         didSet {
             removeHighlightLayers()
             // Update selection highlights if needed.
@@ -136,7 +136,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool,
         letterSpacing: Double,
-        bracePairHighlight: BracePairHighlight? = nil
+        bracketPairHighlight: BracketPairHighlight? = nil
     ) {
         self.text = text
         self.language = language
@@ -152,7 +152,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
         self.isEditable = isEditable
-        self.bracePairHighlight = bracePairHighlight
+        self.bracketPairHighlight = bracketPairHighlight
         super.init(nibName: nil, bundle: nil)
     }
 
