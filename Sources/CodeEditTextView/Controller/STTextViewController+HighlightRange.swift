@@ -144,8 +144,9 @@ extension STTextViewController {
             layer.frame = rectToHighlight
         case .underline:
             let path = CGMutablePath()
-            path.move(to: CGPoint(x: rectToHighlight.minX, y: rectToHighlight.maxY))
-            path.addLine(to: CGPoint(x: rectToHighlight.maxX, y: rectToHighlight.maxY))
+            let pathY = rectToHighlight.maxY - (lineHeight - font.lineHeight)/4
+            path.move(to: CGPoint(x: rectToHighlight.minX, y: pathY))
+            path.addLine(to: CGPoint(x: rectToHighlight.maxX, y: pathY))
             layer.path = path
         }
 

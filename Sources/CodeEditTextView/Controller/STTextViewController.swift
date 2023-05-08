@@ -99,8 +99,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     public var bracketPairHighlight: BracketPairHighlight? {
         didSet {
             removeHighlightLayers()
-            // Update selection highlights if needed.
-            highlightSelectionPairs()
         }
     }
 
@@ -227,6 +225,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
         highlighter?.invalidate()
         updateTextContainerWidthIfNeeded()
+        if bracketPairHighlight == .flash {
+            highlightSelectionPairs()
+        }
     }
 
     /// Calculated line height depending on ``STTextViewController/lineHeightMultiple``
@@ -242,7 +243,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     // MARK: Selectors
 
     override public func keyDown(with event: NSEvent) {
-        if !highlightLayers.isEmpty {
+        if bracketPairHighlight == .flash &&  !highlightLayers.isEmpty {
             removeHighlightLayers()
         }
     }

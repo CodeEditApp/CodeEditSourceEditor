@@ -121,6 +121,9 @@ extension STTextViewController {
         ) { [weak self] _ in
             self?.removeHighlightLayers()
             self?.updateTextContainerWidthIfNeeded()
+            if self?.bracketPairHighlight != .flash {
+                self?.highlightSelectionPairs()
+            }
         }
 
         systemAppearance = NSApp.effectiveAppearance.name
