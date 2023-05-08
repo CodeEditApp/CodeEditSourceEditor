@@ -222,6 +222,7 @@ final class STTextViewControllerTests: XCTestCase {
         controller.textView.string = "{ Loren Ipsum {} }"
         controller.setCursorPosition((1, 2)) // After first opening {
         XCTAssert(controller.highlightLayers.isEmpty, "Controller added highlight layer when setting is set to `nil`")
+        controller.setCursorPosition((1, 3))
 
         controller.bracketPairHighlight = .bordered(color: .black)
         controller.setCursorPosition((1, 2)) // After first opening {

@@ -96,11 +96,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     }
 
     /// The type of highlight to use when highlighting bracket pairs. Leave as `nil` to disable highlighting.
-    public var bracketPairHighlight: BracketPairHighlight? {
-        didSet {
-            removeHighlightLayers()
-        }
-    }
+    public var bracketPairHighlight: BracketPairHighlight?
 
     /// The kern to use for characters. Defaults to `0.0` and is updated when `letterSpacing` is set.
     internal var kern: CGFloat = 0.0
@@ -225,9 +221,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
         highlighter?.invalidate()
         updateTextContainerWidthIfNeeded()
-        if bracketPairHighlight == .flash {
-            highlightSelectionPairs()
-        }
+        highlightSelectionPairs()
     }
 
     /// Calculated line height depending on ``STTextViewController/lineHeightMultiple``
@@ -243,7 +237,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     // MARK: Selectors
 
     override public func keyDown(with event: NSEvent) {
-        if bracketPairHighlight == .flash &&  !highlightLayers.isEmpty {
+        if bracketPairHighlight == .flash {
             removeHighlightLayers()
         }
     }

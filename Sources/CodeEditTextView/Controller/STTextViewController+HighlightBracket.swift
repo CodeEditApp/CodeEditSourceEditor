@@ -12,6 +12,7 @@ extension STTextViewController {
     /// Highlights bracket pairs using the current selection.
     internal func highlightSelectionPairs() {
         guard bracketPairHighlight != nil else { return }
+        removeHighlightLayers()
         for selection in textView.textLayoutManager.textSelections.flatMap(\.textRanges) {
             if selection.isEmpty,
                let range = selection.nsRange(using: textView.textContentManager),

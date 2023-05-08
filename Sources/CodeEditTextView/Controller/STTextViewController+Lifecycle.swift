@@ -109,7 +109,6 @@ extension STTextViewController {
             }
             self?.lastTextSelections = textSelections ?? []
 
-            self?.removeHighlightLayers()
             self?.updateCursorPosition()
             self?.highlightSelectionPairs()
         }
@@ -119,10 +118,9 @@ extension STTextViewController {
             object: (self.view as? NSScrollView)?.verticalRulerView,
             queue: .main
         ) { [weak self] _ in
-            self?.removeHighlightLayers()
             self?.updateTextContainerWidthIfNeeded()
-            if self?.bracketPairHighlight != .flash {
-                self?.highlightSelectionPairs()
+            if self?.bracketPairHighlight == .flash {
+                self?.removeHighlightLayers()
             }
         }
 
