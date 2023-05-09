@@ -142,107 +142,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         fatalError()
     }
 
-    // MARK: VC Lifecycle
-
-    public override func loadView() {
-        textView = STTextView()
-
-        let scrollView = CEScrollView()
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.hasVerticalScroller = true
-        scrollView.documentView = textView
-        scrollView.automaticallyAdjustsContentInsets = contentInsets == nil
-
-        rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
-        rulerView.drawSeparator = false
-        rulerView.baselineOffset = baselineOffset
-        rulerView.allowsMarkers = false
-
-        scrollView.verticalRulerView = rulerView
-        scrollView.rulersVisible = true
-
-        textView.typingAttributes = attributesFor(nil)
-        textView.defaultParagraphStyle = self.paragraphStyle
-        textView.font = self.font
-        textView.insertionPointWidth = 1.0
-
-        textView.string = self.text.wrappedValue
-        textView.allowsUndo = true
-        textView.setupMenus()
-        textView.delegate = self
-
-        scrollView.documentView = textView
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.backgroundColor = useThemeBackground ? theme.background : .clear
-
-        self.view = scrollView
-
-        NSLayoutConstraint.activate([
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            self.keyDown(with: event)
-            return event
-        }
-
-        reloadUI()
-        setUpHighlighter()
-        setHighlightProvider(self.highlightProvider)
-        setUpTextFormation()
-
-        self.setCursorPosition(self.cursorPosition.wrappedValue)
-    }
-
-    public override func viewDidLoad() {
-        super.viewDidLoad()
-
-        NotificationCenter.default.addObserver(forName: NSWindow.didResizeNotification,
-                                               object: nil,
-                                               queue: .main) { [weak self] _ in
-            guard let self = self else { return }
-            (self.view as? NSScrollView)?.contentView.contentInsets.bottom = self.bottomContentInsets
-            self.updateTextContainerWidthIfNeeded()
-        }
-
-        NotificationCenter.default.addObserver(
-            forName: STTextView.didChangeSelectionNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            self?.updateCursorPosition()
-        }
-
-        NotificationCenter.default.addObserver(
-            forName: NSView.frameDidChangeNotification,
-            object: (self.view as? NSScrollView)?.verticalRulerView,
-            queue: .main
-        ) { [weak self] _ in
-            self?.updateTextContainerWidthIfNeeded()
-        }
-
-        systemAppearance = NSApp.effectiveAppearance.name
-
-        NSApp.publisher(for: \.effectiveAppearance)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] newValue in
-                guard let self = self else { return }
-
-                if self.systemAppearance != newValue.name {
-                    self.systemAppearance = newValue.name
-                }
-            }
-            .store(in: &cancellables)
-    }
-
-    public override func viewWillAppear() {
-        super.viewWillAppear()
-        updateTextContainerWidthIfNeeded()
-    }
-
     public func textViewDidChangeText(_ notification: Notification) {
         self.text.wrappedValue = textView.string
     }
@@ -265,7 +164,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     /// ScrollView's bottom inset using as editor overscroll
     private var bottomContentInsets: CGFloat {
-        print("computing bottomContentInsets")
         let height = view.frame.height
         var inset = editorOverscroll * height
 
@@ -278,9 +176,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     /// Reloads the UI to apply changes to ``STTextViewController/font``, ``STTextViewController/theme``, ...
     internal func reloadUI() {
-        print("reloadUI called")
         textView?.textColor = theme.text
-        textView.backgroundColor = .clear
         textView?.insertionPointColor = theme.insertionPoint
         textView?.selectionBackgroundColor = theme.selection
         textView?.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
@@ -292,7 +188,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         paragraphStyle = generateParagraphStyle()
         textView?.defaultParagraphStyle = paragraphStyle
 
-        rulerView?.backgroundColor = .clear
         rulerView?.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
             ? NSColor.quaternaryLabelColor
             : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
@@ -300,7 +195,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.highlightSelectedLine = isEditable
         rulerView?.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
         rulerView?.font = rulerFont
-        rulerView.textColor = .secondaryLabelColor
         if self.isEditable == false {
             rulerView.selectedLineTextColor = nil
             rulerView.selectedLineHighlightColor = .clear
