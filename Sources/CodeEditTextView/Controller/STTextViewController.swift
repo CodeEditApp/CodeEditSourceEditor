@@ -19,6 +19,13 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     internal var rulerView: STLineNumberRulerView!
 
+    /// Internal reference to any injected layers in the text view.
+    internal var highlightLayers: [CALayer] = []
+
+    /// Tracks the last text selections. Used to debounce `STTextView.didChangeSelectionNotification` being sent twice
+    /// for every new selection.
+    internal var lastTextSelections: [NSTextRange] = []
+
     /// Binding for the `textView`s string
     public var text: Binding<String>
 
@@ -88,6 +95,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         }
     }
 
+    /// The type of highlight to use when highlighting bracket pairs. Leave as `nil` to disable highlighting.
+    public var bracketPairHighlight: BracketPairHighlight?
+
     /// The kern to use for characters. Defaults to `0.0` and is updated when `letterSpacing` is set.
     internal var kern: CGFloat = 0.0
 
@@ -119,7 +129,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         highlightProvider: HighlightProviding? = nil,
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool,
-        letterSpacing: Double
+        letterSpacing: Double,
+        bracketPairHighlight: BracketPairHighlight? = nil
     ) {
         self.text = text
         self.language = language
@@ -135,6 +146,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
         self.isEditable = isEditable
+        self.bracketPairHighlight = bracketPairHighlight
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -163,7 +175,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     }
 
     /// ScrollView's bottom inset using as editor overscroll
-    private var bottomContentInsets: CGFloat {
+    internal var bottomContentInsets: CGFloat {
         let height = view.frame.height
         var inset = editorOverscroll * height
 
@@ -211,6 +223,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
         highlighter?.invalidate()
         updateTextContainerWidthIfNeeded()
+        highlightSelectionPairs()
     }
 
     /// Calculated line height depending on ``STTextViewController/lineHeightMultiple``
@@ -226,7 +239,9 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     // MARK: Selectors
 
     override public func keyDown(with event: NSEvent) {
-        // This should be uneccessary but if removed STTextView receives some `keydown`s twice.
+        if bracketPairHighlight == .flash {
+            removeHighlightLayers()
+        }
     }
 
     public override func insertTab(_ sender: Any?) {
@@ -234,6 +249,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     }
 
     deinit {
+        removeHighlightLayers()
         textView = nil
         highlighter = nil
         cancellables.forEach { $0.cancel() }

@@ -79,10 +79,10 @@ extension TreeSitterClient {
     /// - Returns: Any changed ranges.
     internal func changedByteRanges(_ lhs: Tree?, rhs: Tree?) -> [Range<UInt32>] {
         switch (lhs, rhs) {
-        case (let t1?, let t2?):
-            return t1.changedRanges(from: t2).map({ $0.bytes })
-        case (nil, let t2?):
-            let range = t2.rootNode?.byteRange
+        case (let tree1?, let tree2?):
+            return tree1.changedRanges(from: tree2).map({ $0.bytes })
+        case (nil, let tree2?):
+            let range = tree2.rootNode?.byteRange
 
             return range.flatMap({ [$0] }) ?? []
         case (_, nil):
