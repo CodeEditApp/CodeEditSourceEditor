@@ -9,7 +9,6 @@ import AppKit
 import STTextView
 
 extension STTextViewController {
-    // swiftlint:disable:next function_body_length
     public override func loadView() {
         textView = STTextView()
 

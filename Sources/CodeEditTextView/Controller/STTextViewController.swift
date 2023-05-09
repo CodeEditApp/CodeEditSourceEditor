@@ -228,7 +228,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     /// Calculated line height depending on ``STTextViewController/lineHeightMultiple``
     internal var lineHeight: Double {
-        font.pointSize * lineHeightMultiple
+        font.lineHeight * lineHeightMultiple
     }
 
     /// Calculated baseline offset depending on `lineHeight`.
