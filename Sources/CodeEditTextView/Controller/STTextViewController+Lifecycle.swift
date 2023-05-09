@@ -17,28 +17,14 @@ extension STTextViewController {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
         scrollView.documentView = textView
-        scrollView.drawsBackground = useThemeBackground
         scrollView.automaticallyAdjustsContentInsets = contentInsets == nil
-        if let contentInsets = contentInsets {
-            scrollView.contentInsets = contentInsets
-        }
 
         rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
-        rulerView.backgroundColor = useThemeBackground ? theme.background : .clear
-        rulerView.textColor = .secondaryLabelColor
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
-        rulerView.font = rulerFont
-        rulerView.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
-        ? NSColor.quaternaryLabelColor
-        : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
-        rulerView.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
         rulerView.allowsMarkers = false
-
-        if self.isEditable == false {
-            rulerView.selectedLineTextColor = nil
-            rulerView.selectedLineHighlightColor = theme.background
-        }
+        rulerView.backgroundColor = .clear
+        rulerView.textColor = .secondaryLabelColor
 
         scrollView.verticalRulerView = rulerView
         scrollView.rulersVisible = true
@@ -46,25 +32,15 @@ extension STTextViewController {
         textView.typingAttributes = attributesFor(nil)
         textView.defaultParagraphStyle = self.paragraphStyle
         textView.font = self.font
-        textView.textColor = theme.text
-        textView.backgroundColor = useThemeBackground ? theme.background : .clear
-        textView.insertionPointColor = theme.insertionPoint
         textView.insertionPointWidth = 1.0
-        textView.selectionBackgroundColor = theme.selection
-        textView.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
-        ? NSColor.quaternaryLabelColor
-        : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
+        textView.backgroundColor = .clear
 
         textView.string = self.text.wrappedValue
-        textView.isEditable = self.isEditable
-        textView.highlightSelectedLine = true
         textView.allowsUndo = true
         textView.setupMenus()
         textView.delegate = self
-        textView.highlightSelectedLine = self.isEditable
 
         scrollView.documentView = textView
-
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.backgroundColor = useThemeBackground ? theme.background : .clear
 
