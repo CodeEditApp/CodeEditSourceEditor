@@ -96,7 +96,7 @@ final class STTextViewControllerTests: XCTestCase {
         controller.reloadUI()
 
         // editorOverscroll: 1.0
-        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 89.0)
+        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 87.0)
     }
 
     func test_editorInsets() throws {

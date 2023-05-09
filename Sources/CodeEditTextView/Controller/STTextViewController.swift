@@ -164,7 +164,6 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     internal lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
 
     private func generateParagraphStyle() -> NSMutableParagraphStyle {
-        print("computing paragraphStyle")
         // swiftlint:disable:next force_cast
         let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
         paragraph.minimumLineHeight = lineHeight
