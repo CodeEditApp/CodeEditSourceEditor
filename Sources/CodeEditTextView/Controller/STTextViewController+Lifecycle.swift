@@ -54,6 +54,7 @@ extension STTextViewController {
         textView.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
         ? NSColor.quaternaryLabelColor
         : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
+
         textView.string = self.text.wrappedValue
         textView.isEditable = self.isEditable
         textView.highlightSelectedLine = true
@@ -65,6 +66,7 @@ extension STTextViewController {
         scrollView.documentView = textView
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.backgroundColor = useThemeBackground ? theme.background : .clear
 
         self.view = scrollView
 
@@ -80,6 +82,7 @@ extension STTextViewController {
             return event
         }
 
+        reloadUI()
         setUpHighlighter()
         setHighlightProvider(self.highlightProvider)
         setUpTextFormation()
