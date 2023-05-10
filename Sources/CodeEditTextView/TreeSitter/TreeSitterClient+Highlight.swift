@@ -44,23 +44,28 @@ extension TreeSitterClient {
         cursor.setRange(range)
         cursor.matchLimit = Constants.treeSitterMatchLimit
 
-        return highlightsFromCursor(cursor: ResolvingQueryCursor(cursor: cursor))
+        return highlightsFromCursor(cursor: ResolvingQueryCursor(cursor: cursor), includedRange: range)
     }
 
     /// Resolves a query cursor to the highlight ranges it contains.
     /// **Must be called on the main thread**
-    /// - Parameter cursor: The cursor to resolve.
+    /// - Parameters:
+    ///     - cursor: The cursor to resolve.
+    ///     - includedRange: The range to include highlights from.
     /// - Returns: Any highlight ranges contained in the cursor.
-    internal func highlightsFromCursor(cursor: ResolvingQueryCursor) -> [HighlightRange] {
+    internal func highlightsFromCursor(cursor: ResolvingQueryCursor, includedRange: NSRange) -> [HighlightRange] {
         cursor.prepare(with: self.textProvider)
         return cursor
             .flatMap { $0.captures }
             .compactMap {
+                // Sometimes `cursor.setRange` just doesnt work :( so we have to do a redundant check for a valid range
+                // in the included range
+                let intersectionRange = $0.range.intersection(includedRange) ?? .zero
                 // Some languages add an "@spell" capture to indicate a portion of text that should be spellchecked
                 // (usually comments). But this causes other captures in the same range to be overriden. So we ignore
                 // that specific capture type.
-                if $0.name != "spell" && $0.name != "injection.content" {
-                    return HighlightRange(range: $0.range, capture: CaptureName.fromString($0.name ?? ""))
+                if intersectionRange.length > 0 && $0.name != "spell" && $0.name != "injection.content" {
+                    return HighlightRange(range: intersectionRange, capture: CaptureName.fromString($0.name ?? ""))
                 }
                 return nil
             }
