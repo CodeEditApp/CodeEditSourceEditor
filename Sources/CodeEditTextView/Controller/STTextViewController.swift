@@ -187,28 +187,29 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
 
     /// Reloads the UI to apply changes to ``STTextViewController/font``, ``STTextViewController/theme``, ...
     internal func reloadUI() {
-        textView?.textColor = theme.text
-        textView.backgroundColor = useThemeBackground ? theme.background : .clear
-        textView?.insertionPointColor = theme.insertionPoint
-        textView?.selectionBackgroundColor = theme.selection
-        textView?.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
+        textView.textColor = theme.text
+        textView.insertionPointColor = theme.insertionPoint
+        textView.selectionBackgroundColor = theme.selection
+        textView.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
             ? NSColor.quaternaryLabelColor
             : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
-        textView?.isEditable = isEditable
+        textView.isEditable = isEditable
         textView.highlightSelectedLine = isEditable
-        textView?.typingAttributes = attributesFor(nil)
+        textView.typingAttributes = attributesFor(nil)
         paragraphStyle = generateParagraphStyle()
-        textView?.defaultParagraphStyle = paragraphStyle
+        textView.defaultParagraphStyle = paragraphStyle
 
-        rulerView?.backgroundColor = useThemeBackground ? theme.background : .clear
-        rulerView?.separatorColor = theme.invisibles
-        rulerView?.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
+        rulerView.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
             ? NSColor.quaternaryLabelColor
             : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
-        rulerView?.baselineOffset = baselineOffset
+        rulerView.baselineOffset = baselineOffset
         rulerView.highlightSelectedLine = isEditable
-        rulerView?.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
-        rulerView?.font = rulerFont
+        rulerView.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
+        rulerView.font = rulerFont
+        if self.isEditable == false {
+            rulerView.selectedLineTextColor = nil
+            rulerView.selectedLineHighlightColor = .clear
+        }
 
         if let scrollView = view as? NSScrollView {
             scrollView.drawsBackground = useThemeBackground
