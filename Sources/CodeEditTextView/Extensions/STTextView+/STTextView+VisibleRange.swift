@@ -21,7 +21,7 @@ extension STTextView {
 
         // Get visible rect
         guard let bounds = enclosingScrollView?.documentVisibleRect else {
-            return textLayoutManager.documentRange.nsRange(using: textContentStorage)
+            return nil
         }
 
         // Calculate min & max points w/ a small amount of padding vertically.
@@ -33,7 +33,7 @@ extension STTextView {
         // Get text fragments for both the min and max points
         guard let start = textLayoutManager.textLayoutFragment(for: minPoint)?.rangeInElement.location,
               let end = textLayoutManager.textLayoutFragment(for: maxPoint)?.rangeInElement.endLocation else {
-            return textLayoutManager.documentRange.nsRange(using: textContentStorage)
+            return nil
         }
         guard start.compare(end) != .orderedDescending else {
             return NSTextRange(location: end, end: start)?.nsRange(using: textContentStorage)

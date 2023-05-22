@@ -11,6 +11,66 @@ import CodeEditLanguages
 
 extension TreeSitterClient {
 
+    internal func queryHighlightsForRange(
+        range: NSRange,
+        runningAsync: Bool,
+        completion: @escaping (([HighlightRange]) -> Void)
+    ) {
+        stateLock.lock()
+        defer {
+            stateLock.unlock()
+        }
+        guard let textView else { return }
+
+        var highlights: [HighlightRange] = []
+        var injectedSet = IndexSet(integersIn: range)
+
+        for layer in state.layers where layer.id != state.primaryLayer {
+            // Query injected only if a layer's ranges intersects with `range`
+            for layerRange in layer.ranges {
+                if let rangeIntersection = range.intersection(layerRange) {
+                    highlights.append(contentsOf: queryLayerHighlights(
+                        layer: layer,
+                        textView: textView,
+                        range: rangeIntersection
+                    ))
+
+                    injectedSet.remove(integersIn: rangeIntersection)
+                }
+            }
+        }
+
+        // Query primary for any ranges that weren't used in the injected layers.
+        for range in injectedSet.rangeView {
+            highlights.append(contentsOf: queryLayerHighlights(
+                layer: state.layers[0],
+                textView: textView,
+                range: NSRange(range)
+            ))
+        }
+
+        if !runningAsync {
+            completion(highlights)
+        } else {
+            DispatchQueue.main.async {
+                completion(highlights)
+            }
+        }
+    }
+
+    internal func queryHighlightsForRangeAsync(
+        range: NSRange,
+        completion: @escaping (([HighlightRange]) -> Void)
+    ) {
+        let id = UUID()
+        print("\tQueueing Query Async \(id). Items in queue: \(queuedEdits.count + queuedQueries.count)")
+        queuedQueries.append { [weak self] in
+            print("\tAsync Query Dequeued \(id)", range, self == nil ? "No Self!" : "")
+            self?.queryHighlightsForRange(range: range, runningAsync: true, completion: completion)
+        }
+        beginTasksIfNeeded()
+    }
+
     /// Queries the given language layer for any highlights.
     /// - Parameters:
     ///   - layer: The layer to query.
@@ -18,21 +78,12 @@ extension TreeSitterClient {
     ///   - range: The range to query for.
     /// - Returns: Any ranges to highlight.
     internal func queryLayerHighlights(
-        layer: LanguageLayer,
+        layer: TSLanguageLayer,
         textView: HighlighterTextView,
         range: NSRange
     ) -> [HighlightRange] {
-        // Make sure we don't change the tree while we copy it.
-        self.semaphore.wait()
-
-        guard let tree = layer.tree?.copy() else {
-            self.semaphore.signal()
-            return []
-        }
-
-        self.semaphore.signal()
-
-        guard let rootNode = tree.rootNode else {
+        guard let tree = layer.tree,
+              let rootNode = tree.rootNode else {
             return []
         }
 
@@ -61,37 +112,11 @@ extension TreeSitterClient {
                 // Sometimes `cursor.setRange` just doesnt work :( so we have to do a redundant check for a valid range
                 // in the included range
                 let intersectionRange = $0.range.intersection(includedRange) ?? .zero
-                // Some languages add an "@spell" capture to indicate a portion of text that should be spellchecked
-                // (usually comments). But this causes other captures in the same range to be overriden. So we ignore
-                // that specific capture type.
-                if intersectionRange.length > 0 && $0.name != "spell" && $0.name != "injection.content" {
-                    return HighlightRange(range: intersectionRange, capture: CaptureName.fromString($0.name ?? ""))
+                // Check that the capture name is one CETV can parse. If not, ignore it completely.
+                if intersectionRange.length > 0, let captureName = CaptureName.fromString($0.name ?? "") {
+                    return HighlightRange(range: intersectionRange, capture: captureName)
                 }
                 return nil
             }
-    }
-
-    /// Returns all injected languages from a given cursor. The cursor must be new,
-    /// having not been used for normal highlight matching.
-    /// - Parameters:
-    ///   - cursor: The cursor to use for finding injected languages.
-    ///   - textProvider: A callback for efficiently fetching text.
-    /// - Returns: A map of each language to all the ranges they have been injected into.
-    internal func injectedLanguagesFrom(
-        cursor: QueryCursor,
-        textProvider: @escaping ResolvingQueryCursor.TextProvider
-    ) -> [String: [NamedRange]] {
-        var languages: [String: [NamedRange]] = [:]
-
-        for match in cursor {
-            if let injection = match.injection(with: textProvider) {
-                if languages[injection.name] == nil {
-                    languages[injection.name] = []
-                }
-                languages[injection.name]?.append(injection)
-            }
-        }
-
-        return languages
     }
 }

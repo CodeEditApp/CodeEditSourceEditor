@@ -167,19 +167,18 @@ private extension Highlighter {
     func highlight(range rangeToHighlight: NSRange) {
         pendingSet.insert(integersIn: rangeToHighlight)
 
+        print("--Querying Range", rangeToHighlight, visibleSet.rangeView.map { $0 })
         highlightProvider?.queryHighlightsFor(textView: self.textView,
                                               range: rangeToHighlight) { [weak self] highlightRanges in
+            print("--Received Query", rangeToHighlight, self!.visibleSet.rangeView.map { $0 })
             guard let attributeProvider = self?.attributeProvider,
                   let textView = self?.textView else { return }
 
-            // Mark these indices as not pending and valid
             self?.pendingSet.remove(integersIn: rangeToHighlight)
-            self?.validSet.formUnion(IndexSet(integersIn: rangeToHighlight))
-
-            // If this range does not exist in the visible set, we can exit.
-            if !(self?.visibleSet ?? .init()).contains(integersIn: rangeToHighlight) {
+            guard self?.visibleSet.intersects(integersIn: rangeToHighlight) ?? false else {
                 return
             }
+            self?.validSet.formUnion(IndexSet(integersIn: rangeToHighlight))
 
             // Try to create a text range for invalidating. If this fails we fail silently
             guard let textContentManager = textView.textLayoutManager.textContentManager,
@@ -251,7 +250,9 @@ private extension Highlighter {
 private extension Highlighter {
     /// Updates the view to highlight newly visible text when the textview is scrolled or bounds change.
     @objc func visibleTextChanged(_ notification: Notification) {
-        visibleSet = IndexSet(integersIn: textView.visibleTextRange ?? NSRange())
+        if let newVisibleRange = textView.visibleTextRange {
+            visibleSet = IndexSet(integersIn: newVisibleRange)
+        }
 
         // Any indices that are both *not* valid and in the visible text range should be invalidated
         let newlyInvalidSet = visibleSet.subtracting(validSet)
@@ -281,10 +282,21 @@ extension Highlighter: NSTextStorageDelegate {
         if delta > 0 {
             visibleSet.insert(range: editedRange)
         }
+        var info = mach_timebase_info()
+        guard mach_timebase_info(&info) == KERN_SUCCESS else { return }
+
+        let start = mach_absolute_time()
 
         highlightProvider?.applyEdit(textView: self.textView,
                                      range: range,
                                      delta: delta) { [weak self] invalidatedIndexSet in
+            let end = mach_absolute_time()
+
+            let elapsed = end - start
+
+            let nanos = elapsed * UInt64(info.numer) / UInt64(info.denom)
+            print("Receiving Results", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC))
+
             let indexSet = invalidatedIndexSet
                 .union(IndexSet(integersIn: editedRange))
                 // Only invalidate indices that are visible.
@@ -294,5 +306,11 @@ extension Highlighter: NSTextStorageDelegate {
                 self?.invalidate(range: NSRange(range))
             }
         }
+        let end = mach_absolute_time()
+
+        let elapsed = end - start
+
+        let nanos = elapsed * UInt64(info.numer) / UInt64(info.denom)
+        print("Returning From Function", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC))
     }
 }

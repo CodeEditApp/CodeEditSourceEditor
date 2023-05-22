@@ -18,19 +18,25 @@ import SwiftTreeSitter
 /// However, the `setText` method will re-compile the entire corpus so should be used sparingly.
 final class TreeSitterClient: HighlightProviding {
 
+    typealias AsyncCallback = @Sendable () -> Void
+
     // MARK: - Properties/Constants
 
     public var identifier: String {
         "CodeEdit.TreeSitterClient"
     }
 
-    internal var primaryLayer: TreeSitterLanguage
-    internal var layers: [LanguageLayer] = []
+    internal weak var textView: HighlighterTextView?
+    internal var readBlock: Parser.ReadBlock?
 
+    internal var runningTask: Task<Void, Never>?
+    internal var stateLock: NSLock = NSLock()
+    internal var queueLock: NSLock = NSLock()
+    internal var queuedEdits: [AsyncCallback] = []
+    internal var queuedQueries: [AsyncCallback] = []
+
+    internal var state: TreeSitterState
     internal var textProvider: ResolvingQueryCursor.TextProvider
-
-    /// Used to ensure safe use of the shared tree-sitter tree state in different sync/async contexts.
-    internal let semaphore: DispatchSemaphore = DispatchSemaphore(value: 1)
 
     internal enum Constants {
         /// The maximum amount of limits a cursor can match during a query.
@@ -40,6 +46,18 @@ final class TreeSitterClient: HighlightProviding {
         /// See: https://github.com/neovim/neovim/issues/14897
         /// And: https://github.com/helix-editor/helix/pull/4830
         static let treeSitterMatchLimit = 256
+
+        /// The timeout for parsers.
+        static let parserTimeout: TimeInterval = 0.005
+
+        /// The maximum length of an edit before it must be processed asynchronously
+        static let maxSyncEditLength: Int = 1024
+
+        /// The maximum length a document can be before all queries and edits must be processed asynchronously.
+        static let maxSyncContentLength: Int = 1_000_000
+
+        /// The maximum length a query can be before it must be performed asynchronously.
+        static let maxSyncQueryLength: Int = 4096
     }
 
     // MARK: - Init/Config
@@ -50,59 +68,27 @@ final class TreeSitterClient: HighlightProviding {
     ///   - textProvider: The text provider callback to read any text.
     public init(codeLanguage: CodeLanguage, textProvider: @escaping ResolvingQueryCursor.TextProvider) {
         self.textProvider = textProvider
-        self.primaryLayer = codeLanguage.id
-        setLanguage(codeLanguage: codeLanguage)
+        self.state = TreeSitterState(primaryLayer: codeLanguage.id)
+        self.setLanguage(codeLanguage: codeLanguage)
     }
 
     /// Sets the primary language for the client. Will reset all layers, will not do any parsing work.
     /// - Parameter codeLanguage: The new primary language.
     public func setLanguage(codeLanguage: CodeLanguage) {
-        // Remove all trees and languages, everything needs to be re-parsed.
-        layers.removeAll()
-
-        primaryLayer = codeLanguage.id
-        layers = [
-            LanguageLayer(
-                id: codeLanguage.id,
-                parser: Parser(),
-                supportsInjections: codeLanguage.additionalHighlights?.contains("injections") ?? false,
-                tree: nil,
-                languageQuery: TreeSitterModel.shared.query(for: codeLanguage.id),
-                ranges: []
-            )
-        ]
-
-        if let treeSitterLanguage = codeLanguage.language {
-            try? layers[0].parser.setLanguage(treeSitterLanguage)
-        }
+        cancelAllRunningTasks()
+        state.setLanguage(codeLanguage: codeLanguage)
     }
 
     // MARK: - HighlightProviding
 
     /// Set up and parse the initial language tree and all injected layers.
     func setUp(textView: HighlighterTextView) {
-        let readBlock = createReadBlock(textView: textView)
+        cancelAllRunningTasks()
 
-        layers[0].tree = createTree(
-            parser: layers[0].parser,
-            readBlock: readBlock
-        )
+        self.textView = textView
+        readBlock = textView.createReadBlock()
 
-        var layerSet = Set<LanguageLayer>(arrayLiteral: layers[0])
-        var touchedLayers = Set<LanguageLayer>()
-
-        var idx = 0
-        while idx < layers.count {
-            updateInjectedLanguageLayers(
-                textView: textView,
-                layer: layers[idx],
-                layerSet: &layerSet,
-                touchedLayers: &touchedLayers,
-                readBlock: readBlock
-            )
-
-            idx += 1
-        }
+        state.setUp(textView: textView)
     }
 
     /// Notifies the highlighter of an edit and in exchange gets a set of indices that need to be re-highlighted.
@@ -118,75 +104,22 @@ final class TreeSitterClient: HighlightProviding {
         delta: Int,
         completion: @escaping ((IndexSet) -> Void)
     ) {
+        print("Received Edit", range, delta)
         guard let edit = InputEdit(range: range, delta: delta, oldEndPoint: .zero) else { return }
-        let readBlock = createReadBlock(textView: textView)
-        var rangeSet = IndexSet()
 
-        // Helper data structure for finding existing layers in O(1) when adding injected layers
-        var layerSet = Set<LanguageLayer>(minimumCapacity: layers.count)
-        // Tracks which layers were not touched at some point during the edit. Any layers left in this set
-        // after the second loop are removed.
-        var touchedLayers = Set<LanguageLayer>(minimumCapacity: layers.count)
+        queueLock.lock()
+        let longEdit = range.length > Constants.maxSyncEditLength
+        let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
 
-        // Loop through all layers, apply edits & find changed byte ranges.
-        for layerIdx in (0..<layers.count).reversed() {
-            let layer = layers[layerIdx]
-
-            if layer.id != primaryLayer {
-                // Reversed for safe removal while looping
-                for rangeIdx in (0..<layer.ranges.count).reversed() {
-                    layer.ranges[rangeIdx].applyInputEdit(edit)
-
-                    if layer.ranges[rangeIdx].length <= 0 {
-                        layer.ranges.remove(at: rangeIdx)
-                    }
-                }
-                if layer.ranges.isEmpty {
-                    layers.remove(at: layerIdx)
-                    continue
-                }
-
-                touchedLayers.insert(layer)
-            }
-
-            layer.parser.includedRanges = layer.ranges.map { $0.tsRange }
-            rangeSet.insert(
-                ranges: findChangedByteRanges(
-                    textView: textView,
-                    edit: edit,
-                    layer: layer,
-                    readBlock: readBlock
-                )
-            )
-
-            layerSet.insert(layer)
+        if hasOutstandingWork || longEdit || longDocument {
+            print("\tQueueing Async")
+            applyEditAsync(editState: EditState(edit: edit, completion: completion), startAtLayerIndex: 0)
+            queueLock.unlock()
+        } else {
+            queueLock.unlock()
+            print("Performing Sync")
+            applyEdit(editState: EditState(edit: edit, completion: completion))
         }
-
-        // Loop again and apply injections query, add any ranges not previously found
-        // using while loop because `updateInjectedLanguageLayers` can add to `layers` during the loop
-        var idx = 0
-        while idx < layers.count {
-            let layer = layers[idx]
-
-            if layer.supportsInjections {
-                rangeSet.formUnion(
-                    updateInjectedLanguageLayers(
-                        textView: textView,
-                        layer: layer,
-                        layerSet: &layerSet,
-                        touchedLayers: &touchedLayers,
-                        readBlock: readBlock
-                    )
-                )
-            }
-
-            idx += 1
-        }
-
-        // Delete any layers that weren't touched at some point during the edit.
-        layers.removeAll(where: { touchedLayers.contains($0) })
-
-        completion(rangeSet)
     }
 
     /// Initiates a highlight query.
@@ -197,94 +130,81 @@ final class TreeSitterClient: HighlightProviding {
     func queryHighlightsFor(
         textView: HighlighterTextView,
         range: NSRange,
-        completion: @escaping ((([HighlightRange]) -> Void))
+        completion: @escaping (([HighlightRange]) -> Void)
     ) {
-        var highlights: [HighlightRange] = []
-        var injectedSet = IndexSet(integersIn: range)
+        print("Received Query", range)
+        queueLock.lock()
+        let longQuery = range.length > Constants.maxSyncQueryLength
+        let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
 
-        for layer in layers where layer.id != primaryLayer {
-            // Query injected only if a layer's ranges intersects with `range`
-            for layerRange in layer.ranges {
-                if let rangeIntersection = range.intersection(layerRange) {
-                    highlights.append(contentsOf: queryLayerHighlights(
-                        layer: layer,
-                        textView: textView,
-                        range: rangeIntersection
-                    ))
+        if hasOutstandingWork || longQuery || longDocument {
+            print("\tQueuing Async Query")
+            queryHighlightsForRangeAsync(range: range, completion: completion)
+            queueLock.unlock()
+        } else {
+            queueLock.unlock()
+            print("\tQueuing Sync Query")
+            queryHighlightsForRange(range: range, runningAsync: false, completion: completion)
+        }
+    }
 
-                    injectedSet.remove(integersIn: rangeIntersection)
+    // MARK: - Async Helpers
+
+    var hasOutstandingWork: Bool {
+        runningTask != nil || queuedEdits.count > 0 || queuedQueries.count > 0
+    }
+
+    /// Spawn the running task if one is needed and doesn't already exist.
+    internal func beginTasksIfNeeded() {
+        guard runningTask == nil && (queuedEdits.count > 0 || queuedQueries.count > 0) else { return }
+        runningTask = Task.detached(priority: .userInitiated) {
+            defer {
+                self.runningTask = nil
+            }
+
+            var info = mach_timebase_info()
+            guard mach_timebase_info(&info) == KERN_SUCCESS else { return }
+
+            let start = mach_absolute_time()
+
+            do {
+                while let nextQueuedTask = self.determineNextTask() {
+                    let end = mach_absolute_time()
+
+                    let elapsed = end - start
+
+                    let nanos = elapsed * UInt64(info.numer) / UInt64(info.denom)
+
+                    print("\t\tFound Next Task. Tasks Remaining:", self.queuedEdits.count + self.queuedQueries.count)
+                    print("\t\tTime Since queue started (ms): ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC))
+                    try Task.checkCancellation()
+                    nextQueuedTask()
                 }
-            }
+            } catch { }
         }
-
-        // Query primary for any ranges that weren't used in the injected layers.
-        for range in injectedSet.rangeView {
-            highlights.append(contentsOf: queryLayerHighlights(
-                layer: layers[0],
-                textView: textView,
-                range: NSRange(range)
-            ))
-        }
-
-        completion(highlights)
     }
 
-    // MARK: - Helpers
+    /// Determines the next async task to run and returns it if it exists.
+    private func determineNextTask() -> AsyncCallback? {
+        queueLock.lock()
+        defer {
+            queueLock.unlock()
+        }
 
-    /// Attempts to create a language layer and load a highlights file.
-    /// Adds the layer to the `layers` array if successful.
-    /// - Parameters:
-    ///   - layerId: A language ID to add as a layer.
-    ///   - readBlock: Completion called for efficient string lookup.
-    internal func addLanguageLayer(
-        layerId: TreeSitterLanguage,
-        readBlock: @escaping Parser.ReadBlock
-    ) -> LanguageLayer? {
-        guard let language = CodeLanguage.allLanguages.first(where: { $0.id == layerId }),
-              let parserLanguage = language.language
-        else {
+        // Get an edit task if any, otherwise get a highlight task if any.
+        if queuedEdits.count > 0 {
+            return queuedEdits.removeFirst()
+        } else if queuedQueries.count > 0 {
+            return queuedQueries.removeFirst()
+        } else {
             return nil
         }
-
-        let newLayer = LanguageLayer(
-            id: layerId,
-            parser: Parser(),
-            supportsInjections: language.additionalHighlights?.contains("injections") ?? false,
-            tree: nil,
-            languageQuery: TreeSitterModel.shared.query(for: layerId),
-            ranges: []
-        )
-
-        do {
-            try newLayer.parser.setLanguage(parserLanguage)
-        } catch {
-            return nil
-        }
-
-        layers.append(newLayer)
-        return newLayer
     }
 
-    /// Creates a tree-sitter tree.
-    /// - Parameters:
-    ///   - parser: The parser object to use to parse text.
-    ///   - readBlock: A callback for fetching blocks of text.
-    /// - Returns: A tree if it could be parsed.
-    internal func createTree(parser: Parser, readBlock: @escaping Parser.ReadBlock) -> Tree? {
-        return parser.parse(tree: nil, readBlock: readBlock)
-    }
-
-    internal func createReadBlock(textView: HighlighterTextView) -> Parser.ReadBlock {
-        return { byteOffset, _ in
-            let limit = textView.documentRange.length
-            let location = byteOffset / 2
-            let end = min(location + (1024), limit)
-            if location > end {
-                // Ignore and return nothing, tree-sitter's internal tree can be incorrect in some situations.
-                return nil
-            }
-            let range = NSRange(location..<end)
-            return textView.stringForRange(range)?.data(using: String.nativeUTF16Encoding)
-        }
+    /// Cancels all running and enqueued tasks.
+    private func cancelAllRunningTasks() {
+        runningTask?.cancel()
+        queuedEdits.removeAll()
+        queuedQueries.removeAll()
     }
 }

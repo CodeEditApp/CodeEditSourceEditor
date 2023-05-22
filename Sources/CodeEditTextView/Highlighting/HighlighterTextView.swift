@@ -10,7 +10,7 @@ import AppKit
 import STTextView
 
 /// The object `HighlightProviding` objects are given when asked for highlights.
-public protocol HighlighterTextView {
+public protocol HighlighterTextView: AnyObject {
     /// The entire range of the document.
     var documentRange: NSRange { get }
     /// A substring for the requested range.
