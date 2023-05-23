@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import os
 import CodeEditLanguages
 import SwiftTreeSitter
 
@@ -17,7 +18,6 @@ import SwiftTreeSitter
 /// `textProvider` callback. You can optionally update the text manually using the `setText` method.
 /// However, the `setText` method will re-compile the entire corpus so should be used sparingly.
 final class TreeSitterClient: HighlightProviding {
-
     typealias AsyncCallback = @Sendable () -> Void
 
     // MARK: - Properties/Constants
@@ -26,16 +26,25 @@ final class TreeSitterClient: HighlightProviding {
         "CodeEdit.TreeSitterClient"
     }
 
+    /// The text view to use as a data source for text.
     internal weak var textView: HighlighterTextView?
+    /// A callback to use to efficiently fetch portions of text.
     internal var readBlock: Parser.ReadBlock?
 
+    /// The running background task.
     internal var runningTask: Task<Void, Never>?
-    internal var stateLock: NSLock = NSLock()
-    internal var queueLock: NSLock = NSLock()
+    /// An array of all edits queued for execution.
     internal var queuedEdits: [AsyncCallback] = []
+    /// An array of all highlight queries queued for execution.
     internal var queuedQueries: [AsyncCallback] = []
 
-    internal var state: TreeSitterState
+    /// A lock that must be obtained whenever `state` is modified
+    internal var stateLock: OSAllocatedUnfairLock = OSAllocatedUnfairLock()
+    /// A lock that must be obtained whenever either `queuedEdits` or `queuedHighlights` is modified
+    internal var queueLock: OSAllocatedUnfairLock = OSAllocatedUnfairLock()
+
+    /// The internal tree-sitter layer tree object.
+    internal var state: TreeSitterState?
     internal var textProvider: ResolvingQueryCursor.TextProvider
 
     internal enum Constants {
@@ -64,31 +73,36 @@ final class TreeSitterClient: HighlightProviding {
 
     /// Initializes the `TreeSitterClient` with the given parameters.
     /// - Parameters:
+    ///   - textView: The text view to use as a data source.
     ///   - codeLanguage: The language to set up the parser with.
     ///   - textProvider: The text provider callback to read any text.
-    public init(codeLanguage: CodeLanguage, textProvider: @escaping ResolvingQueryCursor.TextProvider) {
+    public init(textProvider: @escaping ResolvingQueryCursor.TextProvider) {
         self.textProvider = textProvider
-        self.state = TreeSitterState(primaryLayer: codeLanguage.id)
-        self.setLanguage(codeLanguage: codeLanguage)
-    }
-
-    /// Sets the primary language for the client. Will reset all layers, will not do any parsing work.
-    /// - Parameter codeLanguage: The new primary language.
-    public func setLanguage(codeLanguage: CodeLanguage) {
-        cancelAllRunningTasks()
-        state.setLanguage(codeLanguage: codeLanguage)
     }
 
     // MARK: - HighlightProviding
 
-    /// Set up and parse the initial language tree and all injected layers.
-    func setUp(textView: HighlighterTextView) {
+    /// Set up the client with a text view and language.
+    /// - Parameters:
+    ///   - textView: The text view to use as a data source.
+    ///               A weak reference will be kept for the lifetime of this object.
+    ///   - codeLanguage: The language to use for parsing.
+    func setUp(textView: HighlighterTextView, codeLanguage: CodeLanguage) {
         cancelAllRunningTasks()
-
+        queueLock.lock()
         self.textView = textView
-        readBlock = textView.createReadBlock()
-
-        state.setUp(textView: textView)
+        self.readBlock = textView.createReadBlock()
+        queuedEdits.append {
+            self.stateLock.lock()
+            if self.state == nil {
+                self.state = TreeSitterState(codeLanguage: codeLanguage, textView: textView)
+            } else {
+                self.state?.setLanguage(codeLanguage)
+            }
+            self.stateLock.unlock()
+        }
+        beginTasksIfNeeded()
+        queueLock.unlock()
     }
 
     /// Notifies the highlighter of an edit and in exchange gets a set of indices that need to be re-highlighted.
@@ -104,7 +118,6 @@ final class TreeSitterClient: HighlightProviding {
         delta: Int,
         completion: @escaping ((IndexSet) -> Void)
     ) {
-        print("Received Edit", range, delta)
         guard let edit = InputEdit(range: range, delta: delta, oldEndPoint: .zero) else { return }
 
         queueLock.lock()
@@ -112,12 +125,10 @@ final class TreeSitterClient: HighlightProviding {
         let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
 
         if hasOutstandingWork || longEdit || longDocument {
-            print("\tQueueing Async")
             applyEditAsync(editState: EditState(edit: edit, completion: completion), startAtLayerIndex: 0)
             queueLock.unlock()
         } else {
             queueLock.unlock()
-            print("Performing Sync")
             applyEdit(editState: EditState(edit: edit, completion: completion))
         }
     }
@@ -132,24 +143,22 @@ final class TreeSitterClient: HighlightProviding {
         range: NSRange,
         completion: @escaping (([HighlightRange]) -> Void)
     ) {
-        print("Received Query", range)
         queueLock.lock()
         let longQuery = range.length > Constants.maxSyncQueryLength
         let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
 
         if hasOutstandingWork || longQuery || longDocument {
-            print("\tQueuing Async Query")
             queryHighlightsForRangeAsync(range: range, completion: completion)
             queueLock.unlock()
         } else {
             queueLock.unlock()
-            print("\tQueuing Sync Query")
             queryHighlightsForRange(range: range, runningAsync: false, completion: completion)
         }
     }
 
     // MARK: - Async Helpers
 
+    /// Use to determine if there are any queued or running async tasks.
     var hasOutstandingWork: Bool {
         runningTask != nil || queuedEdits.count > 0 || queuedQueries.count > 0
     }
@@ -162,21 +171,8 @@ final class TreeSitterClient: HighlightProviding {
                 self.runningTask = nil
             }
 
-            var info = mach_timebase_info()
-            guard mach_timebase_info(&info) == KERN_SUCCESS else { return }
-
-            let start = mach_absolute_time()
-
             do {
                 while let nextQueuedTask = self.determineNextTask() {
-                    let end = mach_absolute_time()
-
-                    let elapsed = end - start
-
-                    let nanos = elapsed * UInt64(info.numer) / UInt64(info.denom)
-
-                    print("\t\tFound Next Task. Tasks Remaining:", self.queuedEdits.count + self.queuedQueries.count)
-                    print("\t\tTime Since queue started (ms): ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC))
                     try Task.checkCancellation()
                     nextQueuedTask()
                 }
@@ -203,8 +199,10 @@ final class TreeSitterClient: HighlightProviding {
 
     /// Cancels all running and enqueued tasks.
     private func cancelAllRunningTasks() {
+        queueLock.lock()
         runningTask?.cancel()
         queuedEdits.removeAll()
         queuedQueries.removeAll()
+        queueLock.unlock()
     }
 }

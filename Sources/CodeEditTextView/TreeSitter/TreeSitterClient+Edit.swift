@@ -10,7 +10,7 @@ import SwiftTreeSitter
 import CodeEditLanguages
 
 extension TreeSitterClient {
-    /// A helper class for passing edit state from synchronous to asynchronous contexts.
+    /// This class contains an edit state that can be resumed if a parser hits a timeout.
     class EditState {
         var edit: InputEdit
         var rangeSet: IndexSet
@@ -38,13 +38,8 @@ extension TreeSitterClient {
     ///                        state object.
     ///   - runningAsync: Determine whether or not to timeout long running parse tasks.
     internal func applyEdit(editState: EditState, startAtLayerIndex: Int? = nil, runningAsync: Bool = false) {
+        guard let readBlock, let textView, let state else { return }
         stateLock.lock()
-        defer {
-            stateLock.unlock()
-        }
-        
-        print("Applying Edit", runningAsync ? "(Async)" : "")
-        guard let readBlock, let textView else { return }
 
         // Loop through all layers, apply edits & find changed byte ranges.
         let startIdx = startAtLayerIndex ?? 0
@@ -80,12 +75,10 @@ extension TreeSitterClient {
                 )
             } catch {
                 // Timed out, queue an async edit with any data already computed.
-                print("\tCaught Timeout Error", layer.parser.timeout)
                 if !runningAsync {
                     applyEditAsync(editState: editState, startAtLayerIndex: layerIdx)
-                } else {
-                    assertionFailure("`layer.findChangedByteRanges` should never throw when `timeout = nil`.")
                 }
+                stateLock.unlock()
                 return
             }
 
@@ -97,6 +90,7 @@ extension TreeSitterClient {
             state.updateInjectedLayers(textView: textView, touchedLayers: editState.touchedLayers)
         )
 
+        stateLock.unlock()
         if runningAsync {
             DispatchQueue.main.async {
                 editState.completion(editState.rangeSet)
@@ -109,11 +103,8 @@ extension TreeSitterClient {
     /// Enqueues the given edit state to be applied asynchronously.
     /// - Parameter editState: The edit state to enqueue.
     internal func applyEditAsync(editState: EditState, startAtLayerIndex: Int) {
-        let id = UUID()
-        print("\tQueueing Async \(id). Items in queue: \(queuedEdits.count + queuedQueries.count)")
-        queuedEdits.append { [weak self] in
-            print("\tAsync Edit Dequeued \(id)")
-            self?.applyEdit(editState: editState, startAtLayerIndex: startAtLayerIndex, runningAsync: true)
+        queuedEdits.append {
+            self.applyEdit(editState: editState, startAtLayerIndex: startAtLayerIndex, runningAsync: true)
         }
         beginTasksIfNeeded()
     }

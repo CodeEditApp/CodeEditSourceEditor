@@ -10,17 +10,13 @@ import SwiftTreeSitter
 import CodeEditLanguages
 
 extension TreeSitterClient {
-
     internal func queryHighlightsForRange(
         range: NSRange,
         runningAsync: Bool,
         completion: @escaping (([HighlightRange]) -> Void)
     ) {
+        guard let textView, let state else { return }
         stateLock.lock()
-        defer {
-            stateLock.unlock()
-        }
-        guard let textView else { return }
 
         var highlights: [HighlightRange] = []
         var injectedSet = IndexSet(integersIn: range)
@@ -49,6 +45,7 @@ extension TreeSitterClient {
             ))
         }
 
+        stateLock.unlock()
         if !runningAsync {
             completion(highlights)
         } else {
@@ -62,11 +59,8 @@ extension TreeSitterClient {
         range: NSRange,
         completion: @escaping (([HighlightRange]) -> Void)
     ) {
-        let id = UUID()
-        print("\tQueueing Query Async \(id). Items in queue: \(queuedEdits.count + queuedQueries.count)")
-        queuedQueries.append { [weak self] in
-            print("\tAsync Query Dequeued \(id)", range, self == nil ? "No Self!" : "")
-            self?.queryHighlightsForRange(range: range, runningAsync: true, completion: completion)
+        queuedQueries.append {
+            self.queryHighlightsForRange(range: range, runningAsync: true, completion: completion)
         }
         beginTasksIfNeeded()
     }

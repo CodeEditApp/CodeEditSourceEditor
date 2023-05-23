@@ -17,19 +17,14 @@ class TreeSitterState {
 
     // MARK: - Init
 
-    init(primaryLayer: TreeSitterLanguage) {
-        self.primaryLayer = primaryLayer
-    }
+    init(codeLanguage: CodeLanguage, textView: HighlighterTextView) {
+        self.primaryLayer = codeLanguage.id
 
-    /// Initialize the state object with the given read block.
-    /// - Parameter textView: The textView to use as a data source.
-    public func setUp(textView: HighlighterTextView) {
+        self.setLanguage(codeLanguage)
         let readBlock = textView.createReadBlock()
 
-        let previousTimeout = layers[0].parser.timeout
         layers[0].parser.timeout = 0.0
         layers[0].tree = layers[0].parser.createTree(readBlock: readBlock)
-        layers[0].parser.timeout = previousTimeout
 
         var layerSet = Set<TSLanguageLayer>(arrayLiteral: layers[0])
         var touchedLayers = Set<TSLanguageLayer>()
@@ -47,10 +42,7 @@ class TreeSitterState {
         }
     }
 
-    /// Sets the primary language for the client. Will reset all layers, will not do any parsing work.
-    /// - Parameter codeLanguage: The new primary language.
-    public func setLanguage(codeLanguage: CodeLanguage) {
-        // Remove all trees and languages, everything needs to be re-parsed.
+    public func setLanguage(_ codeLanguage: CodeLanguage) {
         layers.removeAll()
 
         primaryLayer = codeLanguage.id
@@ -65,9 +57,8 @@ class TreeSitterState {
             )
         ]
 
-        if let treeSitterLanguage = codeLanguage.language {
-            try? layers[0].parser.setLanguage(treeSitterLanguage)
-        }
+        guard let treeSitterLanguage = codeLanguage.language else { return }
+        try? layers[0].parser.setLanguage(treeSitterLanguage)
     }
 
     // MARK: - Layer Management
