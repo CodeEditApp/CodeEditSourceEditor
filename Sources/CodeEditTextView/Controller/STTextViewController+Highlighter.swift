@@ -31,7 +31,7 @@ extension STTextViewController {
                 return self?.textView.textContentStorage?.textStorage?.mutableString.substring(with: range)
             }
 
-            provider = TreeSitterClient(codeLanguage: language, textProvider: textProvider)
+            provider = TreeSitterClient(textProvider: textProvider)
         }
 
         if let provider = provider {

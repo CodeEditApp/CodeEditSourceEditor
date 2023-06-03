@@ -67,11 +67,13 @@ class Highlighter: NSObject {
     ///   - textView: The text view to highlight.
     ///   - treeSitterClient: The tree-sitter client to handle tree updates and highlight queries.
     ///   - theme: The theme to use for highlights.
-    init(textView: STTextView,
-         highlightProvider: HighlightProviding?,
-         theme: EditorTheme,
-         attributeProvider: ThemeAttributesProviding,
-         language: CodeLanguage) {
+    init(
+        textView: STTextView,
+        highlightProvider: HighlightProviding?,
+        theme: EditorTheme,
+        attributeProvider: ThemeAttributesProviding,
+        language: CodeLanguage
+    ) {
         self.textView = textView
         self.highlightProvider = highlightProvider
         self.theme = theme
@@ -80,15 +82,13 @@ class Highlighter: NSObject {
 
         super.init()
 
-        highlightProvider?.setLanguage(codeLanguage: language)
-
         guard textView.textContentStorage?.textStorage != nil else {
             assertionFailure("Text view does not have a textStorage")
             return
         }
 
         textView.textContentStorage?.textStorage?.delegate = self
-        highlightProvider?.setUp(textView: textView)
+        highlightProvider?.setUp(textView: textView, codeLanguage: language)
 
         if let scrollView = textView.enclosingScrollView {
             NotificationCenter.default.addObserver(self,
@@ -113,7 +113,7 @@ class Highlighter: NSObject {
     /// Sets the language and causes a re-highlight of the entire text.
     /// - Parameter language: The language to update to.
     public func setLanguage(language: CodeLanguage) {
-        highlightProvider?.setLanguage(codeLanguage: language)
+        highlightProvider?.setUp(textView: textView, codeLanguage: language)
         invalidate()
     }
 
@@ -121,8 +121,7 @@ class Highlighter: NSObject {
     /// - Parameter provider: The provider to use for future syntax highlights.
     public func setHighlightProvider(_ provider: HighlightProviding) {
         self.highlightProvider = provider
-        highlightProvider?.setLanguage(codeLanguage: language)
-        highlightProvider?.setUp(textView: textView)
+        highlightProvider?.setUp(textView: textView, codeLanguage: language)
         invalidate()
     }
 
@@ -172,14 +171,11 @@ private extension Highlighter {
             guard let attributeProvider = self?.attributeProvider,
                   let textView = self?.textView else { return }
 
-            // Mark these indices as not pending and valid
             self?.pendingSet.remove(integersIn: rangeToHighlight)
-            self?.validSet.formUnion(IndexSet(integersIn: rangeToHighlight))
-
-            // If this range does not exist in the visible set, we can exit.
-            if !(self?.visibleSet ?? .init()).contains(integersIn: rangeToHighlight) {
+            guard self?.visibleSet.intersects(integersIn: rangeToHighlight) ?? false else {
                 return
             }
+            self?.validSet.formUnion(IndexSet(integersIn: rangeToHighlight))
 
             // Try to create a text range for invalidating. If this fails we fail silently
             guard let textContentManager = textView.textLayoutManager.textContentManager,
@@ -251,7 +247,9 @@ private extension Highlighter {
 private extension Highlighter {
     /// Updates the view to highlight newly visible text when the textview is scrolled or bounds change.
     @objc func visibleTextChanged(_ notification: Notification) {
-        visibleSet = IndexSet(integersIn: textView.visibleTextRange ?? NSRange())
+        if let newVisibleRange = textView.visibleTextRange {
+            visibleSet = IndexSet(integersIn: newVisibleRange)
+        }
 
         // Any indices that are both *not* valid and in the visible text range should be invalidated
         let newlyInvalidSet = visibleSet.subtracting(validSet)

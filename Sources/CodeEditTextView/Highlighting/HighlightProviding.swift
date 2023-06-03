@@ -11,19 +11,17 @@ import STTextView
 import AppKit
 
 /// The protocol a class must conform to to be used for highlighting.
-public protocol HighlightProviding {
+public protocol HighlightProviding: AnyObject {
     /// A unique identifier for the highlighter object.
     /// Example: `"CodeEdit.TreeSitterHighlighter"`
     /// - Note: This does not need to be *globally* unique, merely unique across all the highlighters used.
     var identifier: String { get }
 
-    /// Called once at editor initialization.
-    func setUp(textView: HighlighterTextView)
-
-    /// Updates the highlighter's code language.
+    /// Called once to set up the highlight provider with a data source and language.
     /// - Parameters:
+    ///   - textView: The text view to use as a text source.
     ///   - codeLanguage: The langugage that should be used by the highlighter.
-    func setLanguage(codeLanguage: CodeLanguage)
+    func setUp(textView: HighlighterTextView, codeLanguage: CodeLanguage)
 
     /// Notifies the highlighter of an edit and in exchange gets a set of indices that need to be re-highlighted.
     /// The returned `IndexSet` should include all indexes that need to be highlighted, including any inserted text.

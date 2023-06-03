@@ -33,7 +33,7 @@ public enum CaptureName: String, CaseIterable {
     /// - Parameter string: A string to get the capture name from
     /// - Returns: A `CaptureNames` case
     static func fromString(_ string: String?) -> CaptureName? {
-        allCases.first { $0.rawValue == string }
+        CaptureName(rawValue: string ?? "")
     }
 
     var alternate: CaptureName {
