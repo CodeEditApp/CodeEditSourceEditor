@@ -1,6 +1,7 @@
 import XCTest
 @testable import CodeEditTextView
 
+// swiftlint:disable all
 fileprivate class TestTextView: HighlighterTextView {
     var testString: NSMutableString = "func testSwiftFunc() -> Int {\n\tprint(\"\")\n}"
 
@@ -13,7 +14,6 @@ fileprivate class TestTextView: HighlighterTextView {
     }
 }
 
-// swiftlint:disable all
 final class TreeSitterClientTests: XCTestCase {
 
     fileprivate var textView = TestTextView()
