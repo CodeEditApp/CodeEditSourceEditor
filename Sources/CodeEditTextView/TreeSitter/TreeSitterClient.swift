@@ -183,9 +183,9 @@ public final class TreeSitterClient: HighlightProviding {
             }
 
             do {
-                while let nextQueuedTask = self.determineNextTask() {
+                while let nextQueuedJob = self.determineNextJob() {
                     try Task.checkCancellation()
-                    switch nextQueuedTask {
+                    switch nextQueuedJob {
                     case .edit(let job):
                         job()
                     case .highlight(let jobs):
@@ -202,9 +202,9 @@ public final class TreeSitterClient: HighlightProviding {
         }
     }
 
-    /// Determines the next async task to run and returns it if it exists.
+    /// Determines the next async job to run and returns it if it exists.
     /// Greedily returns queued highlight jobs determined by `Constants.simultaneousHighlightLimit`
-    private func determineNextTask() -> QueuedTaskType? {
+    private func determineNextJob() -> QueuedTaskType? {
         queueLock.lock()
         defer {
             queueLock.unlock()
