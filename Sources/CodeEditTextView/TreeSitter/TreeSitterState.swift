@@ -11,14 +11,14 @@ import CodeEditLanguages
 
 /// TreeSitterState contains the tree of language layers that make up the tree-sitter document.
 /// Use the given 
-class TreeSitterState {
-    private(set) var primaryLayer: TreeSitterLanguage
-    private(set) var layers: [TSLanguageLayer] = []
+public class TreeSitterState {
+    private(set) var primaryLayer: CodeLanguage
+    private(set) var layers: [LanguageLayer] = []
 
     // MARK: - Init
 
     init(codeLanguage: CodeLanguage, textView: HighlighterTextView) {
-        self.primaryLayer = codeLanguage.id
+        self.primaryLayer = codeLanguage
 
         self.setLanguage(codeLanguage)
         let readBlock = textView.createReadBlock()
@@ -26,8 +26,8 @@ class TreeSitterState {
         layers[0].parser.timeout = 0.0
         layers[0].tree = layers[0].parser.createTree(readBlock: readBlock)
 
-        var layerSet = Set<TSLanguageLayer>(arrayLiteral: layers[0])
-        var touchedLayers = Set<TSLanguageLayer>()
+        var layerSet = Set<LanguageLayer>(arrayLiteral: layers[0])
+        var touchedLayers = Set<LanguageLayer>()
 
         var idx = 0
         while idx < layers.count {
@@ -42,12 +42,17 @@ class TreeSitterState {
         }
     }
 
+    private init(codeLanguage: CodeLanguage, layers: [LanguageLayer]) {
+        self.primaryLayer = codeLanguage
+        self.layers = layers
+    }
+
     public func setLanguage(_ codeLanguage: CodeLanguage) {
         layers.removeAll()
 
-        primaryLayer = codeLanguage.id
+        primaryLayer = codeLanguage
         layers = [
-            TSLanguageLayer(
+            LanguageLayer(
                 id: codeLanguage.id,
                 parser: Parser(),
                 supportsInjections: codeLanguage.additionalHighlights?.contains("injections") ?? false,
@@ -61,6 +66,10 @@ class TreeSitterState {
         try? layers[0].parser.setLanguage(treeSitterLanguage)
     }
 
+    public func copy() -> TreeSitterState {
+        return TreeSitterState(codeLanguage: primaryLayer, layers: layers.map { $0.copy() })
+    }
+
     // MARK: - Layer Management
 
     /// Removes a layer at the given index.
@@ -69,7 +78,7 @@ class TreeSitterState {
         layers.remove(at: idx)
     }
 
-    public func removeLanguageLayers(in set: Set<TSLanguageLayer>) {
+    public func removeLanguageLayers(in set: Set<LanguageLayer>) {
         layers.removeAll(where: { set.contains($0 )})
     }
 
@@ -81,14 +90,14 @@ class TreeSitterState {
     public func addLanguageLayer(
         layerId: TreeSitterLanguage,
         readBlock: @escaping Parser.ReadBlock
-    ) -> TSLanguageLayer? {
+    ) -> LanguageLayer? {
         guard let language = CodeLanguage.allLanguages.first(where: { $0.id == layerId }),
               let parserLanguage = language.language
         else {
             return nil
         }
 
-        let newLayer = TSLanguageLayer(
+        let newLayer = LanguageLayer(
             id: layerId,
             parser: Parser(),
             supportsInjections: language.additionalHighlights?.contains("injections") ?? false,
@@ -118,7 +127,7 @@ class TreeSitterState {
     /// - Returns: A set of indices of any new layers. This set indicates ranges that should be re-highlighted.
     public func updateInjectedLayers(
         textView: HighlighterTextView,
-        touchedLayers: Set<TSLanguageLayer>
+        touchedLayers: Set<LanguageLayer>
     ) -> IndexSet {
         var layerSet = Set(layers)
         var touchedLayers = touchedLayers
@@ -163,9 +172,9 @@ class TreeSitterState {
     @discardableResult
     private func updateInjectedLanguageLayer(
         textView: HighlighterTextView,
-        layer: TSLanguageLayer,
-        layerSet: inout Set<TSLanguageLayer>,
-        touchedLayers: inout Set<TSLanguageLayer>
+        layer: LanguageLayer,
+        layerSet: inout Set<LanguageLayer>,
+        touchedLayers: inout Set<LanguageLayer>
     ) -> IndexSet {
         guard let tree = layer.tree,
               let rootNode = tree.rootNode,
@@ -186,13 +195,13 @@ class TreeSitterState {
                 continue
             }
 
-            if treeSitterLanguage == primaryLayer {
+            if treeSitterLanguage == primaryLayer.id {
                 continue
             }
 
             for range in ranges {
                 // Temp layer object
-                let layer = TSLanguageLayer(
+                let layer = LanguageLayer(
                     id: treeSitterLanguage,
                     parser: Parser(),
                     supportsInjections: false,

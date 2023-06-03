@@ -6,7 +6,6 @@
 //
 
 import Foundation
-import os
 import CodeEditLanguages
 import SwiftTreeSitter
 
@@ -17,10 +16,10 @@ import SwiftTreeSitter
 /// Use the `init` method to set up the client initially. If text changes it should be able to be read through the
 /// `textProvider` callback. You can optionally update the text manually using the `setText` method.
 /// However, the `setText` method will re-compile the entire corpus so should be used sparingly.
-final class TreeSitterClient: HighlightProviding {
+public final class TreeSitterClient: HighlightProviding {
     typealias AsyncCallback = @Sendable () -> Void
 
-    // MARK: - Properties/Constants
+    // MARK: - Properties
 
     public var identifier: String {
         "CodeEdit.TreeSitterClient"
@@ -39,13 +38,15 @@ final class TreeSitterClient: HighlightProviding {
     internal var queuedQueries: [AsyncCallback] = []
 
     /// A lock that must be obtained whenever `state` is modified
-    internal var stateLock: OSAllocatedUnfairLock = OSAllocatedUnfairLock()
+    internal var stateLock: PthreadLock = PthreadLock()
     /// A lock that must be obtained whenever either `queuedEdits` or `queuedHighlights` is modified
-    internal var queueLock: OSAllocatedUnfairLock = OSAllocatedUnfairLock()
+    internal var queueLock: PthreadLock = PthreadLock()
 
     /// The internal tree-sitter layer tree object.
     internal var state: TreeSitterState?
     internal var textProvider: ResolvingQueryCursor.TextProvider
+
+    // MARK: - Constants
 
     internal enum Constants {
         /// The maximum amount of limits a cursor can match during a query.
@@ -67,6 +68,9 @@ final class TreeSitterClient: HighlightProviding {
 
         /// The maximum length a query can be before it must be performed asynchronously.
         static let maxSyncQueryLength: Int = 4096
+
+        /// The maximum number of highlight queries that can be performed in parallel.
+        static let simultaneousHighlightLimit: Int = 5
     }
 
     // MARK: - Init/Config
@@ -87,7 +91,7 @@ final class TreeSitterClient: HighlightProviding {
     ///   - textView: The text view to use as a data source.
     ///               A weak reference will be kept for the lifetime of this object.
     ///   - codeLanguage: The language to use for parsing.
-    func setUp(textView: HighlighterTextView, codeLanguage: CodeLanguage) {
+    public func setUp(textView: HighlighterTextView, codeLanguage: CodeLanguage) {
         cancelAllRunningTasks()
         queueLock.lock()
         self.textView = textView
@@ -112,7 +116,7 @@ final class TreeSitterClient: HighlightProviding {
     ///   - range: The range of the edit.
     ///   - delta: The length of the edit, can be negative for deletions.
     ///   - completion: The function to call with an `IndexSet` containing all Indices to invalidate.
-    func applyEdit(
+    public func applyEdit(
         textView: HighlighterTextView,
         range: NSRange,
         delta: Int,
@@ -138,7 +142,7 @@ final class TreeSitterClient: HighlightProviding {
     ///   - textView: The text view to use.
     ///   - range: The range to limit the highlights to.
     ///   - completion: Called when the query completes.
-    func queryHighlightsFor(
+    public func queryHighlightsFor(
         textView: HighlighterTextView,
         range: NSRange,
         completion: @escaping (([HighlightRange]) -> Void)
@@ -156,14 +160,21 @@ final class TreeSitterClient: HighlightProviding {
         }
     }
 
-    // MARK: - Async Helpers
+    // MARK: - Async
 
     /// Use to determine if there are any queued or running async tasks.
     var hasOutstandingWork: Bool {
         runningTask != nil || queuedEdits.count > 0 || queuedQueries.count > 0
     }
 
+    private enum QueuedTaskType {
+        case edit(job: AsyncCallback)
+        case highlight(jobs: [AsyncCallback])
+    }
+
     /// Spawn the running task if one is needed and doesn't already exist.
+    ///
+    /// The task will run until `determineNextTask` returns nil. It will run any highlight jobs in parallel.
     internal func beginTasksIfNeeded() {
         guard runningTask == nil && (queuedEdits.count > 0 || queuedQueries.count > 0) else { return }
         runningTask = Task.detached(priority: .userInitiated) {
@@ -174,14 +185,26 @@ final class TreeSitterClient: HighlightProviding {
             do {
                 while let nextQueuedTask = self.determineNextTask() {
                     try Task.checkCancellation()
-                    nextQueuedTask()
+                    switch nextQueuedTask {
+                    case .edit(let job):
+                        job()
+                    case .highlight(let jobs):
+                        await withTaskGroup(of: Void.self, body: { taskGroup in
+                            for job in jobs {
+                                taskGroup.addTask {
+                                    job()
+                                }
+                            }
+                        })
+                    }
                 }
             } catch { }
         }
     }
 
     /// Determines the next async task to run and returns it if it exists.
-    private func determineNextTask() -> AsyncCallback? {
+    /// Greedily returns queued highlight jobs determined by `Constants.simultaneousHighlightLimit`
+    private func determineNextTask() -> QueuedTaskType? {
         queueLock.lock()
         defer {
             queueLock.unlock()
@@ -189,9 +212,12 @@ final class TreeSitterClient: HighlightProviding {
 
         // Get an edit task if any, otherwise get a highlight task if any.
         if queuedEdits.count > 0 {
-            return queuedEdits.removeFirst()
+            return .edit(job: queuedEdits.removeFirst())
         } else if queuedQueries.count > 0 {
-            return queuedQueries.removeFirst()
+            let jobCount = min(queuedQueries.count, Constants.simultaneousHighlightLimit)
+            let jobs = Array(queuedQueries[0..<jobCount])
+            queuedQueries.removeFirst(jobCount)
+            return .highlight(jobs: jobs)
         } else {
             return nil
         }

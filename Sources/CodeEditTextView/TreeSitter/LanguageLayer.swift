@@ -9,7 +9,7 @@ import Foundation
 import CodeEditLanguages
 import SwiftTreeSitter
 
-class TSLanguageLayer: Hashable {
+public class LanguageLayer: Hashable {
     /// Initialize a language layer
     /// - Parameters:
     ///   - id: The ID of the layer.
@@ -43,11 +43,22 @@ class TSLanguageLayer: Hashable {
     var languageQuery: Query?
     var ranges: [NSRange]
 
-    static func == (lhs: TSLanguageLayer, rhs: TSLanguageLayer) -> Bool {
+    func copy() -> LanguageLayer {
+        return LanguageLayer(
+            id: id,
+            parser: parser,
+            supportsInjections: supportsInjections,
+            tree: tree?.copy(),
+            languageQuery: languageQuery,
+            ranges: ranges
+        )
+    }
+
+    public static func == (lhs: LanguageLayer, rhs: LanguageLayer) -> Bool {
         return lhs.id == rhs.id && lhs.ranges == rhs.ranges
     }
 
-    func hash(into hasher: inout Hasher) {
+    public func hash(into hasher: inout Hasher) {
         hasher.combine(id)
         hasher.combine(ranges)
     }

@@ -14,8 +14,8 @@ extension TreeSitterClient {
     class EditState {
         var edit: InputEdit
         var rangeSet: IndexSet
-        var layerSet: Set<TSLanguageLayer>
-        var touchedLayers: Set<TSLanguageLayer>
+        var layerSet: Set<LanguageLayer>
+        var touchedLayers: Set<LanguageLayer>
         var completion: ((IndexSet) -> Void)
 
         init(
@@ -46,7 +46,7 @@ extension TreeSitterClient {
         for layerIdx in (startIdx..<state.layers.count).reversed() {
             let layer = state.layers[layerIdx]
 
-            if layer.id != state.primaryLayer {
+            if layer.id != state.primaryLayer.id {
                 // Reversed for safe removal while looping
                 for rangeIdx in (0..<layer.ranges.count).reversed() {
                     layer.ranges[rangeIdx].applyInputEdit(editState.edit)

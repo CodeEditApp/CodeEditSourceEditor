@@ -15,13 +15,14 @@ extension TreeSitterClient {
         runningAsync: Bool,
         completion: @escaping (([HighlightRange]) -> Void)
     ) {
-        guard let textView, let state else { return }
         stateLock.lock()
+        guard let textView, let state = state?.copy() else { return }
+        stateLock.unlock()
 
         var highlights: [HighlightRange] = []
         var injectedSet = IndexSet(integersIn: range)
 
-        for layer in state.layers where layer.id != state.primaryLayer {
+        for layer in state.layers where layer.id != state.primaryLayer.id {
             // Query injected only if a layer's ranges intersects with `range`
             for layerRange in layer.ranges {
                 if let rangeIntersection = range.intersection(layerRange) {
@@ -72,7 +73,7 @@ extension TreeSitterClient {
     ///   - range: The range to query for.
     /// - Returns: Any ranges to highlight.
     internal func queryLayerHighlights(
-        layer: TSLanguageLayer,
+        layer: LanguageLayer,
         textView: HighlighterTextView,
         range: NSRange
     ) -> [HighlightRange] {
