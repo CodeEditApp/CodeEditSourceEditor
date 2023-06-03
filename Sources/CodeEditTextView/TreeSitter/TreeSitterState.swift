@@ -10,13 +10,16 @@ import SwiftTreeSitter
 import CodeEditLanguages
 
 /// TreeSitterState contains the tree of language layers that make up the tree-sitter document.
-/// Use the given 
 public class TreeSitterState {
     private(set) var primaryLayer: CodeLanguage
     private(set) var layers: [LanguageLayer] = []
 
     // MARK: - Init
 
+    /// Initialize a state object with a language and text view.
+    /// - Parameters:
+    ///   - codeLanguage: The language to use.
+    ///   - textView: The text view to use as a text data source.
     init(codeLanguage: CodeLanguage, textView: HighlighterTextView) {
         self.primaryLayer = codeLanguage
 
@@ -42,11 +45,14 @@ public class TreeSitterState {
         }
     }
 
+    /// Private initilizer used by `copy`
     private init(codeLanguage: CodeLanguage, layers: [LanguageLayer]) {
         self.primaryLayer = codeLanguage
         self.layers = layers
     }
 
+    /// Sets the language for the state. Removing all existing layers.
+    /// - Parameter codeLanguage: The language to use.
     public func setLanguage(_ codeLanguage: CodeLanguage) {
         layers.removeAll()
 
@@ -66,6 +72,8 @@ public class TreeSitterState {
         try? layers[0].parser.setLanguage(treeSitterLanguage)
     }
 
+    /// Creates a copy of this state object.
+    /// - Returns: The copied object
     public func copy() -> TreeSitterState {
         return TreeSitterState(codeLanguage: primaryLayer, layers: layers.map { $0.copy() })
     }
@@ -78,6 +86,8 @@ public class TreeSitterState {
         layers.remove(at: idx)
     }
 
+    /// Removes all languagel ayers in the given set.
+    /// - Parameter set: A set of all language layers to remove.
     public func removeLanguageLayers(in set: Set<LanguageLayer>) {
         layers.removeAll(where: { set.contains($0 )})
     }
