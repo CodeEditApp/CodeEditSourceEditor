@@ -231,4 +231,8 @@ public final class TreeSitterClient: HighlightProviding {
         queuedQueries.removeAll()
         queueLock.unlock()
     }
+
+    deinit {
+        cancelAllRunningTasks()
+    }
 }
