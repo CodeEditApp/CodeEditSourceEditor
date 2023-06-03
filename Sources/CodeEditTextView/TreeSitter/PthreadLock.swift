@@ -8,7 +8,7 @@
 import Foundation
 
 /// A thread safe, atomic lock that wraps a `pthread_mutex_t`
-struct PthreadLock {
+class PthreadLock {
     private var _lock: pthread_mutex_t
 
     /// Initializes the lock
@@ -18,12 +18,16 @@ struct PthreadLock {
     }
 
     /// Locks the lock, if the lock is already locked it will block the current thread until it unlocks.
-    mutating func lock() {
+    func lock() {
         pthread_mutex_lock(&_lock)
     }
 
     /// Unlocks the lock.
-    mutating func unlock() {
+    func unlock() {
         pthread_mutex_unlock(&_lock)
+    }
+
+    deinit {
+        pthread_mutex_destroy(&_lock)
     }
 }
