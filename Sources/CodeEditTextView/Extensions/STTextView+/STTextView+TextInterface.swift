@@ -20,7 +20,7 @@ extension STTextView: TextInterface {
                 return
             }
             if let textRange = NSTextRange(newValue, provider: textContentStorage) {
-                self.setSelectedRange(textRange)
+                self.setSelectedTextRange(textRange)
             }
         }
     }

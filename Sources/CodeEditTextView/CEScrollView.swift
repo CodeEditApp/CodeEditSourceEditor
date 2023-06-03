@@ -26,7 +26,7 @@ class CEScrollView: NSScrollView {
             let endLocation = textView.textLayoutManager.documentRange.endLocation
             let range = NSTextRange(location: endLocation)
             _ = textView.becomeFirstResponder()
-            textView.setSelectedRange(range)
+            textView.setSelectedTextRange(range)
         }
 
         super.mouseDown(with: event)
