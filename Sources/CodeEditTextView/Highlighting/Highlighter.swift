@@ -107,6 +107,7 @@ class Highlighter: NSObject {
 
     /// Invalidates all text in the textview. Useful for updating themes.
     public func invalidate() {
+        updateVisibleSet()
         invalidate(range: NSRange(entireTextRange))
     }
 
@@ -245,11 +246,15 @@ private extension Highlighter {
 // MARK: - Visible Content Updates
 
 private extension Highlighter {
-    /// Updates the view to highlight newly visible text when the textview is scrolled or bounds change.
-    @objc func visibleTextChanged(_ notification: Notification) {
+    private func updateVisibleSet() {
         if let newVisibleRange = textView.visibleTextRange {
             visibleSet = IndexSet(integersIn: newVisibleRange)
         }
+    }
+
+    /// Updates the view to highlight newly visible text when the textview is scrolled or bounds change.
+    @objc func visibleTextChanged(_ notification: Notification) {
+        updateVisibleSet()
 
         // Any indices that are both *not* valid and in the visible text range should be invalidated
         let newlyInvalidSet = visibleSet.subtracting(validSet)
