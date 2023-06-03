@@ -107,11 +107,11 @@ extension STTextViewController {
                                     range: range,
                                     limit: textView.textContentStorage?.length ?? 0)
 
-//        textView.undoManager?.beginUndoGrouping()
+        textView.undoManager?.beginUndoGrouping()
 
         let result = shouldApplyMutation(mutation, to: textView)
 
-//        textView.undoManager?.endUndoGrouping()
+        textView.undoManager?.endUndoGrouping()
 
         return result
     }
