@@ -197,7 +197,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.highlightSelectedLine = isEditable
         textView.typingAttributes = attributesFor(nil)
         paragraphStyle = generateParagraphStyle()
-        textView.defaultParagraphStyle = paragraphStyle
+        textView.typingAttributes[.paragraphStyle] = paragraphStyle
 
         rulerView.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
             ? NSColor.quaternaryLabelColor

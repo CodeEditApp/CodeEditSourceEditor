@@ -29,7 +29,7 @@ extension STTextViewController {
         scrollView.rulersVisible = true
 
         textView.typingAttributes = attributesFor(nil)
-        textView.defaultParagraphStyle = self.paragraphStyle
+        textView.typingAttributes[.paragraphStyle] = self.paragraphStyle
         textView.font = self.font
         textView.insertionPointWidth = 1.0
         textView.backgroundColor = .clear
