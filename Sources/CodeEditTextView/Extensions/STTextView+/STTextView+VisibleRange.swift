@@ -25,10 +25,14 @@ extension STTextView {
         }
 
         // Calculate min & max points w/ a small amount of padding vertically.
-        let minPoint = CGPoint(x: bounds.minX,
-                               y: bounds.minY - 200)
-        let maxPoint = CGPoint(x: bounds.maxX,
-                               y: bounds.maxY + 200)
+        let minPoint = CGPoint(
+            x: bounds.minX,
+            y: bounds.minY - 200
+        )
+        let maxPoint = CGPoint(
+            x: bounds.maxX,
+            y: bounds.maxY + 200
+        )
 
         // Get text fragments for both the min and max points
         guard let start = textLayoutManager.textLayoutFragment(for: minPoint)?.rangeInElement.location else {
