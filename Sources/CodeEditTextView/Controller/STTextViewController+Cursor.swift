@@ -22,7 +22,7 @@ extension STTextViewController {
                 let range = NSRange(string.startIndex..<string.endIndex, in: string)
                 if let newRange = NSTextRange(range, provider: provider) {
                     _ = self.textView.becomeFirstResponder()
-                    self.textView.setSelectedRange(newRange)
+                    self.textView.setSelectedTextRange(newRange)
                     return
                 }
             }
@@ -37,7 +37,7 @@ extension STTextViewController {
                         min(lineRange.upperBound, string.index(lineRange.lowerBound, offsetBy: column - 1))
                     )
                     if let newRange = NSTextRange(NSRange(index..<index, in: string), provider: provider) {
-                        self.textView.setSelectedRange(newRange)
+                        self.textView.setSelectedTextRange(newRange)
                     }
                     done = true
                 } else {
