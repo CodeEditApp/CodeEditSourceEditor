@@ -98,11 +98,7 @@ public final class TreeSitterClient: HighlightProviding {
         self.readBlock = textView.createReadBlock()
         queuedEdits.append {
             self.stateLock.lock()
-            if self.state == nil {
-                self.state = TreeSitterState(codeLanguage: codeLanguage, textView: textView)
-            } else {
-                self.state?.setLanguage(codeLanguage)
-            }
+            self.state = TreeSitterState(codeLanguage: codeLanguage, textView: textView)
             self.stateLock.unlock()
         }
         beginTasksIfNeeded()
