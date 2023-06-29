@@ -88,78 +88,80 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     private var letterSpacing: Double
     private var bracketPairHighlight: BracketPairHighlight?
 
-    public typealias NSViewControllerType = STTextViewController
+    public typealias NSViewControllerType = TextViewController // STTextViewController
 
-    public func makeNSViewController(context: Context) -> NSViewControllerType {
-        let controller = NSViewControllerType(
-            text: $text,
-            language: language,
-            font: font,
-            theme: theme,
-            tabWidth: tabWidth,
-            indentOption: indentOption,
-            lineHeight: lineHeight,
-            wrapLines: wrapLines,
-            cursorPosition: $cursorPosition,
-            editorOverscroll: editorOverscroll,
-            useThemeBackground: useThemeBackground,
-            highlightProvider: highlightProvider,
-            contentInsets: contentInsets,
-            isEditable: isEditable,
-            letterSpacing: letterSpacing,
-            bracketPairHighlight: bracketPairHighlight
-        )
-        return controller
+    public func makeNSViewController(context: Context) -> TextViewController {
+//        let controller = NSViewControllerType(
+//            text: $text,
+//            language: language,
+//            font: font,
+//            theme: theme,
+//            tabWidth: tabWidth,
+//            indentOption: indentOption,
+//            lineHeight: lineHeight,
+//            wrapLines: wrapLines,
+//            cursorPosition: $cursorPosition,
+//            editorOverscroll: editorOverscroll,
+//            useThemeBackground: useThemeBackground,
+//            highlightProvider: highlightProvider,
+//            contentInsets: contentInsets,
+//            isEditable: isEditable,
+//            letterSpacing: letterSpacing,
+//            bracketPairHighlight: bracketPairHighlight
+//        )
+//        return controller
+        return TextViewController(string: text)
     }
 
-    public func updateNSViewController(_ controller: NSViewControllerType, context: Context) {
+    public func updateNSViewController(_ controller: TextViewController, context: Context) {
         // Do manual diffing to reduce the amount of reloads.
         // This helps a lot in view performance, as it otherwise gets triggered on each environment change.
-        guard !paramsAreEqual(controller: controller) else {
-            return
-        }
-
-        controller.font = font
-        controller.wrapLines = wrapLines
-        controller.useThemeBackground = useThemeBackground
-        controller.lineHeightMultiple = lineHeight
-        controller.editorOverscroll = editorOverscroll
-        controller.contentInsets = contentInsets
-        controller.bracketPairHighlight = bracketPairHighlight
-
-        // Updating the language, theme, tab width and indent option needlessly can cause highlights to be re-calculated
-        if controller.language.id != language.id {
-            controller.language = language
-        }
-        if controller.theme != theme {
-            controller.theme = theme
-        }
-        if controller.indentOption != indentOption {
-            controller.indentOption = indentOption
-        }
-        if controller.tabWidth != tabWidth {
-            controller.tabWidth = tabWidth
-        }
-        if controller.letterSpacing != letterSpacing {
-            controller.letterSpacing = letterSpacing
-        }
-
-        controller.reloadUI()
+//        guard !paramsAreEqual(controller: controller) else {
+//            return
+//        }
+//
+//        controller.font = font
+//        controller.wrapLines = wrapLines
+//        controller.useThemeBackground = useThemeBackground
+//        controller.lineHeightMultiple = lineHeight
+//        controller.editorOverscroll = editorOverscroll
+//        controller.contentInsets = contentInsets
+//        controller.bracketPairHighlight = bracketPairHighlight
+//
+//        // Updating the language, theme, tab width and indent option needlessly can cause highlights to be re-calculated
+//        if controller.language.id != language.id {
+//            controller.language = language
+//        }
+//        if controller.theme != theme {
+//            controller.theme = theme
+//        }
+//        if controller.indentOption != indentOption {
+//            controller.indentOption = indentOption
+//        }
+//        if controller.tabWidth != tabWidth {
+//            controller.tabWidth = tabWidth
+//        }
+//        if controller.letterSpacing != letterSpacing {
+//            controller.letterSpacing = letterSpacing
+//        }
+//
+//        controller.reloadUI()
         return
     }
 
     func paramsAreEqual(controller: NSViewControllerType) -> Bool {
-        controller.font == font &&
-        controller.wrapLines == wrapLines &&
-        controller.useThemeBackground == useThemeBackground &&
-        controller.lineHeightMultiple == lineHeight &&
-        controller.editorOverscroll == editorOverscroll &&
-        controller.contentInsets == contentInsets &&
-        controller.language.id == language.id &&
-        controller.theme == theme &&
-        controller.indentOption == indentOption &&
-        controller.tabWidth == tabWidth &&
-        controller.letterSpacing == letterSpacing &&
-        controller.bracketPairHighlight == bracketPairHighlight
+        true
+//        controller.font == font &&
+//        controller.wrapLines == wrapLines &&
+//        controller.useThemeBackground == useThemeBackground &&
+//        controller.lineHeightMultiple == lineHeight &&
+//        controller.editorOverscroll == editorOverscroll &&
+//        controller.contentInsets == contentInsets &&
+//        controller.language.id == language.id &&
+//        controller.theme == theme &&
+//        controller.indentOption == indentOption &&
+//        controller.tabWidth == tabWidth &&
+//        controller.letterSpacing == letterSpacing &&
+//        controller.bracketPairHighlight == bracketPairHighlight
     }
 }
