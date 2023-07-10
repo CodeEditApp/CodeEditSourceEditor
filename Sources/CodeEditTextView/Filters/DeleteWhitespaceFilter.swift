@@ -13,32 +13,37 @@ import TextStory
 struct DeleteWhitespaceFilter: Filter {
     let indentOption: IndentOption
 
-    func processMutation(_ mutation: TextMutation, in interface: TextInterface) -> FilterAction {
-        guard mutation.string == "" && mutation.range.length == 1 && indentOption != .tab else {
+    func processMutation(
+        _ mutation: TextMutation,
+        in interface: TextInterface,
+        with providers: WhitespaceProviders
+    ) -> FilterAction {
+        guard mutation.string == ""
+                && mutation.range.length == 1
+                && indentOption != .tab else {
             return .none
         }
 
-        // Walk backwards from the mutation, grabbing as much whitespace as possible
-        guard let preceedingNonWhitespace = interface.findPrecedingOccurrenceOfCharacter(
-            in: CharacterSet.whitespaces.inverted,
-            from: mutation.range.max
-        ) else {
+        let lineRange = interface.lineRange(containing: mutation.range.location)
+        guard let leadingWhitespace = interface.leadingRange(in: lineRange, within: .whitespacesWithoutNewlines),
+              leadingWhitespace.contains(mutation.range.location) else {
             return .none
         }
 
+        // Move to left of the whitespace and delete to the left-most tab column
         let indentLength = indentOption.stringValue.count
-        let length = mutation.range.max - preceedingNonWhitespace
-        let numberOfExtraSpaces = length % indentLength
-
-        if numberOfExtraSpaces == 0 && length >= indentLength {
-            interface.applyMutation(
-                TextMutation(delete: NSRange(location: mutation.range.max - indentLength,
-                                             length: indentLength),
-                             limit: mutation.limit)
-            )
-            return .discard
+        var numberOfExtraSpaces = leadingWhitespace.length % indentLength
+        if numberOfExtraSpaces == 0 {
+            numberOfExtraSpaces = 4
         }
 
-        return .none
+        interface.applyMutation(
+            TextMutation(
+                delete: NSRange(location: leadingWhitespace.max - numberOfExtraSpaces, length: numberOfExtraSpaces),
+                limit: mutation.limit
+            )
+        )
+
+        return .discard
     }
 }

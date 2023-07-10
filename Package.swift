@@ -14,8 +14,9 @@ let package = Package(
     ],
     dependencies: [
         .package(
-            url: "https://github.com/krzyzanowskim/STTextView.git",
-            exact: "0.6.7"
+            path: "/Users/Khan/Developer/STTextView"
+//            url: "https://github.com/krzyzanowskim/STTextView.git",
+//            exact: "0.7.2"
         ),
         .package(
             url: "https://github.com/CodeEditApp/CodeEditLanguages.git",
@@ -27,7 +28,7 @@ let package = Package(
         ),
         .package(
             url: "https://github.com/ChimeHQ/TextFormation",
-            from: "0.6.7"
+            from: "0.7.0"
         )
     ],
     targets: [

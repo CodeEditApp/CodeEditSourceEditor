@@ -11,6 +11,7 @@ import Combine
 import STTextView
 import CodeEditLanguages
 import TextFormation
+import TextStory
 
 /// A View Controller managing and displaying a `STTextView`
 public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAttributesProviding {
@@ -25,6 +26,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// Tracks the last text selections. Used to debounce `STTextView.didChangeSelectionNotification` being sent twice
     /// for every new selection.
     internal var lastTextSelections: [NSTextRange] = []
+
+    internal var textViewUndoManager: CEUndoManager!
 
     /// Binding for the `textView`s string
     public var text: Binding<String>
@@ -197,7 +200,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         textView.highlightSelectedLine = isEditable
         textView.typingAttributes = attributesFor(nil)
         paragraphStyle = generateParagraphStyle()
-        textView.typingAttributes[.paragraphStyle] = paragraphStyle
+        textView.typingAttributes = attributesFor(nil)
 
         rulerView.selectedLineHighlightColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
             ? NSColor.quaternaryLabelColor
@@ -206,6 +209,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.highlightSelectedLine = isEditable
         rulerView.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
         rulerView.font = rulerFont
+        rulerView.backgroundColor = theme.background
         if self.isEditable == false {
             rulerView.selectedLineTextColor = nil
             rulerView.selectedLineHighlightColor = .clear

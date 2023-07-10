@@ -10,7 +10,7 @@ import STTextView
 
 extension STTextViewController {
     public override func loadView() {
-        textView = STTextView()
+        textView = CETextView()
 
         let scrollView = CEScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -22,7 +22,7 @@ extension STTextViewController {
         rulerView.drawSeparator = false
         rulerView.baselineOffset = baselineOffset
         rulerView.allowsMarkers = false
-        rulerView.backgroundColor = .clear
+        rulerView.backgroundColor = theme.background
         rulerView.textColor = .secondaryLabelColor
 
         scrollView.verticalRulerView = rulerView
@@ -57,6 +57,7 @@ extension STTextViewController {
             return event
         }
 
+        textViewUndoManager = CEUndoManager(textView: textView)
         reloadUI()
         setUpHighlighter()
         setHighlightProvider(self.highlightProvider)
@@ -118,6 +119,6 @@ extension STTextViewController {
 
     public override func viewWillAppear() {
         super.viewWillAppear()
-        updateTextContainerWidthIfNeeded()
+        updateTextContainerWidthIfNeeded(true)
     }
 }
