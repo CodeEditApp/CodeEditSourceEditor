@@ -33,19 +33,27 @@ extension STTextView: TextInterface {
         return textContentStorage?.substring(from: range)
     }
 
-    public func applyMutation(_ mutation: TextStory.TextMutation) {
-        if let manager = undoManager {
-            let inverse = inverseMutation(for: mutation)
+    /// Applies the mutation to the text view.
+    /// - Parameter mutation: The mutation to apply.
+    public func applyMutation(_ mutation: TextMutation) {
+        registerUndo(mutation)
+        applyMutationNoUndo(mutation)
+    }
 
-            manager.registerUndo(withTarget: self, handler: { (storable) in
-                storable.applyMutation(inverse)
-            })
+    fileprivate func registerUndo(_ mutation: TextMutation) {
+        if let manager = undoManager as? CEUndoManager.DelegatedUndoManager {
+            manager.registerMutation(mutation)
         }
+    }
 
+    public func applyMutationNoUndo(_ mutation: TextMutation) {
         textContentStorage?.performEditingTransaction {
             textContentStorage?.applyMutation(mutation)
         }
 
+        let delegate = self.delegate
+        self.delegate = nil
         textDidChange(nil)
+        self.delegate = delegate
     }
 }
