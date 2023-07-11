@@ -207,9 +207,15 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
             : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
         rulerView.baselineOffset = baselineOffset
         rulerView.highlightSelectedLine = isEditable
-        rulerView.rulerInsets = STRulerInsets(leading: rulerFont.pointSize * 1.6, trailing: 8)
+        rulerView.rulerInsets = STRulerInsets(leading: 12, trailing: 8)
         rulerView.font = rulerFont
         rulerView.backgroundColor = theme.background
+        rulerView.ruleThickness = max(
+            NSString(string: "1000").size(withAttributes: [.font: rulerFont]).width
+            + rulerView.rulerInsets.leading
+            + rulerView.rulerInsets.trailing,
+            rulerView.ruleThickness
+        )
         if self.isEditable == false {
             rulerView.selectedLineTextColor = nil
             rulerView.selectedLineHighlightColor = .clear
