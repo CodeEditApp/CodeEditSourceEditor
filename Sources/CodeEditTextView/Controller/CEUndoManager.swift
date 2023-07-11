@@ -10,11 +10,12 @@ import AppKit
 import TextStory
 
 /// Maintains a history of edits applied to the editor and allows for undo/redo actions using those edits.
+/// 
 /// This object also groups edits into sequences that make for a better undo/redo editing experience such as:
 /// - Breaking undo groups on newlines
 /// - Grouping pasted text
-/// If needed, the automatic undo grouping can be overridden using the `beginGrouping()` and `endGrouping()` methods.
 ///
+/// If needed, the automatic undo grouping can be overridden using the `beginGrouping()` and `endGrouping()` methods.
 class CEUndoManager {
     /// An `UndoManager` subclass that forwards relevant actions to a `CEUndoManager`.
     /// Allows for objects like `STTextView` to use the `UndoManager` API
