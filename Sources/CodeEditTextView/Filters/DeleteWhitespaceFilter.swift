@@ -15,7 +15,7 @@ import STTextView
 /// Will only delete whitespace when it's on the leading side of the line. Will delete back to the nearest tab column.
 /// Eg:
 /// ```text
-    /// (| = column delimiter, _ = space, * = cursor)
+/// (| = column delimiter, _ = space, * = cursor)
 ///
 /// ____|___*   <- delete
 /// ----*       <- final
@@ -45,7 +45,7 @@ struct DeleteWhitespaceFilter: Filter {
             return .none
         }
 
-        // Move to left of the whitespace and delete to the left-most tab column
+        // Move to right of the whitespace and delete to the left-most tab column
         let indentLength = indentOption.stringValue.count
         var numberOfExtraSpaces = leadingWhitespace.length % indentLength
         if numberOfExtraSpaces == 0 {
