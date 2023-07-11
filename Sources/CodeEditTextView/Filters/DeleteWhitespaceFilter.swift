@@ -34,7 +34,7 @@ struct DeleteWhitespaceFilter: Filter {
         let indentLength = indentOption.stringValue.count
         var numberOfExtraSpaces = leadingWhitespace.length % indentLength
         if numberOfExtraSpaces == 0 {
-            numberOfExtraSpaces = 4
+            numberOfExtraSpaces = indentLength
         }
 
         interface.applyMutation(
