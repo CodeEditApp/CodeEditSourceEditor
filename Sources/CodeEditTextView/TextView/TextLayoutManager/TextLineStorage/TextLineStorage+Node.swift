@@ -1,5 +1,5 @@
 //
-//  File.swift
+//  TextLineStorage+Node.swift
 //  
 //
 //  Created by Khan Winter on 6/25/23.
@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension TextLayoutLineStorage {
+extension TextLineStorage {
     func isRightChild(_ node: Node) -> Bool {
         node.parent?.right == node
     }
@@ -33,10 +33,12 @@ extension TextLayoutLineStorage {
         // The length of the text line
         var length: Int
         var id: UUID = UUID()
-//        var line: TextLine
+        var line: TextLine
 
         // The offset in characters of the entire left subtree
         var leftSubtreeOffset: Int
+        var leftSubtreeHeight: CGFloat
+        var height: CGFloat
 
         var left: Node?
         var right: Node?
@@ -45,16 +47,20 @@ extension TextLayoutLineStorage {
 
         init(
             length: Int,
-//            line: TextLine,
+            line: TextLine,
             leftSubtreeOffset: Int,
+            leftSubtreeHeight: CGFloat,
+            height: CGFloat,
             left: Node? = nil,
             right: Node? = nil,
             parent: Node? = nil,
             color: Color
         ) {
             self.length = length
-//            self.line = line
+            self.line = line
             self.leftSubtreeOffset = leftSubtreeOffset
+            self.leftSubtreeHeight = leftSubtreeHeight
+            self.height = height
             self.left = left
             self.right = right
             self.parent = parent
@@ -64,7 +70,7 @@ extension TextLayoutLineStorage {
         static func == (lhs: Node, rhs: Node) -> Bool {
             lhs.id == rhs.id
         }
-        
+
 //        func minimum() -> Node? {
 //            if let left {
 //                return left.minimum()

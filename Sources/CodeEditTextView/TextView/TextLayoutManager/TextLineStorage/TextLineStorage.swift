@@ -8,7 +8,7 @@
 import Foundation
 
 /// Implements a red-black tree for efficiently editing, storing and retrieving `TextLine`s.
-final class TextLayoutLineStorage {
+final class TextLineStorage {
 #if DEBUG
     var root: Node?
 #else
@@ -27,13 +27,21 @@ final class TextLayoutLineStorage {
     /// - Parameters:
     ///   - line: The text line to insert
     ///   - range: The range the line represents. If the range is empty the line will be ignored.
-    public func insert(atIndex index: Int, length: Int) {
+    public func insert(line: TextLine, atIndex index: Int, length: Int, height: CGFloat) {
         assert(index >= 0 && index <= self.length, "Invalid index, expected between 0 and \(self.length). Got \(index)")
         defer {
+            self.count += 1
             self.length += length
         }
 
-        let insertedNode = Node(length: length, leftSubtreeOffset: 0, color: .black)
+        let insertedNode = Node(
+            length: length,
+            line: line,
+            leftSubtreeOffset: 0,
+            leftSubtreeHeight: 0.0,
+            height: height,
+            color: .black
+        )
         guard root != nil else {
             root = insertedNode
             return
@@ -86,35 +94,28 @@ final class TextLayoutLineStorage {
     /// Complexity: `O(m log n)` where `m` is the number of lines that need to be deleted as a result of this update.
     /// and `n` is the number of lines stored in the tree.
     ///
-    /// Lines will be deleted if the delta is both negative and encompases the entire line.
+    /// Lines will be deleted if the delta is both negative and encompasses the entire line.
+    ///
+    /// If the delta goes beyond the line's range, an error will be thrown.
     /// - Parameters:
-    ///   - index: The indice where the edit began
+    ///   - index: The index where the edit began
     ///   - delta: The change in length of the document. Negative for deletes, positive for insertions.
-    public func update(atIndex index: Int, delta: Int) {
+    ///   - deltaHeight: The change in height of the document.
+    public func update(atIndex index: Int, delta: Int, deltaHeight: CGFloat) {
         assert(index >= 0 && index < self.length, "Invalid index, expected between 0 and \(self.length). Got \(index)")
         assert(delta != 0, "Delta must be non-0")
+        let (node, offset) = search(for: index)
+        guard let node, offset > -1 else { return }
         if delta < 0 {
-            var remainingDelta = -1 * delta
-            var index = index
-            while remainingDelta > 0 {
-                let (node, offset) = search(for: index)
-                guard let node, offset > -1 else { return }
-                let nodeDelta = index - offset
-                node.length -= min(remainingDelta, nodeDelta)
-                remainingDelta -= min(remainingDelta, nodeDelta)
-                index = offset - 1
-
-                metaFixup(startingAt: node, delta: -nodeDelta)
-                if node.length == 0 {
-
-                }
-            }
-        } else {
-            let (node, offset) = search(for: index)
-            guard let node, offset > -1 else { return }
-            node.length += delta
-            metaFixup(startingAt: node, delta: delta)
+            assert(
+                index - offset > delta,
+                "Delta too large. Deleting \(-delta) from line at position \(index) extends beyond the line's range."
+            )
         }
+
+        node.length += delta
+        node.height += deltaHeight
+        metaFixup(startingAt: node, delta: delta, deltaHeight: deltaHeight)
     }
 
     /// Deletes a line at the given index.
@@ -124,9 +125,9 @@ final class TextLayoutLineStorage {
     /// - Parameter index: The index to delete a line at.
     public func delete(lineAt index: Int) {
         assert(index >= 0 && index < self.length, "Invalid index, expected between 0 and \(self.length). Got \(index)")
-        guard let nodeZ = search(for: index).0 else { return }
-        var nodeX: Node
-        var nodeY: Node
+//        guard let nodeZ = search(for: index).0 else { return }
+//        var nodeX: Node
+//        var nodeY: Node
 
     }
 
@@ -143,7 +144,7 @@ final class TextLayoutLineStorage {
     }
 }
 
-private extension TextLayoutLineStorage {
+private extension TextLineStorage {
     // MARK: - Search
 
     /// Searches for the given index. Returns a node and offset if found.
@@ -174,7 +175,7 @@ private extension TextLayoutLineStorage {
     // MARK: - Fixup
 
     func insertFixup(node: Node) {
-        metaFixup(startingAt: node, delta: node.length)
+        metaFixup(startingAt: node, delta: node.length, deltaHeight: node.height)
 
         var nextNode: Node? = node
         while var nodeX = nextNode, nodeX != root, let nodeXParent = nodeX.parent, nodeXParent.color == .red {
@@ -227,25 +228,31 @@ private extension TextLayoutLineStorage {
     }
 
     /// Walk up the tree, updating any `leftSubtree` metadata.
-    func metaFixup(startingAt node: Node, delta: Int) {
+    func metaFixup(startingAt node: Node, delta: Int, deltaHeight: CGFloat) {
         guard node.parent != nil, delta > 0 else { return }
         // Find the first node that needs to be updated (first left child)
         var nodeX: Node? = node
-        while nodeX != nil, isRightChild(nodeX!) && nodeX!.parent != nil {
-            nodeX = nodeX?.parent
+        var nodeXParent: Node? = node.parent
+        while nodeX != nil {
+            if nodeXParent?.right == nodeX {
+                nodeX = nodeXParent
+                nodeXParent = nodeX?.parent
+            } else {
+                nodeX = nil
+            }
         }
 
-        guard var nodeX else { return }
-        var count = 0
+        guard nodeX != nil else { return }
         while nodeX != root {
-            if isLeftChild(nodeX) {
-                nodeX.parent?.leftSubtreeOffset += delta
+            if nodeXParent?.left == nodeX {
+                nodeXParent?.leftSubtreeOffset += delta
+                nodeXParent?.leftSubtreeHeight += deltaHeight
             }
-            if let parent = nodeX.parent {
+            if nodeXParent != nil {
                 count += 1
-                nodeX = parent
+                nodeX = nodeXParent
+                nodeXParent = nodeX?.parent
             } else {
-                print("Meta Fixup, len: \(length), num items touched: \(count)")
                 return
             }
         }
@@ -259,7 +266,7 @@ private extension TextLayoutLineStorage {
 
 // MARK: - Rotations
 
-private extension TextLayoutLineStorage {
+private extension TextLineStorage {
     func rightRotate(node: Node) {
         rotate(node: node, left: false)
     }
@@ -274,6 +281,7 @@ private extension TextLayoutLineStorage {
         if left {
             nodeY = node.right
             nodeY?.leftSubtreeOffset += node.leftSubtreeOffset + node.length
+            nodeY?.leftSubtreeHeight += node.leftSubtreeHeight + node.height
             node.right = nodeY?.left
             node.right?.parent = node
         } else {
@@ -298,6 +306,7 @@ private extension TextLayoutLineStorage {
         } else {
             nodeY?.right = node
             node.leftSubtreeOffset = (node.left?.length ?? 0) + (node.left?.leftSubtreeOffset ?? 0)
+            node.leftSubtreeHeight = (node.left?.height ?? 0) + (node.left?.leftSubtreeHeight ?? 0)
         }
         node.parent = nodeY
     }

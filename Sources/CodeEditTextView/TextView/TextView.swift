@@ -8,14 +8,19 @@
 import AppKit
 import STTextView
 
+/**
+
+```
+ TextView
+ |-> LayoutManager              Creates and manages TextLines from the text storage
+ |  |-> [TextLine]              Represents a text line
+ |  |   |-> Typesetter          Lays out and calculates line fragments
+ |  |   |   |-> [LineFragment]  Represents a visual text line (may be multiple if text wrapping is on)
+ |-> SelectionManager (depends on LayoutManager)    Maintains text selections and renders selections
+ |  |-> [TextSelection]
+ ```
+ */
 class TextView: NSView {
-    // MARK: - Constants
-
-    enum LineBreakMode {
-        case byCharWrapping
-        case byWordWrapping
-    }
-
     override var visibleRect: NSRect {
         if let scrollView = enclosingScrollView {
             // +200px vertically for a bit of padding
