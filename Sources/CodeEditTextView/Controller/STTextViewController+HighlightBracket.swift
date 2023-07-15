@@ -109,7 +109,7 @@ extension STTextViewController {
     ///   - scrollToRange: Set to true to scroll to the given range when highlighting. Defaults to `false`.
     private func highlightRange(_ range: NSTextRange, scrollToRange: Bool = false) {
         guard let bracketPairHighlight = bracketPairHighlight,
-              var rectToHighlight = textView.textLayoutManager.textSelectionSegmentFrame(
+              var rectToHighlight = textView.textLayoutManager.textSegmentFrame(
                 in: range, type: .highlight
         ) else {
             return

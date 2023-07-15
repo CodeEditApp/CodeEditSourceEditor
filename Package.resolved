@@ -5,8 +5,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CodeEditApp/CodeEditLanguages.git",
       "state" : {
-        "revision" : "016b0e8df9603122202aef1f17cdc7fb2b51e1d0",
-        "version" : "0.1.14"
+        "revision" : "aa7d922b2aa783ae6f2a1a2cb7010ae62b700e17",
+        "version" : "0.1.16"
       }
     },
     {
@@ -21,10 +21,10 @@
     {
       "identity" : "sttextview",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/krzyzanowskim/STTextView",
+      "location" : "https://github.com/krzyzanowskim/STTextView.git",
       "state" : {
-        "revision" : "6c6243ae790247368aea258e4fb3642523759bec",
-        "version" : "0.5.3"
+        "branch" : "897c5ff",
+        "revision" : "897c5ffe3c6b35664ab085d43238b3a95e79440d"
       }
     },
     {
@@ -50,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/TextFormation",
       "state" : {
-        "revision" : "78d0911ef1827957c836f312212cc111b9232046",
-        "version" : "0.6.7"
+        "revision" : "158a603054ed5176f18d7c08ba355c0e05cb0586",
+        "version" : "0.7.0"
       }
     },
     {

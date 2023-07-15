@@ -27,20 +27,10 @@ extension STTextViewController {
     internal func setUpTextFormation() {
         textFilters = []
 
-        let indentationUnit = indentOption.stringValue
-
-        let indenter: TextualIndenter = getTextIndenter()
-        let whitespaceProvider = WhitespaceProviders(
-            leadingWhitespace: indenter.substitionProvider(indentationUnit: indentationUnit,
-                                                           width: tabWidth),
-            trailingWhitespace: { _, _ in "" }
-        )
-
         // Filters
 
-        setUpOpenPairFilters(pairs: BracketPairs.allValues, whitespaceProvider: whitespaceProvider)
-        setUpNewlineTabFilters(whitespaceProvider: whitespaceProvider,
-                               indentOption: indentOption)
+        setUpOpenPairFilters(pairs: BracketPairs.allValues)
+        setUpNewlineTabFilters(indentOption: indentOption)
         setUpDeletePairFilters(pairs: BracketPairs.allValues)
         setUpDeleteWhitespaceFilter(indentOption: indentOption)
     }
@@ -61,9 +51,9 @@ extension STTextViewController {
     /// - Parameters:
     ///   - pairs: The pairs to configure. Eg: `{` and `}`
     ///   - whitespaceProvider: The whitespace providers to use.
-    private func setUpOpenPairFilters(pairs: [(String, String)], whitespaceProvider: WhitespaceProviders) {
+    private func setUpOpenPairFilters(pairs: [(String, String)]) {
         for pair in pairs {
-            let filter = StandardOpenPairFilter(open: pair.0, close: pair.1, whitespaceProviders: whitespaceProvider)
+            let filter = StandardOpenPairFilter(open: pair.0, close: pair.1)
             textFilters.append(filter)
         }
     }
@@ -72,8 +62,8 @@ extension STTextViewController {
     /// - Parameters:
     ///   - whitespaceProvider: The whitespace providers to use.
     ///   - indentationUnit: The unit of indentation to use.
-    private func setUpNewlineTabFilters(whitespaceProvider: WhitespaceProviders, indentOption: IndentOption) {
-        let newlineFilter: Filter = NewlineProcessingFilter(whitespaceProviders: whitespaceProvider)
+    private func setUpNewlineTabFilters(indentOption: IndentOption) {
+        let newlineFilter: Filter = NewlineProcessingFilter()
         let tabReplacementFilter: Filter = TabReplacementFilter(indentOption: indentOption)
 
         textFilters.append(contentsOf: [newlineFilter, tabReplacementFilter])
@@ -93,42 +83,27 @@ extension STTextViewController {
         textFilters.append(filter)
     }
 
-    // MARK: - Delegate Methods
-
-    public func textView(_ textView: STTextView,
-                         shouldChangeTextIn affectedCharRange: NSTextRange,
-                         replacementString: String?) -> Bool {
-        guard let textContentStorage = textView.textContentStorage,
-              let range = affectedCharRange.nsRange(using: textContentStorage) else {
-            return true
-        }
-
-        let mutation = TextMutation(string: replacementString ?? "",
-                                    range: range,
-                                    limit: textView.textContentStorage?.length ?? 0)
-
-        textView.undoManager?.beginUndoGrouping()
-
-        let result = shouldApplyMutation(mutation, to: textView)
-
-        textView.undoManager?.endUndoGrouping()
-
-        return result
-    }
-
     /// Determines whether or not a text mutation should be applied.
     /// - Parameters:
     ///   - mutation: The text mutation.
     ///   - textView: The textView to use.
     /// - Returns: Return whether or not the mutation should be applied.
-    private func shouldApplyMutation(_ mutation: TextMutation, to textView: STTextView) -> Bool {
+    internal func shouldApplyMutation(_ mutation: TextMutation, to textView: STTextView) -> Bool {
         // don't perform any kind of filtering during undo operations
         if textView.undoManager?.isUndoing ?? false || textView.undoManager?.isRedoing ?? false {
             return true
         }
 
+        let indentationUnit = indentOption.stringValue
+        let indenter: TextualIndenter = getTextIndenter()
+        let whitespaceProvider = WhitespaceProviders(
+            leadingWhitespace: indenter.substitionProvider(indentationUnit: indentationUnit,
+                                                           width: tabWidth),
+            trailingWhitespace: { _, _ in "" }
+        )
+
         for filter in textFilters {
-            let action = filter.processMutation(mutation, in: textView)
+            let action = filter.processMutation(mutation, in: textView, with: whitespaceProvider)
 
             switch action {
             case .none:
