@@ -71,56 +71,38 @@ extension TextLineStorage {
             lhs.id == rhs.id
         }
 
-//        func minimum() -> Node? {
-//            if let left {
-//                return left.minimum()
-//            } else {
-//                return self
-//            }
-//        }
+        func minimum() -> Node? {
+            if let left {
+                return left.minimum()
+            } else {
+                return self
+            }
+        }
 
-//        func maximum() -> Node? {
-//            if let right {
-//                return right.maximum()
-//            } else {
-//                return self
-//            }
-//        }
+        func maximum() -> Node? {
+            if let right {
+                return right.maximum()
+            } else {
+                return self
+            }
+        }
 
-//        func getSuccessor() -> Node? {
-//            // If node has right child: successor is the min of this right tree
-//            if let right {
-//                return right.minimum()
-//            } else {
-//                // Else go upward until node is a left child
-//                var currentNode = self
-//                var parent = currentNode.parent
-//                while currentNode.isRightChild {
-//                    if let parent = parent {
-//                        currentNode = parent
-//                    }
-//                    parent = currentNode.parent
-//                }
-//                return parent
-//            }
-//        }
-
-//        func getPredecessor() -> Node? {
-//            // If node has left child: successor is the max of this left tree
-//            if let left {
-//                return left.maximum()
-//            } else {
-//                // Else go upward until node is a right child
-//                var currentNode = self
-//                var parent = currentNode.parent
-//                while currentNode.isLeftChild {
-//                    if let parent = parent {
-//                        currentNode = parent
-//                    }
-//                    parent = currentNode.parent
-//                }
-//                return parent
-//            }
-//        }
+        func getSuccessor() -> Node? {
+            // If node has right child: successor is the min of this right tree
+            if let right {
+                return right.minimum()
+            } else {
+                // Else go upward until node is a left child
+                var currentNode = self
+                var parent = currentNode.parent
+                while currentNode.parent?.right == currentNode {
+                    if let parent = parent {
+                        currentNode = parent
+                    }
+                    parent = currentNode.parent
+                }
+                return parent
+            }
+        }
     }
 }

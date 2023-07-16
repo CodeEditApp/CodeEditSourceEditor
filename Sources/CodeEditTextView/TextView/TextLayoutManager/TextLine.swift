@@ -12,18 +12,17 @@ import AppKit
 final class TextLine {
     typealias Attributes = [NSAttributedString.Key: Any]
 
-    var stringRef: NSString
+    unowned var stringRef: NSTextStorage
     var range: NSRange
-    private let typesetter: Typesetter = .init()
+    let typesetter: Typesetter = Typesetter()
 
-    init(stringRef: NSString, range: NSRange) {
+    init(stringRef: NSTextStorage, range: NSRange) {
         self.stringRef = stringRef
         self.range = range
     }
 
-    func prepareForDisplay(with attributes: [NSRange: Attributes], maxWidth: CGFloat) {
-        let string = NSAttributedString(string: stringRef.substring(with: range))
-        typesetter.prepareToTypeset(string)
-        typesetter.generateLines(maxWidth: maxWidth)
+    func prepareForDisplay(maxWidth: CGFloat) {
+        let string = stringRef.attributedSubstring(from: range)
+        typesetter.prepareToTypeset(string, maxWidth: maxWidth)
     }
 }

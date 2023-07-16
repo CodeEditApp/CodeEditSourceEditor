@@ -17,18 +17,19 @@ final class Typesetter {
 
     init() { }
 
-    func prepareToTypeset(_ string: NSAttributedString) {
+    func prepareToTypeset(_ string: NSAttributedString, maxWidth: CGFloat) {
         self.typesetter = CTTypesetterCreateWithAttributedString(string)
         self.string = string
+        generateLines(maxWidth: maxWidth)
     }
 
     // MARK: - Generate lines
 
-    func generateLines(maxWidth: CGFloat) {
+    private func generateLines(maxWidth: CGFloat) {
         guard let typesetter else { return }
         var startIndex = 0
-        var lineBreak = suggestLineBreak(using: typesetter, startingOffset: startIndex, constrainingWidth: maxWidth)
-        while lineBreak < string.length - 1 {
+        while startIndex < string.length {
+            let lineBreak = suggestLineBreak(using: typesetter, startingOffset: startIndex, constrainingWidth: maxWidth)
             lineFragments.append(typesetLine(range: NSRange(location: startIndex, length: lineBreak)))
             startIndex = lineBreak
         }

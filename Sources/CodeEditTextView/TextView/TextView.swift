@@ -47,7 +47,10 @@ class TextView: NSView {
     init(string: String) {
         self.storage = NSTextStorage(string: string)
         self.storageDelegate = MultiStorageDelegate()
-        self.layoutManager = TextLayoutManager(textStorage: storage)
+        self.layoutManager = TextLayoutManager(
+            textStorage: storage,
+            typingAttributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]
+        )
 
         storage.delegate = storageDelegate
         storageDelegate.addDelegate(layoutManager)
@@ -59,6 +62,14 @@ class TextView: NSView {
         postsBoundsChangedNotifications = true
 
         autoresizingMask = [.width, .height]
+
+        frame = NSRect(
+            x: 0,
+            y: 0,
+            width: enclosingScrollView?.documentVisibleRect.width ?? 1000,
+            height: layoutManager.estimatedHeight()
+        )
+        print(frame)
     }
 
     required init?(coder: NSCoder) {
@@ -68,7 +79,13 @@ class TextView: NSView {
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         super.viewWillMove(toWindow: newWindow)
         guard newWindow != nil else { return }
-        layoutManager.prepareForDisplay()
+        // Do some layout prep
+        frame = NSRect(
+            x: 0,
+            y: 0,
+            width: enclosingScrollView?.documentVisibleRect.width ?? 1000,
+            height: layoutManager.estimatedHeight()
+        )
     }
 
     // MARK: - Draw
@@ -80,18 +97,18 @@ class TextView: NSView {
     override func makeBackingLayer() -> CALayer {
         let layer = CETiledLayer()
         layer.tileSize = CGSize(width: CGFloat.greatestFiniteMagnitude, height: 1000)
+        layer.levelsOfDetail = 4
+        layer.levelsOfDetailBias = 2
         layer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
         return layer
     }
 
     override func draw(_ dirtyRect: NSRect) {
         guard let ctx = NSGraphicsContext.current?.cgContext else { return }
-        ctx.saveGState()
-        ctx.setStrokeColor(NSColor.red.cgColor)
-        ctx.setFillColor(NSColor.orange.cgColor)
-        ctx.setLineWidth(10)
-        ctx.addEllipse(in: dirtyRect)
-        ctx.drawPath(using: .fillStroke)
-        ctx.restoreGState()
+        layoutManager.draw(inRect: dirtyRect, context: ctx)
+    }
+
+    private func updateHeightIfNeeded() {
+
     }
 }

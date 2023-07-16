@@ -9,6 +9,12 @@ import Foundation
 
 /// Implements a red-black tree for efficiently editing, storing and retrieving `TextLine`s.
 final class TextLineStorage {
+    struct TextLinePosition {
+        let node: Node
+        let offset: Int
+        let height: CGFloat
+    }
+
 #if DEBUG
     var root: Node?
 #else
@@ -54,7 +60,7 @@ final class TextLineStorage {
             if currentOffset >= index {
                 if node.left != nil {
                     currentNode = node.left
-                    currentOffset -= (node.left?.leftSubtreeOffset ?? 0) + (node.left?.length ?? 0)
+                    currentOffset = (currentOffset - node.leftSubtreeOffset) + (node.left?.leftSubtreeOffset ?? 0)
                 } else {
                     node.left = insertedNode
                     insertedNode.parent = node
@@ -80,11 +86,38 @@ final class TextLineStorage {
     /// Complexity: `O(log n)`
     /// - Parameter index: The index to fetch for.
     /// - Returns: A text line object representing a generated line object and the offset in the document of the line.
-    ///            If the line was not found, the offset will be `-1`.
-//    public func getLine(atIndex index: Int) -> (TextLine?, Int) {
-//        let result = search(for: index)
-//        return (result.0?.line, result.1)
-//    }
+    public func getLine(atIndex index: Int) -> TextLinePosition? {
+        return search(for: index)
+    }
+
+    /// Fetches a line for the given `y` value.
+    ///
+    /// Complexity: `O(log n)`
+    /// - Parameter position: The position to fetch for.
+    /// - Returns: A text line object representing a generated line object and the offset in the document of the line.
+    public func getLine(atPosition posY: CGFloat) -> TextLinePosition? {
+        var currentNode = root
+        var currentOffset: Int = root?.leftSubtreeOffset ?? 0
+        var currentHeight: CGFloat = root?.leftSubtreeHeight ?? 0
+        while let node = currentNode {
+            // If index is in the range [currentOffset..<currentOffset + length) it's in the line
+            if posY >= currentHeight && posY < currentHeight + node.height {
+                return TextLinePosition(node: node, offset: currentOffset, height: currentHeight)
+            } else if currentHeight > posY {
+                currentNode = node.left
+                currentOffset = (currentOffset - node.leftSubtreeOffset) + (node.left?.leftSubtreeOffset ?? 0)
+                currentHeight = (currentHeight - node.leftSubtreeHeight) + (node.left?.leftSubtreeHeight ?? 0)
+            } else if node.leftSubtreeHeight < posY {
+                currentNode = node.right
+                currentOffset += node.length + (node.right?.leftSubtreeOffset ?? 0)
+                currentHeight += node.height + (node.right?.leftSubtreeHeight ?? 0)
+            } else {
+                currentNode = nil
+            }
+        }
+
+        return nil
+    }
 
     /// Applies a length change at the given index.
     ///
@@ -103,19 +136,21 @@ final class TextLineStorage {
     ///   - deltaHeight: The change in height of the document.
     public func update(atIndex index: Int, delta: Int, deltaHeight: CGFloat) {
         assert(index >= 0 && index < self.length, "Invalid index, expected between 0 and \(self.length). Got \(index)")
-        assert(delta != 0, "Delta must be non-0")
-        let (node, offset) = search(for: index)
-        guard let node, offset > -1 else { return }
+        assert(delta != 0 || deltaHeight != 0, "Delta must be non-0")
+        guard let position = search(for: index) else {
+            assertionFailure("No line found at index \(index)")
+            return
+        }
         if delta < 0 {
             assert(
-                index - offset > delta,
+                index - position.offset > delta,
                 "Delta too large. Deleting \(-delta) from line at position \(index) extends beyond the line's range."
             )
         }
-
-        node.length += delta
-        node.height += deltaHeight
-        metaFixup(startingAt: node, delta: delta, deltaHeight: deltaHeight)
+        length += delta
+        position.node.length += delta
+        position.node.height += deltaHeight
+        metaFixup(startingAt: position.node, delta: delta, deltaHeight: deltaHeight)
     }
 
     /// Deletes a line at the given index.
@@ -135,11 +170,78 @@ final class TextLineStorage {
         print(
             treeString(root!) { node in
                 (
-                    "\(node.length)[\(node.leftSubtreeOffset)\(node.color == .red ? "R" : "B")]",
+                    "\(node.length)[\(node.leftSubtreeOffset)\(node.color == .red ? "R" : "B")][\(node.height), \(node.leftSubtreeHeight)]",
                     node.left,
                     node.right
                 )
             }
+        )
+        print("")
+    }
+
+    /// Efficiently builds the tree from the given array of lines.
+    /// - Parameter lines: The lines to use to build the tree.
+    public func build(from lines: [(TextLine, Int)], estimatedLineHeight: CGFloat) {
+        root = build(lines: lines, estimatedLineHeight: estimatedLineHeight, left: 0, right: lines.count, parent: nil).0
+        count = lines.count
+    }
+
+    /// Recursively builds a subtree given an array of sorted lines, and a left and right indexes.
+    /// - Parameters:
+    ///   - lines: The lines to use to build the subtree.
+    ///   - estimatedLineHeight: An estimated line height to add to the allocated nodes.
+    ///   - left: The left index to use.
+    ///   - right: The right index to use.
+    ///   - parent: The parent of the subtree, `nil` if this is the root.
+    /// - Returns: A node, if available, along with it's subtree's height and offset.
+    private func build(
+        lines: [(TextLine, Int)],
+        estimatedLineHeight: CGFloat,
+        left: Int,
+        right: Int,
+        parent: Node?
+    ) -> (Node?, Int?, CGFloat?) { // swiftlint:disable:this large_tuple
+        guard left < right else { return (nil, nil, nil) }
+        let mid = left + (right - left)/2
+        let node = Node(
+            length: lines[mid].1,
+            line: lines[mid].0,
+            leftSubtreeOffset: 0,
+            leftSubtreeHeight: 0,
+            height: estimatedLineHeight,
+            color: .black
+        )
+        node.parent = parent
+
+        let (left, leftOffset, leftHeight) = build(
+            lines: lines,
+            estimatedLineHeight: estimatedLineHeight,
+            left: left,
+            right: mid,
+            parent: node
+        )
+        let (right, rightOffset, rightHeight) = build(
+            lines: lines,
+            estimatedLineHeight: estimatedLineHeight,
+            left: mid + 1,
+            right: right,
+            parent: node
+        )
+        node.left = left
+        node.right = right
+
+        if node.left == nil && node.right == nil {
+            node.color = .red
+        }
+
+        length += node.length
+        node.leftSubtreeOffset = leftOffset ?? 0
+        node.leftSubtreeHeight = leftHeight ?? 0
+
+        return (
+            node,
+            node.length + (leftOffset ?? 0) + (rightOffset ?? 0),
+            node.height + (leftHeight ?? 0) + (rightHeight ?? 0)
         )
     }
 }
@@ -150,26 +252,28 @@ private extension TextLineStorage {
     /// Searches for the given index. Returns a node and offset if found.
     /// - Parameter index: The index to look for in the document.
     /// - Returns: A tuple containing a node if it was found, and the offset of the node in the document.
-    ///            The index will be negative if the node was not found.
-    func search(for index: Int) -> (Node?, Int) {
+    func search(for index: Int) -> TextLinePosition? { // swiftlint:disable:this large_tuple
         var currentNode = root
         var currentOffset: Int = root?.leftSubtreeOffset ?? 0
+        var currentHeight: CGFloat = root?.leftSubtreeHeight ?? 0
         while let node = currentNode {
             // If index is in the range [currentOffset..<currentOffset + length) it's in the line
             if index >= currentOffset && index < currentOffset + node.length {
-                return (node, currentOffset)
+                return TextLinePosition(node: node, offset: currentOffset, height: currentHeight)
             } else if currentOffset > index {
                 currentNode = node.left
-                currentOffset -= (node.left?.leftSubtreeOffset ?? 0) + (node.left?.length ?? 0)
+                currentOffset = (currentOffset - node.leftSubtreeOffset) + (node.left?.leftSubtreeOffset ?? 0)
+                currentHeight = (currentHeight - node.leftSubtreeHeight) + (node.left?.leftSubtreeHeight ?? 0)
             } else if node.leftSubtreeOffset < index {
                 currentNode = node.right
                 currentOffset += node.length + (node.right?.leftSubtreeOffset ?? 0)
+                currentHeight += node.height + (node.right?.leftSubtreeHeight ?? 0)
             } else {
                 currentNode = nil
             }
         }
 
-        return (nil, -1)
+        return nil
     }
 
     // MARK: - Fixup
@@ -230,31 +334,13 @@ private extension TextLineStorage {
     /// Walk up the tree, updating any `leftSubtree` metadata.
     func metaFixup(startingAt node: Node, delta: Int, deltaHeight: CGFloat) {
         guard node.parent != nil, delta > 0 else { return }
-        // Find the first node that needs to be updated (first left child)
-        var nodeX: Node? = node
-        var nodeXParent: Node? = node.parent
-        while nodeX != nil {
-            if nodeXParent?.right == nodeX {
-                nodeX = nodeXParent
-                nodeXParent = nodeX?.parent
-            } else {
-                nodeX = nil
+        var node: Node? = node
+        while node != nil, node != root {
+            if isLeftChild(node!) {
+                node?.parent?.leftSubtreeOffset += delta
+                node?.parent?.leftSubtreeHeight += deltaHeight
             }
-        }
-
-        guard nodeX != nil else { return }
-        while nodeX != root {
-            if nodeXParent?.left == nodeX {
-                nodeXParent?.leftSubtreeOffset += delta
-                nodeXParent?.leftSubtreeHeight += deltaHeight
-            }
-            if nodeXParent != nil {
-                count += 1
-                nodeX = nodeXParent
-                nodeXParent = nodeX?.parent
-            } else {
-                return
-            }
+            node = node?.parent
         }
     }
 

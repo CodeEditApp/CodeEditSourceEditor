@@ -25,11 +25,14 @@ public class TextViewController: NSViewController {
     public override func loadView() {
         scrollView = NSScrollView()
         textView = TextView(string: string)
-        textView.frame.size = CGSize(width: 500, height: 100000)
+//        textView.translatesAutoresizingMaskIntoConstraints = false
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalRuler = true
         scrollView.documentView = textView
+        scrollView.automaticallyAdjustsContentInsets = false
+        scrollView.contentInsets = NSEdgeInsets(top: 128, left: 0, bottom: 32, right: 0)
 
         self.view = scrollView
 

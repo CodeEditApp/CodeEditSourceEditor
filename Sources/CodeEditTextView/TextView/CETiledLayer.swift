@@ -18,12 +18,12 @@ class CETiledLayer: CATiledLayer {
 
     /// A dictionary containing layer actions.
     /// Disable animations
-    override public var actions: [String : CAAction]? {
-        set {
-            return
-        }
+    override public var actions: [String: CAAction]? {
         get {
             super.actions
+        }
+        set {
+            return
         }
     }
 
