@@ -5,7 +5,8 @@
 - [X] scroll
 - [X] wrap text
 - [X] resize correctly
-- [] syntax highlighting
+- [x] syntax highlighting
+- [] cursor
 - [] edit text
     - [] isEditable
 - [] tab widths & indents
