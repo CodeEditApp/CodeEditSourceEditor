@@ -30,7 +30,7 @@ final class Typesetter {
         var startIndex = 0
         while startIndex < string.length {
             let lineBreak = suggestLineBreak(using: typesetter, startingOffset: startIndex, constrainingWidth: maxWidth)
-            lineFragments.append(typesetLine(range: NSRange(location: startIndex, length: lineBreak)))
+            lineFragments.append(typesetLine(range: NSRange(location: startIndex, length: lineBreak - startIndex)))
             startIndex = lineBreak
         }
     }

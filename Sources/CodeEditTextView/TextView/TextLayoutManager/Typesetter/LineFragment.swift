@@ -7,7 +7,7 @@
 
 import AppKit
 
-final class LineFragment {
+struct LineFragment {
     var ctLine: CTLine
     var width: CGFloat
     var height: CGFloat

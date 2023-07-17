@@ -8,15 +8,29 @@
 import Foundation
 import AppKit
 
-protocol TextLayoutManagerDelegate: AnyObject { }
+protocol TextLayoutManagerDelegate: AnyObject {
+    func maxWidthDidChange(newWidth: CGFloat)
+    func textViewportSize() -> CGSize
+}
 
 class TextLayoutManager: NSObject {
+    // MARK: - Public Config
+
+    public weak var delegate: TextLayoutManagerDelegate?
+    public var typingAttributes: [NSAttributedString.Key: Any]
+    public var lineHeightMultiplier: CGFloat
+    public var wrapLines: Bool
+
+    // MARK: - Internal
+
     private unowned var textStorage: NSTextStorage
     private var lineStorage: TextLineStorage
-    public var typingAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular),
-        .paragraphStyle: NSParagraphStyle.default.copy()
-    ]
+
+    private var maxLineWidth: CGFloat = 0 {
+        didSet {
+            delegate?.maxWidthDidChange(newWidth: maxLineWidth)
+        }
+    }
 
     // MARK: - Init
 
@@ -24,10 +38,17 @@ class TextLayoutManager: NSObject {
     /// - Parameters:
     ///   - textStorage: The text storage object to use as a data source.
     ///   - typingAttributes: The attributes to use while typing.
-    init(textStorage: NSTextStorage, typingAttributes: [NSAttributedString.Key: Any]) {
+    init(
+        textStorage: NSTextStorage,
+        typingAttributes: [NSAttributedString.Key: Any],
+        lineHeightMultiplier: CGFloat,
+        wrapLines: Bool
+    ) {
         self.textStorage = textStorage
         self.lineStorage = TextLineStorage()
         self.typingAttributes = typingAttributes
+        self.lineHeightMultiplier = lineHeightMultiplier
+        self.wrapLines = wrapLines
         super.init()
         textStorage.addAttributes(typingAttributes, range: NSRange(location: 0, length: textStorage.length))
         prepareTextLines()
@@ -37,9 +58,11 @@ class TextLayoutManager: NSObject {
     /// Parses the text storage object into lines and builds the `lineStorage` object from those lines.
     private func prepareTextLines() {
         guard lineStorage.count == 0 else { return }
+#if DEBUG
         var info = mach_timebase_info()
         guard mach_timebase_info(&info) == KERN_SUCCESS else { return }
         let start = mach_absolute_time()
+#endif
 
         func getNextLine(startingAt location: Int) -> NSRange? {
             let range = NSRange(location: location, length: 0)
@@ -53,10 +76,6 @@ class TextLayoutManager: NSObject {
             }
         }
 
-        let estimatedLineHeight = NSAttributedString(string: " ", attributes: typingAttributes).boundingRect(
-            with: NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
-        ).height
-
         var index = 0
         var lines: [(TextLine, Int)] = []
         while let range = getNextLine(startingAt: index) {
@@ -66,7 +85,7 @@ class TextLayoutManager: NSObject {
             ))
             index = NSMaxRange(range)
         }
-        // Get the last line
+        // Create the last line
         if textStorage.length - index > 0 {
             lines.append((
                 TextLine(stringRef: textStorage, range: NSRange(location: index, length: textStorage.length - index)),
@@ -74,45 +93,74 @@ class TextLayoutManager: NSObject {
             ))
         }
 
-        lineStorage.build(from: lines, estimatedLineHeight: estimatedLineHeight)
+        // Use a more efficient tree building algorithm than adding lines as calculated in the above loop.
+        lineStorage.build(from: lines, estimatedLineHeight: estimateLineHeight())
 
+#if DEBUG
         let end = mach_absolute_time()
         let elapsed = end - start
         let nanos = elapsed * UInt64(info.numer) / UInt64(info.denom)
         print("Layout Manager built in: ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC), "ms")
+#endif
     }
 
-    // MARK: - API
+    private func estimateLineHeight() -> CGFloat {
+        let string = NSAttributedString(string: "0", attributes: typingAttributes)
+        let typesetter = CTTypesetterCreateWithAttributedString(string)
+        let ctLine = CTTypesetterCreateLine(typesetter, CFRangeMake(0, 1))
+        var ascent: CGFloat = 0
+        var descent: CGFloat = 0
+        var leading: CGFloat = 0
+        CTLineGetTypographicBounds(ctLine, &ascent, &descent, &leading)
+        return (ascent + descent + leading) * lineHeightMultiplier
+    }
 
-    func estimatedHeight() -> CGFloat {
+    // MARK: - Public Convenience Methods
+
+    public func estimatedHeight() -> CGFloat {
         guard let position = lineStorage.getLine(atIndex: lineStorage.length - 1) else {
             return 0.0
         }
         return position.node.height + position.height
     }
-    func estimatedWidth() -> CGFloat { 0 }
 
-    func textLineForPosition(_ posY: CGFloat) -> TextLine? {
+    public func estimatedWidth() -> CGFloat {
+        maxLineWidth
+    }
+
+    public func textLineForPosition(_ posY: CGFloat) -> TextLine? {
         lineStorage.getLine(atPosition: posY)?.node.line
     }
 
     // MARK: - Rendering
 
-    func draw(inRect rect: CGRect, context: CGContext) {
+    public func invalidateLayoutForRect(_ rect: NSRect) {
+        // Get all lines in rect and discard their line fragment data
+        for position in lineStorage.linesStartingAt(rect.minY, until: rect.maxY) {
+            position.node.line.typesetter.lineFragments.removeAll(keepingCapacity: true)
+        }
+    }
+
+    internal func draw(inRect rect: CGRect, context: CGContext) {
         // Get all lines in rect & draw!
-        var currentPosition = lineStorage.getLine(atPosition: rect.minY)
-        while let position = currentPosition, position.height < rect.maxY {
-            let lineHeight = drawLine(
+        for position in lineStorage.linesStartingAt(rect.minY, until: rect.maxY) {
+            let lineSize = drawLine(
                 line: position.node.line,
                 offsetHeight: position.height,
                 minY: rect.minY,
                 maxY: rect.maxY,
                 context: context
             )
-            if lineHeight != position.node.height {
-                lineStorage.update(atIndex: position.offset, delta: 0, deltaHeight: lineHeight - position.node.height)
+            if lineSize.height != position.node.height {
+                lineStorage.update(
+                    atIndex: position.offset,
+                    delta: 0,
+                    deltaHeight: lineSize.height - position.node.height
+                )
             }
-            currentPosition = lineStorage.getLine(atIndex: position.offset + position.node.length)
+            if maxLineWidth < lineSize.width {
+                maxLineWidth = lineSize.width
+            }
         }
     }
 
@@ -122,19 +170,25 @@ class TextLayoutManager: NSObject {
     ///   - offsetHeight: The initial offset of the line.
     ///   - minY: The minimum Y position to begin drawing from.
     ///   - maxY: The maximum Y position to draw to.
+    /// - Returns: The size of the rendered line.
     private func drawLine(
         line: TextLine,
         offsetHeight: CGFloat,
         minY: CGFloat,
         maxY: CGFloat,
         context: CGContext
-    ) -> CGFloat {
+    ) -> CGSize {
         if line.typesetter.lineFragments.isEmpty {
-            line.prepareForDisplay(maxWidth: .greatestFiniteMagnitude)
+            line.prepareForDisplay(
+                maxWidth: wrapLines
+                ? delegate?.textViewportSize().width ?? .greatestFiniteMagnitude
+                : .greatestFiniteMagnitude
+            )
         }
         var height = offsetHeight
+        var maxWidth: CGFloat = 0
         for lineFragment in line.typesetter.lineFragments {
-            if height + lineFragment.height >= minY {
+            if height + (lineFragment.height * lineHeightMultiplier) >= minY {
                 // The fragment is within the valid region
                 context.saveGState()
                 context.textMatrix = .init(scaleX: 1, y: -1)
@@ -143,9 +197,10 @@ class TextLayoutManager: NSObject {
                 CTLineDraw(lineFragment.ctLine, context)
                 context.restoreGState()
             }
-            height += lineFragment.height
+            maxWidth = max(lineFragment.width, maxWidth)
+            height += lineFragment.height * lineHeightMultiplier
         }
-        return height - offsetHeight
+        return CGSize(width: maxWidth, height: height - offsetHeight)
     }
 }
 
@@ -156,6 +211,6 @@ extension TextLayoutManager: NSTextStorageDelegate {
         range editedRange: NSRange,
         changeInLength delta: Int
     ) {
-        
+
     }
 }

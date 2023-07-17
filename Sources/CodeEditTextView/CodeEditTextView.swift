@@ -110,7 +110,18 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
 //            bracketPairHighlight: bracketPairHighlight
 //        )
 //        return controller
-        return TextViewController(string: text)
+        return TextViewController(
+            string: text,
+            font: font,
+            theme: theme,
+            lineHeight: lineHeight,
+            wrapLines: wrapLines,
+            editorOverscroll: editorOverscroll,
+            useThemeBackground: useThemeBackground,
+            contentInsets: contentInsets,
+            isEditable: isEditable,
+            letterSpacing: letterSpacing
+        )
     }
 
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
