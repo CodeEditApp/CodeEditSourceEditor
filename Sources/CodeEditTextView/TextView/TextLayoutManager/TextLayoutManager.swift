@@ -11,6 +11,7 @@ import AppKit
 protocol TextLayoutManagerDelegate: AnyObject {
     func maxWidthDidChange(newWidth: CGFloat)
     func textViewportSize() -> CGSize
+    func textLayoutSetNeedsDisplay()
 }
 
 class TextLayoutManager: NSObject {
@@ -132,11 +133,25 @@ class TextLayoutManager: NSObject {
         lineStorage.getLine(atPosition: posY)?.node.line
     }
 
+    public func enumerateLines(startingAt posY: CGFloat, completion: ((TextLine, Int, CGFloat) -> Bool)) {
+        for position in lineStorage.linesStartingAt(posY, until: .greatestFiniteMagnitude) {
+            guard completion(position.node.line, position.offset, position.height) else {
+                break
+            }
+        }
+    }
+
     // MARK: - Rendering
 
     public func invalidateLayoutForRect(_ rect: NSRect) {
         // Get all lines in rect and discard their line fragment data
         for position in lineStorage.linesStartingAt(rect.minY, until: rect.maxY) {
+            position.node.line.typesetter.lineFragments.removeAll(keepingCapacity: true)
+        }
+    }
+
+    public func invalidateLayoutForRange(_ range: NSRange) {
+        for position in lineStorage.linesInRange(range) {
             position.node.line.typesetter.lineFragments.removeAll(keepingCapacity: true)
         }
     }
@@ -211,6 +226,7 @@ extension TextLayoutManager: NSTextStorageDelegate {
         range editedRange: NSRange,
         changeInLength delta: Int
     ) {
-
+        invalidateLayoutForRange(editedRange)
+        delegate?.textLayoutSetNeedsDisplay()
     }
 }

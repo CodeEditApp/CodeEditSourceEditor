@@ -24,57 +24,41 @@ class TextView: NSView {
     // MARK: - Configuration
 
     func setString(_ string: String) {
-        storage.setAttributedString(.init(string: string))
+        textStorage.setAttributedString(.init(string: string))
     }
 
     public var font: NSFont
-    public var theme: EditorTheme
     public var lineHeight: CGFloat
     public var wrapLines: Bool
     public var editorOverscroll: CGFloat
-    public var useThemeBackground: Bool
-    public var contentInsets: NSEdgeInsets?
     public var isEditable: Bool
     public var letterSpacing: Double
 
     // MARK: - Internal Properties
 
-    private var storage: NSTextStorage!
-    private var storageDelegate: MultiStorageDelegate!
-    private var layoutManager: TextLayoutManager!
+    private(set) var textStorage: NSTextStorage!
+    private(set) var layoutManager: TextLayoutManager!
 
     var scrollView: NSScrollView? {
         guard let enclosingScrollView, enclosingScrollView.documentView == self else { return nil }
         return enclosingScrollView
     }
 
-//    override open var frame: NSRect {
-//        get { super.frame }
-//        set {
-//            super.frame = newValue
-//            print(#function)
-//            layoutManager.invalidateLayoutForRect(newValue)
-//        }
-//    }
-
     // MARK: - Init
 
     init(
         string: String,
         font: NSFont,
-        theme: EditorTheme,
         lineHeight: CGFloat,
         wrapLines: Bool,
         editorOverscroll: CGFloat,
-        useThemeBackground: Bool,
-        contentInsets: NSEdgeInsets?,
         isEditable: Bool,
-        letterSpacing: Double
+        letterSpacing: Double,
+        storageDelegate: MultiStorageDelegate!
     ) {
-        self.storage = NSTextStorage(string: string)
-        self.storageDelegate = MultiStorageDelegate()
+        self.textStorage = NSTextStorage(string: string)
         self.layoutManager = TextLayoutManager(
-            textStorage: storage,
+            textStorage: textStorage,
             typingAttributes: [
                 .font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular),
                 .paragraphStyle: {
@@ -90,18 +74,14 @@ class TextView: NSView {
         )
 
         self.font = font
-        self.theme = theme
         self.lineHeight = lineHeight
         self.wrapLines = wrapLines
         self.editorOverscroll = editorOverscroll
-        self.useThemeBackground = useThemeBackground
-        self.contentInsets = contentInsets
         self.isEditable = isEditable
         self.letterSpacing = letterSpacing
 
-        storage.delegate = storageDelegate
+        textStorage.delegate = storageDelegate
         storageDelegate.addDelegate(layoutManager)
-        // TODO: Add Highlighter as storage delegate #2
 
         super.init(frame: .zero)
 
@@ -136,24 +116,28 @@ class TextView: NSView {
         true
     }
 
-//    override func makeBackingLayer() -> CALayer {
-//        let layer = CETiledLayer()
-//        layer.tileSize = CGSize(width: 2000, height: 1000)
-////        layer.levelsOfDetail = 4
-////        layer.levelsOfDetailBias = 2
-//        layer.autoresizingMask = [.layerWidthSizable, .layerHeightSizable]
-//        layer.contentsScale = NSScreen.main?.backingScaleFactor ?? 1.0
-//        layer.drawsAsynchronously = false
-//        return layer
-//    }
-
     override var visibleRect: NSRect {
         if let scrollView = scrollView {
             // +200px vertically for a bit of padding
-            return scrollView.visibleRect.insetBy(dx: 0, dy: 400)
+            return scrollView.visibleRect.insetBy(dx: 0, dy: -400).offsetBy(dx: 0, dy: 200)
         } else {
             return super.visibleRect
         }
+    }
+
+    var visibleTextRange: NSRange? {
+        var min: Int = -1
+        var max: Int = 0
+        layoutManager.enumerateLines(startingAt: CGFloat.maximum(visibleRect.minY, 0)) { _, offset, height in
+            if min < 0 {
+                min = offset
+            } else {
+                max = offset
+            }
+            return height < visibleRect.maxY
+        }
+        guard min >= 0 else { return nil }
+        return NSRange(location: min, length: max - min)
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -206,5 +190,9 @@ extension TextView: TextLayoutManagerDelegate {
         } else {
             return CGSize(width: CGFloat.infinity, height: CGFloat.infinity)
         }
+    }
+
+    func textLayoutSetNeedsDisplay() {
+        needsDisplay = true
     }
 }

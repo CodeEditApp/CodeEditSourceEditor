@@ -16,3 +16,13 @@ public protocol HighlighterTextView: AnyObject {
     /// A substring for the requested range.
     func stringForRange(_ nsRange: NSRange) -> String?
 }
+
+extension TextView: HighlighterTextView {
+    var documentRange: NSRange {
+        NSRange(location: 0, length: textStorage.length)
+    }
+
+    func stringForRange(_ nsRange: NSRange) -> String? {
+        textStorage.substring(from: nsRange)
+    }
+}

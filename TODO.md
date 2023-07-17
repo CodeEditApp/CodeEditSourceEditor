@@ -1,0 +1,32 @@
+# TODO
+
+- [X] load file
+- [X] render text
+- [X] scroll
+- [X] wrap text
+- [X] resize correctly
+- [] syntax highlighting
+- [] edit text
+    - [] isEditable
+- [] tab widths & indents
+- [] update parameters in real time
+    - [] tab & indent options
+    - [] kern
+    - [] theme
+    - [] line height
+    - [] wrap lines
+    - [] editor overscroll
+    - [] useThemeBackground
+    - [] highlight provider
+    - [] content insets
+    - [] isEditable
+    - [] language
+- [] select text
+- [] multiple selection
+- [] copy/paste
+- [] undo/redo
+- [] sync system appearance
+- [] update cursor position
+- [] update text (from outside)
+- [] highlight brackets
+- [] textformation integration

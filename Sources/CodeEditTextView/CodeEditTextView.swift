@@ -91,36 +91,23 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     public typealias NSViewControllerType = TextViewController // STTextViewController
 
     public func makeNSViewController(context: Context) -> TextViewController {
-//        let controller = NSViewControllerType(
-//            text: $text,
-//            language: language,
-//            font: font,
-//            theme: theme,
-//            tabWidth: tabWidth,
-//            indentOption: indentOption,
-//            lineHeight: lineHeight,
-//            wrapLines: wrapLines,
-//            cursorPosition: $cursorPosition,
-//            editorOverscroll: editorOverscroll,
-//            useThemeBackground: useThemeBackground,
-//            highlightProvider: highlightProvider,
-//            contentInsets: contentInsets,
-//            isEditable: isEditable,
-//            letterSpacing: letterSpacing,
-//            bracketPairHighlight: bracketPairHighlight
-//        )
-//        return controller
         return TextViewController(
-            string: text,
+            string: $text,
+            language: language,
             font: font,
             theme: theme,
+            tabWidth: tabWidth,
+            indentOption: indentOption,
             lineHeight: lineHeight,
             wrapLines: wrapLines,
+            cursorPosition: $cursorPosition,
             editorOverscroll: editorOverscroll,
             useThemeBackground: useThemeBackground,
+            highlightProvider: highlightProvider,
             contentInsets: contentInsets,
             isEditable: isEditable,
-            letterSpacing: letterSpacing
+            letterSpacing: letterSpacing,
+            bracketPairHighlight: bracketPairHighlight
         )
     }
 

@@ -9,7 +9,11 @@ import Foundation
 
 extension TextLineStorage {
     func linesStartingAt(_ minY: CGFloat, until maxY: CGFloat) -> TextLineStorageYIterator {
-        return TextLineStorageYIterator(storage: self, minY: minY, maxY: maxY)
+        TextLineStorageYIterator(storage: self, minY: minY, maxY: maxY)
+    }
+
+    func linesInRange(_ range: NSRange) -> TextLineStorageRangeIterator {
+        TextLineStorageRangeIterator(storage: self, range: range)
     }
 
     struct TextLineStorageYIterator: Sequence, IteratorProtocol {
@@ -37,4 +41,27 @@ extension TextLineStorage {
         }
     }
 
+    struct TextLineStorageRangeIterator: Sequence, IteratorProtocol {
+        let storage: TextLineStorage
+        let range: NSRange
+        var currentPosition: TextLinePosition?
+
+        mutating func next() -> TextLinePosition? {
+            if let currentPosition {
+                guard currentPosition.offset + currentPosition.node.length < NSMaxRange(range),
+                      let nextNode = currentPosition.node.getSuccessor() else { return nil }
+                self.currentPosition = TextLinePosition(
+                    node: nextNode,
+                    offset: currentPosition.offset + currentPosition.node.length,
+                    height: currentPosition.height + currentPosition.node.height
+                )
+                return self.currentPosition!
+            } else if let nextPosition = storage.getLine(atIndex: range.location) {
+                self.currentPosition = nextPosition
+                return nextPosition
+            } else {
+                return nil
+            }
+        }
+    }
 }

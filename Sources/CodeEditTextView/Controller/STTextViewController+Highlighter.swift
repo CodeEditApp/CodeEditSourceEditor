@@ -11,13 +11,13 @@ import SwiftTreeSitter
 extension STTextViewController {
     /// Configures the `Highlighter` object
     internal func setUpHighlighter() {
-        self.highlighter = Highlighter(
-            textView: textView,
-            highlightProvider: highlightProvider,
-            theme: theme,
-            attributeProvider: self,
-            language: language
-        )
+//        self.highlighter = Highlighter(
+//            textView: textView,
+//            highlightProvider: highlightProvider,
+//            theme: theme,
+//            attributeProvider: self,
+//            language: language
+//        )
     }
 
     /// Sets the highlight provider and re-highlights all text. This method should be used sparingly.

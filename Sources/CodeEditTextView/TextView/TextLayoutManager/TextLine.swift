@@ -22,7 +22,9 @@ final class TextLine {
     }
 
     func prepareForDisplay(maxWidth: CGFloat) {
-        let string = stringRef.attributedSubstring(from: range)
-        typesetter.prepareToTypeset(string, maxWidth: maxWidth)
+        typesetter.prepareToTypeset(
+            stringRef.attributedSubstring(from: range),
+            maxWidth: maxWidth
+        )
     }
 }
