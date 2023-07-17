@@ -119,7 +119,7 @@ class TextView: NSView {
     override var visibleRect: NSRect {
         if let scrollView = scrollView {
             // +200px vertically for a bit of padding
-            return scrollView.visibleRect.insetBy(dx: 0, dy: -400).offsetBy(dx: 0, dy: 200)
+            return scrollView.documentVisibleRect.insetBy(dx: 0, dy: -400).offsetBy(dx: 0, dy: 200)
         } else {
             return super.visibleRect
         }
