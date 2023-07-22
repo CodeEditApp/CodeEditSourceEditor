@@ -12,15 +12,17 @@ import STTextView
 
 ```
  TextView
- |-> LayoutManager              Creates, manages, and renders TextLines from the text storage
+ |-> TextLayoutManager          Creates, manages, and lays out text lines from a line storage
  |  |-> [TextLine]              Represents a text line
  |  |   |-> Typesetter          Lays out and calculates line fragments
- |  |   |   |-> [LineFragment]  Represents a visual text line (may be multiple if text wrapping is on)
- |-> SelectionManager (depends on LayoutManager)    Maintains text selections and renders selections
+ |  |   |-> [LineFragment]      Represents a visual text line, stored in a line storage for long lines
+ |  |-> [LineFragmentLayer]     Reusable fragment layers that draw a fragment in their context.
+ |
+ |-> TextSelectionManager (depends on LayoutManager)    Maintains text selections and renders selections
  |  |-> [TextSelection]
  ```
  */
-class TextView: NSView {
+class TextView: NSView, NSTextContent {
     // MARK: - Configuration
 
     func setString(_ string: String) {
@@ -32,12 +34,24 @@ class TextView: NSView {
     public var wrapLines: Bool
     public var editorOverscroll: CGFloat
     public var isEditable: Bool
+    public var isSelectable: Bool = true {
+        didSet {
+            if isSelectable, let layer = self.layer {
+                self.selectionManager = TextSelectionManager(layoutManager: layoutManager, parentLayer: layer)
+            } else {
+                self.selectionManager = nil
+            }
+        }
+    }
     public var letterSpacing: Double
+
+    open var contentType: NSTextContentType?
 
     // MARK: - Internal Properties
 
     private(set) var textStorage: NSTextStorage!
     private(set) var layoutManager: TextLayoutManager!
+    private(set) var selectionManager: TextSelectionManager?
 
     var scrollView: NSScrollView? {
         guard let enclosingScrollView, enclosingScrollView.documentView == self else { return nil }
@@ -90,15 +104,39 @@ class TextView: NSView {
         wantsLayer = true
         postsFrameChangedNotifications = true
         postsBoundsChangedNotifications = true
-
         autoresizingMask = [.width, .height]
 
         updateFrameIfNeeded()
+
+        if isSelectable {
+            self.selectionManager = TextSelectionManager(layoutManager: layoutManager)
+        }
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    open override var canBecomeKeyView: Bool {
+        super.canBecomeKeyView && acceptsFirstResponder && !isHiddenOrHasHiddenAncestor
+    }
+
+    open override var needsPanelToBecomeKey: Bool {
+        isSelectable || isEditable
+    }
+
+    open override var acceptsFirstResponder: Bool {
+        isSelectable
+    }
+
+    open override func resetCursorRects() {
+        super.resetCursorRects()
+        if isSelectable {
+            addCursorRect(visibleRect, cursor: .iBeam)
+        }
+    }
+
+    // MARK: - View Lifecycle
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         super.viewWillMove(toWindow: newWindow)
@@ -108,6 +146,35 @@ class TextView: NSView {
     override func viewDidEndLiveResize() {
         super.viewDidEndLiveResize()
         updateFrameIfNeeded()
+    }
+
+    override func layout() {
+        if needsLayout {
+            needsLayout = false
+            CATransaction.begin()
+            layoutManager.layoutLines()
+            CATransaction.commit()
+        }
+    }
+
+    // MARK: - Keys
+
+    override func keyDown(with event: NSEvent) {
+        guard isEditable else {
+            super.keyDown(with: event)
+            return
+        }
+
+        NSCursor.setHiddenUntilMouseMoves(true)
+
+        if !(inputContext?.handleEvent(event) ?? false) {
+            interpretKeyEvents([event])
+        }
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        super.mouseDown(with: event)
+        
     }
 
     // MARK: - Draw
@@ -126,23 +193,16 @@ class TextView: NSView {
     }
 
     var visibleTextRange: NSRange? {
-        var min: Int = -1
-        var max: Int = 0
-        layoutManager.enumerateLines(startingAt: CGFloat.maximum(visibleRect.minY, 0)) { _, offset, height in
-            if min < 0 {
-                min = offset
-            } else {
-                max = offset
-            }
-            return height < visibleRect.maxY
+        let minY = max(visibleRect.minY, 0)
+        let maxY = min(visibleRect.maxY, layoutManager.estimatedHeight())
+        guard let minYLine = layoutManager.textLineForPosition(minY),
+              let maxYLine = layoutManager.textLineForPosition(maxY) else {
+            return nil
         }
-        guard min >= 0 else { return nil }
-        return NSRange(location: min, length: max - min)
-    }
-
-    override func draw(_ dirtyRect: NSRect) {
-        guard let ctx = NSGraphicsContext.current?.cgContext else { return }
-        layoutManager.draw(inRect: dirtyRect, context: ctx)
+        return NSRange(
+            location: minYLine.range.location,
+            length: (maxYLine.range.location - minYLine.range.location) + maxYLine.range.length
+        )
     }
 
     public func updateFrameIfNeeded() {
@@ -170,7 +230,6 @@ class TextView: NSView {
         if didUpdate {
             needsLayout = true
             needsDisplay = true
-            layoutManager.invalidateLayoutForRect(frame)
         }
     }
 }

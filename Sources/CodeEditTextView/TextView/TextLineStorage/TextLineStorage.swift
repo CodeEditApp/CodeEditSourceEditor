@@ -8,17 +8,17 @@
 import Foundation
 
 /// Implements a red-black tree for efficiently editing, storing and retrieving `TextLine`s.
-final class TextLineStorage {
+final class TextLineStorage<Data> {
     struct TextLinePosition {
-        let node: Node
+        let node: Node<Data>
         let offset: Int
         let height: CGFloat
     }
 
 #if DEBUG
-    var root: Node?
+    var root: Node<Data>?
 #else
-    private var root: Node?
+    private var root: Node<Data>?
 #endif
     /// The number of characters in the storage object.
     private(set) public var length: Int = 0
@@ -33,7 +33,7 @@ final class TextLineStorage {
     /// - Parameters:
     ///   - line: The text line to insert
     ///   - range: The range the line represents. If the range is empty the line will be ignored.
-    public func insert(line: TextLine, atIndex index: Int, length: Int, height: CGFloat) {
+    public func insert(line: Data, atIndex index: Int, length: Int, height: CGFloat) {
         assert(index >= 0 && index <= self.length, "Invalid index, expected between 0 and \(self.length). Got \(index)")
         defer {
             self.count += 1
@@ -42,7 +42,7 @@ final class TextLineStorage {
 
         let insertedNode = Node(
             length: length,
-            line: line,
+            data: line,
             leftSubtreeOffset: 0,
             leftSubtreeHeight: 0.0,
             height: height,
@@ -181,7 +181,7 @@ final class TextLineStorage {
 
     /// Efficiently builds the tree from the given array of lines.
     /// - Parameter lines: The lines to use to build the tree.
-    public func build(from lines: [(TextLine, Int)], estimatedLineHeight: CGFloat) {
+    public func build(from lines: [(Data, Int)], estimatedLineHeight: CGFloat) {
         root = build(lines: lines, estimatedLineHeight: estimatedLineHeight, left: 0, right: lines.count, parent: nil).0
         count = lines.count
     }
@@ -195,17 +195,17 @@ final class TextLineStorage {
     ///   - parent: The parent of the subtree, `nil` if this is the root.
     /// - Returns: A node, if available, along with it's subtree's height and offset.
     private func build(
-        lines: [(TextLine, Int)],
+        lines: [(Data, Int)],
         estimatedLineHeight: CGFloat,
         left: Int,
         right: Int,
-        parent: Node?
-    ) -> (Node?, Int?, CGFloat?) { // swiftlint:disable:this large_tuple
+        parent: Node<Data>?
+    ) -> (Node<Data>?, Int?, CGFloat?) { // swiftlint:disable:this large_tuple
         guard left < right else { return (nil, nil, nil) }
         let mid = left + (right - left)/2
         let node = Node(
             length: lines[mid].1,
-            line: lines[mid].0,
+            data: lines[mid].0,
             leftSubtreeOffset: 0,
             leftSubtreeHeight: 0,
             height: estimatedLineHeight,
@@ -252,7 +252,7 @@ private extension TextLineStorage {
     /// Searches for the given index. Returns a node and offset if found.
     /// - Parameter index: The index to look for in the document.
     /// - Returns: A tuple containing a node if it was found, and the offset of the node in the document.
-    func search(for index: Int) -> TextLinePosition? { // swiftlint:disable:this large_tuple
+    func search(for index: Int) -> TextLinePosition? {
         var currentNode = root
         var currentOffset: Int = root?.leftSubtreeOffset ?? 0
         var currentHeight: CGFloat = root?.leftSubtreeHeight ?? 0
@@ -278,10 +278,10 @@ private extension TextLineStorage {
 
     // MARK: - Fixup
 
-    func insertFixup(node: Node) {
+    func insertFixup(node: Node<Data>) {
         metaFixup(startingAt: node, delta: node.length, deltaHeight: node.height)
 
-        var nextNode: Node? = node
+        var nextNode: Node<Data>? = node
         while var nodeX = nextNode, nodeX != root, let nodeXParent = nodeX.parent, nodeXParent.color == .red {
             let nodeY = sibling(nodeXParent)
             if isLeftChild(nodeXParent) {
@@ -327,12 +327,12 @@ private extension TextLineStorage {
     }
 
     /// RB Tree Deletes `:(`
-    func deleteFixup(node: Node) {
+    func deleteFixup(node: Node<Data>) {
 
     }
 
     /// Walk up the tree, updating any `leftSubtree` metadata.
-    func metaFixup(startingAt node: Node, delta: Int, deltaHeight: CGFloat) {
+    func metaFixup(startingAt node: Node<Data>, delta: Int, deltaHeight: CGFloat) {
         guard node.parent != nil, delta > 0 else { return }
         var node: Node? = node
         while node != nil, node != root {
@@ -344,7 +344,7 @@ private extension TextLineStorage {
         }
     }
 
-    func calculateSize(_ node: Node?) -> Int {
+    func calculateSize(_ node: Node<Data>?) -> Int {
         guard let node else { return 0 }
         return node.length + node.leftSubtreeOffset + calculateSize(node.right)
     }
@@ -353,16 +353,16 @@ private extension TextLineStorage {
 // MARK: - Rotations
 
 private extension TextLineStorage {
-    func rightRotate(node: Node) {
+    func rightRotate(node: Node<Data>) {
         rotate(node: node, left: false)
     }
 
-    func leftRotate(node: Node) {
+    func leftRotate(node: Node<Data>) {
         rotate(node: node, left: true)
     }
 
-    func rotate(node: Node, left: Bool) {
-        var nodeY: Node?
+    func rotate(node: Node<Data>, left: Bool) {
+        var nodeY: Node<Data>?
 
         if left {
             nodeY = node.right

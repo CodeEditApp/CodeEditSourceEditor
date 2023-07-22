@@ -117,10 +117,6 @@ public class TextViewController: NSViewController {
             self.textView.updateFrameIfNeeded()
         }
     }
-
-    override public func viewWillAppear() {
-        highlighter?.invalidate()
-    }
 }
 
 extension TextViewController: ThemeAttributesProviding {

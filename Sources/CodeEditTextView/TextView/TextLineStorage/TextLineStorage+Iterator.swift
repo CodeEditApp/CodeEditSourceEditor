@@ -24,13 +24,11 @@ extension TextLineStorage {
 
         mutating func next() -> TextLinePosition? {
             if let currentPosition {
-                guard currentPosition.height + currentPosition.node.height < maxY,
-                      let nextNode = currentPosition.node.getSuccessor() else { return nil }
-                self.currentPosition = TextLinePosition(
-                    node: nextNode,
-                    offset: currentPosition.offset + currentPosition.node.length,
-                    height: currentPosition.height + currentPosition.node.height
-                )
+                guard currentPosition.height < maxY,
+                      let nextPosition = storage.getLine(
+                        atIndex: currentPosition.offset + currentPosition.node.length
+                      ) else { return nil }
+                self.currentPosition = nextPosition
                 return self.currentPosition!
             } else if let nextPosition = storage.getLine(atPosition: minY) {
                 self.currentPosition = nextPosition
@@ -49,12 +47,10 @@ extension TextLineStorage {
         mutating func next() -> TextLinePosition? {
             if let currentPosition {
                 guard currentPosition.offset + currentPosition.node.length < NSMaxRange(range),
-                      let nextNode = currentPosition.node.getSuccessor() else { return nil }
-                self.currentPosition = TextLinePosition(
-                    node: nextNode,
-                    offset: currentPosition.offset + currentPosition.node.length,
-                    height: currentPosition.height + currentPosition.node.height
-                )
+                      let nextPosition = storage.getLine(
+                        atIndex: currentPosition.offset + currentPosition.node.length
+                      ) else { return nil }
+                self.currentPosition = nextPosition
                 return self.currentPosition!
             } else if let nextPosition = storage.getLine(atIndex: range.location) {
                 self.currentPosition = nextPosition

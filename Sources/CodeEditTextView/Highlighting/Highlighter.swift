@@ -159,7 +159,6 @@ private extension Highlighter {
     /// Highlights the given range
     /// - Parameter range: The range to request highlights for.
     func highlight(range rangeToHighlight: NSRange) {
-        print(#function, rangeToHighlight)
         pendingSet.insert(integersIn: rangeToHighlight)
 
         highlightProvider?.queryHighlightsFor(

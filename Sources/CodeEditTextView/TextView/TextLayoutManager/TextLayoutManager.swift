@@ -25,7 +25,7 @@ class TextLayoutManager: NSObject {
     // MARK: - Internal
 
     private unowned var textStorage: NSTextStorage
-    private var lineStorage: TextLineStorage
+    private var lineStorage: TextLineStorage<TextLine>
 
     private var maxLineWidth: CGFloat = 0 {
         didSet {
@@ -116,7 +116,7 @@ class TextLayoutManager: NSObject {
         return (ascent + descent + leading) * lineHeightMultiplier
     }
 
-    // MARK: - Public Convenience Methods
+    // MARK: - Public Methods
 
     public func estimatedHeight() -> CGFloat {
         guard let position = lineStorage.getLine(atIndex: lineStorage.length - 1) else {
@@ -130,54 +130,76 @@ class TextLayoutManager: NSObject {
     }
 
     public func textLineForPosition(_ posY: CGFloat) -> TextLine? {
-        lineStorage.getLine(atPosition: posY)?.node.line
+        lineStorage.getLine(atPosition: posY)?.node.data
     }
 
-    public func enumerateLines(startingAt posY: CGFloat, completion: ((TextLine, Int, CGFloat) -> Bool)) {
-        for position in lineStorage.linesStartingAt(posY, until: .greatestFiniteMagnitude) {
-            guard completion(position.node.line, position.offset, position.height) else {
-                break
-            }
+    public func textOffsetAtPoint(_ point: CGPoint) -> Int? {
+        guard let position = lineStorage.getLine(atPosition: point.y) else {
+            return nil
         }
+        // Find the fragment that contains the point
+        var height: CGFloat = position.height
+        for fragment in position.node.data.typesetter.lineFragments {
+            if point.y >= height && point.y <= height + (fragment.height * lineHeightMultiplier) {
+                let fragmentRange = CTLineGetStringRange(fragment.ctLine)
+                if fragment.width < point.x {
+                    return position.offset + fragmentRange.location + fragmentRange.length
+                } else {
+                    let fragmentIndex = CTLineGetStringIndexForPosition(
+                        fragment.ctLine,
+                        CGPoint(x: point.x, y: fragment.height/2)
+                    )
+                    return position.offset + fragmentRange.location + fragmentIndex
+                }
+            } else if height > point.y {
+                return nil
+            }
+            height += fragment.height * lineHeightMultiplier
+        }
+
+        return nil
     }
 
-    // MARK: - Rendering
+    // MARK: - Drawing
 
     public func invalidateLayoutForRect(_ rect: NSRect) {
         // Get all lines in rect and discard their line fragment data
         for position in lineStorage.linesStartingAt(rect.minY, until: rect.maxY) {
-            position.node.line.typesetter.lineFragments.removeAll(keepingCapacity: true)
+            position.node.data.typesetter.lineFragments.removeAll(keepingCapacity: true)
         }
     }
 
     public func invalidateLayoutForRange(_ range: NSRange) {
         for position in lineStorage.linesInRange(range) {
-            position.node.line.typesetter.lineFragments.removeAll(keepingCapacity: true)
+            position.node.data.typesetter.lineFragments.removeAll(keepingCapacity: true)
         }
     }
 
-    internal func draw(inRect rect: CGRect, context: CGContext) {
-        // Get all lines in rect & draw!
-        for position in lineStorage.linesStartingAt(rect.minY, until: rect.maxY) {
-            let lineSize = drawLine(
-                line: position.node.line,
-                offsetHeight: position.height,
-                minY: rect.minY,
-                maxY: rect.maxY,
-                context: context
-            )
-            if lineSize.height != position.node.height {
-                lineStorage.update(
-                    atIndex: position.offset,
-                    delta: 0,
-                    deltaHeight: lineSize.height - position.node.height
-                )
-            }
-            if maxLineWidth < lineSize.width {
-                maxLineWidth = lineSize.width
-            }
-        }
+    internal func layoutLines() {
+        // Flush all line fragment views for reuse and 
     }
+
+//    internal func draw(inRect rect: CGRect, context: CGContext) {
+//        // Get all lines in rect & draw!
+//        for position in lineStorage.linesStartingAt(rect.minY, until: rect.maxY + 200) {
+//            let lineSize = drawLine(
+//                line: position.node.data,
+//                offsetHeight: position.height,
+//                minY: rect.minY,
+//                context: context
+//            )
+//            if lineSize.height != position.node.height {
+//                lineStorage.update(
+//                    atIndex: position.offset,
+//                    delta: 0,
+//                    deltaHeight: lineSize.height - position.node.height
+//                )
+//            }
+//            if maxLineWidth < lineSize.width {
+//                maxLineWidth = lineSize.width
+//            }
+//        }
+//    }
 
     /// Draws a `TextLine` into the current graphics context up to a maximum y position.
     /// - Parameters:
@@ -190,7 +212,6 @@ class TextLayoutManager: NSObject {
         line: TextLine,
         offsetHeight: CGFloat,
         minY: CGFloat,
-        maxY: CGFloat,
         context: CGContext
     ) -> CGSize {
         if line.typesetter.lineFragments.isEmpty {
