@@ -26,43 +26,65 @@ import AppKit
  */
 
 extension TextView: NSTextInputClient {
-    func insertText(_ string: Any, replacementRange: NSRange) {
-        print(string, replacementRange)
+    @objc public func insertText(_ string: Any, replacementRange: NSRange) {
+        guard isEditable else { return }
+        textStorage.beginEditing()
+        selectionManager?.textSelections.forEach { selection in
+            switch string {
+            case let string as NSString:
+                textStorage.replaceCharacters(in: selection.range, with: string as String)
+                selection.didInsertText(length: string.length)
+            case let string as NSAttributedString:
+                textStorage.replaceCharacters(in: selection.range, with: string)
+                selection.didInsertText(length: string.length)
+            default:
+                assertionFailure("\(#function) called with invalid string type. Expected String or NSAttributedString.")
+            }
+        }
+        textStorage.endEditing()
+        selectionManager?.updateSelectionViews()
+        print(selectionManager!.textSelections.map { $0.range })
     }
 
-    func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
+    @objc public func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
 
     }
 
-    func unmarkText() {
+    @objc public func unmarkText() {
 
     }
 
-    func selectedRange() -> NSRange {
+    @objc public func selectedRange() -> NSRange {
+        return selectionManager?.textSelections.first?.range ?? NSRange.zero
+    }
+
+    @objc public func markedRange() -> NSRange {
         .zero
     }
 
-    func markedRange() -> NSRange {
-        .zero
-    }
-
-    func hasMarkedText() -> Bool {
+    @objc public func hasMarkedText() -> Bool {
         false
     }
 
-    func attributedSubstring(forProposedRange range: NSRange, actualRange: NSRangePointer?) -> NSAttributedString? {
-        nil
+    @objc public func attributedSubstring(
+        forProposedRange range: NSRange,
+        actualRange: NSRangePointer?
+    ) -> NSAttributedString? {
+        let realRange = (textStorage.string as NSString).rangeOfComposedCharacterSequences(for: range)
+        actualRange?.pointee = realRange
+        print(realRange)
+        return textStorage.attributedSubstring(from: realRange)
     }
 
-    func validAttributesForMarkedText() -> [NSAttributedString.Key] {
+    @objc public func validAttributesForMarkedText() -> [NSAttributedString.Key] {
         []
     }
 
-    func firstRect(forCharacterRange range: NSRange, actualRange: NSRangePointer?) -> NSRect {
+    @objc public func firstRect(forCharacterRange range: NSRange, actualRange: NSRangePointer?) -> NSRect {
         .zero
     }
 
-    func characterIndex(for point: NSPoint) -> Int {
+    @objc public func characterIndex(for point: NSPoint) -> Int {
         layoutManager.textOffsetAtPoint(point) ?? NSNotFound
     }
 }

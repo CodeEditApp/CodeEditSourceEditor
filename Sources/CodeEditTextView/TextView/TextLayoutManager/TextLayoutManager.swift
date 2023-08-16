@@ -252,7 +252,6 @@ final class TextLayoutManager: NSObject {
         let maxY = visibleRect.maxY + 200
         let originalHeight = lineStorage.height
         var usedFragmentIDs = Set<UUID>()
-        print("")
 
         // Layout all lines
         for linePosition in lineStorage.linesStartingAt(minY, until: maxY) {
@@ -370,6 +369,7 @@ final class TextLayoutManager: NSObject {
     }
 
     deinit {
+        lineStorage.removeAll()
         layoutView = nil
         delegate = nil
     }
@@ -382,7 +382,9 @@ extension TextLayoutManager: NSTextStorageDelegate {
         range editedRange: NSRange,
         changeInLength delta: Int
     ) {
-        
+        if editedMask.contains(.editedCharacters) {
+            lineStorage.update(atIndex: editedRange.location, delta: delta, deltaHeight: 0)
+        }
         invalidateLayoutForRange(editedRange)
         delegate?.textLayoutSetNeedsDisplay()
     }

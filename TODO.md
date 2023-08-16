@@ -6,7 +6,7 @@
 - [X] wrap text
 - [X] resize correctly
 - [x] syntax highlighting
-- [] cursor
+- [x] cursor
 - [] edit text
     - [] isEditable
 - [] tab widths & indents

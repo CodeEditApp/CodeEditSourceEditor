@@ -88,4 +88,8 @@ final class Typesetter {
         )
         return set.isSubset(of: .whitespacesWithoutNewlines) || set.isSubset(of: .punctuationCharacters)
     }
+
+    deinit {
+        lineFragments.removeAll()
+    }
 }

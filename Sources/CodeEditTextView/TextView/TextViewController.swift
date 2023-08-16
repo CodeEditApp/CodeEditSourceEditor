@@ -116,6 +116,7 @@ public class TextViewController: NSViewController {
             queue: .main
         ) { _ in
             self.textView.layoutManager.updateVisibleLines()
+            self.textView.inputContext?.invalidateCharacterCoordinates()
         }
 
         textView.updateFrameIfNeeded()

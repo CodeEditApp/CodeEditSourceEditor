@@ -103,5 +103,11 @@ extension TextLineStorage {
                 return parent
             }
         }
+
+        deinit {
+            left = nil
+            right = nil
+            parent = nil
+        }
     }
 }

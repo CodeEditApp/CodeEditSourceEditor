@@ -35,6 +35,11 @@ class TextSelectionManager {
         var isCursor: Bool {
             range.length == 0
         }
+
+        func didInsertText(length: Int) {
+            range.length = 0
+            range.location += length
+        }
     }
 
     private(set) var markedText: [MarkedText] = []
