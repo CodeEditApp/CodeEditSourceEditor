@@ -28,6 +28,10 @@ let package = Package(
         .package(
             url: "https://github.com/ChimeHQ/TextFormation",
             from: "0.7.0"
+        ),
+        .package(
+            url: "https://github.com/apple/swift-collections.git",
+            .upToNextMajor(from: "1.0.0")
         )
     ],
     targets: [
@@ -36,7 +40,8 @@ let package = Package(
             dependencies: [
                 "STTextView",
                 "CodeEditLanguages",
-                "TextFormation"
+                "TextFormation",
+                .product(name: "Collections", package: "swift-collections")
             ],
             plugins: [
                 .plugin(name: "SwiftLint", package: "SwiftLintPlugin")

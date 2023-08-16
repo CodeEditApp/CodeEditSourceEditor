@@ -8,7 +8,7 @@
 import Foundation
 
 /// Implements a red-black tree for efficiently editing, storing and retrieving `TextLine`s.
-final class TextLineStorage<Data> {
+final class TextLineStorage<Data: Identifiable> {
     struct TextLinePosition {
         let node: Node<Data>
         let offset: Int
@@ -25,6 +25,10 @@ final class TextLineStorage<Data> {
     /// The number of lines in the storage object
     private(set) public var count: Int = 0
 
+    public var isEmpty: Bool { count == 0 }
+
+    public var height: CGFloat = 0
+
     init() { }
 
     // MARK: - Public Methods
@@ -38,6 +42,7 @@ final class TextLineStorage<Data> {
         defer {
             self.count += 1
             self.length += length
+            self.height += height
         }
 
         let insertedNode = Node(
@@ -148,6 +153,7 @@ final class TextLineStorage<Data> {
             )
         }
         length += delta
+        height += deltaHeight
         position.node.length += delta
         position.node.height += deltaHeight
         metaFixup(startingAt: position.node, delta: delta, deltaHeight: deltaHeight)
@@ -164,6 +170,12 @@ final class TextLineStorage<Data> {
 //        var nodeX: Node
 //        var nodeY: Node
 
+    }
+
+    public func removeAll() {
+        root = nil
+        count = 0
+        length = 0
     }
 
     public func printTree() {
@@ -235,6 +247,7 @@ final class TextLineStorage<Data> {
         }
 
         length += node.length
+        height += node.height
         node.leftSubtreeOffset = leftOffset ?? 0
         node.leftSubtreeHeight = leftHeight ?? 0
 

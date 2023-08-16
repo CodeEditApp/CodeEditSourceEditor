@@ -16,7 +16,7 @@ import STTextView
  |  |-> [TextLine]              Represents a text line
  |  |   |-> Typesetter          Lays out and calculates line fragments
  |  |   |-> [LineFragment]      Represents a visual text line, stored in a line storage for long lines
- |  |-> [LineFragmentLayer]     Reusable fragment layers that draw a fragment in their context.
+ |  |-> [LineFragmentView]      Reusable line fragment view that draws a line fragment.
  |
  |-> TextSelectionManager (depends on LayoutManager)    Maintains text selections and renders selections
  |  |-> [TextSelection]
@@ -36,8 +36,8 @@ class TextView: NSView, NSTextContent {
     public var isEditable: Bool
     public var isSelectable: Bool = true {
         didSet {
-            if isSelectable, let layer = self.layer {
-                self.selectionManager = TextSelectionManager(layoutManager: layoutManager, parentLayer: layer)
+            if isSelectable {
+                self.selectionManager = TextSelectionManager(layoutManager: layoutManager)
             } else {
                 self.selectionManager = nil
             }
@@ -71,21 +71,6 @@ class TextView: NSView, NSTextContent {
         storageDelegate: MultiStorageDelegate!
     ) {
         self.textStorage = NSTextStorage(string: string)
-        self.layoutManager = TextLayoutManager(
-            textStorage: textStorage,
-            typingAttributes: [
-                .font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular),
-                .paragraphStyle: {
-                    // swiftlint:disable:next force_cast
-                    let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
-//                    paragraph.tabStops.removeAll()
-//                    paragraph.defaultTabInterval = CGFloat(tabWidth) * fontCharWidth
-                    return paragraph
-                }()
-            ],
-            lineHeightMultiplier: lineHeight,
-            wrapLines: wrapLines
-        )
 
         self.font = font
         self.lineHeight = lineHeight
@@ -94,19 +79,42 @@ class TextView: NSView, NSTextContent {
         self.isEditable = isEditable
         self.letterSpacing = letterSpacing
 
-        textStorage.delegate = storageDelegate
-        storageDelegate.addDelegate(layoutManager)
-
         super.init(frame: .zero)
 
-        layoutManager.delegate = self
-
         wantsLayer = true
+        canDrawSubviewsIntoLayer = true
         postsFrameChangedNotifications = true
         postsBoundsChangedNotifications = true
         autoresizingMask = [.width, .height]
 
-        updateFrameIfNeeded()
+        self.layoutManager = TextLayoutManager(
+            textStorage: textStorage,
+            typingAttributes: [
+                .font: font,
+                .paragraphStyle: {
+                    // swiftlint:disable:next force_cast
+                    let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
+                    //                    paragraph.tabStops.removeAll()
+                    //                    paragraph.defaultTabInterval = CGFloat(tabWidth) * fontCharWidth
+                    return paragraph
+                }()
+            ],
+            lineHeightMultiplier: lineHeight,
+            wrapLines: wrapLines,
+            textView: self, // TODO: This is an odd syntax... consider reworking this
+            delegate: self
+        )
+        textStorage.delegate = storageDelegate
+        storageDelegate.addDelegate(layoutManager)
+
+        textStorage.addAttributes(
+            [
+                .font: font
+            ],
+            range: documentRange
+        )
+
+        layoutManager.layoutLines()
 
         if isSelectable {
             self.selectionManager = TextSelectionManager(layoutManager: layoutManager)
@@ -140,21 +148,12 @@ class TextView: NSView, NSTextContent {
 
     override func viewWillMove(toWindow newWindow: NSWindow?) {
         super.viewWillMove(toWindow: newWindow)
-        updateFrameIfNeeded()
+        layoutManager.layoutLines()
     }
 
     override func viewDidEndLiveResize() {
         super.viewDidEndLiveResize()
         updateFrameIfNeeded()
-    }
-
-    override func layout() {
-        if needsLayout {
-            needsLayout = false
-            CATransaction.begin()
-            layoutManager.layoutLines()
-            CATransaction.commit()
-        }
     }
 
     // MARK: - Keys
@@ -174,7 +173,7 @@ class TextView: NSView, NSTextContent {
 
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with: event)
-        
+
     }
 
     // MARK: - Draw
@@ -213,10 +212,9 @@ class TextView: NSView, NSTextContent {
 
         var didUpdate = false
 
-        if frame.size.height != availableSize.height
-            || (newHeight > availableSize.height && frame.size.height != newHeight) {
-            frame.size.height = max(availableSize.height, newHeight + editorOverscroll)
-            didUpdate = true
+        if newHeight + editorOverscroll >= availableSize.height && frame.size.height != newHeight + editorOverscroll {
+            frame.size.height = newHeight + editorOverscroll
+            // No need to update layout after height adjustment
         }
 
         if wrapLines && frame.size.width != availableSize.width {
@@ -230,6 +228,9 @@ class TextView: NSView, NSTextContent {
         if didUpdate {
             needsLayout = true
             needsDisplay = true
+            layoutManager.layoutLines()
+        } else {
+            layoutManager.updateVisibleLines()
         }
     }
 }
@@ -237,11 +238,15 @@ class TextView: NSView, NSTextContent {
 // MARK: - TextLayoutManagerDelegate
 
 extension TextView: TextLayoutManagerDelegate {
-    func maxWidthDidChange(newWidth: CGFloat) {
+    func layoutManagerHeightDidUpdate(newHeight: CGFloat) {
         updateFrameIfNeeded()
     }
 
-    func textViewportSize() -> CGSize {
+    func layoutManagerMaxWidthDidChange(newWidth: CGFloat) {
+        updateFrameIfNeeded()
+    }
+
+    func textViewSize() -> CGSize {
         if let scrollView = scrollView {
             var size = scrollView.contentSize
             size.height -= scrollView.contentInsets.top + scrollView.contentInsets.bottom
@@ -253,5 +258,6 @@ extension TextView: TextLayoutManagerDelegate {
 
     func textLayoutSetNeedsDisplay() {
         needsDisplay = true
+        needsLayout = true
     }
 }

@@ -24,13 +24,11 @@ extension TextLineStorage {
         }
     }
 
-    final class Node<Data>: Equatable {
+    final class Node<Data: Identifiable>: Equatable {
         enum Color {
             case red
             case black
         }
-
-        let id: UUID = UUID()
 
         // The length of the text line
         var length: Int
@@ -69,7 +67,7 @@ extension TextLineStorage {
         }
 
         static func == (lhs: Node, rhs: Node) -> Bool {
-            lhs.id == rhs.id
+            lhs.data.id == rhs.data.id
         }
 
         func minimum() -> Node<Data>? {

@@ -7,13 +7,19 @@
 
 import AppKit
 
-struct LineFragment {
+class LineFragment: Identifiable {
+    let id = UUID()
     var ctLine: CTLine
-    var width: CGFloat
-    var height: CGFloat
-    var scaledHeight: CGFloat
+    let width: CGFloat
+    let height: CGFloat
+    let scaledHeight: CGFloat
 
-    init(ctLine: CTLine, width: CGFloat, height: CGFloat, lineHeightMultiplier: CGFloat) {
+    init(
+        ctLine: CTLine,
+        width: CGFloat,
+        height: CGFloat,
+        lineHeightMultiplier: CGFloat
+    ) {
         self.ctLine = ctLine
         self.width = width
         self.height = height

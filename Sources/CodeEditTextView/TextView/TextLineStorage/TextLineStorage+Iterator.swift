@@ -61,3 +61,30 @@ extension TextLineStorage {
         }
     }
 }
+
+extension TextLineStorage: Sequence {
+    func makeIterator() -> TextLineStorageIterator {
+        TextLineStorageIterator(storage: self, currentPosition: nil)
+    }
+
+    struct TextLineStorageIterator: IteratorProtocol {
+        let storage: TextLineStorage
+        var currentPosition: TextLinePosition?
+
+        mutating func next() -> TextLinePosition? {
+            if let currentPosition {
+                guard currentPosition.offset + currentPosition.node.length < storage.length,
+                      let nextPosition = storage.getLine(
+                        atIndex: currentPosition.offset + currentPosition.node.length
+                      ) else { return nil }
+                self.currentPosition = nextPosition
+                return self.currentPosition!
+            } else if let nextPosition = storage.getLine(atIndex: 0) {
+                self.currentPosition = nextPosition
+                return nextPosition
+            } else {
+                return nil
+            }
+        }
+    }
+}

@@ -9,9 +9,10 @@ import Foundation
 import AppKit
 
 /// Represents a displayable line of text.
-final class TextLine {
+final class TextLine: Identifiable {
     typealias Attributes = [NSAttributedString.Key: Any]
 
+    let id: UUID = UUID()
     unowned var stringRef: NSTextStorage
     var range: NSRange
     let typesetter: Typesetter = Typesetter()
@@ -21,10 +22,11 @@ final class TextLine {
         self.range = range
     }
 
-    func prepareForDisplay(maxWidth: CGFloat) {
+    func prepareForDisplay(maxWidth: CGFloat, lineHeightMultiplier: CGFloat) {
         typesetter.prepareToTypeset(
             stringRef.attributedSubstring(from: range),
-            maxWidth: maxWidth
+            maxWidth: maxWidth,
+            lineHeightMultiplier: lineHeightMultiplier
         )
     }
 }

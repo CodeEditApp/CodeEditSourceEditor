@@ -11,38 +11,48 @@ import CoreText
 final class Typesetter {
     var typesetter: CTTypesetter?
     var string: NSAttributedString!
-    var lineFragments: [LineFragment] = []
+    var lineFragments = TextLineStorage<LineFragment>()
 
     // MARK: - Init & Prepare
 
     init() { }
 
-    func prepareToTypeset(_ string: NSAttributedString, maxWidth: CGFloat) {
+    func prepareToTypeset(_ string: NSAttributedString, maxWidth: CGFloat, lineHeightMultiplier: CGFloat) {
+        lineFragments.removeAll()
         self.typesetter = CTTypesetterCreateWithAttributedString(string)
         self.string = string
-        generateLines(maxWidth: maxWidth)
+        generateLines(maxWidth: maxWidth, lineHeightMultiplier: lineHeightMultiplier)
     }
 
     // MARK: - Generate lines
 
-    private func generateLines(maxWidth: CGFloat) {
+    private func generateLines(maxWidth: CGFloat, lineHeightMultiplier: CGFloat) {
         guard let typesetter else { return }
         var startIndex = 0
         while startIndex < string.length {
             let lineBreak = suggestLineBreak(using: typesetter, startingOffset: startIndex, constrainingWidth: maxWidth)
-            lineFragments.append(typesetLine(range: NSRange(location: startIndex, length: lineBreak - startIndex)))
+            let lineFragment = typesetLine(
+                range: NSRange(location: startIndex, length: lineBreak - startIndex),
+                lineHeightMultiplier: lineHeightMultiplier
+            )
+            lineFragments.insert(
+                line: lineFragment,
+                atIndex: startIndex,
+                length: lineBreak - startIndex,
+                height: lineFragment.scaledHeight
+            )
             startIndex = lineBreak
         }
     }
 
-    private func typesetLine(range: NSRange) -> LineFragment {
+    private func typesetLine(range: NSRange, lineHeightMultiplier: CGFloat) -> LineFragment {
         let ctLine = CTTypesetterCreateLine(typesetter!, CFRangeMake(range.location, range.length))
         var ascent: CGFloat = 0
         var descent: CGFloat = 0
         var leading: CGFloat = 0
         let width = CGFloat(CTLineGetTypographicBounds(ctLine, &ascent, &descent, &leading))
         let height = ascent + descent + leading
-        return LineFragment(ctLine: ctLine, width: width, height: height)
+        return LineFragment(ctLine: ctLine, width: width, height: height, lineHeightMultiplier: lineHeightMultiplier)
     }
 
     // MARK: - Line Breaks

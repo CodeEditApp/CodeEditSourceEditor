@@ -93,6 +93,7 @@ public class TextViewController: NSViewController {
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalRuler = true
         scrollView.documentView = textView
+        scrollView.contentView.postsBoundsChangedNotifications = true
         if let contentInsets {
             scrollView.automaticallyAdjustsContentInsets = false
             scrollView.contentInsets = contentInsets
@@ -110,12 +111,14 @@ public class TextViewController: NSViewController {
         ])
 
         NotificationCenter.default.addObserver(
-            forName: NSView.frameDidChangeNotification,
+            forName: NSView.boundsDidChangeNotification,
             object: scrollView.contentView,
             queue: .main
         ) { _ in
-            self.textView.updateFrameIfNeeded()
+            self.textView.layoutManager.updateVisibleLines()
         }
+
+        textView.updateFrameIfNeeded()
     }
 }
 
