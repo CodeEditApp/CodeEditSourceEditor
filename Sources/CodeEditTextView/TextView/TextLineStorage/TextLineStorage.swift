@@ -346,7 +346,7 @@ private extension TextLineStorage {
 
     /// Walk up the tree, updating any `leftSubtree` metadata.
     func metaFixup(startingAt node: Node<Data>, delta: Int, deltaHeight: CGFloat) {
-        guard node.parent != nil, delta > 0 else { return }
+        guard node.parent != nil else { return }
         var node: Node? = node
         while node != nil, node != root {
             if isLeftChild(node!) {

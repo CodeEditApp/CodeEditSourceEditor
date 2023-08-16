@@ -17,13 +17,14 @@ protocol TextLayoutManagerDelegate: AnyObject {
     var visibleRect: NSRect { get }
 }
 
-class TextLayoutManager: NSObject {
+final class TextLayoutManager: NSObject {
     // MARK: - Public Config
 
     public weak var delegate: TextLayoutManagerDelegate?
     public var typingAttributes: [NSAttributedString.Key: Any]
     public var lineHeightMultiplier: CGFloat
     public var wrapLines: Bool
+    public var detectedLineEnding: LineEnding = .lf
 
     // MARK: - Internal
 
@@ -105,6 +106,7 @@ class TextLayoutManager: NSObject {
 
         // Use an efficient tree building algorithm rather than adding lines sequentially
         lineStorage.build(from: lines, estimatedLineHeight: estimateLineHeight())
+        detectedLineEnding = LineEnding.detectLineEnding(lineStorage: lineStorage)
 
 #if DEBUG
         let end = mach_absolute_time()
@@ -147,11 +149,14 @@ class TextLayoutManager: NSObject {
             return nil
         }
         let fragment = fragmentPosition.node.data
-        print(CTLineGetStringRange(fragment.ctLine), fragment.width, point.x)
 
         let fragmentRange = CTLineGetStringRange(fragment.ctLine)
         if fragment.width < point.x {
-            return position.offset + fragmentRange.location + fragmentRange.length
+            // before the eol
+            return position.offset + fragmentRange.location + fragmentRange.length - (
+                fragmentPosition.offset + fragmentPosition.node.length == position.node.data.range.max ?
+                1 : detectedLineEnding.length
+            )
         } else {
             let fragmentIndex = CTLineGetStringIndexForPosition(
                 fragment.ctLine,
@@ -247,6 +252,7 @@ class TextLayoutManager: NSObject {
         let maxY = visibleRect.maxY + 200
         let originalHeight = lineStorage.height
         var usedFragmentIDs = Set<UUID>()
+        print("")
 
         // Layout all lines
         for linePosition in lineStorage.linesStartingAt(minY, until: maxY) {
@@ -278,12 +284,13 @@ class TextLayoutManager: NSObject {
 
     /// Lays out any lines that should be visible but are not laid out yet.
     internal func updateVisibleLines() {
+        // TODO: re-calculate layout after size change.
         // Get all visible lines and determine if more need to be laid out vertically.
         guard let visibleRect = delegate?.visibleRect else { return }
         let minY = max(visibleRect.minY - 200, 0)
         let maxY = visibleRect.maxY + 200
+        let existingFragmentIDs = Set(viewReuseQueue.usedViews.keys)
         var usedFragmentIDs = Set<UUID>()
-        var existingFragmentIDs = Set(viewReuseQueue.usedViews.keys)
 
         for linePosition in lineStorage.linesStartingAt(minY, until: maxY) {
             if linePosition.node.data.typesetter.lineFragments.isEmpty {

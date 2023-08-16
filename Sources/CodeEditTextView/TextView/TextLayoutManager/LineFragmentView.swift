@@ -7,7 +7,7 @@
 
 import AppKit
 
-class LineFragmentView: NSView {
+final class LineFragmentView: NSView {
     private weak var lineFragment: LineFragment?
 
     override var isFlipped: Bool {

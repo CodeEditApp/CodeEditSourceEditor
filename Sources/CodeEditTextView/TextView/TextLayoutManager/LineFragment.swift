@@ -7,7 +7,7 @@
 
 import AppKit
 
-class LineFragment: Identifiable {
+final class LineFragment: Identifiable {
     let id = UUID()
     var ctLine: CTLine
     let width: CGFloat

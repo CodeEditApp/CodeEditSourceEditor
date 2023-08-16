@@ -229,6 +229,8 @@ class TextView: NSView, NSTextContent {
         } else {
             layoutManager.updateVisibleLines()
         }
+
+        selectionManager?.updateSelectionViews()
     }
 }
 

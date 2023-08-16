@@ -10,8 +10,6 @@ import AppKit
 
 /// Represents a displayable line of text.
 final class TextLine: Identifiable {
-    typealias Attributes = [NSAttributedString.Key: Any]
-
     let id: UUID = UUID()
     unowned var stringRef: NSTextStorage
     var range: NSRange

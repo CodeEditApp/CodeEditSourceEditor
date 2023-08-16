@@ -63,7 +63,8 @@ class TextSelectionManager {
         updateSelectionViews()
     }
 
-    private func updateSelectionViews() {
+    internal func updateSelectionViews() {
+        textSelections.forEach { $0.view?.removeFromSuperview() }
         for textSelection in textSelections {
             if textSelection.range.length == 0 {
                 textSelection.view?.removeFromSuperview()
