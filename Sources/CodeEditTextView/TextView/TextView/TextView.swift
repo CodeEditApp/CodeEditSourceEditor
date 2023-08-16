@@ -18,7 +18,7 @@ import STTextView
  |  |   |-> [LineFragment]      Represents a visual text line, stored in a line storage for long lines
  |  |-> [LineFragmentView]      Reusable line fragment view that draws a line fragment.
  |
- |-> TextSelectionManager (depends on LayoutManager)    Maintains text selections and renders selections
+ |-> TextSelectionManager (depends on LayoutManager)    Maintains and renders text selections
  |  |-> [TextSelection]
  ```
  */
@@ -37,7 +37,7 @@ class TextView: NSView, NSTextContent {
     public var isSelectable: Bool = true {
         didSet {
             if isSelectable {
-                self.selectionManager = TextSelectionManager(layoutManager: layoutManager)
+                self.selectionManager = TextSelectionManager(layoutManager: layoutManager, delegate: self)
             } else {
                 self.selectionManager = nil
             }
@@ -91,13 +91,6 @@ class TextView: NSView, NSTextContent {
             textStorage: textStorage,
             typingAttributes: [
                 .font: font,
-                .paragraphStyle: {
-                    // swiftlint:disable:next force_cast
-                    let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
-                    //                    paragraph.tabStops.removeAll()
-                    //                    paragraph.defaultTabInterval = CGFloat(tabWidth) * fontCharWidth
-                    return paragraph
-                }()
             ],
             lineHeightMultiplier: lineHeight,
             wrapLines: wrapLines,
@@ -117,7 +110,7 @@ class TextView: NSView, NSTextContent {
         layoutManager.layoutLines()
 
         if isSelectable {
-            self.selectionManager = TextSelectionManager(layoutManager: layoutManager)
+            self.selectionManager = TextSelectionManager(layoutManager: layoutManager, delegate: self)
         }
     }
 
@@ -172,8 +165,12 @@ class TextView: NSView, NSTextContent {
     }
 
     override func mouseDown(with event: NSEvent) {
-        super.mouseDown(with: event)
-
+        // Set cursor
+        guard let offset = layoutManager.textOffsetAtPoint(self.convert(event.locationInWindow, from: nil)) else {
+            super.mouseDown(with: event)
+            return
+        }
+        selectionManager?.setSelectedRange(NSRange(location: offset, length: 0))
     }
 
     // MARK: - Draw
@@ -259,5 +256,13 @@ extension TextView: TextLayoutManagerDelegate {
     func textLayoutSetNeedsDisplay() {
         needsDisplay = true
         needsLayout = true
+    }
+}
+
+// MARK: - TextSelectionManagerDelegate
+
+extension TextView: TextSelectionManagerDelegate {
+    func addCursorView(_ view: NSView) {
+        addSubview(view)
     }
 }

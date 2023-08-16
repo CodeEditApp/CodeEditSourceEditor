@@ -68,11 +68,11 @@ class TextLayoutManager: NSObject {
     /// Parses the text storage object into lines and builds the `lineStorage` object from those lines.
     private func prepareTextLines() {
         guard lineStorage.count == 0 else { return }
-//#if DEBUG
+#if DEBUG
         var info = mach_timebase_info()
         guard mach_timebase_info(&info) == KERN_SUCCESS else { return }
         let start = mach_absolute_time()
-//#endif
+#endif
 
         func getNextLine(startingAt location: Int) -> NSRange? {
             let range = NSRange(location: location, length: 0)
@@ -106,12 +106,12 @@ class TextLayoutManager: NSObject {
         // Use an efficient tree building algorithm rather than adding lines sequentially
         lineStorage.build(from: lines, estimatedLineHeight: estimateLineHeight())
 
-//#if DEBUG
+#if DEBUG
         let end = mach_absolute_time()
         let elapsed = end - start
         let nanos = elapsed * UInt64(info.numer) / UInt64(info.denom)
-        print("Layout Manager built in: ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC), "ms")
-//#endif
+        print("Text Layout Manager built in: ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC), "ms")
+#endif
     }
 
     private func estimateLineHeight() -> CGFloat {
@@ -147,6 +147,7 @@ class TextLayoutManager: NSObject {
             return nil
         }
         let fragment = fragmentPosition.node.data
+        print(CTLineGetStringRange(fragment.ctLine), fragment.width, point.x)
 
         let fragmentRange = CTLineGetStringRange(fragment.ctLine)
         if fragment.width < point.x {
@@ -158,6 +159,31 @@ class TextLayoutManager: NSObject {
             )
             return position.offset + fragmentRange.location + fragmentIndex
         }
+    }
+
+    /// Find a position for the character at a given offset.
+    /// Returns the bottom-left corner of the character.
+    /// - Parameter offset: The offset to create the rect for.
+    /// - Returns: The found rect for the given offset.
+    public func positionForOffset(_ offset: Int) -> CGPoint? {
+        guard let linePosition = lineStorage.getLine(atIndex: offset),
+              let fragmentPosition = linePosition.node.data.typesetter.lineFragments.getLine(
+                atIndex: offset - linePosition.offset
+              ) else {
+            return nil
+        }
+
+        let xPos = CTLineGetOffsetForStringIndex(
+            fragmentPosition.node.data.ctLine,
+            offset - linePosition.offset - fragmentPosition.offset,
+            nil
+        )
+
+        return CGPoint(
+            x: xPos,
+            y: linePosition.height + fragmentPosition.height
+            + (fragmentPosition.node.data.height - fragmentPosition.node.data.scaledHeight)/2
+        )
     }
 
     // MARK: - Layout
@@ -325,7 +351,10 @@ class TextLayoutManager: NSObject {
     /// - Parameters:
     ///   - lineFragment: The line fragment position to lay out a view for.
     ///   - yPos: The y value at which the line should begin.
-    private func layoutFragmentView(for lineFragment: TextLineStorage<LineFragment>.TextLinePosition, at yPos: CGFloat) {
+    private func layoutFragmentView(
+        for lineFragment: TextLineStorage<LineFragment>.TextLinePosition,
+        at yPos: CGFloat
+    ) {
         let view = viewReuseQueue.getOrCreateView(forKey: lineFragment.node.data.id)
         view.setLineFragment(lineFragment.node.data)
         view.frame.origin = CGPoint(x: 0, y: yPos)

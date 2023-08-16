@@ -7,6 +7,13 @@
 
 import AppKit
 
+protocol TextSelectionManagerDelegate: AnyObject {
+    var font: NSFont { get }
+    var lineHeight: CGFloat { get }
+
+    func addCursorView(_ view: NSView)
+}
+
 /// Manages an array of text selections representing cursors (0-length ranges) and selections (>0-length ranges).
 ///
 /// Draws selections using a draw method similar to the `TextLayoutManager` class, and adds
@@ -18,11 +25,11 @@ class TextSelectionManager {
 
     class TextSelection {
         var range: NSRange
-        weak var layer: CALayer?
+        weak var view: CursorView?
 
-        init(range: NSRange, layer: CALayer? = nil) {
+        init(range: NSRange, view: CursorView? = nil) {
             self.range = range
-            self.layer = layer
+            self.view = view
         }
 
         var isCursor: Bool {
@@ -33,42 +40,41 @@ class TextSelectionManager {
     private(set) var markedText: [MarkedText] = []
     private(set) var textSelections: [TextSelection] = []
     private unowned var layoutManager: TextLayoutManager
+    private weak var delegate: TextSelectionManagerDelegate?
 
-    init(layoutManager: TextLayoutManager) {
+    init(layoutManager: TextLayoutManager, delegate: TextSelectionManagerDelegate?) {
         self.layoutManager = layoutManager
+        self.delegate = delegate
         textSelections = [
             TextSelection(range: NSRange(location: 0, length: 0))
         ]
-//        updateSelectionLayers()
+        updateSelectionViews()
     }
 
     public func setSelectedRange(_ range: NSRange) {
+        textSelections.forEach { $0.view?.removeFromSuperview() }
         textSelections = [TextSelection(range: range)]
-//        updateSelectionLayers()
-        layoutManager.delegate?.textLayoutSetNeedsDisplay()
+        updateSelectionViews()
     }
 
     public func setSelectedRanges(_ ranges: [NSRange]) {
+        textSelections.forEach { $0.view?.removeFromSuperview() }
         textSelections = ranges.map { TextSelection(range: $0) }
-//        updateSelectionLayers()
-        layoutManager.delegate?.textLayoutSetNeedsDisplay()
+        updateSelectionViews()
     }
 
-    /// Updates all cursor layers.
-//    private func updateSelectionLayers() {
-//        for textSelection in textSelections {
-//            if textSelection.isCursor {
-//                textSelection.layer?.removeFromSuperlayer()
-////                let rect =
-////                let layer = CursorLayer(rect: <#T##NSRect#>)
-//            }
-//        }
-//    }
-
-    // MARK: - Draw
-
-    /// Draws all visible highlight rects.
-//    internal func draw(inRect rect: CGRect, context: CGContext) {
-//
-//    }
+    private func updateSelectionViews() {
+        for textSelection in textSelections {
+            if textSelection.range.length == 0 {
+                textSelection.view?.removeFromSuperview()
+                let selectionView = CursorView()
+                selectionView.frame.origin = layoutManager.positionForOffset(textSelection.range.location) ?? .zero
+                selectionView.frame.size.height = (delegate?.font.lineHeight ?? 0) * (delegate?.lineHeight ?? 0)
+                delegate?.addCursorView(selectionView)
+                textSelection.view = selectionView
+            } else {
+                // TODO: Selection Highlights
+            }
+        }
+    }
 }
