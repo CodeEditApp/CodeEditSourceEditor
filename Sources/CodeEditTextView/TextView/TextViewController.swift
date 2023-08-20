@@ -31,6 +31,7 @@ public class TextViewController: NSViewController {
 
     private var storageDelegate: MultiStorageDelegate!
     private var highlighter: Highlighter?
+    private var lastScrollPosition: CGFloat = 0
 
     init(
         string: Binding<String>,
@@ -115,7 +116,10 @@ public class TextViewController: NSViewController {
             object: scrollView.contentView,
             queue: .main
         ) { _ in
-            self.textView.layoutManager.updateVisibleLines()
+            self.lastScrollPosition = self.scrollView.documentVisibleRect.origin.y
+            self.textView.layoutManager.updateVisibleLines(
+                delta: self.scrollView.documentVisibleRect.origin.y - self.lastScrollPosition
+            )
             self.textView.inputContext?.invalidateCharacterCoordinates()
         }
 

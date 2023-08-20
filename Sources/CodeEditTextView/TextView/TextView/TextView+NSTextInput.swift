@@ -43,7 +43,6 @@ extension TextView: NSTextInputClient {
         }
         textStorage.endEditing()
         selectionManager?.updateSelectionViews()
-        print(selectionManager!.textSelections.map { $0.range })
     }
 
     @objc public func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
@@ -72,7 +71,6 @@ extension TextView: NSTextInputClient {
     ) -> NSAttributedString? {
         let realRange = (textStorage.string as NSString).rangeOfComposedCharacterSequences(for: range)
         actualRange?.pointee = realRange
-        print(realRange)
         return textStorage.attributedSubstring(from: realRange)
     }
 

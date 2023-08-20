@@ -227,7 +227,7 @@ class TextView: NSView, NSTextContent {
             needsDisplay = true
             layoutManager.layoutLines()
         } else {
-            layoutManager.updateVisibleLines()
+            layoutManager.updateVisibleLines(delta: nil)
         }
 
         selectionManager?.updateSelectionViews()

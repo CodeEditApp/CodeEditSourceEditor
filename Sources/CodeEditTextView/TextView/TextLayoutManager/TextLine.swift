@@ -12,15 +12,15 @@ import AppKit
 final class TextLine: Identifiable {
     let id: UUID = UUID()
     unowned var stringRef: NSTextStorage
-    var range: NSRange
+    var maxWidth: CGFloat?
     let typesetter: Typesetter = Typesetter()
 
-    init(stringRef: NSTextStorage, range: NSRange) {
+    init(stringRef: NSTextStorage) {
         self.stringRef = stringRef
-        self.range = range
     }
 
-    func prepareForDisplay(maxWidth: CGFloat, lineHeightMultiplier: CGFloat) {
+    func prepareForDisplay(maxWidth: CGFloat, lineHeightMultiplier: CGFloat, range: NSRange) {
+        self.maxWidth = maxWidth
         typesetter.prepareToTypeset(
             stringRef.attributedSubstring(from: range),
             maxWidth: maxWidth,

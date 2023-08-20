@@ -17,16 +17,23 @@ extension TextLineStorage {
     }
 
     struct TextLineStorageYIterator: Sequence, IteratorProtocol {
-        let storage: TextLineStorage
-        let minY: CGFloat
-        let maxY: CGFloat
-        var currentPosition: TextLinePosition?
+        private let storage: TextLineStorage
+        private let minY: CGFloat
+        private let maxY: CGFloat
+        private var currentPosition: TextLinePosition?
+
+        init(storage: TextLineStorage, minY: CGFloat, maxY: CGFloat, currentPosition: TextLinePosition? = nil) {
+            self.storage = storage
+            self.minY = minY
+            self.maxY = maxY
+            self.currentPosition = currentPosition
+        }
 
         mutating func next() -> TextLinePosition? {
             if let currentPosition {
-                guard currentPosition.height < maxY,
+                guard currentPosition.yPos < maxY,
                       let nextPosition = storage.getLine(
-                        atIndex: currentPosition.offset + currentPosition.node.length
+                        atIndex: currentPosition.range.max
                       ) else { return nil }
                 self.currentPosition = nextPosition
                 return self.currentPosition!
@@ -40,15 +47,21 @@ extension TextLineStorage {
     }
 
     struct TextLineStorageRangeIterator: Sequence, IteratorProtocol {
-        let storage: TextLineStorage
-        let range: NSRange
-        var currentPosition: TextLinePosition?
+        private let storage: TextLineStorage
+        private let range: NSRange
+        private var currentPosition: TextLinePosition?
+
+        init(storage: TextLineStorage, range: NSRange, currentPosition: TextLinePosition? = nil) {
+            self.storage = storage
+            self.range = range
+            self.currentPosition = currentPosition
+        }
 
         mutating func next() -> TextLinePosition? {
             if let currentPosition {
-                guard currentPosition.offset + currentPosition.node.length < NSMaxRange(range),
+                guard currentPosition.range.max < range.max,
                       let nextPosition = storage.getLine(
-                        atIndex: currentPosition.offset + currentPosition.node.length
+                        atIndex: currentPosition.range.max
                       ) else { return nil }
                 self.currentPosition = nextPosition
                 return self.currentPosition!
@@ -68,14 +81,19 @@ extension TextLineStorage: Sequence {
     }
 
     struct TextLineStorageIterator: IteratorProtocol {
-        let storage: TextLineStorage
-        var currentPosition: TextLinePosition?
+        private let storage: TextLineStorage
+        private var currentPosition: TextLinePosition?
+
+        init(storage: TextLineStorage, currentPosition: TextLinePosition? = nil) {
+            self.storage = storage
+            self.currentPosition = currentPosition
+        }
 
         mutating func next() -> TextLinePosition? {
             if let currentPosition {
-                guard currentPosition.offset + currentPosition.node.length < storage.length,
+                guard currentPosition.range.max < storage.length,
                       let nextPosition = storage.getLine(
-                        atIndex: currentPosition.offset + currentPosition.node.length
+                        atIndex: currentPosition.range.max
                       ) else { return nil }
                 self.currentPosition = nextPosition
                 return self.currentPosition!

@@ -91,16 +91,16 @@ final class TextLayoutManager: NSObject {
         var lines: [(TextLine, Int)] = []
         while let range = getNextLine(startingAt: index) {
             lines.append((
-                TextLine(stringRef: textStorage, range: NSRange(location: index, length: NSMaxRange(range) - index)),
-                NSMaxRange(range) - index
+                TextLine(stringRef: textStorage),
+                range.max - index
             ))
             index = NSMaxRange(range)
         }
         // Create the last line
         if textStorage.length - index > 0 {
             lines.append((
-                TextLine(stringRef: textStorage, range: NSRange(location: index, length: textStorage.length - index)),
-                index
+                TextLine(stringRef: textStorage),
+                textStorage.length - index
             ))
         }
 
@@ -137,32 +137,34 @@ final class TextLayoutManager: NSObject {
         maxLineWidth
     }
 
-    public func textLineForPosition(_ posY: CGFloat) -> TextLine? {
-        lineStorage.getLine(atPosition: posY)?.node.data
+    public func textLineForPosition(_ posY: CGFloat) -> TextLineStorage<TextLine>.TextLinePosition? {
+        lineStorage.getLine(atPosition: posY)
     }
 
     public func textOffsetAtPoint(_ point: CGPoint) -> Int? {
         guard let position = lineStorage.getLine(atPosition: point.y),
-              let fragmentPosition = position.node.data.typesetter.lineFragments.getLine(
-                atPosition: point.y - position.height
+              let fragmentPosition = position.data.typesetter.lineFragments.getLine(
+                atPosition: point.y - position.yPos
               ) else {
             return nil
         }
-        let fragment = fragmentPosition.node.data
+        let fragment = fragmentPosition.data
 
-        let fragmentRange = CTLineGetStringRange(fragment.ctLine)
         if fragment.width < point.x {
-            // before the eol
-            return position.offset + fragmentRange.location + fragmentRange.length - (
-                fragmentPosition.offset + fragmentPosition.node.length == position.node.data.range.max ?
+            let fragmentRange = CTLineGetStringRange(fragment.ctLine)
+            // Return eol
+            return position.range.location + fragmentRange.location + fragmentRange.length - (
+                // Before the eol character (insertion point is before the eol)
+                fragmentPosition.range.max == position.range.max ?
                 1 : detectedLineEnding.length
             )
         } else {
+            // Somewhere in the fragment
             let fragmentIndex = CTLineGetStringIndexForPosition(
                 fragment.ctLine,
                 CGPoint(x: point.x, y: fragment.height/2)
             )
-            return position.offset + fragmentRange.location + fragmentIndex
+            return position.range.location + fragmentIndex
         }
     }
 
@@ -172,26 +174,26 @@ final class TextLayoutManager: NSObject {
     /// - Returns: The found rect for the given offset.
     public func positionForOffset(_ offset: Int) -> CGPoint? {
         guard let linePosition = lineStorage.getLine(atIndex: offset),
-              let fragmentPosition = linePosition.node.data.typesetter.lineFragments.getLine(
-                atIndex: offset - linePosition.offset
+              let fragmentPosition = linePosition.data.typesetter.lineFragments.getLine(
+                atIndex: offset - linePosition.range.location
               ) else {
             return nil
         }
 
         let xPos = CTLineGetOffsetForStringIndex(
-            fragmentPosition.node.data.ctLine,
-            offset - linePosition.offset - fragmentPosition.offset,
+            fragmentPosition.data.ctLine,
+            offset - linePosition.range.location,
             nil
         )
 
         return CGPoint(
             x: xPos,
-            y: linePosition.height + fragmentPosition.height
-            + (fragmentPosition.node.data.height - fragmentPosition.node.data.scaledHeight)/2
+            y: linePosition.yPos + fragmentPosition.yPos
+            + (fragmentPosition.data.height - fragmentPosition.data.scaledHeight)/2
         )
     }
 
-    // MARK: - Layout
+    // MARK: - Invalidation
 
     /// Invalidates layout for the given rect.
     /// - Parameter rect: The rect to invalidate.
@@ -205,15 +207,15 @@ final class TextLayoutManager: NSObject {
         let maxY = min(rect.maxY, visibleRect.maxY)
 
         for linePosition in lineStorage.linesStartingAt(minY, until: maxY) {
-            existingFragmentIDs.formUnion(Set(linePosition.node.data.typesetter.lineFragments.map(\.node.data.id)))
+            existingFragmentIDs.formUnion(Set(linePosition.data.typesetter.lineFragments.map(\.data.id)))
 
             let lineSize = layoutLine(
                 linePosition,
-                minY: linePosition.height,
+                minY: linePosition.yPos,
                 maxY: maxY,
                 laidOutFragmentIDs: &usedFragmentIDs
             )
-            if lineSize.height != linePosition.node.height {
+            if lineSize.height != linePosition.height {
                 // If there's a height change, we need to lay out everything again and enqueue any views already used.
                 viewReuseQueue.enqueueViews(in: usedFragmentIDs.union(existingFragmentIDs))
                 layoutLines()
@@ -238,12 +240,14 @@ final class TextLayoutManager: NSObject {
         invalidateLayoutForRect(
             NSRect(
                 x: 0,
-                y: minPosition.height,
+                y: minPosition.yPos,
                 width: 0,
-                height: maxPosition.height + maxPosition.node.height
+                height: maxPosition.yPos + maxPosition.height
             )
         )
     }
+
+    // MARK: - Layout
 
     /// Lays out all visible lines
     internal func layoutLines() {
@@ -257,15 +261,15 @@ final class TextLayoutManager: NSObject {
         for linePosition in lineStorage.linesStartingAt(minY, until: maxY) {
             let lineSize = layoutLine(
                 linePosition,
-                minY: linePosition.height,
+                minY: linePosition.yPos,
                 maxY: maxY,
                 laidOutFragmentIDs: &usedFragmentIDs
             )
-            if lineSize.height != linePosition.node.height {
+            if lineSize.height != linePosition.height {
                 lineStorage.update(
-                    atIndex: linePosition.offset,
+                    atIndex: linePosition.range.location,
                     delta: 0,
-                    deltaHeight: lineSize.height - linePosition.node.height
+                    deltaHeight: lineSize.height - linePosition.height
                 )
             }
             if maxLineWidth < lineSize.width {
@@ -282,7 +286,9 @@ final class TextLayoutManager: NSObject {
     }
 
     /// Lays out any lines that should be visible but are not laid out yet.
-    internal func updateVisibleLines() {
+    /// - Parameter delta: If used a scroll view, the delta between the last y position and the current y position.
+    ///                    Used to correctly update the view's height without jumping down in the active scroll.
+    internal func updateVisibleLines(delta: CGFloat?) {
         // TODO: re-calculate layout after size change.
         // Get all visible lines and determine if more need to be laid out vertically.
         guard let visibleRect = delegate?.visibleRect else { return }
@@ -292,22 +298,21 @@ final class TextLayoutManager: NSObject {
         var usedFragmentIDs = Set<UUID>()
 
         for linePosition in lineStorage.linesStartingAt(minY, until: maxY) {
-            if linePosition.node.data.typesetter.lineFragments.isEmpty {
+            if linePosition.data.typesetter.lineFragments.isEmpty {
                 usedFragmentIDs.forEach { viewId in
                     viewReuseQueue.enqueueView(forKey: viewId)
                 }
                 layoutLines()
                 return
             }
-            for lineFragmentPosition in linePosition
-                .node
-                .data
-                .typesetter
-                .lineFragments {
-                let lineFragment = lineFragmentPosition.node.data
+            for lineFragmentPosition in linePosition.data.typesetter.lineFragments {
+                let lineFragment = lineFragmentPosition.data
                 usedFragmentIDs.insert(lineFragment.id)
                 if viewReuseQueue.usedViews[lineFragment.id] == nil {
-                    layoutFragmentView(for: lineFragmentPosition, at: linePosition.height + lineFragmentPosition.height)
+                    layoutFragmentView(
+                        for: lineFragmentPosition,
+                        at: linePosition.yPos + lineFragmentPosition.height
+                    )
                 }
             }
         }
@@ -328,12 +333,13 @@ final class TextLayoutManager: NSObject {
         maxY: CGFloat,
         laidOutFragmentIDs: inout Set<UUID>
     ) -> CGSize {
-        let line = position.node.data
+        let line = position.data
         line.prepareForDisplay(
             maxWidth: wrapLines
             ? delegate?.textViewSize().width ?? .greatestFiniteMagnitude
             : .greatestFiniteMagnitude,
-            lineHeightMultiplier: lineHeightMultiplier
+            lineHeightMultiplier: lineHeightMultiplier,
+            range: position.range
         )
 
         var height: CGFloat = 0
@@ -341,9 +347,9 @@ final class TextLayoutManager: NSObject {
 
         // TODO: Lay out only fragments in min/max Y
         for lineFragmentPosition in line.typesetter.lineFragments {
-            let lineFragment = lineFragmentPosition.node.data
+            let lineFragment = lineFragmentPosition.data
 
-            layoutFragmentView(for: lineFragmentPosition, at: minY + lineFragmentPosition.height)
+            layoutFragmentView(for: lineFragmentPosition, at: minY + lineFragmentPosition.yPos)
 
             width = max(width, lineFragment.width)
             height += lineFragment.scaledHeight
@@ -361,8 +367,8 @@ final class TextLayoutManager: NSObject {
         for lineFragment: TextLineStorage<LineFragment>.TextLinePosition,
         at yPos: CGFloat
     ) {
-        let view = viewReuseQueue.getOrCreateView(forKey: lineFragment.node.data.id)
-        view.setLineFragment(lineFragment.node.data)
+        let view = viewReuseQueue.getOrCreateView(forKey: lineFragment.data.id)
+        view.setLineFragment(lineFragment.data)
         view.frame.origin = CGPoint(x: 0, y: yPos)
         layoutView?.addSubview(view)
         view.needsDisplay = true
@@ -384,8 +390,10 @@ extension TextLayoutManager: NSTextStorageDelegate {
     ) {
         if editedMask.contains(.editedCharacters) {
             lineStorage.update(atIndex: editedRange.location, delta: delta, deltaHeight: 0)
+            layoutLines()
+        } else {
+            invalidateLayoutForRange(editedRange)
+            delegate?.textLayoutSetNeedsDisplay()
         }
-        invalidateLayoutForRange(editedRange)
-        delegate?.textLayoutSetNeedsDisplay()
     }
 }

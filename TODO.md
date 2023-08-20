@@ -3,14 +3,21 @@
 - [X] load file
 - [X] render text
 - [X] scroll
+    - [] When scrolling, if width changed & scrolling up, batch layout a couple hundred lines (test for correct # for 
+         speed), update height and scroll offset to keep user in same spot.
 - [X] wrap text
 - [X] resize correctly
 - [x] syntax highlighting
 - [x] cursor
 - [] edit text
-    - [] isEditable
+    - [x] isEditable
+    - [x] Insert
+    - [] Delete
+    - [] Copy/paste
+- [] select text
+- [] multiple cursors (+ edit)
 - [] tab widths & indents
-- [] update parameters in real time
+- [] paramater updating
     - [] tab & indent options
     - [] kern
     - [] theme
@@ -21,13 +28,11 @@
     - [] highlight provider
     - [] content insets
     - [] isEditable
+    - [] isSelectable
     - [] language
-- [] select text
-- [] multiple selection
-- [] copy/paste
 - [] undo/redo
 - [] sync system appearance
-- [] update cursor position
+- [x] update cursor position
 - [] update text (from outside)
 - [] highlight brackets
 - [] textformation integration

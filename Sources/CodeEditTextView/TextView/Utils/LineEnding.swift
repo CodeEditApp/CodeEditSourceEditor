@@ -18,7 +18,7 @@ enum LineEnding: String {
     @inlinable
     init?(line: String) {
         var iterator = line.lazy.reversed().makeIterator()
-        guard var endChar = iterator.next() else { return nil }
+        guard let endChar = iterator.next() else { return nil }
         if endChar == "\n" {
             if let nextEndChar = iterator.next(), nextEndChar == "\r" {
                 self = .crlf
@@ -44,8 +44,8 @@ enum LineEnding: String {
         var shouldContinue = true
         var lineIterator = lineStorage.makeIterator()
 
-        while let line = lineIterator.next()?.node.data, shouldContinue {
-            guard let lineString = line.stringRef.substring(from: line.range),
+        while let line = lineIterator.next(), shouldContinue {
+            guard let lineString = line.data.stringRef.substring(from: line.range),
                   let lineEnding = LineEnding(line: lineString) else {
                 continue
             }
