@@ -33,6 +33,8 @@ final class TextLayoutManager: NSObject {
     private var lineStorage: TextLineStorage<TextLine> = TextLineStorage()
     private let viewReuseQueue: ViewReuseQueue<LineFragmentView, UUID> = ViewReuseQueue()
     private var visibleLineIds: Set<TextLine.ID> = []
+    /// Used to force a complete re-layout using `setNeedsLayout`
+    private var needsLayout: Bool = false
 
     weak private var layoutView: NSView?
 
@@ -216,6 +218,11 @@ final class TextLayoutManager: NSObject {
         layoutLines()
     }
 
+    func setNeedsLayout() {
+        needsLayout = true
+        visibleLineIds.removeAll(keepingCapacity: true)
+    }
+
     // MARK: - Layout
 
     /// Lays out all visible lines
@@ -225,7 +232,7 @@ final class TextLayoutManager: NSObject {
         let maxY = visibleRect.maxY + 200
         let originalHeight = lineStorage.height
         var usedFragmentIDs = Set<UUID>()
-        var forceLayout: Bool = false
+        var forceLayout: Bool = needsLayout
         let maxWidth: CGFloat = wrapLines
             ? delegate?.textViewSize().width ?? .greatestFiniteMagnitude
             : .greatestFiniteMagnitude
@@ -281,6 +288,8 @@ final class TextLayoutManager: NSObject {
         if yContentAdjustment != 0 {
             delegate?.layoutManagerYAdjustment(yContentAdjustment)
         }
+
+        needsLayout = false
     }
 
     /// Lays out a single text line.

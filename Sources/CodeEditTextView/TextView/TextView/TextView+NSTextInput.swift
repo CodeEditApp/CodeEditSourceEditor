@@ -29,6 +29,7 @@ import TextStory
 extension TextView: NSTextInputClient {
     @objc public func insertText(_ string: Any, replacementRange: NSRange) {
         guard isEditable else { return }
+        layoutManager.setNeedsLayout() // force a complete layout when the storage edit is committed.
         textStorage.beginEditing()
         selectionManager?.textSelections.forEach { selection in
             switch string {
