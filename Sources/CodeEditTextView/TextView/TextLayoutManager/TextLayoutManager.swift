@@ -30,7 +30,7 @@ final class TextLayoutManager: NSObject {
     // MARK: - Internal
 
     private unowned var textStorage: NSTextStorage
-    private var lineStorage: TextLineStorage<TextLine> = TextLineStorage()
+    internal var lineStorage: TextLineStorage<TextLine> = TextLineStorage()
     private let viewReuseQueue: ViewReuseQueue<LineFragmentView, UUID> = ViewReuseQueue()
     private var visibleLineIds: Set<TextLine.ID> = []
     /// Used to force a complete re-layout using `setNeedsLayout`
@@ -198,8 +198,8 @@ final class TextLayoutManager: NSObject {
     /// Lays out all visible lines
     internal func layoutLines() {
         guard let visibleRect = delegate?.visibleRect else { return }
-        let minY = max(visibleRect.minY - 200, 0)
-        let maxY = visibleRect.maxY + 200
+        let minY = max(visibleRect.minY, 0)
+        let maxY = max(visibleRect.maxY, 0)
         let originalHeight = lineStorage.height
         var usedFragmentIDs = Set<UUID>()
         var forceLayout: Bool = needsLayout
@@ -321,6 +321,8 @@ final class TextLayoutManager: NSObject {
         delegate = nil
     }
 }
+
+// MARK: - Edits
 
 extension TextLayoutManager: NSTextStorageDelegate {
     func textStorage(

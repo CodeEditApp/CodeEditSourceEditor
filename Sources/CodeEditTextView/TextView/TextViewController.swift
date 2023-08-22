@@ -91,7 +91,7 @@ public class TextViewController: NSViewController {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.contentView.postsFrameChangedNotifications = true
         scrollView.hasVerticalScroller = true
-        scrollView.hasHorizontalRuler = true
+        scrollView.hasHorizontalScroller = true
         scrollView.documentView = textView
         scrollView.contentView.postsBoundsChangedNotifications = true
         if let contentInsets {

@@ -208,10 +208,10 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         rulerView.baselineOffset = baselineOffset
         rulerView.highlightSelectedLine = isEditable
         rulerView.rulerInsets = STRulerInsets(leading: 12, trailing: 8)
-        rulerView.font = rulerFont
+        rulerView.font = font.rulerFont
         rulerView.backgroundColor = theme.background
         rulerView.ruleThickness = max(
-            NSString(string: "1000").size(withAttributes: [.font: rulerFont]).width
+            NSString(string: "1000").size(withAttributes: [.font: font.rulerFont]).width
             + rulerView.rulerInsets.leading
             + rulerView.rulerInsets.trailing,
             rulerView.ruleThickness

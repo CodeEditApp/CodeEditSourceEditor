@@ -8,11 +8,11 @@
 import Foundation
 import AppKit
 
-extension STTextViewController {
+extension NSFont {
     var rulerFont: NSFont {
-        let fontSize: Double = (font.pointSize - 1) + 0.25
-        let fontAdvance: Double = font.pointSize * 0.49 + 0.1
-        let fontWeight = NSFont.Weight(rawValue: font.pointSize * 0.00001 + 0.0001)
+        let fontSize: Double = (self.pointSize - 1) + 0.25
+        let fontAdvance: Double = self.pointSize * 0.49 + 0.1
+        let fontWeight = NSFont.Weight(rawValue: self.pointSize * 0.00001 + 0.0001)
         let fontWidth = NSFont.Width(rawValue: -0.13)
 
         let font = NSFont.systemFont(ofSize: fontSize, weight: fontWeight, width: fontWidth)
@@ -36,7 +36,7 @@ extension STTextViewController {
         ]
 
         let features = [alt4, alt6and9, monoSpaceDigits]
-        let descriptor = font.fontDescriptor.addingAttributes([.featureSettings: features, .fixedAdvance: fontAdvance])
+        let descriptor = self.fontDescriptor.addingAttributes([.featureSettings: features, .fixedAdvance: fontAdvance])
         return NSFont(descriptor: descriptor, size: 0) ?? font
     }
 }

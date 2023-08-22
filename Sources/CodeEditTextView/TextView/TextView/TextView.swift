@@ -186,7 +186,7 @@ class TextView: NSView, NSTextContent {
         if !(inputContext?.handleEvent(event) ?? false) {
             interpretKeyEvents([event])
         } else {
-            
+
         }
     }
 

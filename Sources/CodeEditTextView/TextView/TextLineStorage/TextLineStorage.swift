@@ -10,11 +10,12 @@ import Foundation
 /// Implements a red-black tree for efficiently editing, storing and retrieving `TextLine`s.
 final class TextLineStorage<Data: Identifiable> {
     struct TextLinePosition {
-        init(data: Data, range: NSRange, yPos: CGFloat, height: CGFloat) {
+        init(data: Data, range: NSRange, yPos: CGFloat, height: CGFloat, index: Int) {
             self.data = data
             self.range = range
             self.yPos = yPos
             self.height = height
+            self.index = index
         }
 
         init(position: NodePosition) {
@@ -22,6 +23,7 @@ final class TextLineStorage<Data: Identifiable> {
             self.range = NSRange(location: position.textPos, length: position.node.length)
             self.yPos = position.yPos
             self.height = position.node.height
+            self.index = position.index
         }
 
         /// The data stored at the position
@@ -32,6 +34,8 @@ final class TextLineStorage<Data: Identifiable> {
         let yPos: CGFloat
         /// The height of the stored data
         let height: CGFloat
+        /// The index of the position.
+        let index: Int
     }
 
     internal struct NodePosition {
@@ -41,6 +45,8 @@ final class TextLineStorage<Data: Identifiable> {
         let yPos: CGFloat
         /// The location of the node in the document
         let textPos: Int
+        /// The index of the node in the document.
+        let index: Int
     }
 
 #if DEBUG
@@ -96,6 +102,7 @@ final class TextLineStorage<Data: Identifiable> {
             data: line,
             leftSubtreeOffset: 0,
             leftSubtreeHeight: 0.0,
+            leftSubtreeCount: 0,
             height: height,
             color: .black
         )
@@ -151,6 +158,7 @@ final class TextLineStorage<Data: Identifiable> {
         var currentNode = root
         var currentOffset: Int = root?.leftSubtreeOffset ?? 0
         var currentYPosition: CGFloat = root?.leftSubtreeHeight ?? 0
+        var currentIndex: Int = root?.leftSubtreeCount ?? 0
         while let node = currentNode {
             // If index is in the range [currentOffset..<currentOffset + length) it's in the line
             if posY >= currentYPosition && posY < currentYPosition + node.height {
@@ -158,16 +166,19 @@ final class TextLineStorage<Data: Identifiable> {
                     data: node.data,
                     range: NSRange(location: currentOffset, length: node.length),
                     yPos: currentYPosition,
-                    height: node.height
+                    height: node.height,
+                    index: currentIndex
                 )
             } else if currentYPosition > posY {
                 currentNode = node.left
                 currentOffset = (currentOffset - node.leftSubtreeOffset) + (node.left?.leftSubtreeOffset ?? 0)
                 currentYPosition = (currentYPosition - node.leftSubtreeHeight) + (node.left?.leftSubtreeHeight ?? 0)
+                currentIndex = (currentIndex - node.leftSubtreeCount) + (node.left?.leftSubtreeCount ?? 0)
             } else if node.leftSubtreeHeight < posY {
                 currentNode = node.right
                 currentOffset += node.length + (node.right?.leftSubtreeOffset ?? 0)
                 currentYPosition += node.height + (node.right?.leftSubtreeHeight ?? 0)
+                currentIndex += 1 + (node.right?.leftSubtreeCount ?? 0)
             } else {
                 currentNode = nil
             }
@@ -208,7 +219,7 @@ final class TextLineStorage<Data: Identifiable> {
         height += deltaHeight
         position.node.length += delta
         position.node.height += deltaHeight
-        metaFixup(startingAt: position.node, delta: delta, deltaHeight: deltaHeight)
+        metaFixup(startingAt: position.node, delta: delta, deltaHeight: deltaHeight, insertedNode: false)
     }
 
     /// Deletes a line at the given index.
@@ -265,27 +276,28 @@ final class TextLineStorage<Data: Identifiable> {
         left: Int,
         right: Int,
         parent: Node<Data>?
-    ) -> (Node<Data>?, Int?, CGFloat?) { // swiftlint:disable:this large_tuple
-        guard left < right else { return (nil, nil, nil) }
+    ) -> (Node<Data>?, Int?, CGFloat?, Int) { // swiftlint:disable:this large_tuple
+        guard left < right else { return (nil, nil, nil, 0) }
         let mid = left + (right - left)/2
         let node = Node(
             length: lines[mid].1,
             data: lines[mid].0,
             leftSubtreeOffset: 0,
             leftSubtreeHeight: 0,
+            leftSubtreeCount: 0,
             height: estimatedLineHeight,
             color: .black
         )
         node.parent = parent
 
-        let (left, leftOffset, leftHeight) = build(
+        let (left, leftOffset, leftHeight, leftCount) = build(
             lines: lines,
             estimatedLineHeight: estimatedLineHeight,
             left: left,
             right: mid,
             parent: node
         )
-        let (right, rightOffset, rightHeight) = build(
+        let (right, rightOffset, rightHeight, rightCount) = build(
             lines: lines,
             estimatedLineHeight: estimatedLineHeight,
             left: mid + 1,
@@ -303,11 +315,13 @@ final class TextLineStorage<Data: Identifiable> {
         height += node.height
         node.leftSubtreeOffset = leftOffset ?? 0
         node.leftSubtreeHeight = leftHeight ?? 0
+        node.leftSubtreeCount = leftCount
 
         return (
             node,
             node.length + (leftOffset ?? 0) + (rightOffset ?? 0),
-            node.height + (leftHeight ?? 0) + (rightHeight ?? 0)
+            node.height + (leftHeight ?? 0) + (rightHeight ?? 0),
+            1 + leftCount + rightCount
         )
     }
 }
@@ -322,18 +336,21 @@ private extension TextLineStorage {
         var currentNode = root
         var currentOffset: Int = root?.leftSubtreeOffset ?? 0
         var currentYPosition: CGFloat = root?.leftSubtreeHeight ?? 0
+        var currentIndex: Int = root?.leftSubtreeCount ?? 0
         while let node = currentNode {
             // If index is in the range [currentOffset..<currentOffset + length) it's in the line
             if index >= currentOffset && index < currentOffset + node.length {
-                return NodePosition(node: node, yPos: currentYPosition, textPos: currentOffset)
+                return NodePosition(node: node, yPos: currentYPosition, textPos: currentOffset, index: currentIndex)
             } else if currentOffset > index {
                 currentNode = node.left
                 currentOffset = (currentOffset - node.leftSubtreeOffset) + (node.left?.leftSubtreeOffset ?? 0)
                 currentYPosition = (currentYPosition - node.leftSubtreeHeight) + (node.left?.leftSubtreeHeight ?? 0)
+                currentIndex = (currentIndex - node.leftSubtreeCount) + (node.left?.leftSubtreeCount ?? 0)
             } else if node.leftSubtreeOffset < index {
                 currentNode = node.right
                 currentOffset += node.length + (node.right?.leftSubtreeOffset ?? 0)
                 currentYPosition += node.height + (node.right?.leftSubtreeHeight ?? 0)
+                currentIndex += 1 + (node.right?.leftSubtreeCount ?? 0)
             } else {
                 currentNode = nil
             }
@@ -345,7 +362,7 @@ private extension TextLineStorage {
     // MARK: - Fixup
 
     func insertFixup(node: Node<Data>) {
-        metaFixup(startingAt: node, delta: node.length, deltaHeight: node.height)
+        metaFixup(startingAt: node, delta: node.length, deltaHeight: node.height, insertedNode: true)
 
         var nextNode: Node<Data>? = node
         while var nodeX = nextNode, nodeX != root, let nodeXParent = nodeX.parent, nodeXParent.color == .red {
@@ -398,13 +415,14 @@ private extension TextLineStorage {
     }
 
     /// Walk up the tree, updating any `leftSubtree` metadata.
-    func metaFixup(startingAt node: Node<Data>, delta: Int, deltaHeight: CGFloat) {
+    func metaFixup(startingAt node: Node<Data>, delta: Int, deltaHeight: CGFloat, insertedNode: Bool) {
         guard node.parent != nil else { return }
         var node: Node? = node
         while node != nil, node != root {
             if isLeftChild(node!) {
                 node?.parent?.leftSubtreeOffset += delta
                 node?.parent?.leftSubtreeHeight += deltaHeight
+                node?.parent?.leftSubtreeCount += insertedNode ? 1 : 0
             }
             node = node?.parent
         }
@@ -434,6 +452,7 @@ private extension TextLineStorage {
             nodeY = node.right
             nodeY?.leftSubtreeOffset += node.leftSubtreeOffset + node.length
             nodeY?.leftSubtreeHeight += node.leftSubtreeHeight + node.height
+            nodeY?.leftSubtreeCount += node.leftSubtreeCount + 1
             node.right = nodeY?.left
             node.right?.parent = node
         } else {
@@ -459,6 +478,7 @@ private extension TextLineStorage {
             nodeY?.right = node
             node.leftSubtreeOffset = (node.left?.length ?? 0) + (node.left?.leftSubtreeOffset ?? 0)
             node.leftSubtreeHeight = (node.left?.height ?? 0) + (node.left?.leftSubtreeHeight ?? 0)
+            node.leftSubtreeCount = (node.left == nil ? 1 : 0) + (node.left?.leftSubtreeCount ?? 0)
         }
         node.parent = nodeY
     }

@@ -32,12 +32,16 @@ extension TextLineStorage {
 
         // The length of the text line
         var length: Int
+        // The height of this text line
+        var height: CGFloat
         var data: Data
 
         // The offset in characters of the entire left subtree
         var leftSubtreeOffset: Int
+        // The sum of the height of the nodes in the left subtree
         var leftSubtreeHeight: CGFloat
-        var height: CGFloat
+        // The number of nodes in the left subtree
+        var leftSubtreeCount: Int
 
         var left: Node<Data>?
         var right: Node<Data>?
@@ -49,6 +53,7 @@ extension TextLineStorage {
             data: Data,
             leftSubtreeOffset: Int,
             leftSubtreeHeight: CGFloat,
+            leftSubtreeCount: Int,
             height: CGFloat,
             left: Node<Data>? = nil,
             right: Node<Data>? = nil,
@@ -59,6 +64,7 @@ extension TextLineStorage {
             self.data = data
             self.leftSubtreeOffset = leftSubtreeOffset
             self.leftSubtreeHeight = leftSubtreeHeight
+            self.leftSubtreeCount = leftSubtreeCount
             self.height = height
             self.left = left
             self.right = right
