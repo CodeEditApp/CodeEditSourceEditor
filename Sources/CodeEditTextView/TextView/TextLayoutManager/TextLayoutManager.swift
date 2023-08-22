@@ -31,6 +31,7 @@ final class TextLayoutManager: NSObject {
     private unowned var textStorage: NSTextStorage
     private var lineStorage: TextLineStorage<TextLine> = TextLineStorage()
     private let viewReuseQueue: ViewReuseQueue<LineFragmentView, UUID> = ViewReuseQueue()
+    private var visibleLineIds: Set<TextLine.ID> = []
 
     weak private var layoutView: NSView?
 
@@ -198,53 +199,20 @@ final class TextLayoutManager: NSObject {
     /// Invalidates layout for the given rect.
     /// - Parameter rect: The rect to invalidate.
     public func invalidateLayoutForRect(_ rect: NSRect) {
-        guard let visibleRect = delegate?.visibleRect else { return }
-        // The new view IDs
-        var usedFragmentIDs = Set<UUID>()
-        // The IDs that were replaced and need removing.
-        var existingFragmentIDs = Set<UUID>()
-        let minY = max(max(rect.minY, 0), visibleRect.minY)
-        let maxY = min(rect.maxY, visibleRect.maxY)
-
-        for linePosition in lineStorage.linesStartingAt(minY, until: maxY) {
-            existingFragmentIDs.formUnion(Set(linePosition.data.typesetter.lineFragments.map(\.data.id)))
-
-            let lineSize = layoutLine(
-                linePosition,
-                minY: linePosition.yPos,
-                maxY: maxY,
-                laidOutFragmentIDs: &usedFragmentIDs
-            )
-            if lineSize.height != linePosition.height {
-                // If there's a height change, we need to lay out everything again and enqueue any views already used.
-                viewReuseQueue.enqueueViews(in: usedFragmentIDs.union(existingFragmentIDs))
-                layoutLines()
-                return
-            }
-            if maxLineWidth < lineSize.width {
-                maxLineWidth = lineSize.width
-            }
+        for linePosition in lineStorage.linesStartingAt(rect.minY, until: rect.maxY) {
+            linePosition.data.setNeedsLayout()
         }
-
-        viewReuseQueue.enqueueViews(in: existingFragmentIDs)
+        layoutLines()
     }
 
     /// Invalidates layout for the given range of text.
     /// - Parameter range: The range of text to invalidate.
     public func invalidateLayoutForRange(_ range: NSRange) {
-        // Determine the min/max Y value for this range and invalidate it
-        guard let minPosition = lineStorage.getLine(atIndex: range.location),
-              let maxPosition = lineStorage.getLine(atIndex: range.max) else {
-            return
+        for linePosition in lineStorage.linesInRange(range) {
+            linePosition.data.setNeedsLayout()
         }
-        invalidateLayoutForRect(
-            NSRect(
-                x: 0,
-                y: minPosition.yPos,
-                width: 0,
-                height: maxPosition.yPos + maxPosition.height
-            )
-        )
+
+        layoutLines()
     }
 
     // MARK: - Layout
@@ -256,68 +224,52 @@ final class TextLayoutManager: NSObject {
         let maxY = visibleRect.maxY + 200
         let originalHeight = lineStorage.height
         var usedFragmentIDs = Set<UUID>()
+        var forceLayout: Bool = false
+        let maxWidth: CGFloat = wrapLines
+            ? delegate?.textViewSize().width ?? .greatestFiniteMagnitude
+            : .greatestFiniteMagnitude
+        var newVisibleLines: Set<TextLine.ID> = []
 
         // Layout all lines
         for linePosition in lineStorage.linesStartingAt(minY, until: maxY) {
-            let lineSize = layoutLine(
-                linePosition,
-                minY: linePosition.yPos,
-                maxY: maxY,
-                laidOutFragmentIDs: &usedFragmentIDs
-            )
-            if lineSize.height != linePosition.height {
-                lineStorage.update(
-                    atIndex: linePosition.range.location,
-                    delta: 0,
-                    deltaHeight: lineSize.height - linePosition.height
+            if forceLayout
+                || linePosition.data.needsLayout(maxWidth: maxWidth)
+                || !visibleLineIds.contains(linePosition.data.id) {
+                let lineSize = layoutLine(
+                    linePosition,
+                    minY: linePosition.yPos,
+                    maxY: maxY,
+                    maxWidth: maxWidth,
+                    laidOutFragmentIDs: &usedFragmentIDs
                 )
+                if lineSize.height != linePosition.height {
+                    lineStorage.update(
+                        atIndex: linePosition.range.location,
+                        delta: 0,
+                        deltaHeight: lineSize.height - linePosition.height
+                    )
+                    // If we've updated a line's height, force re-layout for the rest of the pass.
+                    forceLayout = true
+                }
+                if maxLineWidth < lineSize.width {
+                    maxLineWidth = lineSize.width
+                }
+            } else {
+                // Make sure the used fragment views aren't dequeued.
+                usedFragmentIDs.formUnion(linePosition.data.typesetter.lineFragments.map(\.data.id))
             }
-            if maxLineWidth < lineSize.width {
-                maxLineWidth = lineSize.width
-            }
+            newVisibleLines.insert(linePosition.data.id)
         }
 
         // Enqueue any lines not used in this layout pass.
         viewReuseQueue.enqueueViews(notInSet: usedFragmentIDs)
 
+        // Update the visible lines with the new set.
+        visibleLineIds = newVisibleLines
+
         if originalHeight != lineStorage.height || layoutView?.frame.size.height != lineStorage.height {
             delegate?.layoutManagerHeightDidUpdate(newHeight: lineStorage.height)
         }
-    }
-
-    /// Lays out any lines that should be visible but are not laid out yet.
-    /// - Parameter delta: If used a scroll view, the delta between the last y position and the current y position.
-    ///                    Used to correctly update the view's height without jumping down in the active scroll.
-    internal func updateVisibleLines(delta: CGFloat?) {
-        // TODO: re-calculate layout after size change.
-        // Get all visible lines and determine if more need to be laid out vertically.
-        guard let visibleRect = delegate?.visibleRect else { return }
-        let minY = max(visibleRect.minY - 200, 0)
-        let maxY = visibleRect.maxY + 200
-        let existingFragmentIDs = Set(viewReuseQueue.usedViews.keys)
-        var usedFragmentIDs = Set<UUID>()
-
-        for linePosition in lineStorage.linesStartingAt(minY, until: maxY) {
-            if linePosition.data.typesetter.lineFragments.isEmpty {
-                usedFragmentIDs.forEach { viewId in
-                    viewReuseQueue.enqueueView(forKey: viewId)
-                }
-                layoutLines()
-                return
-            }
-            for lineFragmentPosition in linePosition.data.typesetter.lineFragments {
-                let lineFragment = lineFragmentPosition.data
-                usedFragmentIDs.insert(lineFragment.id)
-                if viewReuseQueue.usedViews[lineFragment.id] == nil {
-                    layoutFragmentView(
-                        for: lineFragmentPosition,
-                        at: linePosition.yPos + lineFragmentPosition.height
-                    )
-                }
-            }
-        }
-
-        viewReuseQueue.enqueueViews(in: existingFragmentIDs.subtracting(usedFragmentIDs))
     }
 
     /// Lays out a single text line.
@@ -331,13 +283,12 @@ final class TextLayoutManager: NSObject {
         _ position: TextLineStorage<TextLine>.TextLinePosition,
         minY: CGFloat,
         maxY: CGFloat,
+        maxWidth: CGFloat,
         laidOutFragmentIDs: inout Set<UUID>
     ) -> CGSize {
         let line = position.data
         line.prepareForDisplay(
-            maxWidth: wrapLines
-            ? delegate?.textViewSize().width ?? .greatestFiniteMagnitude
-            : .greatestFiniteMagnitude,
+            maxWidth: maxWidth,
             lineHeightMultiplier: lineHeightMultiplier,
             range: position.range
         )
@@ -390,10 +341,7 @@ extension TextLayoutManager: NSTextStorageDelegate {
     ) {
         if editedMask.contains(.editedCharacters) {
             lineStorage.update(atIndex: editedRange.location, delta: delta, deltaHeight: 0)
-            layoutLines()
-        } else {
-            invalidateLayoutForRange(editedRange)
-            delegate?.textLayoutSetNeedsDisplay()
         }
+        invalidateLayoutForRange(editedRange)
     }
 }

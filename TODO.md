@@ -3,8 +3,9 @@
 - [X] load file
 - [X] render text
 - [X] scroll
-    - [] When scrolling, if width changed & scrolling up, batch layout a couple hundred lines (test for correct # for 
-         speed), update height and scroll offset to keep user in same spot.
+    - [x] ~~When scrolling, if width changed & scrolling up, batch layout a couple hundred lines (test for correct number for 
+         speed), update height and scroll offset to keep user in same spot.~~
+    - [x] Layout all visible lines on scroll & resize updates
 - [X] wrap text
 - [X] resize correctly
 - [x] syntax highlighting

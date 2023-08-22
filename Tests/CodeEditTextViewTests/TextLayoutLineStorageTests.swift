@@ -72,4 +72,23 @@ final class TextLayoutLineStorageTests: XCTestCase {
             tree.build(from: lines, estimatedLineHeight: 1.0)
         }
     }
+
+    func test_iterationPerformance() {
+        let tree = TextLineStorage<TextLine>()
+        let stringRef = NSTextStorage(string: "")
+        var lines: [(TextLine, Int)] = []
+        for i in 0..<100_000 {
+            lines.append((
+                TextLine(stringRef: stringRef),
+                i + 1
+            ))
+        }
+        tree.build(from: lines, estimatedLineHeight: 1.0)
+
+        measure {
+            for line in tree {
+                let _ = line
+            }
+        }
+    }
 }

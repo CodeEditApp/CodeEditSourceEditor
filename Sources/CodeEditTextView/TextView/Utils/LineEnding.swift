@@ -45,7 +45,7 @@ enum LineEnding: String {
         var lineIterator = lineStorage.makeIterator()
 
         while let line = lineIterator.next(), shouldContinue {
-            guard let lineString = line.data.stringRef.substring(from: line.range),
+            guard let lineString = line.data.stringRef?.substring(from: line.range),
                   let lineEnding = LineEnding(line: lineString) else {
                 continue
             }

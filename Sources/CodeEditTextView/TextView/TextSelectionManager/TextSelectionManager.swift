@@ -51,7 +51,8 @@ class TextSelectionManager {
         self.layoutManager = layoutManager
         self.delegate = delegate
         textSelections = [
-            TextSelection(range: NSRange(location: 0, length: 0))
+            .init(range: NSRange(location: 0, length: 4)),
+            .init(range: NSRange(location: 6, length: 10))
         ]
         updateSelectionViews()
     }

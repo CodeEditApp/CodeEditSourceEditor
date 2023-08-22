@@ -71,10 +71,10 @@ class CEUndoManager {
     /// A stack of operations that can be redone.
     private var redoStack: [UndoGroup] = []
 
-    private unowned let textView: STTextView
+    private weak var textView: TextView?
     private(set) var isGrouping: Bool = false
 
-    public init(textView: STTextView) {
+    public init(textView: TextView) {
         self.textView = textView
         self.manager = DelegatedUndoManager()
         manager.parent = self
@@ -82,26 +82,30 @@ class CEUndoManager {
 
     /// Performs an undo operation if there is one available.
     public func undo() {
-        guard let item = undoStack.popLast() else {
+        guard let item = undoStack.popLast(), let textView else {
             return
         }
         isUndoing = true
+        textView.textStorage.beginEditing()
         for mutation in item.mutations.reversed() {
-            textView.applyMutationNoUndo(mutation.inverse)
+            textView.textStorage.applyMutation(mutation.inverse)
         }
+        textView.textStorage.endEditing()
         redoStack.append(item)
         isUndoing = false
     }
 
     /// Performs a redo operation if there is one available.
     public func redo() {
-        guard let item = redoStack.popLast() else {
+        guard let item = redoStack.popLast(), let textView else {
             return
         }
         isRedoing = true
+        textView.textStorage.beginEditing()
         for mutation in item.mutations {
-            textView.applyMutationNoUndo(mutation.mutation)
+            textView.textStorage.applyMutation(mutation.mutation)
         }
+        textView.textStorage.endEditing()
         undoStack.append(item)
         isRedoing = false
     }
@@ -117,8 +121,17 @@ class CEUndoManager {
     /// Calling this method while the manager is in an undo/redo operation will result in a no-op.
     /// - Parameter mutation: The mutation to register for undo/redo
     public func registerMutation(_ mutation: TextMutation) {
-        if (mutation.range.length == 0 && mutation.string.isEmpty) || isUndoing || isRedoing { return }
-        let newMutation = UndoGroup.Mutation(mutation: mutation, inverse: textView.inverseMutation(for: mutation))
+        dump(mutation)
+        guard let textView,
+              let textStorage = textView.textStorage,
+              mutation.range.length > 0,
+              !mutation.string.isEmpty,
+              !isUndoing,
+              !isRedoing else {
+            return
+        }
+        let newMutation = UndoGroup.Mutation(mutation: mutation, inverse: textStorage.inverseMutation(for: mutation))
+        print(#function)
         if !undoStack.isEmpty, let lastMutation = undoStack.last?.mutations.last {
             if isGrouping || shouldContinueGroup(newMutation, lastMutation: lastMutation) {
                 undoStack[undoStack.count - 1].mutations.append(newMutation)

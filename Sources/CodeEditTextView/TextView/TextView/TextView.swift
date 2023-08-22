@@ -53,6 +53,11 @@ class TextView: NSView, NSTextContent {
     private(set) var layoutManager: TextLayoutManager!
     private(set) var selectionManager: TextSelectionManager?
 
+    internal var isFirstResponder: Bool = false
+
+    var _undoManager: CEUndoManager?
+    @objc dynamic open var allowsUndo: Bool
+
     var scrollView: NSScrollView? {
         guard let enclosingScrollView, enclosingScrollView.documentView == self else { return nil }
         return enclosingScrollView
@@ -78,6 +83,7 @@ class TextView: NSView, NSTextContent {
         self.editorOverscroll = editorOverscroll
         self.isEditable = isEditable
         self.letterSpacing = letterSpacing
+        self.allowsUndo = true
 
         super.init(frame: .zero)
 
@@ -112,10 +118,24 @@ class TextView: NSView, NSTextContent {
         if isSelectable {
             self.selectionManager = TextSelectionManager(layoutManager: layoutManager, delegate: self)
         }
+
+        _undoManager = CEUndoManager(textView: self)
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - First Responder
+
+    open override func becomeFirstResponder() -> Bool {
+        isFirstResponder = true
+        return super.becomeFirstResponder()
+    }
+
+    open override func resignFirstResponder() -> Bool {
+        isFirstResponder = false
+        return super.resignFirstResponder()
     }
 
     open override var canBecomeKeyView: Bool {
@@ -128,6 +148,10 @@ class TextView: NSView, NSTextContent {
 
     open override var acceptsFirstResponder: Bool {
         isSelectable
+    }
+
+    open override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        return true
     }
 
     open override func resetCursorRects() {
@@ -149,7 +173,7 @@ class TextView: NSView, NSTextContent {
         updateFrameIfNeeded()
     }
 
-    // MARK: - Keys
+    // MARK: - Interaction
 
     override func keyDown(with event: NSEvent) {
         guard isEditable else {
@@ -161,6 +185,8 @@ class TextView: NSView, NSTextContent {
 
         if !(inputContext?.handleEvent(event) ?? false) {
             interpretKeyEvents([event])
+        } else {
+            
         }
     }
 
@@ -171,6 +197,10 @@ class TextView: NSView, NSTextContent {
             return
         }
         selectionManager?.setSelectedRange(NSRange(location: offset, length: 0))
+
+        if !self.isFirstResponder {
+            self.window?.makeFirstResponder(self)
+        }
     }
 
     // MARK: - Draw
@@ -181,8 +211,10 @@ class TextView: NSView, NSTextContent {
 
     override var visibleRect: NSRect {
         if let scrollView = scrollView {
-            // +200px vertically for a bit of padding
-            return scrollView.documentVisibleRect.insetBy(dx: 0, dy: -400).offsetBy(dx: 0, dy: 200)
+            var rect = scrollView.documentVisibleRect
+            rect.origin.y += scrollView.contentInsets.top
+            rect.size.height -= scrollView.contentInsets.top + scrollView.contentInsets.bottom
+            return rect
         } else {
             return super.visibleRect
         }
@@ -226,11 +258,16 @@ class TextView: NSView, NSTextContent {
             needsLayout = true
             needsDisplay = true
             layoutManager.layoutLines()
-        } else {
-            layoutManager.updateVisibleLines(delta: nil)
         }
 
         selectionManager?.updateSelectionViews()
+    }
+
+    deinit {
+        layoutManager = nil
+        selectionManager = nil
+        textStorage = nil
+        NotificationCenter.default.removeObserver(self)
     }
 }
 

@@ -41,9 +41,7 @@ extension STTextView: TextInterface {
     }
 
     fileprivate func registerUndo(_ mutation: TextMutation) {
-        if let manager = undoManager as? CEUndoManager.DelegatedUndoManager {
-            manager.registerMutation(mutation)
-        }
+
     }
 
     public func applyMutationNoUndo(_ mutation: TextMutation) {

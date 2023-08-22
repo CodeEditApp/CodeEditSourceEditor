@@ -60,7 +60,7 @@ final class TextLineStorage<Data: Identifiable> {
     // TODO: Cache this value & update on tree update
     var first: TextLinePosition? {
         guard length > 0,
-              let position = search(for: length - 1) else {
+              let position = search(for: 0) else {
             return nil
         }
         return TextLinePosition(position: position)

@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import TextStory
 
 /**
  # Marked Text Notes
@@ -34,9 +35,15 @@ extension TextView: NSTextInputClient {
             case let string as NSString:
                 textStorage.replaceCharacters(in: selection.range, with: string as String)
                 selection.didInsertText(length: string.length)
+                _undoManager?.registerMutation(
+                    TextMutation(string: string as String, range: selection.range, limit: textStorage.length)
+                )
             case let string as NSAttributedString:
                 textStorage.replaceCharacters(in: selection.range, with: string)
                 selection.didInsertText(length: string.length)
+                _undoManager?.registerMutation(
+                    TextMutation(string: string.string, range: selection.range, limit: textStorage.length)
+                )
             default:
                 assertionFailure("\(#function) called with invalid string type. Expected String or NSAttributedString.")
             }
@@ -79,10 +86,12 @@ extension TextView: NSTextInputClient {
     }
 
     @objc public func firstRect(forCharacterRange range: NSRange, actualRange: NSRangePointer?) -> NSRect {
-        .zero
+        print(#function)
+        return .zero
     }
 
     @objc public func characterIndex(for point: NSPoint) -> Int {
-        layoutManager.textOffsetAtPoint(point) ?? NSNotFound
+        print(#function)
+        return layoutManager.textOffsetAtPoint(point) ?? NSNotFound
     }
 }
