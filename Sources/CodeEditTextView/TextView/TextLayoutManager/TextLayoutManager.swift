@@ -79,37 +79,7 @@ final class TextLayoutManager: NSObject {
         let start = mach_absolute_time()
 #endif
 
-        func getNextLine(startingAt location: Int) -> NSRange? {
-            let range = NSRange(location: location, length: 0)
-            var end: Int = NSNotFound
-            var contentsEnd: Int = NSNotFound
-            (textStorage.string as NSString).getLineStart(nil, end: &end, contentsEnd: &contentsEnd, for: range)
-            if end != NSNotFound && contentsEnd != NSNotFound && end != contentsEnd {
-                return NSRange(location: contentsEnd, length: end - contentsEnd)
-            } else {
-                return nil
-            }
-        }
-
-        var index = 0
-        var lines: [(TextLine, Int)] = []
-        while let range = getNextLine(startingAt: index) {
-            lines.append((
-                TextLine(stringRef: textStorage),
-                range.max - index
-            ))
-            index = NSMaxRange(range)
-        }
-        // Create the last line
-        if textStorage.length - index > 0 {
-            lines.append((
-                TextLine(stringRef: textStorage),
-                textStorage.length - index
-            ))
-        }
-
-        // Use an efficient tree building algorithm rather than adding lines sequentially
-        lineStorage.build(from: lines, estimatedLineHeight: estimateLineHeight())
+        lineStorage.buildFromTextStorage(textStorage, estimatedLineHeight: estimateLineHeight())
         detectedLineEnding = LineEnding.detectLineEnding(lineStorage: lineStorage)
 
 #if DEBUG
