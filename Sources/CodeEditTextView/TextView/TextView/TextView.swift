@@ -88,7 +88,7 @@ class TextView: NSView, NSTextContent {
         super.init(frame: .zero)
 
         wantsLayer = true
-        canDrawSubviewsIntoLayer = true
+//        canDrawSubviewsIntoLayer = true
         postsFrameChangedNotifications = true
         postsBoundsChangedNotifications = true
         autoresizingMask = [.width, .height]
@@ -231,6 +231,11 @@ class TextView: NSView, NSTextContent {
             location: minYLine.range.location,
             length: (maxYLine.range.location - minYLine.range.location) + maxYLine.range.length
         )
+    }
+
+    public func updatedViewport(_ newRect: CGRect) {
+        layoutManager.layoutLines()
+        inputContext?.invalidateCharacterCoordinates()
     }
 
     public func updateFrameIfNeeded() {

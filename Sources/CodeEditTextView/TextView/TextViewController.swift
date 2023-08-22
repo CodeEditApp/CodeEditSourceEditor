@@ -13,6 +13,7 @@ import SwiftTreeSitter
 public class TextViewController: NSViewController {
     var scrollView: NSScrollView!
     var textView: TextView!
+    var gutterView: GutterView!
 
     public var string: Binding<String>
     public var language: CodeLanguage
@@ -99,6 +100,13 @@ public class TextViewController: NSViewController {
             scrollView.contentInsets = contentInsets
         }
 
+        self.gutterView = GutterView(font: font.rulerFont, textColor: .secondaryLabelColor, delegate: self, layoutManager: textView.layoutManager)
+        gutterView.frame.size.width = 30
+        scrollView.addFloatingSubview(
+            gutterView,
+            for: .vertical
+        )
+
         self.view = scrollView
 
         setUpHighlighter()
@@ -107,7 +115,8 @@ public class TextViewController: NSViewController {
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            gutterView.heightAnchor.constraint(equalTo: scrollView.contentView.heightAnchor, multiplier: 1.0)
         ])
 
         // Layout on scroll change
@@ -116,8 +125,8 @@ public class TextViewController: NSViewController {
             object: scrollView.contentView,
             queue: .main
         ) { _ in
-            self.textView.layoutManager.layoutLines()
-            self.textView.inputContext?.invalidateCharacterCoordinates()
+            self.textView.updatedViewport(self.scrollView.documentVisibleRect)
+            self.gutterView.needsDisplay = true
         }
 
         // Layout on frame change
@@ -127,9 +136,11 @@ public class TextViewController: NSViewController {
             queue: .main
         ) { _ in
             self.textView.layoutManager.layoutLines()
+            self.gutterView.needsDisplay = true
         }
 
         textView.updateFrameIfNeeded()
+        gutterView.needsDisplay = true
     }
 }
 
@@ -175,5 +186,18 @@ extension TextViewController {
             self.highlightProvider = provider
             highlighter?.setHighlightProvider(provider)
         }
+    }
+}
+
+extension TextViewController: GutterViewDelegate {
+    func gutterViewVisibleRect() -> CGRect {
+        var rect = scrollView.documentVisibleRect
+        rect.origin.y += scrollView.contentInsets.top
+        rect.size.height -= scrollView.contentInsets.top + scrollView.contentInsets.bottom
+        return rect
+    }
+
+    func gutterView(updatedWidth: CGFloat) {
+        textView.layoutManager.gutterWidth = updatedWidth
     }
 }

@@ -26,6 +26,11 @@ final class TextLayoutManager: NSObject {
     public var lineHeightMultiplier: CGFloat
     public var wrapLines: Bool
     public var detectedLineEnding: LineEnding = .lf
+    public var gutterWidth: CGFloat = 20 {
+        didSet {
+            setNeedsLayout()
+        }
+    }
 
     // MARK: - Internal
 
@@ -124,7 +129,7 @@ final class TextLayoutManager: NSObject {
         }
         let fragment = fragmentPosition.data
 
-        if fragment.width < point.x {
+        if fragment.width < point.x - gutterWidth {
             let fragmentRange = CTLineGetStringRange(fragment.ctLine)
             // Return eol
             return position.range.location + fragmentRange.location + fragmentRange.length - (
@@ -136,7 +141,7 @@ final class TextLayoutManager: NSObject {
             // Somewhere in the fragment
             let fragmentIndex = CTLineGetStringIndexForPosition(
                 fragment.ctLine,
-                CGPoint(x: point.x, y: fragment.height/2)
+                CGPoint(x: point.x - gutterWidth, y: fragment.height/2)
             )
             return position.range.location + fragmentIndex
         }
@@ -161,7 +166,7 @@ final class TextLayoutManager: NSObject {
         )
 
         return CGPoint(
-            x: xPos,
+            x: xPos + gutterWidth,
             y: linePosition.yPos + fragmentPosition.yPos
             + (fragmentPosition.data.height - fragmentPosition.data.scaledHeight)/2
         )
@@ -204,7 +209,7 @@ final class TextLayoutManager: NSObject {
         var usedFragmentIDs = Set<UUID>()
         var forceLayout: Bool = needsLayout
         let maxWidth: CGFloat = wrapLines
-            ? delegate?.textViewSize().width ?? .greatestFiniteMagnitude
+            ? (delegate?.textViewSize().width ?? .greatestFiniteMagnitude) - gutterWidth
             : .greatestFiniteMagnitude
         var newVisibleLines: Set<TextLine.ID> = []
         var yContentAdjustment: CGFloat = 0
@@ -310,7 +315,7 @@ final class TextLayoutManager: NSObject {
     ) {
         let view = viewReuseQueue.getOrCreateView(forKey: lineFragment.data.id)
         view.setLineFragment(lineFragment.data)
-        view.frame.origin = CGPoint(x: 0, y: yPos)
+        view.frame.origin = CGPoint(x: gutterWidth, y: yPos)
         layoutView?.addSubview(view)
         view.needsDisplay = true
     }
