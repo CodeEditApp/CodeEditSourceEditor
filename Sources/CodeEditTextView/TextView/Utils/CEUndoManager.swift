@@ -121,7 +121,6 @@ class CEUndoManager {
     /// Calling this method while the manager is in an undo/redo operation will result in a no-op.
     /// - Parameter mutation: The mutation to register for undo/redo
     public func registerMutation(_ mutation: TextMutation) {
-        dump(mutation)
         guard let textView,
               let textStorage = textView.textStorage,
               mutation.range.length > 0,
@@ -131,7 +130,6 @@ class CEUndoManager {
             return
         }
         let newMutation = UndoGroup.Mutation(mutation: mutation, inverse: textStorage.inverseMutation(for: mutation))
-        print(#function)
         if !undoStack.isEmpty, let lastMutation = undoStack.last?.mutations.last {
             if isGrouping || shouldContinueGroup(newMutation, lastMutation: lastMutation) {
                 undoStack[undoStack.count - 1].mutations.append(newMutation)

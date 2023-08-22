@@ -13,6 +13,7 @@ protocol TextLayoutManagerDelegate: AnyObject {
     func layoutManagerMaxWidthDidChange(newWidth: CGFloat)
     func textViewSize() -> CGSize
     func textLayoutSetNeedsDisplay()
+    func layoutManagerYAdjustment(_ yAdjustment: CGFloat)
 
     var visibleRect: NSRect { get }
 }
@@ -229,6 +230,7 @@ final class TextLayoutManager: NSObject {
             ? delegate?.textViewSize().width ?? .greatestFiniteMagnitude
             : .greatestFiniteMagnitude
         var newVisibleLines: Set<TextLine.ID> = []
+        var yContentAdjustment: CGFloat = 0
 
         // Layout all lines
         for linePosition in lineStorage.linesStartingAt(minY, until: maxY) {
@@ -250,6 +252,11 @@ final class TextLayoutManager: NSObject {
                     )
                     // If we've updated a line's height, force re-layout for the rest of the pass.
                     forceLayout = true
+
+                    if linePosition.yPos < minY {
+                        // Adjust the scroll position by the difference between the new height and old.
+                        yContentAdjustment += lineSize.height - linePosition.height
+                    }
                 }
                 if maxLineWidth < lineSize.width {
                     maxLineWidth = lineSize.width
@@ -269,6 +276,10 @@ final class TextLayoutManager: NSObject {
 
         if originalHeight != lineStorage.height || layoutView?.frame.size.height != lineStorage.height {
             delegate?.layoutManagerHeightDidUpdate(newHeight: lineStorage.height)
+        }
+
+        if yContentAdjustment != 0 {
+            delegate?.layoutManagerYAdjustment(yContentAdjustment)
         }
     }
 

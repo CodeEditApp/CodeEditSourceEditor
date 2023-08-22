@@ -296,6 +296,12 @@ extension TextView: TextLayoutManagerDelegate {
         needsDisplay = true
         needsLayout = true
     }
+
+    func layoutManagerYAdjustment(_ yAdjustment: CGFloat) {
+        var point = scrollView?.documentVisibleRect.origin ?? .zero
+        point.y += yAdjustment
+        scrollView?.documentView?.scroll(point)
+    }
 }
 
 // MARK: - TextSelectionManagerDelegate
