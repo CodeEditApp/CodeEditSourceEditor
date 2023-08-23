@@ -42,6 +42,10 @@ class TextSelectionManager {
         }
     }
 
+    class var selectionChangedNotification: Notification.Name {
+        Notification.Name("TextSelectionManager.TextSelectionChangedNotification")
+    }
+
     private(set) var markedText: [MarkedText] = []
     private(set) var textSelections: [TextSelection] = []
     private unowned var layoutManager: TextLayoutManager
@@ -50,10 +54,7 @@ class TextSelectionManager {
     init(layoutManager: TextLayoutManager, delegate: TextSelectionManagerDelegate?) {
         self.layoutManager = layoutManager
         self.delegate = delegate
-        textSelections = [
-            .init(range: NSRange(location: 0, length: 4)),
-            .init(range: NSRange(location: 6, length: 10))
-        ]
+        textSelections = []
         updateSelectionViews()
     }
 
@@ -83,5 +84,6 @@ class TextSelectionManager {
                 // TODO: Selection Highlights
             }
         }
+        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification))
     }
 }

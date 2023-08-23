@@ -14,9 +14,15 @@
     - [x] isEditable
     - [x] Insert
     - [] Delete
-    - [] Copy/paste
+    - [x] Paste
+- [x] Line Numbers
 - [] select text
+    - [] Copy
 - [] multiple cursors (+ edit)
+- [] Keyboard navigation
+    - [] Arrow keys
+    - [] Command & control arrow keys
+    - [] Page up and down
 - [] tab widths & indents
 - [] paramater updating
     - [] tab & indent options

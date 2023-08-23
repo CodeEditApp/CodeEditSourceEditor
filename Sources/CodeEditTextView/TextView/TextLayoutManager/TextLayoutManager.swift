@@ -40,6 +40,7 @@ final class TextLayoutManager: NSObject {
     private var visibleLineIds: Set<TextLine.ID> = []
     /// Used to force a complete re-layout using `setNeedsLayout`
     private var needsLayout: Bool = false
+    private var isInTransaction: Bool = false
 
     weak private var layoutView: NSView?
 
@@ -120,6 +121,10 @@ final class TextLayoutManager: NSObject {
         lineStorage.getLine(atPosition: posY)
     }
 
+    public func textLineForOffset(_ offset: Int) -> TextLineStorage<TextLine>.TextLinePosition? {
+        lineStorage.getLine(atIndex: offset)
+    }
+
     public func textOffsetAtPoint(_ point: CGPoint) -> Int? {
         guard let position = lineStorage.getLine(atPosition: point.y),
               let fragmentPosition = position.data.typesetter.lineFragments.getLine(
@@ -198,11 +203,21 @@ final class TextLayoutManager: NSObject {
         visibleLineIds.removeAll(keepingCapacity: true)
     }
 
+    func beginTransaction() {
+        isInTransaction = true
+    }
+
+    func endTransaction() {
+        isInTransaction = false
+        setNeedsLayout()
+        layoutLines()
+    }
+
     // MARK: - Layout
 
     /// Lays out all visible lines
     internal func layoutLines() {
-        guard let visibleRect = delegate?.visibleRect else { return }
+        guard let visibleRect = delegate?.visibleRect, !isInTransaction else { return }
         let minY = max(visibleRect.minY, 0)
         let maxY = max(visibleRect.maxY, 0)
         let originalHeight = lineStorage.height
@@ -274,7 +289,7 @@ final class TextLayoutManager: NSObject {
     ///   - maxY: The maximum Y value to end layout at.
     ///   - laidOutFragmentIDs: Updated by this method as line fragments are laid out.
     /// - Returns: A `CGSize` representing the max width and total height of the laid out portion of the line.
-    internal func layoutLine(
+    private func layoutLine(
         _ position: TextLineStorage<TextLine>.TextLinePosition,
         minY: CGFloat,
         maxY: CGFloat,
@@ -290,6 +305,7 @@ final class TextLayoutManager: NSObject {
 
         var height: CGFloat = 0
         var width: CGFloat = 0
+
 
         // TODO: Lay out only fragments in min/max Y
         for lineFragmentPosition in line.typesetter.lineFragments {

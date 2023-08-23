@@ -75,6 +75,7 @@ public class TextViewController: NSViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // swiftlint:disable:next function_body_length
     public override func loadView() {
         scrollView = NSScrollView()
         textView = TextView(
@@ -87,6 +88,7 @@ public class TextViewController: NSViewController {
             letterSpacing: letterSpacing,
             storageDelegate: storageDelegate
         )
+        textView.postsFrameChangedNotifications = true
         textView.translatesAutoresizingMaskIntoConstraints = false
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -100,11 +102,12 @@ public class TextViewController: NSViewController {
             scrollView.contentInsets = contentInsets
         }
 
-        self.gutterView = GutterView(font: font.rulerFont, textColor: .secondaryLabelColor, delegate: self, layoutManager: textView.layoutManager)
-        gutterView.frame.size.width = 30
+        gutterView = GutterView(font: font.rulerFont, textColor: .secondaryLabelColor, textView: textView)
+        gutterView.frame.origin.y = -scrollView.contentInsets.top
+        gutterView.updateWidthIfNeeded()
         scrollView.addFloatingSubview(
             gutterView,
-            for: .vertical
+            for: .horizontal
         )
 
         self.view = scrollView
@@ -115,8 +118,7 @@ public class TextViewController: NSViewController {
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            gutterView.heightAnchor.constraint(equalTo: scrollView.contentView.heightAnchor, multiplier: 1.0)
+            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
         // Layout on scroll change
@@ -139,8 +141,20 @@ public class TextViewController: NSViewController {
             self.gutterView.needsDisplay = true
         }
 
+        NotificationCenter.default.addObserver(
+            forName: NSView.frameDidChangeNotification,
+            object: textView,
+            queue: .main
+        ) { _ in
+            self.gutterView.frame.size.height = self.textView.frame.height
+            self.gutterView.needsDisplay = true
+        }
+
         textView.updateFrameIfNeeded()
-        gutterView.needsDisplay = true
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 }
 
@@ -186,18 +200,5 @@ extension TextViewController {
             self.highlightProvider = provider
             highlighter?.setHighlightProvider(provider)
         }
-    }
-}
-
-extension TextViewController: GutterViewDelegate {
-    func gutterViewVisibleRect() -> CGRect {
-        var rect = scrollView.documentVisibleRect
-        rect.origin.y += scrollView.contentInsets.top
-        rect.size.height -= scrollView.contentInsets.top + scrollView.contentInsets.bottom
-        return rect
-    }
-
-    func gutterView(updatedWidth: CGFloat) {
-        textView.layoutManager.gutterWidth = updatedWidth
     }
 }

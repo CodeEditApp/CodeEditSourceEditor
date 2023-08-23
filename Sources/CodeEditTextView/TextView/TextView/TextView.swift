@@ -88,10 +88,12 @@ class TextView: NSView, NSTextContent {
         super.init(frame: .zero)
 
         wantsLayer = true
-//        canDrawSubviewsIntoLayer = true
         postsFrameChangedNotifications = true
         postsBoundsChangedNotifications = true
         autoresizingMask = [.width, .height]
+
+        // TODO: Implement typing/"default" attributes
+        textStorage.addAttributes([.font: font], range: documentRange)
 
         self.layoutManager = TextLayoutManager(
             textStorage: textStorage,
@@ -105,13 +107,6 @@ class TextView: NSView, NSTextContent {
         )
         textStorage.delegate = storageDelegate
         storageDelegate.addDelegate(layoutManager)
-
-        textStorage.addAttributes(
-            [
-                .font: font
-            ],
-            range: documentRange
-        )
 
         layoutManager.layoutLines()
 
