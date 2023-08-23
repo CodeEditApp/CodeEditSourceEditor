@@ -52,7 +52,13 @@ final class Typesetter {
         var leading: CGFloat = 0
         let width = CGFloat(CTLineGetTypographicBounds(ctLine, &ascent, &descent, &leading))
         let height = ascent + descent + leading
-        return LineFragment(ctLine: ctLine, width: width, height: height, lineHeightMultiplier: lineHeightMultiplier)
+        return LineFragment(
+            ctLine: ctLine,
+            width: width,
+            height: height,
+            descent: descent,
+            lineHeightMultiplier: lineHeightMultiplier
+        )
     }
 
     // MARK: - Line Breaks

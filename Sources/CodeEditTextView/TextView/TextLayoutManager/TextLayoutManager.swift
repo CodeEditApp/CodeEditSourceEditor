@@ -173,7 +173,6 @@ final class TextLayoutManager: NSObject {
         return CGPoint(
             x: xPos + gutterWidth,
             y: linePosition.yPos + fragmentPosition.yPos
-            + (fragmentPosition.data.height - fragmentPosition.data.scaledHeight)/2
         )
     }
 

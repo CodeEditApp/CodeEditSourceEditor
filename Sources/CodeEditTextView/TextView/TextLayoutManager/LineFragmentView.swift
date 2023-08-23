@@ -32,7 +32,7 @@ final class LineFragmentView: NSView {
         context.textMatrix = .init(scaleX: 1, y: -1)
         context.textPosition = CGPoint(
             x: 0,
-            y: lineFragment.height - ((lineFragment.scaledHeight - lineFragment.height)/2)
+            y: lineFragment.height - lineFragment.descent + (lineFragment.heightDifference/2)
         )
         CTLineDraw(lineFragment.ctLine, context)
         context.restoreGState()

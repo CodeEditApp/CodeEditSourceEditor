@@ -92,8 +92,8 @@ class GutterView: NSView {
             let maxCtLine = CTLineCreateWithAttributedString(
                 NSAttributedString(string: String(repeating: "0", count: lineStorageDigits), attributes: attributes)
             )
-            let bounds = CTLineGetBoundsWithOptions(maxCtLine, CTLineBoundsOptions())
-            maxWidth = max(maxWidth, bounds.width)
+            let width = CTLineGetTypographicBounds(maxCtLine, nil, nil, nil)
+            maxWidth = max(maxWidth, width)
             maxLineLength = lineStorageDigits
         }
 
@@ -120,7 +120,7 @@ class GutterView: NSView {
             context.fill(
                 CGRect(
                     x: 0.0,
-                    y: textView.layoutManager.pointForOffset(line.range.location)?.y ?? line.yPos,
+                    y: line.yPos,
                     width: maxWidth + edgeInsets.horizontal,
                     height: line.height
                 )
@@ -143,11 +143,12 @@ class GutterView: NSView {
                 NSAttributedString(string: "\(linePosition.index + 1)", attributes: attributes)
             )
             let fragment: LineFragment? = linePosition.data.typesetter.lineFragments.first?.data
+            var ascent: CGFloat = 0
+            let lineNumberWidth = CTLineGetTypographicBounds(ctLine, &ascent, nil, nil)
 
-            let topPadding: CGFloat = ((fragment?.scaledHeight ?? 0) - (fragment?.height ?? 0))/2.0
-            let yPos = linePosition.yPos + (fragment?.height ?? 0) - topPadding
+            let yPos = linePosition.yPos + ascent + (fragment?.heightDifference ?? 0)/2
             // Leading padding + (width - linewidth)
-            let xPos = edgeInsets.leading + (maxWidth - CTLineGetBoundsWithOptions(ctLine, CTLineBoundsOptions()).width)
+            let xPos = edgeInsets.leading + (maxWidth - lineNumberWidth)
 
             context.textPosition = CGPoint(
                 x: xPos,
