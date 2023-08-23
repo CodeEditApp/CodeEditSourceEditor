@@ -96,7 +96,7 @@ final class TextLayoutManager: NSObject {
 #endif
     }
 
-    private func estimateLineHeight() -> CGFloat {
+    internal func estimateLineHeight() -> CGFloat {
         let string = NSAttributedString(string: "0", attributes: typingAttributes)
         let typesetter = CTTypesetterCreateWithAttributedString(string)
         let ctLine = CTTypesetterCreateLine(typesetter, CFRangeMake(0, 1))
@@ -156,7 +156,7 @@ final class TextLayoutManager: NSObject {
     /// Returns the bottom-left corner of the character.
     /// - Parameter offset: The offset to create the rect for.
     /// - Returns: The found rect for the given offset.
-    public func positionForOffset(_ offset: Int) -> CGPoint? {
+    public func pointForOffset(_ offset: Int) -> CGPoint? {
         guard let linePosition = lineStorage.getLine(atIndex: offset),
               let fragmentPosition = linePosition.data.typesetter.lineFragments.getLine(
                 atIndex: offset - linePosition.range.location
@@ -305,7 +305,6 @@ final class TextLayoutManager: NSObject {
 
         var height: CGFloat = 0
         var width: CGFloat = 0
-
 
         // TODO: Lay out only fragments in min/max Y
         for lineFragmentPosition in line.typesetter.lineFragments {

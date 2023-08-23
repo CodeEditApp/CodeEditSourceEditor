@@ -34,15 +34,8 @@ class TextView: NSView, NSTextContent {
     public var wrapLines: Bool
     public var editorOverscroll: CGFloat
     public var isEditable: Bool
-    public var isSelectable: Bool = true {
-        didSet {
-            if isSelectable {
-                self.selectionManager = TextSelectionManager(layoutManager: layoutManager, delegate: self)
-            } else {
-                self.selectionManager = nil
-            }
-        }
-    }
+    @Invalidating(.display)
+    public var isSelectable: Bool = true
     public var letterSpacing: Double
 
     open var contentType: NSTextContentType?
@@ -51,7 +44,7 @@ class TextView: NSView, NSTextContent {
 
     private(set) var textStorage: NSTextStorage!
     private(set) var layoutManager: TextLayoutManager!
-    private(set) var selectionManager: TextSelectionManager?
+    private(set) var selectionManager: TextSelectionManager!
 
     internal var isFirstResponder: Bool = false
 
@@ -95,7 +88,7 @@ class TextView: NSView, NSTextContent {
         // TODO: Implement typing/"default" attributes
         textStorage.addAttributes([.font: font], range: documentRange)
 
-        self.layoutManager = TextLayoutManager(
+        layoutManager = TextLayoutManager(
             textStorage: textStorage,
             typingAttributes: [
                 .font: font,
@@ -108,13 +101,15 @@ class TextView: NSView, NSTextContent {
         textStorage.delegate = storageDelegate
         storageDelegate.addDelegate(layoutManager)
 
-        layoutManager.layoutLines()
-
-        if isSelectable {
-            self.selectionManager = TextSelectionManager(layoutManager: layoutManager, delegate: self)
-        }
+        selectionManager = TextSelectionManager(
+            layoutManager: layoutManager,
+            layoutView: self, // TODO: This is an odd syntax... consider reworking this
+            delegate: self
+        )
 
         _undoManager = CEUndoManager(textView: self)
+
+        layoutManager.layoutLines()
     }
 
     required init?(coder: NSCoder) {
@@ -191,7 +186,9 @@ class TextView: NSView, NSTextContent {
             super.mouseDown(with: event)
             return
         }
-        selectionManager?.setSelectedRange(NSRange(location: offset, length: 0))
+        if isSelectable {
+            selectionManager.setSelectedRange(NSRange(location: offset, length: 0))
+        }
 
         if !self.isFirstResponder {
             self.window?.makeFirstResponder(self)
@@ -199,6 +196,13 @@ class TextView: NSView, NSTextContent {
     }
 
     // MARK: - Draw
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+        if isSelectable {
+            selectionManager.drawSelections(in: dirtyRect)
+        }
+    }
 
     override open var isFlipped: Bool {
         true
@@ -229,11 +233,14 @@ class TextView: NSView, NSTextContent {
     }
 
     public func updatedViewport(_ newRect: CGRect) {
-        layoutManager.layoutLines()
+        if !updateFrameIfNeeded() {
+            layoutManager.layoutLines()
+        }
         inputContext?.invalidateCharacterCoordinates()
     }
 
-    public func updateFrameIfNeeded() {
+    @discardableResult
+    public func updateFrameIfNeeded() -> Bool {
         var availableSize = scrollView?.contentSize ?? .zero
         availableSize.height -= (scrollView?.contentInsets.top ?? 0) + (scrollView?.contentInsets.bottom ?? 0)
         let newHeight = layoutManager.estimatedHeight()
@@ -249,7 +256,7 @@ class TextView: NSView, NSTextContent {
         if wrapLines && frame.size.width != availableSize.width {
             frame.size.width = availableSize.width
             didUpdate = true
-        } else if !wrapLines && newWidth > availableSize.width && frame.size.width != newWidth {
+        } else if !wrapLines && frame.size.width != max(newWidth, availableSize.width) {
             frame.size.width = max(newWidth, availableSize.width)
             didUpdate = true
         }
@@ -260,7 +267,11 @@ class TextView: NSView, NSTextContent {
             layoutManager.layoutLines()
         }
 
-        selectionManager?.updateSelectionViews()
+        if isSelectable {
+            selectionManager?.updateSelectionViews()
+        }
+
+        return didUpdate
     }
 
     deinit {
@@ -307,7 +318,11 @@ extension TextView: TextLayoutManagerDelegate {
 // MARK: - TextSelectionManagerDelegate
 
 extension TextView: TextSelectionManagerDelegate {
-    func addCursorView(_ view: NSView) {
-        addSubview(view)
+    func setNeedsDisplay() {
+        self.setNeedsDisplay(visibleRect)
+    }
+
+    func estimatedLineHeight() -> CGFloat {
+        layoutManager.estimateLineHeight()
     }
 }

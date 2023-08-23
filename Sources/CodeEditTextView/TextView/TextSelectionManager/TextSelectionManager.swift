@@ -9,14 +9,15 @@ import AppKit
 
 protocol TextSelectionManagerDelegate: AnyObject {
     var font: NSFont { get }
-    var lineHeight: CGFloat { get }
 
-    func addCursorView(_ view: NSView)
+    func setNeedsDisplay()
+    func estimatedLineHeight() -> CGFloat
 }
 
 /// Manages an array of text selections representing cursors (0-length ranges) and selections (>0-length ranges).
 ///
-/// Draws selections using a draw method similar to the `TextLayoutManager` class, and adds
+/// Draws selections using a draw method similar to the `TextLayoutManager` class, and adds cursor views when
+/// appropriate.
 class TextSelectionManager {
     struct MarkedText {
         let range: NSRange
@@ -46,13 +47,17 @@ class TextSelectionManager {
         Notification.Name("TextSelectionManager.TextSelectionChangedNotification")
     }
 
+    public var selectedLineBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
+    
     private(set) var markedText: [MarkedText] = []
     private(set) var textSelections: [TextSelection] = []
-    private unowned var layoutManager: TextLayoutManager
+    private weak var layoutManager: TextLayoutManager?
+    weak private var layoutView: NSView?
     private weak var delegate: TextSelectionManagerDelegate?
 
-    init(layoutManager: TextLayoutManager, delegate: TextSelectionManagerDelegate?) {
+    init(layoutManager: TextLayoutManager, layoutView: NSView?, delegate: TextSelectionManagerDelegate?) {
         self.layoutManager = layoutManager
+        self.layoutView = layoutView
         self.delegate = delegate
         textSelections = []
         updateSelectionViews()
@@ -72,18 +77,68 @@ class TextSelectionManager {
 
     internal func updateSelectionViews() {
         textSelections.forEach { $0.view?.removeFromSuperview() }
+        for textSelection in textSelections where textSelection.range.isEmpty {
+            textSelection.view?.removeFromSuperview()
+            let lineFragment = layoutManager?
+                .textLineForOffset(textSelection.range.location)?
+                .data
+                .typesetter
+                .lineFragments
+                .first
+
+            let cursorView = CursorView()
+            cursorView.frame.origin = layoutManager?.pointForOffset(textSelection.range.location) ?? .zero
+
+            cursorView.frame.size.height = lineFragment?.data.scaledHeight ?? 0
+            layoutView?.addSubview(cursorView)
+            textSelection.view = cursorView
+        }
+        delegate?.setNeedsDisplay()
+        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification))
+    }
+
+    /// Draws line backgrounds and selection rects for each selection in the given rect.
+    /// - Parameter rect: The rect to draw in.
+    internal func drawSelections(in rect: NSRect) {
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+        context.saveGState()
+        // For each selection in the rect
         for textSelection in textSelections {
-            if textSelection.range.length == 0 {
-                textSelection.view?.removeFromSuperview()
-                let selectionView = CursorView()
-                selectionView.frame.origin = layoutManager.positionForOffset(textSelection.range.location) ?? .zero
-                selectionView.frame.size.height = (delegate?.font.lineHeight ?? 0) * (delegate?.lineHeight ?? 0)
-                delegate?.addCursorView(selectionView)
-                textSelection.view = selectionView
+            if textSelection.range.isEmpty {
+                // Highlight the line
+                guard let linePosition = layoutManager?.textLineForOffset(textSelection.range.location) else {
+                    continue
+                }
+                context.setFillColor(selectedLineBackgroundColor.cgColor)
+                context.fill(
+                    CGRect(
+                        x: rect.minX,
+                        y: linePosition.yPos,
+                        width: rect.width,
+                        height: linePosition.height
+                    )
+                )
             } else {
-                // TODO: Selection Highlights
+                // TODO: Highlight Selection Ranges
+                
+//                guard let selectionPointMin = layoutManager.pointForOffset(selection.range.location),
+//                      let selectionPointMax = layoutManager.pointForOffset(selection.range.max) else {
+//                    continue
+//                }
+//                let selectionRect = NSRect(
+//                    x: selectionPointMin.x,
+//                    y: selectionPointMin.y,
+//                    width: selectionPointMax.x - selectionPointMin.x,
+//                    height: selectionPointMax.y - selectionPointMin.y
+//                )
+//                if selectionRect.intersects(rect) {
+//                    // This selection has some portion in the visible rect, draw it.
+//                    for linePosition in layoutManager.lineStorage.linesInRange(selection.range) {
+//
+//                    }
+//                }
             }
         }
-        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification))
+        context.restoreGState()
     }
 }

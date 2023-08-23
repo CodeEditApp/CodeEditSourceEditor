@@ -25,16 +25,16 @@ final class LineFragmentView: NSView {
     }
 
     override func draw(_ dirtyRect: NSRect) {
-        guard let lineFragment, let ctx = NSGraphicsContext.current?.cgContext else {
+        guard let lineFragment, let context = NSGraphicsContext.current?.cgContext else {
             return
         }
-        ctx.saveGState()
-        ctx.textMatrix = .init(scaleX: 1, y: -1)
-        ctx.textPosition = CGPoint(
+        context.saveGState()
+        context.textMatrix = .init(scaleX: 1, y: -1)
+        context.textPosition = CGPoint(
             x: 0,
             y: lineFragment.height + ((lineFragment.height - lineFragment.scaledHeight) / 2)
         )
-        CTLineDraw(lineFragment.ctLine, ctx)
-        ctx.restoreGState()
+        CTLineDraw(lineFragment.ctLine, context)
+        context.restoreGState()
     }
 }

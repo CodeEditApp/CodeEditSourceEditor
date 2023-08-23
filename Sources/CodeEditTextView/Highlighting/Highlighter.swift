@@ -43,19 +43,19 @@ class Highlighter: NSObject {
     // MARK: - UI
 
     /// The text view to highlight
-    private var textView: TextView
+    private unowned var textView: TextView
 
     /// The editor theme
     private var theme: EditorTheme
 
     /// The object providing attributes for captures.
-    private var attributeProvider: ThemeAttributesProviding!
+    private weak var attributeProvider: ThemeAttributesProviding!
 
     /// The current language of the editor.
     private var language: CodeLanguage
 
     /// Calculates invalidated ranges given an edit.
-    private var highlightProvider: HighlightProviding?
+    private weak var highlightProvider: HighlightProviding?
 
     /// The length to chunk ranges into when passing to the highlighter.
     fileprivate let rangeChunkLimit = 256

@@ -126,9 +126,9 @@ public class TextViewController: NSViewController {
             forName: NSView.boundsDidChangeNotification,
             object: scrollView.contentView,
             queue: .main
-        ) { _ in
-            self.textView.updatedViewport(self.scrollView.documentVisibleRect)
-            self.gutterView.needsDisplay = true
+        ) { [weak self] _ in
+            self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
+            self?.gutterView.needsDisplay = true
         }
 
         // Layout on frame change
@@ -136,24 +136,27 @@ public class TextViewController: NSViewController {
             forName: NSView.frameDidChangeNotification,
             object: scrollView.contentView,
             queue: .main
-        ) { _ in
-            self.textView.layoutManager.layoutLines()
-            self.gutterView.needsDisplay = true
+        ) { [weak self] _ in
+            self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
+            self?.gutterView.needsDisplay = true
         }
 
         NotificationCenter.default.addObserver(
             forName: NSView.frameDidChangeNotification,
             object: textView,
             queue: .main
-        ) { _ in
-            self.gutterView.frame.size.height = self.textView.frame.height
-            self.gutterView.needsDisplay = true
+        ) { [weak self] _ in
+            self?.gutterView.frame.size.height = self?.textView.frame.height ?? 0
+            self?.gutterView.needsDisplay = true
         }
 
         textView.updateFrameIfNeeded()
     }
 
     deinit {
+        highlighter = nil
+        highlightProvider = nil
+        storageDelegate = nil
         NotificationCenter.default.removeObserver(self)
     }
 }

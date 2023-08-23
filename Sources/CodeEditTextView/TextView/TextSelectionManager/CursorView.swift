@@ -40,8 +40,8 @@ class CursorView: NSView {
         layer?.backgroundColor = color
 
         if let blinkDuration {
-            timer = Timer.scheduledTimer(withTimeInterval: blinkDuration, repeats: true, block: { _ in
-                self.isHidden.toggle()
+            timer = Timer.scheduledTimer(withTimeInterval: blinkDuration, repeats: true, block: { [weak self] _ in
+                self?.isHidden.toggle()
             })
         }
     }
@@ -52,5 +52,6 @@ class CursorView: NSView {
 
     deinit {
         timer?.invalidate()
+        timer = nil
     }
 }
