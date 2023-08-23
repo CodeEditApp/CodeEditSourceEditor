@@ -24,7 +24,7 @@
     - [] Command & control arrow keys
     - [] Page up and down
 - [] tab widths & indents
-- [] paramater updating
+- [] parameter updating
     - [] tab & indent options
     - [] kern
     - [] theme
@@ -39,7 +39,6 @@
     - [] language
 - [] undo/redo
 - [] sync system appearance
-- [x] update cursor position
 - [] update text (from outside)
 - [] highlight brackets
 - [] textformation integration
