@@ -29,7 +29,12 @@ class TextView: NSView, NSTextContent {
         textStorage.setAttributedString(.init(string: string))
     }
 
-    public var font: NSFont
+    public var font: NSFont {
+        didSet {
+            setNeedsDisplay()
+            layoutManager.setNeedsLayout()
+        }
+    }
     public var lineHeight: CGFloat
     public var wrapLines: Bool
     public var editorOverscroll: CGFloat
@@ -125,6 +130,7 @@ class TextView: NSView, NSTextContent {
 
     open override func resignFirstResponder() -> Bool {
         isFirstResponder = false
+        selectionManager.removeCursors()
         return super.resignFirstResponder()
     }
 

@@ -97,6 +97,12 @@ class TextSelectionManager {
         NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification))
     }
 
+    internal func removeCursors() {
+        for textSelection in textSelections {
+            textSelection.view?.removeFromSuperview()
+        }
+    }
+
     /// Draws line backgrounds and selection rects for each selection in the given rect.
     /// - Parameter rect: The rect to draw in.
     internal func drawSelections(in rect: NSRect) {
@@ -113,14 +119,14 @@ class TextSelectionManager {
                 context.fill(
                     CGRect(
                         x: rect.minX,
-                        y: linePosition.yPos,
+                        y: layoutManager?.pointForOffset(linePosition.range.location)?.y ?? linePosition.yPos,
                         width: rect.width,
                         height: linePosition.height
                     )
                 )
             } else {
                 // TODO: Highlight Selection Ranges
-                
+
 //                guard let selectionPointMin = layoutManager.pointForOffset(selection.range.location),
 //                      let selectionPointMax = layoutManager.pointForOffset(selection.range.max) else {
 //                    continue

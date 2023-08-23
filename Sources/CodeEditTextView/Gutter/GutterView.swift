@@ -117,7 +117,14 @@ class GutterView: NSView {
                   visibleRange.intersection(line.range) != nil else {
                 continue
             }
-            context.fill(CGRect(x: 0.0, y: line.yPos, width: maxWidth + edgeInsets.horizontal, height: line.height))
+            context.fill(
+                CGRect(
+                    x: 0.0,
+                    y: textView.layoutManager.pointForOffset(line.range.location)?.y ?? line.yPos,
+                    width: maxWidth + edgeInsets.horizontal,
+                    height: line.height
+                )
+            )
         }
         context.restoreGState()
     }

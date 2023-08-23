@@ -17,7 +17,11 @@ public class TextViewController: NSViewController {
 
     public var string: Binding<String>
     public var language: CodeLanguage
-    public var font: NSFont
+    public var font: NSFont {
+        didSet {
+            textView.font = font
+        }
+    }
     public var theme: EditorTheme
     public var lineHeight: CGFloat
     public var wrapLines: Bool

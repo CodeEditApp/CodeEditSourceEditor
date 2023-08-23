@@ -118,7 +118,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
 //            return
 //        }
 //
-//        controller.font = font
+        controller.font = font
 //        controller.wrapLines = wrapLines
 //        controller.useThemeBackground = useThemeBackground
 //        controller.lineHeightMultiple = lineHeight

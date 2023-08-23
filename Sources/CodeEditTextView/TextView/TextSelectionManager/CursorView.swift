@@ -9,9 +9,9 @@ import AppKit
 
 /// Animates a cursor.
 class CursorView: NSView {
-    let blinkDuration: TimeInterval?
-    let color: CGColor
-    let width: CGFloat
+    private let blinkDuration: TimeInterval?
+    private let color: NSColor
+    private let width: CGFloat
 
     private var timer: Timer?
 
@@ -26,8 +26,8 @@ class CursorView: NSView {
     ///   - width: How wide the cursor should be.
     init(
         blinkDuration: TimeInterval? = 0.5,
-        color: CGColor = NSColor.controlAccentColor.cgColor,
-        width: CGFloat = 2.0
+        color: NSColor = NSColor.labelColor,
+        width: CGFloat = 1.0
     ) {
         self.blinkDuration = blinkDuration
         self.color = color
@@ -37,7 +37,7 @@ class CursorView: NSView {
 
         frame.size.width = width
         wantsLayer = true
-        layer?.backgroundColor = color
+        layer?.backgroundColor = color.cgColor
 
         if let blinkDuration {
             timer = Timer.scheduledTimer(withTimeInterval: blinkDuration, repeats: true, block: { [weak self] _ in
