@@ -153,26 +153,38 @@ final class TextLayoutManager: NSObject {
     }
 
     /// Find a position for the character at a given offset.
-    /// Returns the bottom-left corner of the character.
+    /// Returns the rect of the character at the given offset.
+    /// The rect may represent more than one unicode unit, for instance if the offset is at the beginning of an
+    /// emoji or non-latin glyph.
     /// - Parameter offset: The offset to create the rect for.
     /// - Returns: The found rect for the given offset.
-    public func pointForOffset(_ offset: Int) -> CGPoint? {
+    public func rectForOffset(_ offset: Int) -> CGRect? {
         guard let linePosition = lineStorage.getLine(atIndex: offset),
               let fragmentPosition = linePosition.data.typesetter.lineFragments.getLine(
                 atIndex: offset - linePosition.range.location
               ) else {
             return nil
         }
+        // Get the *real* length of the character at the offset. If this is a surrogate pair it'll return the correct
+        // length of the character at the offset.
+        let charLengthAtOffset = (textStorage.string as NSString).rangeOfComposedCharacterSequence(at: offset).length
 
-        let xPos = CTLineGetOffsetForStringIndex(
+        let minXPos = CTLineGetOffsetForStringIndex(
             fragmentPosition.data.ctLine,
             offset - linePosition.range.location,
             nil
         )
+        let maxXPos = CTLineGetOffsetForStringIndex(
+            fragmentPosition.data.ctLine,
+            offset - linePosition.range.location + charLengthAtOffset,
+            nil
+        )
 
-        return CGPoint(
-            x: xPos + gutterWidth,
-            y: linePosition.yPos + fragmentPosition.yPos
+        return CGRect(
+            x: minXPos + gutterWidth,
+            y: linePosition.yPos + fragmentPosition.yPos,
+            width: (maxXPos - minXPos) + gutterWidth,
+            height: fragmentPosition.data.scaledHeight
         )
     }
 

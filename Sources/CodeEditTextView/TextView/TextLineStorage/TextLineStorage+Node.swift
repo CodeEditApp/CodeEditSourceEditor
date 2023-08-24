@@ -8,10 +8,12 @@
 import Foundation
 
 extension TextLineStorage {
+    @inlinable
     func isRightChild(_ node: Node<Data>) -> Bool {
         node.parent?.right == node
     }
 
+    @inlinable
     func isLeftChild(_ node: Node<Data>) -> Bool {
         node.parent?.left == node
     }
@@ -22,6 +24,36 @@ extension TextLineStorage {
         } else {
             return node.parent?.left
         }
+    }
+
+    /// Transplants a node with another node.
+    ///
+    /// ```
+    ///         [a]
+    ///     [u]_/ \_[b]
+    /// [c]_/ \_[v]
+    ///
+    /// call: transplant(u, v)
+    ///
+    ///         [a]
+    ///     [v]_/ \_[b]
+    /// [c]_/
+    ///
+    /// ```
+    ///
+    /// - Parameters:
+    ///   - nodeU: The node to replace.
+    ///   - nodeV: The node to insert in place of `nodeU`
+    @inlinable
+    func transplant(_ nodeU: Node<Data>, with nodeV: Node<Data>?) {
+        if nodeU.parent == nil {
+            root = nodeV
+        } else if isLeftChild(nodeU) {
+            nodeU.parent?.left = nodeV
+        } else {
+            nodeU.parent?.right = nodeV
+        }
+        nodeV?.parent = nodeU.parent
     }
 
     final class Node<Data: Identifiable>: Equatable {
@@ -76,7 +108,7 @@ extension TextLineStorage {
             lhs.data.id == rhs.data.id
         }
 
-        func minimum() -> Node<Data>? {
+        func minimum() -> Node<Data> {
             if let left {
                 return left.minimum()
             } else {
@@ -84,7 +116,7 @@ extension TextLineStorage {
             }
         }
 
-        func maximum() -> Node<Data>? {
+        func maximum() -> Node<Data> {
             if let right {
                 return right.maximum()
             } else {

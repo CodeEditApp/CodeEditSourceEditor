@@ -48,7 +48,7 @@ class TextSelectionManager {
     }
 
     public var selectedLineBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
-    
+
     private(set) var markedText: [MarkedText] = []
     private(set) var textSelections: [TextSelection] = []
     private weak var layoutManager: TextLayoutManager?
@@ -87,7 +87,7 @@ class TextSelectionManager {
                 .first
 
             let cursorView = CursorView()
-            cursorView.frame.origin = layoutManager?.pointForOffset(textSelection.range.location) ?? .zero
+            cursorView.frame.origin = (layoutManager?.rectForOffset(textSelection.range.location) ?? .zero).origin
 
             cursorView.frame.size.height = lineFragment?.data.scaledHeight ?? 0
             layoutView?.addSubview(cursorView)
@@ -119,7 +119,7 @@ class TextSelectionManager {
                 context.fill(
                     CGRect(
                         x: rect.minX,
-                        y: layoutManager?.pointForOffset(linePosition.range.location)?.y ?? linePosition.yPos,
+                        y: layoutManager?.rectForOffset(linePosition.range.location)?.minY ?? linePosition.yPos,
                         width: rect.width,
                         height: linePosition.height
                     )

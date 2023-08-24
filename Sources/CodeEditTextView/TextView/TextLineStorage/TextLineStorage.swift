@@ -7,53 +7,10 @@
 
 import Foundation
 
-/// Implements a red-black tree for efficiently editing, storing and retrieving `TextLine`s.
+/// Implements a red-black tree for efficiently editing, storing and retrieving lines of text in a document.
 final class TextLineStorage<Data: Identifiable> {
-    struct TextLinePosition {
-        init(data: Data, range: NSRange, yPos: CGFloat, height: CGFloat, index: Int) {
-            self.data = data
-            self.range = range
-            self.yPos = yPos
-            self.height = height
-            self.index = index
-        }
+    internal var root: Node<Data>?
 
-        init(position: NodePosition) {
-            self.data = position.node.data
-            self.range = NSRange(location: position.textPos, length: position.node.length)
-            self.yPos = position.yPos
-            self.height = position.node.height
-            self.index = position.index
-        }
-
-        /// The data stored at the position
-        let data: Data
-        /// The range represented by the data
-        let range: NSRange
-        /// The y position of the data, on a top down y axis
-        let yPos: CGFloat
-        /// The height of the stored data
-        let height: CGFloat
-        /// The index of the position.
-        let index: Int
-    }
-
-    internal struct NodePosition {
-        /// The node storing information and the data stored at the position.
-        let node: Node<Data>
-        /// The y position of the data, on a top down y axis
-        let yPos: CGFloat
-        /// The location of the node in the document
-        let textPos: Int
-        /// The index of the node in the document.
-        let index: Int
-    }
-
-#if DEBUG
-    var root: Node<Data>?
-#else
-    private var root: Node<Data>?
-#endif
     /// The number of characters in the storage object.
     private(set) public var length: Int = 0
     /// The number of lines in the storage object
@@ -222,23 +179,85 @@ final class TextLineStorage<Data: Identifiable> {
         metaFixup(startingAt: position.node, delta: delta, deltaHeight: deltaHeight, insertedNode: false)
     }
 
-    /// Deletes a line at the given index.
+    /// Deletes the line containing the given index.
     ///
-    /// Will return if a line could not be found for the given index, and throw an assertion error if the index is
-    /// out of bounds.
+    /// Will exit silently if a line could not be found for the given index, and throw an assertion error if the index
+    /// is out of bounds.
     /// - Parameter index: The index to delete a line at.
     public func delete(lineAt index: Int) {
         assert(index >= 0 && index < self.length, "Invalid index, expected between 0 and \(self.length). Got \(index)")
-//        guard let nodeZ = search(for: index).0 else { return }
-//        var nodeX: Node
-//        var nodeY: Node
+        if count == 1 {
+            removeAll()
+            return
+        }
+        guard let node = search(for: index)?.node else { return }
+        defer {
+            count -= 1
+        }
 
+        var originalColor = node.color
+        // Node to slice out
+        var nodeY: Node<Data> = node
+        // Node that replaces the sliced node.
+        var nodeX: Node<Data>?
+
+        if node.left == nil {
+            nodeX = node.right
+            transplant(node, with: node.right)
+        } else if node.right == nil {
+            nodeX = node.left
+            transplant(node, with: node.left)
+        } else {
+            nodeY = node.right!.minimum() // node.right is not null by case 2
+            originalColor = nodeY.color
+            nodeX = nodeY.right
+            if nodeY.parent == node {
+                nodeX?.parent = nodeY
+            } else {
+                transplant(nodeY, with: nodeY.right)
+                nodeY.right = node.right
+                nodeY.right?.parent = nodeY
+            }
+
+            transplant(node, with: nodeY)
+            nodeY.left = node.left
+            nodeY.left?.parent = nodeY
+            nodeY.color = node.color
+        }
+
+//        if (z.left == TNULL) {
+//            x = z.right;
+//            rbTransplant(z, z.right);
+//        } else if (z.right == TNULL) {
+//            x = z.left;
+//            rbTransplant(z, z.left);
+//        } else {
+//            y = minimum(z.right);
+//            yOriginalColor = y.color;
+//            x = y.right;
+//            if (y.parent == z) {
+//                x.parent = y;
+//            } else {
+//                rbTransplant(y, y.right);
+//                y.right = z.right;
+//                y.right.parent = y;
+//            }
+//
+//            rbTransplant(z, y);
+//            y.left = z.left;
+//            y.left.parent = y;
+//            y.color = z.color;
+//        }
+//        if (yOriginalColor == 0) {
+//            fixDelete(x);
+//        }
     }
 
     public func removeAll() {
         root = nil
         count = 0
         length = 0
+        height = 0
     }
 
     public func printTree() {
