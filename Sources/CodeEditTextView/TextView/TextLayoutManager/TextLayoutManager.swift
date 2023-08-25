@@ -364,6 +364,7 @@ extension TextLayoutManager: NSTextStorageDelegate {
     ) {
         if editedMask.contains(.editedCharacters) {
             lineStorage.update(atIndex: editedRange.location, delta: delta, deltaHeight: 0)
+            // TODO: If delta < 0, handle delete.
         }
         invalidateLayoutForRange(editedRange)
     }

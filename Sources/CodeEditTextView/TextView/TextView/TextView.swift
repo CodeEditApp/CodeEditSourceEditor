@@ -7,6 +7,7 @@
 
 import AppKit
 import STTextView
+import TextStory
 
 /**
 
@@ -108,6 +109,7 @@ class TextView: NSView, NSTextContent {
 
         selectionManager = TextSelectionManager(
             layoutManager: layoutManager,
+            textStorage: textStorage,
             layoutView: self, // TODO: This is an odd syntax... consider reworking this
             delegate: self
         )
@@ -182,7 +184,7 @@ class TextView: NSView, NSTextContent {
         if !(inputContext?.handleEvent(event) ?? false) {
             interpretKeyEvents([event])
         } else {
-
+            // Handle key events?
         }
     }
 
@@ -201,7 +203,29 @@ class TextView: NSView, NSTextContent {
         }
     }
 
-    // MARK: - Draw
+    public func replaceCharacters(in ranges: [NSRange], with string: String) {
+        guard isEditable else { return }
+        layoutManager.beginTransaction()
+        textStorage.beginEditing()
+        for range in ranges where range.length != 0 {
+            replaceCharactersNoCheck(in: range, with: string)
+            _undoManager?.registerMutation(
+                TextMutation(string: string as String, range: range, limit: textStorage.length)
+            )
+        }
+        textStorage.endEditing()
+        layoutManager.endTransaction()
+    }
+
+    public func replaceCharacters(in range: NSRange, with string: String) {
+        replaceCharacters(in: [range], with: string)
+    }
+
+    private func replaceCharactersNoCheck(in range: NSRange, with string: String) {
+        textStorage.replaceCharacters(in: range, with: string)
+    }
+
+    // MARK: - Layout
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)

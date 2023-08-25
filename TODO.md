@@ -14,6 +14,10 @@
     - [x] isEditable
     - [x] Insert
     - [] Delete
+        - [x] Delete line
+        - [x] Delete word
+        - [x] Delete character
+        - [x] Delete across line boundaries  
     - [x] Paste
 - [x] Line Numbers
 - [] select text
@@ -42,3 +46,4 @@
 - [] update text (from outside)
 - [] highlight brackets
 - [] textformation integration
+- [] make non scrollable (just remove scroll view, add gutter above textview & set width )

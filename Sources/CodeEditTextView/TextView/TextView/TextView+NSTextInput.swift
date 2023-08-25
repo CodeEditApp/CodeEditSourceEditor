@@ -44,24 +44,31 @@ extension TextView: NSTextInputClient {
         guard isEditable else { return }
         layoutManager.beginTransaction()
         textStorage.beginEditing()
-        selectionManager?.textSelections.forEach { selection in
-            switch string {
-            case let string as NSString:
-                textStorage.replaceCharacters(in: selection.range, with: string as String)
-                selection.didInsertText(length: string.length)
-                _undoManager?.registerMutation(
-                    TextMutation(string: string as String, range: selection.range, limit: textStorage.length)
-                )
-            case let string as NSAttributedString:
-                textStorage.replaceCharacters(in: selection.range, with: string)
-                selection.didInsertText(length: string.length)
-                _undoManager?.registerMutation(
-                    TextMutation(string: string.string, range: selection.range, limit: textStorage.length)
-                )
-            default:
-                assertionFailure("\(#function) called with invalid string type. Expected String or NSAttributedString.")
-            }
+
+        let insertString: String
+        switch string {
+        case let string as NSString:
+            insertString = string as String
+        case let string as NSAttributedString:
+            insertString = string.string
+        default:
+            insertString = ""
+            assertionFailure("\(#function) called with invalid string type. Expected String or NSAttributedString.")
         }
+
+        if replacementRange.location == NSNotFound {
+            replaceCharacters(in: selectionManager.textSelections.map { $0.range }, with: insertString)
+            // TODO: This actually won't fix the selection ranges. See the delete method
+            selectionManager.textSelections.forEach { selection in
+                selection.didInsertText(length: insertString.count == 0 ? -selection.range.length : insertString.count)
+            }
+        } else {
+            replaceCharacters(in: replacementRange, with: insertString)
+            selectionManager.updateSelections(
+                delta: insertString.count == 0 ? -replacementRange.length : replacementRange.length
+            )
+        }
+
         textStorage.endEditing()
         layoutManager.endTransaction()
         selectionManager?.updateSelectionViews()
