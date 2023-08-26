@@ -11,14 +11,10 @@ import AppKit
 /// Represents a displayable line of text.
 final class TextLine: Identifiable {
     let id: UUID = UUID()
-    weak var stringRef: NSTextStorage?
+//    private weak var stringRef: NSTextStorage?
     private var needsLayout: Bool = true
     var maxWidth: CGFloat?
     private(set) var typesetter: Typesetter = Typesetter()
-
-    init(stringRef: NSTextStorage) {
-        self.stringRef = stringRef
-    }
 
     func setNeedsLayout() {
         needsLayout = true
@@ -29,8 +25,8 @@ final class TextLine: Identifiable {
         needsLayout || maxWidth != self.maxWidth
     }
 
-    func prepareForDisplay(maxWidth: CGFloat, lineHeightMultiplier: CGFloat, range: NSRange) {
-        guard let string = stringRef?.attributedSubstring(from: range) else { return }
+    func prepareForDisplay(maxWidth: CGFloat, lineHeightMultiplier: CGFloat, range: NSRange, stringRef: NSTextStorage) {
+        let string = stringRef.attributedSubstring(from: range)
         self.maxWidth = maxWidth
         typesetter.prepareToTypeset(
             string,

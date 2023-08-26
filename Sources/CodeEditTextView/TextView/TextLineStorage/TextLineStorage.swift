@@ -276,7 +276,7 @@ final class TextLineStorage<Data: Identifiable> {
 
     /// Efficiently builds the tree from the given array of lines.
     /// - Parameter lines: The lines to use to build the tree.
-    public func build(from lines: [(Data, Int)], estimatedLineHeight: CGFloat) {
+    public func build(from lines: [BuildItem], estimatedLineHeight: CGFloat) {
         root = build(lines: lines, estimatedLineHeight: estimatedLineHeight, left: 0, right: lines.count, parent: nil).0
         count = lines.count
     }
@@ -290,7 +290,7 @@ final class TextLineStorage<Data: Identifiable> {
     ///   - parent: The parent of the subtree, `nil` if this is the root.
     /// - Returns: A node, if available, along with it's subtree's height and offset.
     private func build(
-        lines: [(Data, Int)],
+        lines: [BuildItem],
         estimatedLineHeight: CGFloat,
         left: Int,
         right: Int,
@@ -299,8 +299,8 @@ final class TextLineStorage<Data: Identifiable> {
         guard left < right else { return (nil, nil, nil, 0) }
         let mid = left + (right - left)/2
         let node = Node(
-            length: lines[mid].1,
-            data: lines[mid].0,
+            length: lines[mid].length,
+            data: lines[mid].data,
             leftSubtreeOffset: 0,
             leftSubtreeHeight: 0,
             leftSubtreeCount: 0,

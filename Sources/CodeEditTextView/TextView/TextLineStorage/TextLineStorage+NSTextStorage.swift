@@ -26,20 +26,24 @@ extension TextLineStorage where Data == TextLine {
         }
 
         var index = 0
-        var lines: [(TextLine, Int)] = []
+        var lines: [BuildItem] = []
         while let range = getNextLine(startingAt: index) {
-            lines.append((
-                TextLine(stringRef: textStorage),
-                range.max - index
-            ))
+            lines.append(
+                BuildItem(
+                    data: TextLine(),
+                    length: range.max - index
+                )
+            )
             index = NSMaxRange(range)
         }
         // Create the last line
         if textStorage.length - index > 0 {
-            lines.append((
-                TextLine(stringRef: textStorage),
-                textStorage.length - index
-            ))
+            lines.append(
+                BuildItem(
+                    data: TextLine(),
+                    length: textStorage.length - index
+                )
+            )
         }
 
         // Use an efficient tree building algorithm rather than adding lines sequentially

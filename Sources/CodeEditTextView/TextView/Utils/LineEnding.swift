@@ -5,6 +5,8 @@
 //  Created by Khan Winter on 8/16/23.
 //
 
+import AppKit
+
 enum LineEnding: String {
     /// The default unix `\n` character
     case lf = "\n"
@@ -35,7 +37,7 @@ enum LineEnding: String {
     /// Attempts to detect the line ending from a line storage.
     /// - Parameter lineStorage: The line storage to enumerate.
     /// - Returns: A line ending. Defaults to `.lf` if none could be found.
-    static func detectLineEnding(lineStorage: TextLineStorage<TextLine>) -> LineEnding {
+    static func detectLineEnding(lineStorage: TextLineStorage<TextLine>, textStorage: NSTextStorage) -> LineEnding {
         var histogram: [LineEnding: Int] = [
             .lf: 0,
             .cr: 0,
@@ -45,7 +47,7 @@ enum LineEnding: String {
         var lineIterator = lineStorage.makeIterator()
 
         while let line = lineIterator.next(), shouldContinue {
-            guard let lineString = line.data.stringRef?.substring(from: line.range),
+            guard let lineString = textStorage.substring(from: line.range),
                   let lineEnding = LineEnding(line: lineString) else {
                 continue
             }

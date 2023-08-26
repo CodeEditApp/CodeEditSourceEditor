@@ -47,4 +47,9 @@ extension TextLineStorage where Data: Identifiable {
         /// The index of the node in the document.
         let index: Int
     }
+
+    struct BuildItem {
+        let data: Data
+        let length: Int
+    }
 }

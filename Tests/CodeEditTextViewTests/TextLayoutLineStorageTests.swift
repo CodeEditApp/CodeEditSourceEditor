@@ -4,11 +4,10 @@ import XCTest
 final class TextLayoutLineStorageTests: XCTestCase {
     func test_insert() {
         let tree = TextLineStorage<TextLine>()
-        let stringRef = NSTextStorage(string: "")
         var sum = 0
         for i in 0..<20 {
             tree.insert(
-                line: .init(stringRef: stringRef),
+                line: TextLine(),
                 atIndex: sum,
                 length: i + 1,
                 height: 1.0
@@ -21,11 +20,10 @@ final class TextLayoutLineStorageTests: XCTestCase {
 
     func test_update() {
         let tree = TextLineStorage<TextLine>()
-        let stringRef = NSTextStorage(string: "")
         var sum = 0
         for i in 0..<20 {
             tree.insert(
-                line: .init(stringRef: stringRef),
+                line: TextLine(),
                 atIndex: sum,
                 length: i + 1,
                 height: 1.0
@@ -39,12 +37,11 @@ final class TextLayoutLineStorageTests: XCTestCase {
 
     func test_insertPerformance() {
         let tree = TextLineStorage<TextLine>()
-        let stringRef = NSTextStorage(string: "")
-        var lines: [(TextLine, Int)] = []
+        var lines: [TextLineStorage<TextLine>.BuildItem] = []
         for i in 0..<250_000 {
-            lines.append((
-                TextLine(stringRef: stringRef),
-                i + 1
+            lines.append(TextLineStorage<TextLine>.BuildItem(
+                data: TextLine(),
+                length: i + 1
             ))
         }
         tree.build(from: lines, estimatedLineHeight: 1.0)
@@ -52,7 +49,7 @@ final class TextLayoutLineStorageTests: XCTestCase {
         measure {
             for _ in 0..<100_000 {
                 tree.insert(
-                    line: .init(stringRef: stringRef), atIndex: Int.random(in: 0..<tree.length), length: 1, height: 0.0
+                    line: TextLine(), atIndex: Int.random(in: 0..<tree.length), length: 1, height: 0.0
                 )
             }
         }
@@ -60,14 +57,12 @@ final class TextLayoutLineStorageTests: XCTestCase {
 
     func test_insertFastPerformance() {
         let tree = TextLineStorage<TextLine>()
-        let stringRef = NSTextStorage(string: "")
         measure {
-            var lines: [(TextLine, Int)] = []
-            for i in 0..<250_000 {
-                lines.append((
-                    TextLine(stringRef: stringRef),
-                    i + 1
-                ))
+            var lines: [TextLineStorage<TextLine>.BuildItem] = (0..<250_000).map {
+                TextLineStorage<TextLine>.BuildItem(
+                    data: TextLine(),
+                    length: $0 + 1
+                )
             }
             tree.build(from: lines, estimatedLineHeight: 1.0)
         }
@@ -75,12 +70,11 @@ final class TextLayoutLineStorageTests: XCTestCase {
 
     func test_iterationPerformance() {
         let tree = TextLineStorage<TextLine>()
-        let stringRef = NSTextStorage(string: "")
-        var lines: [(TextLine, Int)] = []
+        var lines: [TextLineStorage<TextLine>.BuildItem] = []
         for i in 0..<100_000 {
-            lines.append((
-                TextLine(stringRef: stringRef),
-                i + 1
+            lines.append(TextLineStorage<TextLine>.BuildItem(
+                data: TextLine(),
+                length: i + 1
             ))
         }
         tree.build(from: lines, estimatedLineHeight: 1.0)

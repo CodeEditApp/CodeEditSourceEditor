@@ -79,21 +79,17 @@ final class TextLayoutManager: NSObject {
     /// Parses the text storage object into lines and builds the `lineStorage` object from those lines.
     private func prepareTextLines() {
         guard lineStorage.count == 0 else { return }
-#if DEBUG
         var info = mach_timebase_info()
         guard mach_timebase_info(&info) == KERN_SUCCESS else { return }
         let start = mach_absolute_time()
-#endif
 
         lineStorage.buildFromTextStorage(textStorage, estimatedLineHeight: estimateLineHeight())
-        detectedLineEnding = LineEnding.detectLineEnding(lineStorage: lineStorage)
+        detectedLineEnding = LineEnding.detectLineEnding(lineStorage: lineStorage, textStorage: textStorage)
 
-#if DEBUG
         let end = mach_absolute_time()
         let elapsed = end - start
         let nanos = elapsed * UInt64(info.numer) / UInt64(info.denom)
         print("Text Layout Manager built in: ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC), "ms")
-#endif
     }
 
     internal func estimateLineHeight() -> CGFloat {
@@ -311,7 +307,8 @@ final class TextLayoutManager: NSObject {
         line.prepareForDisplay(
             maxWidth: maxWidth,
             lineHeightMultiplier: lineHeightMultiplier,
-            range: position.range
+            range: position.range,
+            stringRef: textStorage
         )
 
         var height: CGFloat = 0
