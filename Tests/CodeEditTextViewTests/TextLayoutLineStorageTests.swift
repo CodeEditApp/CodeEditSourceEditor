@@ -57,13 +57,13 @@ final class TextLayoutLineStorageTests: XCTestCase {
 
     func test_insertFastPerformance() {
         let tree = TextLineStorage<TextLine>()
+        let lines: [TextLineStorage<TextLine>.BuildItem] = (0..<250_000).map {
+            TextLineStorage<TextLine>.BuildItem(
+                data: TextLine(),
+                length: $0 + 1
+            )
+        }
         measure {
-            var lines: [TextLineStorage<TextLine>.BuildItem] = (0..<250_000).map {
-                TextLineStorage<TextLine>.BuildItem(
-                    data: TextLine(),
-                    length: $0 + 1
-                )
-            }
             tree.build(from: lines, estimatedLineHeight: 1.0)
         }
     }

@@ -19,7 +19,7 @@ import TextStory
  |  |   |-> [LineFragment]      Represents a visual text line, stored in a line storage for long lines
  |  |-> [LineFragmentView]      Reusable line fragment view that draws a line fragment.
  |
- |-> TextSelectionManager (depends on LayoutManager)    Maintains and renders text selections
+ |-> TextSelectionManager       Maintains, modifies, and renders text selections
  |  |-> [TextSelection]
  ```
  */
