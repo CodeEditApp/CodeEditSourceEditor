@@ -12,16 +12,43 @@ extension TextView {
         delete(direction: .backward, destination: .character)
     }
 
+    open override func deleteBackwardByDecomposingPreviousCharacter(_ sender: Any?) {
+        delete(direction: .backward, destination: .character, decomposeCharacters: true)
+    }
+
+    open override func deleteForward(_ sender: Any?) {
+        delete(direction: .forward, destination: .character)
+    }
+
     open override func deleteWordBackward(_ sender: Any?) {
         delete(direction: .backward, destination: .word)
+    }
+
+    open override func deleteWordForward(_ sender: Any?) {
+        delete(direction: .forward, destination: .word)
     }
 
     open override func deleteToBeginningOfLine(_ sender: Any?) {
         delete(direction: .backward, destination: .line)
     }
 
-    private func delete(direction: TextSelectionManager.Direction, destination: TextSelectionManager.Destination) {
-        print(#function, direction, destination)
+    open override func deleteToEndOfLine(_ sender: Any?) {
+        delete(direction: .forward, destination: .line)
+    }
+
+    open override func deleteToBeginningOfParagraph(_ sender: Any?) {
+        delete(direction: .backward, destination: .line)
+    }
+
+    open override func deleteToEndOfParagraph(_ sender: Any?) {
+        delete(direction: .forward, destination: .line)
+    }
+
+    private func delete(
+        direction: TextSelectionManager.Direction,
+        destination: TextSelectionManager.Destination,
+        decomposeCharacters: Bool = false
+    ) {
         /// Extend each selection by a distance specified by `destination`, then update both storage and the selection.
         for textSelection in selectionManager.textSelections {
             let extendedRange = selectionManager.rangeOfSelection(
@@ -29,18 +56,11 @@ extension TextView {
                 direction: direction,
                 destination: destination
             )
+            print(textSelection.range)
+            print(extendedRange, textSelection.range.union(extendedRange))
             textSelection.range.formUnion(extendedRange)
         }
 
         replaceCharacters(in: selectionManager.textSelections.map(\.range), with: "")
-
-        var delta: Int = 0
-        for textSelection in selectionManager.textSelections {
-            textSelection.range.location -= delta
-            delta += textSelection.range.length
-            textSelection.range.length = 0
-        }
-
-        selectionManager.updateSelectionViews()
     }
 }

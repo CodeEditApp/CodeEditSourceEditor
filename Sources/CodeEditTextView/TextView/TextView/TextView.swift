@@ -91,7 +91,7 @@ class TextView: NSView, NSTextContent {
         postsBoundsChangedNotifications = true
         autoresizingMask = [.width, .height]
 
-        // TODO: Implement typing/"default" attributes
+        // TODO: Implement typing/default attributes
         textStorage.addAttributes([.font: font], range: documentRange)
 
         layoutManager = TextLayoutManager(
@@ -113,6 +113,7 @@ class TextView: NSView, NSTextContent {
             layoutView: self, // TODO: This is an odd syntax... consider reworking this
             delegate: self
         )
+        storageDelegate.addDelegate(selectionManager)
 
         _undoManager = CEUndoManager(textView: self)
 
@@ -207,7 +208,8 @@ class TextView: NSView, NSTextContent {
         guard isEditable else { return }
         layoutManager.beginTransaction()
         textStorage.beginEditing()
-        for range in ranges where range.length != 0 {
+        // Can't insert an empty string into an empty range. One must be not empty
+        for range in ranges where !range.isEmpty || !string.isEmpty {
             replaceCharactersNoCheck(in: range, with: string)
             _undoManager?.registerMutation(
                 TextMutation(string: string as String, range: range, limit: textStorage.length)

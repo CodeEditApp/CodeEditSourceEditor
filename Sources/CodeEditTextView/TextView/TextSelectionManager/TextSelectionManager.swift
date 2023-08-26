@@ -19,11 +19,13 @@ protocol TextSelectionManagerDelegate: AnyObject {
 ///
 /// Draws selections using a draw method similar to the `TextLayoutManager` class, and adds cursor views when
 /// appropriate.
-class TextSelectionManager {
+class TextSelectionManager: NSObject {
     struct MarkedText {
         let range: NSRange
         let attributedString: NSAttributedString
     }
+
+    // MARK: - TextSelection
 
     class TextSelection {
         var range: NSRange
@@ -36,13 +38,6 @@ class TextSelectionManager {
 
         var isCursor: Bool {
             range.length == 0
-        }
-
-        func didInsertText(length: Int, retainLength: Bool = false) {
-            if !retainLength {
-                range.length = 0
-            }
-            range.location += length
         }
     }
 
@@ -62,6 +57,8 @@ class TextSelectionManager {
         case backward
     }
 
+    // MARK: - Properties
+
     class var selectionChangedNotification: Notification.Name {
         Notification.Name("TextSelectionManager.TextSelectionChangedNotification")
     }
@@ -70,10 +67,10 @@ class TextSelectionManager {
 
     private(set) var markedText: [MarkedText] = []
     private(set) var textSelections: [TextSelection] = []
-    private weak var layoutManager: TextLayoutManager?
-    private weak var textStorage: NSTextStorage?
-    private weak var layoutView: NSView?
-    private weak var delegate: TextSelectionManagerDelegate?
+    internal weak var layoutManager: TextLayoutManager?
+    internal weak var textStorage: NSTextStorage?
+    internal weak var layoutView: NSView?
+    internal weak var delegate: TextSelectionManagerDelegate?
 
     init(
         layoutManager: TextLayoutManager,
@@ -85,9 +82,12 @@ class TextSelectionManager {
         self.textStorage = textStorage
         self.layoutView = layoutView
         self.delegate = delegate
+        super.init()
         textSelections = []
         updateSelectionViews()
     }
+
+    // MARK: - Selected Ranges
 
     public func setSelectedRange(_ range: NSRange) {
         textSelections.forEach { $0.view?.removeFromSuperview() }
@@ -100,6 +100,8 @@ class TextSelectionManager {
         textSelections = ranges.map { TextSelection(range: $0) }
         updateSelectionViews()
     }
+
+    // MARK: - Selection Views
 
     internal func updateSelectionViews() {
         textSelections.forEach { $0.view?.removeFromSuperview() }
@@ -137,6 +139,8 @@ class TextSelectionManager {
             textSelection.view?.removeFromSuperview()
         }
     }
+
+    // MARK: - Draw
 
     /// Draws line backgrounds and selection rects for each selection in the given rect.
     /// - Parameter rect: The rect to draw in.
@@ -183,201 +187,44 @@ class TextSelectionManager {
         }
         context.restoreGState()
     }
+}
 
-    // MARK: - Selection Manipulation
+// MARK: - Private TextSelection
 
-    public func rangeOfSelection(from offset: Int, direction: Direction, destination: Destination) -> NSRange {
-        switch direction {
-        case .backward:
-            return extendSelection(from: offset, destination: destination, delta: -1)
-        case .forward:
-            return NSRange(location: offset, length: 0)
-        case .up: // TODO: up
-            return NSRange(location: offset, length: 0)
-        case .down: // TODO: down
-            return NSRange(location: offset, length: 0)
+private extension TextSelectionManager.TextSelection {
+    func didInsertText(length: Int, retainLength: Bool = false) {
+        if !retainLength {
+            range.length = 0
         }
+        range.location += length
     }
+}
 
-    /// Extends a selection from the given offset determining the length by the destination.
-    ///
-    /// Returns a new range that needs to be merged with an existing selection range using `NSRange.formUnion`
-    ///
-    /// - Parameters:
-    ///   - offset: The location to start extending the selection from.
-    ///   - destination: Determines how far the selection is extended.
-    ///   - delta: The direction the selection should be extended. `1` for forwards, `-1` for backwards.
-    /// - Returns: A new range to merge with a selection.
-    private func extendSelection(from offset: Int, destination: Destination, delta: Int) -> NSRange {
-        guard let string = textStorage?.string as NSString? else { return NSRange(location: offset, length: 0) }
+// MARK: - Text Storage Delegate
 
-        switch destination {
-        case .character:
-            return extendSelectionCharacter(string: string, from: offset, delta: delta)
-        case .word:
-            return extendSelectionWord(string: string, from: offset, delta: delta)
-        case .line:
-            return extendSelectionLine(string: string, from: offset, delta: delta)
-        case .container:
-            return extendSelectionContainer(from: offset, delta: delta)
-        case .document:
-            if delta > 0 {
-                return NSRange(location: offset, length: string.length - offset)
-            } else {
-                return NSRange(location: 0, length: offset)
-            }
-        }
-    }
-
-    /// Extends the selection by a single character.
-    ///
-    /// The range returned from this method can be longer than `1` character if the character in the extended direction
-    /// is a member of a grapheme cluster.
-    ///
-    /// - Parameters:
-    ///   - string: The reference string to use.
-    ///   - offset: The location to start extending the selection from.
-    ///   - delta: The direction the selection should be extended. `1` for forwards, `-1` for backwards.
-    /// - Returns: The range of the extended selection.
-    private func extendSelectionCharacter(string: NSString, from offset: Int, delta: Int) -> NSRange {
-        if delta > 0 {
-            return string.rangeOfComposedCharacterSequences(for: NSRange(location: offset, length: 1))
-        } else {
-            return string.rangeOfComposedCharacterSequences(for: NSRange(location: offset - 1, length: 1))
-        }
-    }
-
-    /// Extends the selection by one "word".
-    ///
-    /// Words in this case begin after encountering an alphanumeric character, and extend until either a whitespace
-    /// or punctuation character.
-    /// 
-    /// - Parameters:
-    ///   - string: The reference string to use.
-    ///   - offset: The location to start extending the selection from.
-    ///   - delta: The direction the selection should be extended. `1` for forwards, `-1` for backwards.
-    /// - Returns: The range of the extended selection.
-    private func extendSelectionWord(string: NSString, from offset: Int, delta: Int) -> NSRange {
-        var enumerationOptions: NSString.EnumerationOptions = .byCaretPositions
-        if delta < 0 {
-            enumerationOptions.formUnion(.reverse)
-        }
-        guard let line = layoutManager?.textLineForOffset(offset),
-              let lineFragment = line.data.typesetter.lineFragments.getLine(atIndex: offset - line.range.location)
-        else {
-            return NSRange(location: offset, length: 0)
-        }
-        let lineStart = line.range.location + lineFragment.range.location
-        let lineEnd = line.range.location + lineFragment.range.max
-        var rangeToDelete = NSRange(location: offset, length: 0)
-
-        var hasFoundValidWordChar = false
-        string.enumerateSubstrings(
-            in: NSRange(
-                location: delta > 0 ? offset : lineStart,
-                length: delta > 0 ? lineEnd - offset : offset - lineStart
-            ),
-            options: enumerationOptions
-        ) { substring, _, _, stop in
-            guard let substring = substring else {
-                stop.pointee = true
-                return
-            }
-
-            if hasFoundValidWordChar && CharacterSet
-                .whitespacesWithoutNewlines
-                .union(.punctuationCharacters)
-                .isSuperset(of: CharacterSet(charactersIn: substring)) {
-                stop.pointee = true
-                return
-            } else if CharacterSet.alphanumerics.isSuperset(of: CharacterSet(charactersIn: substring)) {
-                hasFoundValidWordChar = true
-            }
-            rangeToDelete.length += substring.count
-
-            if delta < 0 {
-                rangeToDelete.location -= substring.count
-            }
-        }
-
-        return rangeToDelete
-    }
-
-    /// Extends the selection by one line in the direction specified.
-    ///
-    /// If extending backwards, this method will return the beginning of the leading non-whitespace characters
-    /// in the line. If the offset is located in the leading whitespace it will return the real line beginning.
-    /// For Example
-    /// ```
-    /// ^ = offset, ^--^ = returned range
-    /// Line:
-    ///      Loren Ipsum
-    ///            ^
-    /// Extend 1st Call:
-    ///      Loren Ipsum
-    ///      ^-----^
-    /// Extend 2nd Call:
-    ///      Loren Ipsum
-    /// ^----^
-    /// ```
-    ///
-    /// - Parameters:
-    ///   - string: The reference string to use.
-    ///   - offset: The location to start extending the selection from.
-    ///   - delta: The direction the selection should be extended. `1` for forwards, `-1` for backwards.
-    /// - Returns: The range of the extended selection.
-    private func extendSelectionLine(string: NSString, from offset: Int, delta: Int) -> NSRange {
-        guard let line = layoutManager?.textLineForOffset(offset),
-              let lineFragment = line.data.typesetter.lineFragments.getLine(atIndex: offset - line.range.location)
-        else {
-            return NSRange(location: offset, length: 0)
-        }
-        print(line.range, lineFragment.range)
-        let lineBound = delta > 0
-        ? line.range.location + lineFragment.range.max
-        : line.range.location + lineFragment.range.location
-
-        var foundRange = NSRange(
-            location: min(lineBound, offset),
-            length: max(lineBound, offset) - min(lineBound, offset)
-        )
-        let originalFoundRange = foundRange
-
-        // Only do this if we're going backwards.
-        if delta < 0 {
-            string.enumerateSubstrings(in: foundRange, options: .byCaretPositions) { substring, _, _, stop in
-                if let substring = substring as String? {
-                    if CharacterSet.whitespacesWithoutNewlines.isSuperset(of: CharacterSet(charactersIn: substring)) {
-                        foundRange.location += 1
-                        foundRange.length -= 1
-                    } else {
-                        stop.pointee = true
-                    }
+extension TextSelectionManager: NSTextStorageDelegate {
+    func textStorage(
+        _ textStorage: NSTextStorage,
+        didProcessEditing editedMask: NSTextStorageEditActions,
+        range editedRange: NSRange,
+        changeInLength delta: Int
+    ) {
+        guard editedMask.contains(.editedCharacters) else { return }
+        for textSelection in textSelections {
+            if textSelection.range.max < editedRange.location {
+                textSelection.range.location += delta
+                textSelection.range.length = 0
+            } else if textSelection.range.intersection(editedRange) != nil {
+                if delta > 0 {
+                    textSelection.range.location = editedRange.max
                 } else {
-                    stop.pointee = true
+                    textSelection.range.location = editedRange.location
                 }
+                textSelection.range.length = 0
+            } else {
+                textSelection.range.length = 0
             }
         }
-
-        return foundRange.length == 0 ? originalFoundRange : foundRange
-    }
-
-    /// Extends a selection one "container" long.
-    /// - Parameters:
-    ///   - offset: The location to start extending the selection from.
-    ///   - delta: The direction the selection should be extended. `1` for forwards, `-1` for backwards.
-    /// - Returns: The range of the extended selection.
-    private func extendSelectionContainer(from offset: Int, delta: Int) -> NSRange {
-        guard let layoutView, let endOffset = layoutManager?.textOffsetAtPoint(
-            CGPoint(
-                x: delta > 0 ? layoutView.frame.maxX : layoutView.frame.minX,
-                y: delta > 0 ? layoutView.frame.maxY : layoutView.frame.minY
-            )
-        ) else {
-            return NSRange(location: offset, length: 0)
-        }
-        return endOffset > offset
-        ? NSRange(location: offset, length: endOffset - offset)
-        : NSRange(location: endOffset, length: offset - endOffset)
+        updateSelectionViews()
     }
 }

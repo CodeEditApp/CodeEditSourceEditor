@@ -17,7 +17,7 @@
         - [x] Delete line
         - [x] Delete word
         - [x] Delete character
-        - [x] Delete across line boundaries  
+        - [] Delete across line boundaries  
     - [x] Paste
 - [x] Line Numbers
 - [] select text

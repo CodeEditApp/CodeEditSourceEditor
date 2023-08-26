@@ -23,7 +23,7 @@ import TextStory
  this should only happen if the `setMarkedText` method is called with `NSNotFound` for the replacement range's
  location (indicating that the marked text should appear at the insertion location)
 
- **Note: Visual studio code Does not correctly support marked text with multiple cursors,*
+ **Note: Visual studio code Does Not correctly support marked text with multiple cursors,*
  **use Xcode as an example of this behavior.*
  */
 
@@ -58,20 +58,12 @@ extension TextView: NSTextInputClient {
 
         if replacementRange.location == NSNotFound {
             replaceCharacters(in: selectionManager.textSelections.map { $0.range }, with: insertString)
-            // TODO: This actually won't fix the selection ranges. See the delete method
-            selectionManager.textSelections.forEach { selection in
-                selection.didInsertText(length: insertString.count == 0 ? -selection.range.length : insertString.count)
-            }
         } else {
             replaceCharacters(in: replacementRange, with: insertString)
-            selectionManager.updateSelections(
-                delta: insertString.count == 0 ? -replacementRange.length : replacementRange.length
-            )
         }
 
         textStorage.endEditing()
         layoutManager.endTransaction()
-        selectionManager?.updateSelectionViews()
     }
 
     // MARK: - Marked Text
