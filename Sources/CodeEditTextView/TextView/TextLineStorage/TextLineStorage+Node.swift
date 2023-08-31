@@ -10,20 +10,12 @@ import Foundation
 extension TextLineStorage {
     @inlinable
     func isRightChild(_ node: Node<Data>) -> Bool {
-        node.parent?.right == node
+        node.parent?.right === node
     }
 
     @inlinable
     func isLeftChild(_ node: Node<Data>) -> Bool {
-        node.parent?.left == node
-    }
-
-    func sibling(_ node: Node<Data>) -> Node<Data>? {
-        if isLeftChild(node) {
-            return node.parent?.right
-        } else {
-            return node.parent?.left
-        }
+        node.parent?.left === node
     }
 
     /// Transplants a node with another node.
@@ -56,7 +48,7 @@ extension TextLineStorage {
         nodeV?.parent = nodeU.parent
     }
 
-    final class Node<Data: Identifiable>: Equatable {
+    final class Node<Data: Identifiable> {
         enum Color {
             case red
             case black
@@ -104,8 +96,12 @@ extension TextLineStorage {
             self.color = color
         }
 
-        static func == (lhs: Node, rhs: Node) -> Bool {
-            lhs.data.id == rhs.data.id
+        func sibling() -> Node<Data>? {
+            if parent?.left === self {
+                return parent?.right
+            } else {
+                return parent?.left
+            }
         }
 
         func minimum() -> Node<Data> {
@@ -132,7 +128,7 @@ extension TextLineStorage {
                 // Else go upward until node is a left child
                 var currentNode = self
                 var parent = currentNode.parent
-                while currentNode.parent?.right == currentNode {
+                while currentNode.parent?.right === currentNode {
                     if let parent = parent {
                         currentNode = parent
                     }

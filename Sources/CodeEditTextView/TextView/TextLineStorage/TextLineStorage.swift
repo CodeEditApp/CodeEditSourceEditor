@@ -9,6 +9,12 @@ import Foundation
 
 /// Implements a red-black tree for efficiently editing, storing and retrieving lines of text in a document.
 final class TextLineStorage<Data: Identifiable> {
+    private enum MetaFixupAction {
+        case inserted
+        case deleted
+        case none
+    }
+
     internal var root: Node<Data>?
 
     /// The number of characters in the storage object.
@@ -31,10 +37,7 @@ final class TextLineStorage<Data: Identifiable> {
 
     // TODO: Cache this value & update on tree update
     var last: TextLinePosition? {
-        guard length > 0 else { return nil }
-        guard let position = search(for: length - 1) else {
-            return nil
-        }
+        guard length > 0, let position = search(for: length - 1) else { return nil }
         return TextLinePosition(position: position)
     }
 
@@ -176,7 +179,7 @@ final class TextLineStorage<Data: Identifiable> {
         height += deltaHeight
         position.node.length += delta
         position.node.height += deltaHeight
-        metaFixup(startingAt: position.node, delta: delta, deltaHeight: deltaHeight, insertedNode: false)
+        metaFixup(startingAt: position.node, delta: delta, deltaHeight: deltaHeight)
     }
 
     /// Deletes the line containing the given index.
@@ -191,66 +194,10 @@ final class TextLineStorage<Data: Identifiable> {
             return
         }
         guard let node = search(for: index)?.node else { return }
-        defer {
-            count -= 1
-        }
-
-        var originalColor = node.color
-        // Node to slice out
-        var nodeY: Node<Data> = node
-        // Node that replaces the sliced node.
-        var nodeX: Node<Data>?
-
-        if node.left == nil {
-            nodeX = node.right
-            transplant(node, with: node.right)
-        } else if node.right == nil {
-            nodeX = node.left
-            transplant(node, with: node.left)
-        } else {
-            nodeY = node.right!.minimum() // node.right is not null by case 2
-            originalColor = nodeY.color
-            nodeX = nodeY.right
-            if nodeY.parent == node {
-                nodeX?.parent = nodeY
-            } else {
-                transplant(nodeY, with: nodeY.right)
-                nodeY.right = node.right
-                nodeY.right?.parent = nodeY
-            }
-
-            transplant(node, with: nodeY)
-            nodeY.left = node.left
-            nodeY.left?.parent = nodeY
-            nodeY.color = node.color
-        }
-
-//        if (z.left == TNULL) {
-//            x = z.right;
-//            rbTransplant(z, z.right);
-//        } else if (z.right == TNULL) {
-//            x = z.left;
-//            rbTransplant(z, z.left);
-//        } else {
-//            y = minimum(z.right);
-//            yOriginalColor = y.color;
-//            x = y.right;
-//            if (y.parent == z) {
-//                x.parent = y;
-//            } else {
-//                rbTransplant(y, y.right);
-//                y.right = z.right;
-//                y.right.parent = y;
-//            }
-//
-//            rbTransplant(z, y);
-//            y.left = z.left;
-//            y.left.parent = y;
-//            y.color = z.color;
-//        }
-//        if (yOriginalColor == 0) {
-//            fixDelete(x);
-//        }
+        count -= 1
+        length -= node.length
+        height -= node.height
+        deleteNode(node)
     }
 
     public func removeAll() {
@@ -258,20 +205,6 @@ final class TextLineStorage<Data: Identifiable> {
         count = 0
         length = 0
         height = 0
-    }
-
-    public func printTree() {
-        print(
-            treeString(root!) { node in
-                (
-                    // swiftlint:disable:next line_length
-                    "\(node.length)[\(node.leftSubtreeOffset)\(node.color == .red ? "R" : "B")][\(node.height), \(node.leftSubtreeHeight)]",
-                    node.left,
-                    node.right
-                )
-            }
-        )
-        print("")
     }
 
     /// Efficiently builds the tree from the given array of lines.
@@ -371,21 +304,53 @@ private extension TextLineStorage {
                 currentYPosition += node.height + (node.right?.leftSubtreeHeight ?? 0)
                 currentIndex += 1 + (node.right?.leftSubtreeCount ?? 0)
             } else {
+                print(index, currentOffset, node.length)
                 currentNode = nil
             }
         }
-
         return nil
+    }
+
+    // MARK: - Delete
+
+    func deleteNode(_ node: Node<Data>) {
+        if node.left != nil, let nodeRight = node.right {
+            // Both children exist, replace with min of right
+            let replacementNode = nodeRight.minimum()
+            deleteNode(replacementNode)
+            transplant(node, with: replacementNode)
+            node.left?.parent = replacementNode
+            node.right?.parent = replacementNode
+            replacementNode.left = node.left
+            replacementNode.right = node.right
+            replacementNode.color = node.color
+            replacementNode.leftSubtreeCount = node.leftSubtreeCount
+            replacementNode.leftSubtreeHeight = node.leftSubtreeHeight
+            replacementNode.leftSubtreeOffset = node.leftSubtreeOffset
+            metaFixup(startingAt: replacementNode, delta: -node.length, deltaHeight: -node.height, nodeAction: .deleted)
+        } else {
+            // Either node's left or right is `nil`
+            metaFixup(startingAt: node, delta: -node.length, deltaHeight: -node.height, nodeAction: .deleted)
+            let replacementNode = node.left ?? node.right
+            transplant(node, with: replacementNode)
+            if node.color == .black {
+                if replacementNode != nil && replacementNode?.color == .red {
+                    replacementNode?.color = .black
+                } else if let replacementNode {
+                    deleteFixup(node: replacementNode)
+                }
+            }
+        }
     }
 
     // MARK: - Fixup
 
     func insertFixup(node: Node<Data>) {
-        metaFixup(startingAt: node, delta: node.length, deltaHeight: node.height, insertedNode: true)
+        metaFixup(startingAt: node, delta: node.length, deltaHeight: node.height, nodeAction: .inserted)
 
         var nextNode: Node<Data>? = node
-        while var nodeX = nextNode, nodeX != root, let nodeXParent = nodeX.parent, nodeXParent.color == .red {
-            let nodeY = sibling(nodeXParent)
+        while var nodeX = nextNode, nodeX !== root, let nodeXParent = nodeX.parent, nodeXParent.color == .red {
+            let nodeY = nodeXParent.sibling()
             if isLeftChild(nodeXParent) {
                 if nodeY?.color == .red {
                     nodeXParent.color = .black
@@ -428,20 +393,89 @@ private extension TextLineStorage {
         root?.color = .black
     }
 
-    /// RB Tree Deletes `:(`
+    // swiftlint:disable:next cyclomatic_complexity
     func deleteFixup(node: Node<Data>) {
+        guard node.parent != nil, node.color == .black, var sibling = node.sibling() else { return }
+        // Case 1: Sibling is red
+        if sibling.color == .red {
+            // Recolor
+            sibling.color = .black
+            if let nodeParent = node.parent {
+                nodeParent.color = .red
+                if isLeftChild(node) {
+                    leftRotate(node: nodeParent)
+                } else {
+                    rightRotate(node: nodeParent)
+                }
+                if let newSibling = node.sibling() {
+                    sibling = newSibling
+                }
+            }
+        }
 
+        // Case 2: Sibling is black with two black children
+        if sibling.left?.color == .black && sibling.right?.color == .black {
+            sibling.color = .red
+            if let nodeParent = node.parent {
+                deleteFixup(node: nodeParent)
+            }
+        } else {
+            // Case 3: Sibling black with one black child
+            if sibling.left?.color == .black || sibling.right?.color == .black {
+                let isLeftBlack = sibling.left?.color == .black
+                let siblingOtherChild = isLeftBlack ? sibling.right : sibling.left
+                sibling.color = .red
+                siblingOtherChild?.color = .black
+                if isLeftBlack {
+                    leftRotate(node: sibling)
+                } else {
+                    rightRotate(node: sibling)
+                }
+                if let newSibling = node.sibling() {
+                    sibling = newSibling
+                }
+            }
+
+            // Case 4: Sibling is black with red child
+            if let nodeParent = node.parent {
+                sibling.color = nodeParent.color
+                nodeParent.color = .black
+                if isLeftChild(node) {
+                    sibling.right?.color = .black
+                    leftRotate(node: nodeParent)
+                } else {
+                    sibling.left?.color = .black
+                    rightRotate(node: nodeParent)
+                }
+                root?.color = .black
+                return
+            }
+        }
+        node.color = .black
     }
 
     /// Walk up the tree, updating any `leftSubtree` metadata.
-    func metaFixup(startingAt node: Node<Data>, delta: Int, deltaHeight: CGFloat, insertedNode: Bool) {
+    private func metaFixup(
+        startingAt node: Node<Data>,
+        delta: Int,
+        deltaHeight: CGFloat,
+        nodeAction: MetaFixupAction = .none
+    ) {
         guard node.parent != nil else { return }
         var node: Node? = node
-        while node != nil, node != root {
+        while node != nil, node !== root {
             if isLeftChild(node!) {
                 node?.parent?.leftSubtreeOffset += delta
                 node?.parent?.leftSubtreeHeight += deltaHeight
-                node?.parent?.leftSubtreeCount += insertedNode ? 1 : 0
+                switch nodeAction {
+                case .inserted:
+                    node?.parent?.leftSubtreeCount += 1
+                case .deleted:
+                    node?.parent?.leftSubtreeCount -= 1
+                case .none:
+                    node = node?.parent
+                    continue
+                }
             }
             node = node?.parent
         }
@@ -502,134 +536,3 @@ private extension TextLineStorage {
         node.parent = nodeY
     }
 }
-
-// swiftlint:disable all
-// Awesome tree printing function from https://stackoverflow.com/a/43903427/10453550
-public func treeString<T>(_ node:T, reversed:Bool=false, isTop:Bool=true, using nodeInfo:(T)->(String,T?,T?)) -> String {
-    // node value string and sub nodes
-    let (stringValue, leftNode, rightNode) = nodeInfo(node)
-
-    let stringValueWidth  = stringValue.count
-
-    // recurse to sub nodes to obtain line blocks on left and right
-    let leftTextBlock     = leftNode  == nil ? []
-    : treeString(leftNode!,reversed:reversed,isTop:false,using:nodeInfo)
-        .components(separatedBy:"\n")
-
-    let rightTextBlock    = rightNode == nil ? []
-    : treeString(rightNode!,reversed:reversed,isTop:false,using:nodeInfo)
-        .components(separatedBy:"\n")
-
-    // count common and maximum number of sub node lines
-    let commonLines       = min(leftTextBlock.count,rightTextBlock.count)
-    let subLevelLines     = max(rightTextBlock.count,leftTextBlock.count)
-
-    // extend lines on shallower side to get same number of lines on both sides
-    let leftSubLines      = leftTextBlock
-    + Array(repeating:"", count: subLevelLines-leftTextBlock.count)
-    let rightSubLines     = rightTextBlock
-    + Array(repeating:"", count: subLevelLines-rightTextBlock.count)
-
-    // compute location of value or link bar for all left and right sub nodes
-    //   * left node's value ends at line's width
-    //   * right node's value starts after initial spaces
-    let leftLineWidths    = leftSubLines.map{$0.count}
-    let rightLineIndents  = rightSubLines.map{$0.prefix{$0==" "}.count  }
-
-    // top line value locations, will be used to determine position of current node & link bars
-    let firstLeftWidth    = leftLineWidths.first   ?? 0
-    let firstRightIndent  = rightLineIndents.first ?? 0
-
-
-    // width of sub node link under node value (i.e. with slashes if any)
-    // aims to center link bars under the value if value is wide enough
-    //
-    // ValueLine:    v     vv    vvvvvv   vvvvv
-    // LinkLine:    / \   /  \    /  \     / \
-    //
-    let linkSpacing       = min(stringValueWidth, 2 - stringValueWidth % 2)
-    let leftLinkBar       = leftNode  == nil ? 0 : 1
-    let rightLinkBar      = rightNode == nil ? 0 : 1
-    let minLinkWidth      = leftLinkBar + linkSpacing + rightLinkBar
-    let valueOffset       = (stringValueWidth - linkSpacing) / 2
-
-    // find optimal position for right side top node
-    //   * must allow room for link bars above and between left and right top nodes
-    //   * must not overlap lower level nodes on any given line (allow gap of minSpacing)
-    //   * can be offset to the left if lower subNodes of right node
-    //     have no overlap with subNodes of left node
-    let minSpacing        = 2
-    let rightNodePosition = zip(leftLineWidths,rightLineIndents[0..<commonLines])
-        .reduce(firstLeftWidth + minLinkWidth)
-    { max($0, $1.0 + minSpacing + firstRightIndent - $1.1) }
-
-
-    // extend basic link bars (slashes) with underlines to reach left and right
-    // top nodes.
-    //
-    //        vvvvv
-    //       __/ \__
-    //      L       R
-    //
-    let linkExtraWidth    = max(0, rightNodePosition - firstLeftWidth - minLinkWidth )
-    let rightLinkExtra    = linkExtraWidth / 2
-    let leftLinkExtra     = linkExtraWidth - rightLinkExtra
-
-    // build value line taking into account left indent and link bar extension (on left side)
-    let valueIndent       = max(0, firstLeftWidth + leftLinkExtra + leftLinkBar - valueOffset)
-    let valueLine         = String(repeating:" ", count:max(0,valueIndent))
-    + stringValue
-    let slash             = reversed ? "\\" : "/"
-    let backSlash         = reversed ? "/"  : "\\"
-    let uLine             = reversed ? "¯"  : "_"
-    // build left side of link line
-    let leftLink          = leftNode == nil ? ""
-    : String(repeating: " ", count:firstLeftWidth)
-    + String(repeating: uLine, count:leftLinkExtra)
-    + slash
-
-    // build right side of link line (includes blank spaces under top node value)
-    let rightLinkOffset   = linkSpacing + valueOffset * (1 - leftLinkBar)
-    let rightLink         = rightNode == nil ? ""
-    : String(repeating:  " ", count:rightLinkOffset)
-    + backSlash
-    + String(repeating:  uLine, count:rightLinkExtra)
-
-    // full link line (will be empty if there are no sub nodes)
-    let linkLine          = leftLink + rightLink
-
-    // will need to offset left side lines if right side sub nodes extend beyond left margin
-    // can happen if left subtree is shorter (in height) than right side subtree
-    let leftIndentWidth   = max(0,firstRightIndent - rightNodePosition)
-    let leftIndent        = String(repeating:" ", count:leftIndentWidth)
-    let indentedLeftLines = leftSubLines.map{ $0.isEmpty ? $0 : (leftIndent + $0) }
-
-    // compute distance between left and right sublines based on their value position
-    // can be negative if leading spaces need to be removed from right side
-    let mergeOffsets      = indentedLeftLines
-        .map{$0.count}
-        .map{leftIndentWidth + rightNodePosition - firstRightIndent - $0 }
-        .enumerated()
-        .map{ rightSubLines[$0].isEmpty ? 0  : $1 }
-
-
-    // combine left and right lines using computed offsets
-    //   * indented left sub lines
-    //   * spaces between left and right lines
-    //   * right sub line with extra leading blanks removed.
-    let mergedSubLines    = zip(mergeOffsets.enumerated(),indentedLeftLines)
-        .map{ ( $0.0, $0.1, $1 + String(repeating:" ", count:max(0,$0.1)) ) }
-        .map{ $2 + String(rightSubLines[$0].dropFirst(max(0,-$1))) }
-
-    // Assemble final result combining
-    //  * node value string
-    //  * link line (if any)
-    //  * merged lines from left and right sub trees (if any)
-    let treeLines = [leftIndent + valueLine]
-    + (linkLine.isEmpty ? [] : [leftIndent + linkLine])
-    + mergedSubLines
-
-    return (reversed && isTop ? treeLines.reversed(): treeLines)
-        .joined(separator:"\n")
-}
-// swiftlint:enable all

@@ -104,25 +104,33 @@ class TextSelectionManager: NSObject {
     // MARK: - Selection Views
 
     internal func updateSelectionViews() {
-        textSelections.forEach { $0.view?.removeFromSuperview() }
+        var didUpdate: Bool = false
+
         for textSelection in textSelections where textSelection.range.isEmpty {
-            textSelection.view?.removeFromSuperview()
             let lineFragment = layoutManager?
                 .textLineForOffset(textSelection.range.location)?
                 .data
                 .typesetter
                 .lineFragments
                 .first
-
-            let cursorView = CursorView()
-            cursorView.frame.origin = (layoutManager?.rectForOffset(textSelection.range.location) ?? .zero).origin
-
-            cursorView.frame.size.height = lineFragment?.data.scaledHeight ?? 0
-            layoutView?.addSubview(cursorView)
-            textSelection.view = cursorView
+            let cursorOrigin = (layoutManager?.rectForOffset(textSelection.range.location) ?? .zero).origin
+            if textSelection.view == nil
+                || textSelection.view?.frame.origin != cursorOrigin
+                || textSelection.view?.frame.height != lineFragment?.data.scaledHeight ?? 0 {
+                textSelection.view?.removeFromSuperview()
+                let cursorView = CursorView()
+                cursorView.frame.origin = cursorOrigin
+                cursorView.frame.size.height = lineFragment?.data.scaledHeight ?? 0
+                layoutView?.addSubview(cursorView)
+                textSelection.view = cursorView
+                didUpdate = true
+            }
         }
-        delegate?.setNeedsDisplay()
-        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification))
+
+        if didUpdate {
+            delegate?.setNeedsDisplay()
+            NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification))
+        }
     }
 
     /// Notifies the selection manager of an edit and updates all selections accordingly.
