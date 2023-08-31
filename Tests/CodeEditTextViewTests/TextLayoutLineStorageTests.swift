@@ -96,6 +96,11 @@ final class TextLayoutLineStorageTests: XCTestCase {
             tree = createTree()
             tree.delete(lineAt: Int.random(in: 0..<tree.count ))
             XCTAssert(tree.count == 14, "Tree length incorrect")
+            var last = -1
+            for line in tree {
+                XCTAssert(line.range.length > last, "Out of order after deletion")
+                last = line.range.length
+            }
         }
     }
 
