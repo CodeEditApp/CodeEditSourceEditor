@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import Common
 
 extension TextLineStorage where Data == TextLine {
     /// Builds the line storage object from the given `NSTextStorage`.
@@ -13,21 +14,9 @@ extension TextLineStorage where Data == TextLine {
     ///   - textStorage: The text storage object to use.
     ///   - estimatedLineHeight: The estimated height of each individual line.
     func buildFromTextStorage(_ textStorage: NSTextStorage, estimatedLineHeight: CGFloat) {
-        func getNextLine(startingAt location: Int) -> NSRange? {
-            let range = NSRange(location: location, length: 0)
-            var end: Int = NSNotFound
-            var contentsEnd: Int = NSNotFound
-            (textStorage.string as NSString).getLineStart(nil, end: &end, contentsEnd: &contentsEnd, for: range)
-            if end != NSNotFound && contentsEnd != NSNotFound && end != contentsEnd {
-                return NSRange(location: contentsEnd, length: end - contentsEnd)
-            } else {
-                return nil
-            }
-        }
-
         var index = 0
         var lines: [BuildItem] = []
-        while let range = getNextLine(startingAt: index) {
+        while let range = textStorage.getNextLine(startingAt: index) {
             lines.append(
                 BuildItem(
                     data: TextLine(),

@@ -40,7 +40,7 @@ public class TextLayoutManager: NSObject {
 
     // MARK: - Internal
 
-    private unowned var textStorage: NSTextStorage
+    internal unowned var textStorage: NSTextStorage
     internal var lineStorage: TextLineStorage<TextLine> = TextLineStorage()
     private let viewReuseQueue: ViewReuseQueue<LineFragmentView, UUID> = ViewReuseQueue()
     private var visibleLineIds: Set<TextLine.ID> = []
@@ -356,42 +356,5 @@ public class TextLayoutManager: NSObject {
         lineStorage.removeAll()
         layoutView = nil
         delegate = nil
-    }
-}
-
-// MARK: - Edits
-
-extension TextLayoutManager: NSTextStorageDelegate {
-    /// Notifies the layout manager of an edit.
-    ///
-    /// Used by the `TextView` to tell the layout manager about any edits that will happen.
-    /// Use this to keep the layout manager's line storage in sync with the text storage.
-    ///
-    /// - Parameters:
-    ///   - range: The range of the edit.
-    ///   - string: The string to replace in the given range.
-    public func willReplaceCharactersInRange(range: NSRange, with string: String) {
-        print(textStorage.substring(from: range)!, string.isEmpty)
-        // Loop through each line being replaced, updating and removing where necessary.
-        for linePosition in lineStorage.linesInRange(range) {
-            // Two cases: Edited line, deleted line entirely
-            
-        }
-
-        // Loop through each line being inserted, inserting where necessary
-    }
-
-    /// This method is to simplify keeping the layout manager in sync with attribute changes in the storage object.
-    /// This does not handle cases where characters have been inserted or removed from the storage.
-    /// For that, see the `willPerformEdit` method.
-    public func textStorage(
-        _ textStorage: NSTextStorage,
-        didProcessEditing editedMask: NSTextStorageEditActions,
-        range editedRange: NSRange,
-        changeInLength delta: Int
-    ) {
-        if editedMask.contains(.editedAttributes) && delta == 0 {
-            invalidateLayoutForRange(editedRange)
-        }
     }
 }

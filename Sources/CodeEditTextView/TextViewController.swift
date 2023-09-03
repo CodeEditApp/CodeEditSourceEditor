@@ -92,6 +92,7 @@ public class TextViewController: NSViewController {
             editorOverscroll: editorOverscroll,
             isEditable: isEditable,
             letterSpacing: letterSpacing,
+            delegate: self,
             storageDelegate: storageDelegate
         )
         textView.postsFrameChangedNotifications = true
@@ -209,5 +210,11 @@ extension TextViewController {
             self.highlightProvider = provider
             highlighter?.setHighlightProvider(provider)
         }
+    }
+}
+
+extension TextViewController: TextViewDelegate {
+    public func textView(_ textView: TextView, didReplaceContents in: NSRange, with: String) {
+        gutterView.needsDisplay = true
     }
 }

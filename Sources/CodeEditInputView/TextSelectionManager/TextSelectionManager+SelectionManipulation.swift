@@ -140,9 +140,7 @@ public extension TextSelectionManager {
                 return
             }
 
-            if hasFoundValidWordChar && CharacterSet
-                .whitespacesAndNewlines.subtracting(.newlines)
-                .union(.punctuationCharacters)
+            if hasFoundValidWordChar && CharacterSet.punctuationCharacters
                 .isSuperset(of: CharacterSet(charactersIn: substring)) {
                 stop.pointee = true
                 return

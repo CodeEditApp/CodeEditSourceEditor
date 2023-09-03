@@ -46,6 +46,8 @@ public class TextView: NSView, NSTextContent {
 
     open var contentType: NSTextContentType?
 
+    public weak var delegate: TextViewDelegate?
+
     public var textStorage: NSTextStorage! {
         didSet {
             setUpLayoutManager()
@@ -99,8 +101,10 @@ public class TextView: NSView, NSTextContent {
         editorOverscroll: CGFloat,
         isEditable: Bool,
         letterSpacing: Double,
+        delegate: TextViewDelegate,
         storageDelegate: MultiStorageDelegate
     ) {
+        self.delegate = delegate
         self.textStorage = NSTextStorage(string: string)
         self.storageDelegate = storageDelegate
 
@@ -239,32 +243,6 @@ public class TextView: NSView, NSTextContent {
         if !self.isFirstResponder {
             self.window?.makeFirstResponder(self)
         }
-    }
-
-    // MARK: - Replace Characters
-
-    public func replaceCharacters(in ranges: [NSRange], with string: String) {
-        guard isEditable else { return }
-        layoutManager.beginTransaction()
-        textStorage.beginEditing()
-        // Can't insert an empty string into an empty range. One must be not empty
-        for range in ranges where !range.isEmpty || !string.isEmpty {
-            replaceCharactersNoCheck(in: range, with: string)
-            _undoManager?.registerMutation(
-                TextMutation(string: string as String, range: range, limit: textStorage.length)
-            )
-        }
-        layoutManager.endTransaction()
-        textStorage.endEditing()
-    }
-
-    public func replaceCharacters(in range: NSRange, with string: String) {
-        replaceCharacters(in: [range], with: string)
-    }
-
-    private func replaceCharactersNoCheck(in range: NSRange, with string: String) {
-        layoutManager.willReplaceCharactersInRange(range: range, with: string)
-        textStorage.replaceCharacters(in: range, with: string)
     }
 
     // MARK: - Layout

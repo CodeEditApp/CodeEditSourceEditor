@@ -187,11 +187,14 @@ public final class TextLineStorage<Data: Identifiable> {
     /// - Parameter index: The index to delete a line at.
     public func delete(lineAt index: Int) {
         assert(index >= 0 && index < self.length, "Invalid index, expected between 0 and \(self.length). Got \(index)")
-        if count == 1 {
+        guard count > 1 else {
             removeAll()
             return
         }
-        guard let node = search(for: index)?.node else { return }
+        guard let node = search(for: index)?.node else {
+            assertionFailure("Failed to find node for index: \(index)")
+            return
+        }
         count -= 1
         length -= node.length
         height -= node.height
@@ -325,7 +328,15 @@ private extension TextLineStorage {
             replacementNode.leftSubtreeCount = node.leftSubtreeCount
             replacementNode.leftSubtreeHeight = node.leftSubtreeHeight
             replacementNode.leftSubtreeOffset = node.leftSubtreeOffset
-            metaFixup(startingAt: replacementNode, delta: -node.length, deltaHeight: -node.height, nodeAction: .deleted)
+            // The parent needs to be notified that the replacement node was inserted again, otherwise we lose
+            // the count of both the node being deleted *and* the replacement node.
+            // Check that delta > 0 or deltaHeight > 0 before updating.
+            let delta = -node.length + replacementNode.length
+            let deltaHeight = -node.height + replacementNode.height
+            if delta != 0 || deltaHeight != 0 {
+                // Use nodeAction = .none because the change in number of nodes is 0
+                metaFixup(startingAt: replacementNode, delta: delta, deltaHeight: deltaHeight, nodeAction: .none)
+            }
         } else {
             // Either node's left or right is `nil`
             metaFixup(startingAt: node, delta: -node.length, deltaHeight: -node.height, nodeAction: .deleted)
