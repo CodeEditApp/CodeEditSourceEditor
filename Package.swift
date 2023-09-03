@@ -15,11 +15,11 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/krzyzanowskim/STTextView.git",
-            revision: "897c5ff"
+            exact: "0.8.7"
         ),
         .package(
             url: "https://github.com/CodeEditApp/CodeEditLanguages.git",
-            exact: "0.1.16"
+            exact: "0.1.17"
         ),
         .package(
             url: "https://github.com/lukepistrol/SwiftLintPlugin",
@@ -42,7 +42,8 @@ let package = Package(
                 "STTextView",
                 "CodeEditInputView",
                 "CodeEditLanguages",
-                "TextFormation"
+                "TextFormation",
+                .product(name: "STTextKitPlus", package: "STTextView")
             ],
             plugins: [
                 .plugin(name: "SwiftLint", package: "SwiftLintPlugin")
