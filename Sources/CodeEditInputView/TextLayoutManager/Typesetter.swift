@@ -92,7 +92,8 @@ final class Typesetter {
         let set = CharacterSet(
             charactersIn: string.attributedSubstring(from: NSRange(location: index, length: 1)).string
         )
-        return set.isSubset(of: .whitespacesWithoutNewlines) || set.isSubset(of: .punctuationCharacters)
+        return set.isSubset(of: .whitespacesAndNewlines.subtracting(.newlines))
+        || set.isSubset(of: .punctuationCharacters)
     }
 
     deinit {

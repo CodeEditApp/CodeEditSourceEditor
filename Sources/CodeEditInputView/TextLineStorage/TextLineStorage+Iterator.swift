@@ -7,16 +7,16 @@
 
 import Foundation
 
-extension TextLineStorage {
-    func linesStartingAt(_ minY: CGFloat, until maxY: CGFloat) -> TextLineStorageYIterator {
+public extension TextLineStorage {
+    public func linesStartingAt(_ minY: CGFloat, until maxY: CGFloat) -> TextLineStorageYIterator {
         TextLineStorageYIterator(storage: self, minY: minY, maxY: maxY)
     }
 
-    func linesInRange(_ range: NSRange) -> TextLineStorageRangeIterator {
+    public func linesInRange(_ range: NSRange) -> TextLineStorageRangeIterator {
         TextLineStorageRangeIterator(storage: self, range: range)
     }
 
-    struct TextLineStorageYIterator: LazySequenceProtocol, IteratorProtocol {
+    public struct TextLineStorageYIterator: LazySequenceProtocol, IteratorProtocol {
         private let storage: TextLineStorage
         private let minY: CGFloat
         private let maxY: CGFloat
@@ -29,7 +29,7 @@ extension TextLineStorage {
             self.currentPosition = currentPosition
         }
 
-        mutating func next() -> TextLinePosition? {
+        public mutating func next() -> TextLinePosition? {
             if let currentPosition {
                 guard currentPosition.yPos < maxY,
                       let nextPosition = storage.getLine(
@@ -46,7 +46,7 @@ extension TextLineStorage {
         }
     }
 
-    struct TextLineStorageRangeIterator: LazySequenceProtocol, IteratorProtocol {
+    public struct TextLineStorageRangeIterator: LazySequenceProtocol, IteratorProtocol {
         private let storage: TextLineStorage
         private let range: NSRange
         private var currentPosition: TextLinePosition?
@@ -57,7 +57,7 @@ extension TextLineStorage {
             self.currentPosition = currentPosition
         }
 
-        mutating func next() -> TextLinePosition? {
+        public mutating func next() -> TextLinePosition? {
             if let currentPosition {
                 guard currentPosition.range.max < range.max,
                       let nextPosition = storage.getLine(
@@ -76,11 +76,11 @@ extension TextLineStorage {
 }
 
 extension TextLineStorage: LazySequenceProtocol {
-    func makeIterator() -> TextLineStorageIterator {
+    public func makeIterator() -> TextLineStorageIterator {
         TextLineStorageIterator(storage: self, currentPosition: nil)
     }
 
-    struct TextLineStorageIterator: IteratorProtocol {
+    public struct TextLineStorageIterator: IteratorProtocol {
         private let storage: TextLineStorage
         private var currentPosition: TextLinePosition?
 
@@ -89,7 +89,7 @@ extension TextLineStorage: LazySequenceProtocol {
             self.currentPosition = currentPosition
         }
 
-        mutating func next() -> TextLinePosition? {
+        public mutating func next() -> TextLinePosition? {
             if let currentPosition {
                 guard currentPosition.range.max < storage.length,
                       let nextPosition = storage.getLine(

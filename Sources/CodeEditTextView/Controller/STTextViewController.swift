@@ -27,7 +27,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// for every new selection.
     internal var lastTextSelections: [NSTextRange] = []
 
-    internal var textViewUndoManager: CEUndoManager!
+//    internal var textViewUndoManager: CEUndoManager!
 
     /// Binding for the `textView`s string
     public var text: Binding<String>

@@ -7,7 +7,7 @@
 
 import AppKit
 
-enum LineEnding: String {
+public enum LineEnding: String {
     /// The default unix `\n` character
     case lf = "\n"
     /// MacOS line ending `\r` character
@@ -17,7 +17,7 @@ enum LineEnding: String {
 
     /// Initialize a line ending from a line string.
     /// - Parameter line: The line to use
-    init?(line: String) {
+    public init?(line: String) {
         var iterator = line.lazy.reversed().makeIterator()
         guard let endChar = iterator.next() else { return nil }
         if endChar == "\n" {
@@ -36,7 +36,7 @@ enum LineEnding: String {
     /// Attempts to detect the line ending from a line storage.
     /// - Parameter lineStorage: The line storage to enumerate.
     /// - Returns: A line ending. Defaults to `.lf` if none could be found.
-    static func detectLineEnding(lineStorage: TextLineStorage<TextLine>, textStorage: NSTextStorage) -> LineEnding {
+    public static func detectLineEnding(lineStorage: TextLineStorage<TextLine>, textStorage: NSTextStorage) -> LineEnding {
         var histogram: [LineEnding: Int] = [
             .lf: 0,
             .cr: 0,
@@ -60,7 +60,7 @@ enum LineEnding: String {
         return histogram.max(by: { $0.value < $1.value })?.key ?? .lf
     }
 
-    var length: Int {
+    public var length: Int {
         rawValue.count
     }
 }

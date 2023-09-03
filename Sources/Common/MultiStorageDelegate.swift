@@ -7,14 +7,18 @@
 
 import AppKit
 
-class MultiStorageDelegate: NSObject, NSTextStorageDelegate {
+public class MultiStorageDelegate: NSObject, NSTextStorageDelegate {
     private var delegates = NSHashTable<NSTextStorageDelegate>.weakObjects()
 
-    func addDelegate(_ delegate: NSTextStorageDelegate) {
+    public func addDelegate(_ delegate: NSTextStorageDelegate) {
         delegates.add(delegate)
     }
 
-    func textStorage(
+    public func removeDelegate(_ delegate: NSTextStorageDelegate) {
+        delegates.remove(delegate)
+    }
+
+    public func textStorage(
         _ textStorage: NSTextStorage,
         didProcessEditing editedMask: NSTextStorageEditActions,
         range editedRange: NSRange,
@@ -25,7 +29,7 @@ class MultiStorageDelegate: NSObject, NSTextStorageDelegate {
         }
     }
 
-    func textStorage(
+    public func textStorage(
         _ textStorage: NSTextStorage,
         willProcessEditing editedMask: NSTextStorageEditActions,
         range editedRange: NSRange,

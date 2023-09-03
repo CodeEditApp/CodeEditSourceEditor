@@ -6,7 +6,6 @@
 //
 
 import AppKit
-import TextStory
 
 /**
  # Marked Text Notes

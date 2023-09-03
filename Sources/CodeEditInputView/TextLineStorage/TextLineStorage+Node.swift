@@ -8,12 +8,10 @@
 import Foundation
 
 extension TextLineStorage {
-    @inlinable
     func isRightChild(_ node: Node<Data>) -> Bool {
         node.parent?.right === node
     }
 
-    @inlinable
     func isLeftChild(_ node: Node<Data>) -> Bool {
         node.parent?.left === node
     }
@@ -36,7 +34,6 @@ extension TextLineStorage {
     /// - Parameters:
     ///   - nodeU: The node to replace.
     ///   - nodeV: The node to insert in place of `nodeU`
-    @inlinable
     func transplant(_ nodeU: Node<Data>, with nodeV: Node<Data>?) {
         if nodeU.parent == nil {
             root = nodeV

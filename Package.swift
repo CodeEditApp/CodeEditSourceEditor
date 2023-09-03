@@ -38,9 +38,31 @@ let package = Package(
         .target(
             name: "CodeEditTextView",
             dependencies: [
+                "Common",
                 "STTextView",
+                "CodeEditInputView",
                 "CodeEditLanguages",
-                "TextFormation",
+                "TextFormation"
+            ],
+            plugins: [
+                .plugin(name: "SwiftLint", package: "SwiftLintPlugin")
+            ]
+        ),
+
+        .target(
+            name: "CodeEditInputView",
+            dependencies: [
+                "Common",
+                "TextFormation"
+            ],
+            plugins: [
+                .plugin(name: "SwiftLint", package: "SwiftLintPlugin")
+            ]
+        ),
+
+        .target(
+            name: "Common",
+            dependencies: [
                 .product(name: "Collections", package: "swift-collections")
             ],
             plugins: [
@@ -55,5 +77,12 @@ let package = Package(
                 "CodeEditLanguages",
             ]
         ),
+
+            .testTarget(
+                name: "CodeEditInputViewTests",
+                dependencies: [
+                    "CodeEditInputView",
+                ]
+            ),
     ]
 )

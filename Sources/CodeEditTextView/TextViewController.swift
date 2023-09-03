@@ -6,9 +6,11 @@
 //
 
 import AppKit
+import CodeEditInputView
 import CodeEditLanguages
 import SwiftUI
 import SwiftTreeSitter
+import Common
 
 public class TextViewController: NSViewController {
     var scrollView: NSScrollView!

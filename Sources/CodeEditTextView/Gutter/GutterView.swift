@@ -6,8 +6,9 @@
 //
 
 import AppKit
+import CodeEditInputView
 
-class GutterView: NSView {
+public class GutterView: NSView {
     struct EdgeInsets: Equatable, Hashable {
         let leading: CGFloat
         let trailing: CGFloat
@@ -40,11 +41,11 @@ class GutterView: NSView {
     /// The maximum number of digits found for a line number.
     private var maxLineLength: Int = 0
 
-    override var isFlipped: Bool {
+    override public var isFlipped: Bool {
         true
     }
 
-    init(
+    public init(
         font: NSFont,
         textColor: NSColor,
         textView: TextView
@@ -85,7 +86,7 @@ class GutterView: NSView {
         ]
         let originalMaxWidth = maxWidth
         // Reserve at least 3 digits of space no matter what
-        let lineStorageDigits = max(3, String(textView.layoutManager.lineStorage.count).count)
+        let lineStorageDigits = max(3, String(textView.layoutManager.lineCount).count)
 
         if maxLineLength < lineStorageDigits {
             // Update the max width
@@ -142,7 +143,7 @@ class GutterView: NSView {
             let ctLine = CTLineCreateWithAttributedString(
                 NSAttributedString(string: "\(linePosition.index + 1)", attributes: attributes)
             )
-            let fragment: LineFragment? = linePosition.data.typesetter.lineFragments.first?.data
+            let fragment: LineFragment? = linePosition.data.lineFragments.first?.data
             var ascent: CGFloat = 0
             let lineNumberWidth = CTLineGetTypographicBounds(ctLine, &ascent, nil, nil)
 
@@ -159,7 +160,7 @@ class GutterView: NSView {
         context.restoreGState()
     }
 
-    override func draw(_ dirtyRect: NSRect) {
+    public override func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext else {
             return
         }

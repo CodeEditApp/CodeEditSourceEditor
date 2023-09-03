@@ -7,7 +7,7 @@
 
 import Foundation
 import AppKit
-import STTextView
+import CodeEditInputView
 import SwiftTreeSitter
 import CodeEditLanguages
 

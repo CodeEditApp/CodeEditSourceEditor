@@ -8,7 +8,7 @@
 import Foundation
 
 /// Implements a red-black tree for efficiently editing, storing and retrieving lines of text in a document.
-final class TextLineStorage<Data: Identifiable> {
+public final class TextLineStorage<Data: Identifiable> {
     private enum MetaFixupAction {
         case inserted
         case deleted
@@ -26,8 +26,7 @@ final class TextLineStorage<Data: Identifiable> {
 
     public var height: CGFloat = 0
 
-    // TODO: Cache this value & update on tree update
-    var first: TextLinePosition? {
+    public var first: TextLinePosition? {
         guard length > 0,
               let position = search(for: 0) else {
             return nil
@@ -35,13 +34,12 @@ final class TextLineStorage<Data: Identifiable> {
         return TextLinePosition(position: position)
     }
 
-    // TODO: Cache this value & update on tree update
-    var last: TextLinePosition? {
+    public var last: TextLinePosition? {
         guard length > 0, let position = search(for: length - 1) else { return nil }
         return TextLinePosition(position: position)
     }
 
-    init() { }
+    public init() { }
 
     // MARK: - Public Methods
 

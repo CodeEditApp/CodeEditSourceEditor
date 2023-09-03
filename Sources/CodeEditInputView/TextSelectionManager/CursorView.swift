@@ -8,14 +8,14 @@
 import AppKit
 
 /// Animates a cursor.
-class CursorView: NSView {
+open class CursorView: NSView {
     private let blinkDuration: TimeInterval?
     private let color: NSColor
     private let width: CGFloat
 
     private var timer: Timer?
 
-    override var isFlipped: Bool {
+    open override var isFlipped: Bool {
         true
     }
 
@@ -46,7 +46,7 @@ class CursorView: NSView {
         }
     }
 
-    required init?(coder: NSCoder) {
+    public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 

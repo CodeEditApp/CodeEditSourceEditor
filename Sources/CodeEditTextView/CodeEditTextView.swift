@@ -6,7 +6,7 @@
 //
 
 import SwiftUI
-import STTextView
+import CodeEditInputView
 import CodeEditLanguages
 
 /// A `SwiftUI` wrapper for a ``STTextViewController``.

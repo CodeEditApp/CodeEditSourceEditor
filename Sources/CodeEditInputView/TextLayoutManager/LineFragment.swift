@@ -7,16 +7,15 @@
 
 import AppKit
 
-final class LineFragment: Identifiable {
-    let id = UUID()
-    var ctLine: CTLine
-    let width: CGFloat
-    let height: CGFloat
-    let descent: CGFloat
-    let scaledHeight: CGFloat
+public final class LineFragment: Identifiable {
+    public let id = UUID()
+    private(set) public var ctLine: CTLine
+    public let width: CGFloat
+    public let height: CGFloat
+    public let descent: CGFloat
+    public let scaledHeight: CGFloat
 
-    @inlinable
-    var heightDifference: CGFloat {
+    public var heightDifference: CGFloat {
         scaledHeight - height
     }
 

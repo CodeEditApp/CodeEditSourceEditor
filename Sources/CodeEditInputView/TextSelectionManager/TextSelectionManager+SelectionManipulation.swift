@@ -7,7 +7,7 @@
 
 import AppKit
 
-extension TextSelectionManager {
+public extension TextSelectionManager {
     // MARK: - Range Of Selection
 
     /// Creates a range for a new selection given a starting point, direction, and destination.
@@ -141,7 +141,7 @@ extension TextSelectionManager {
             }
 
             if hasFoundValidWordChar && CharacterSet
-                .whitespacesWithoutNewlines
+                .whitespacesAndNewlines.subtracting(.newlines)
                 .union(.punctuationCharacters)
                 .isSuperset(of: CharacterSet(charactersIn: substring)) {
                 stop.pointee = true
@@ -202,7 +202,9 @@ extension TextSelectionManager {
         if delta < 0 {
             string.enumerateSubstrings(in: foundRange, options: .byCaretPositions) { substring, _, _, stop in
                 if let substring = substring as String? {
-                    if CharacterSet.whitespacesWithoutNewlines.isSuperset(of: CharacterSet(charactersIn: substring)) {
+                    if CharacterSet
+                        .whitespacesAndNewlines.subtracting(.newlines)
+                        .isSuperset(of: CharacterSet(charactersIn: substring)) {
                         foundRange.location += 1
                         foundRange.length -= 1
                     } else {

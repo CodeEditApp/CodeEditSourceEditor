@@ -8,7 +8,7 @@
 import AppKit
 
 extension TextView {
-    override var undoManager: UndoManager? {
+    public override var undoManager: UndoManager? {
         _undoManager?.manager
     }
 

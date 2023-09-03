@@ -6,7 +6,7 @@
 //
 
 import AppKit
-import STTextView
+import Common
 import TextStory
 
 /**
@@ -23,7 +23,7 @@ import TextStory
  |  |-> [TextSelection]
  ```
  */
-class TextView: NSView, NSTextContent {
+public class TextView: NSView, NSTextContent {
     // MARK: - Configuration
 
     func setString(_ string: String) {
@@ -46,11 +46,36 @@ class TextView: NSView, NSTextContent {
 
     open var contentType: NSTextContentType?
 
-    // MARK: - Internal Properties
+    public var textStorage: NSTextStorage! {
+        didSet {
+            setUpLayoutManager()
+            setUpSelectionManager()
+            needsDisplay = true
+            needsLayout = true
+        }
+    }
+    public var layoutManager: TextLayoutManager! {
+        willSet {
+            if let oldValue = layoutManager {
+                storageDelegate.removeDelegate(oldValue)
+            }
+            if let newValue {
+                storageDelegate.addDelegate(newValue)
+            }
+        }
+    }
+    public var selectionManager: TextSelectionManager! {
+        willSet {
+            if let oldValue = selectionManager {
+                storageDelegate.removeDelegate(oldValue)
+            }
+            if let newValue {
+                storageDelegate.addDelegate(newValue)
+            }
+        }
+    }
 
-    private(set) var textStorage: NSTextStorage!
-    private(set) var layoutManager: TextLayoutManager!
-    private(set) var selectionManager: TextSelectionManager!
+    // MARK: - Private Properties
 
     internal var isFirstResponder: Bool = false
 
@@ -62,9 +87,11 @@ class TextView: NSView, NSTextContent {
         return enclosingScrollView
     }
 
+    private weak var storageDelegate: MultiStorageDelegate!
+
     // MARK: - Init
 
-    init(
+    public init(
         string: String,
         font: NSFont,
         lineHeight: CGFloat,
@@ -72,9 +99,10 @@ class TextView: NSView, NSTextContent {
         editorOverscroll: CGFloat,
         isEditable: Bool,
         letterSpacing: Double,
-        storageDelegate: MultiStorageDelegate!
+        storageDelegate: MultiStorageDelegate
     ) {
         self.textStorage = NSTextStorage(string: string)
+        self.storageDelegate = storageDelegate
 
         self.font = font
         self.lineHeight = lineHeight
@@ -93,7 +121,21 @@ class TextView: NSView, NSTextContent {
 
         // TODO: Implement typing/default attributes
         textStorage.addAttributes([.font: font], range: documentRange)
+        textStorage.delegate = storageDelegate
 
+        setUpLayoutManager()
+        setUpSelectionManager()
+
+        _undoManager = CEUndoManager(textView: self)
+
+        layoutManager.layoutLines()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setUpLayoutManager() {
         layoutManager = TextLayoutManager(
             textStorage: textStorage,
             typingAttributes: [
@@ -104,24 +146,19 @@ class TextView: NSView, NSTextContent {
             textView: self, // TODO: This is an odd syntax... consider reworking this
             delegate: self
         )
-        textStorage.delegate = storageDelegate
-        storageDelegate.addDelegate(layoutManager)
+    }
 
+    private func setUpSelectionManager() {
         selectionManager = TextSelectionManager(
             layoutManager: layoutManager,
             textStorage: textStorage,
             layoutView: self, // TODO: This is an odd syntax... consider reworking this
             delegate: self
         )
-        storageDelegate.addDelegate(selectionManager)
-
-        _undoManager = CEUndoManager(textView: self)
-
-        layoutManager.layoutLines()
     }
 
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
+    public var documentRange: NSRange {
+        NSRange(location: 0, length: textStorage.length)
     }
 
     // MARK: - First Responder
@@ -162,19 +199,19 @@ class TextView: NSView, NSTextContent {
 
     // MARK: - View Lifecycle
 
-    override func viewWillMove(toWindow newWindow: NSWindow?) {
+    public override func viewWillMove(toWindow newWindow: NSWindow?) {
         super.viewWillMove(toWindow: newWindow)
         layoutManager.layoutLines()
     }
 
-    override func viewDidEndLiveResize() {
+    public override func viewDidEndLiveResize() {
         super.viewDidEndLiveResize()
         updateFrameIfNeeded()
     }
 
     // MARK: - Interaction
 
-    override func keyDown(with event: NSEvent) {
+    public override func keyDown(with event: NSEvent) {
         guard isEditable else {
             super.keyDown(with: event)
             return
@@ -189,7 +226,7 @@ class TextView: NSView, NSTextContent {
         }
     }
 
-    override func mouseDown(with event: NSEvent) {
+    public override func mouseDown(with event: NSEvent) {
         // Set cursor
         guard let offset = layoutManager.textOffsetAtPoint(self.convert(event.locationInWindow, from: nil)) else {
             super.mouseDown(with: event)
@@ -232,7 +269,7 @@ class TextView: NSView, NSTextContent {
 
     // MARK: - Layout
 
-    override func draw(_ dirtyRect: NSRect) {
+    public override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         if isSelectable {
             selectionManager.drawSelections(in: dirtyRect)
@@ -243,7 +280,7 @@ class TextView: NSView, NSTextContent {
         true
     }
 
-    override var visibleRect: NSRect {
+    public override var visibleRect: NSRect {
         if let scrollView = scrollView {
             var rect = scrollView.documentVisibleRect
             rect.origin.y += scrollView.contentInsets.top
@@ -254,7 +291,7 @@ class TextView: NSView, NSTextContent {
         }
     }
 
-    var visibleTextRange: NSRange? {
+    public var visibleTextRange: NSRange? {
         let minY = max(visibleRect.minY, 0)
         let maxY = min(visibleRect.maxY, layoutManager.estimatedHeight())
         guard let minYLine = layoutManager.textLineForPosition(minY),
@@ -320,15 +357,15 @@ class TextView: NSView, NSTextContent {
 // MARK: - TextLayoutManagerDelegate
 
 extension TextView: TextLayoutManagerDelegate {
-    func layoutManagerHeightDidUpdate(newHeight: CGFloat) {
+    public func layoutManagerHeightDidUpdate(newHeight: CGFloat) {
         updateFrameIfNeeded()
     }
 
-    func layoutManagerMaxWidthDidChange(newWidth: CGFloat) {
+    public func layoutManagerMaxWidthDidChange(newWidth: CGFloat) {
         updateFrameIfNeeded()
     }
 
-    func textViewSize() -> CGSize {
+    public func textViewSize() -> CGSize {
         if let scrollView = scrollView {
             var size = scrollView.contentSize
             size.height -= scrollView.contentInsets.top + scrollView.contentInsets.bottom
@@ -338,12 +375,12 @@ extension TextView: TextLayoutManagerDelegate {
         }
     }
 
-    func textLayoutSetNeedsDisplay() {
+    public func textLayoutSetNeedsDisplay() {
         needsDisplay = true
         needsLayout = true
     }
 
-    func layoutManagerYAdjustment(_ yAdjustment: CGFloat) {
+    public func layoutManagerYAdjustment(_ yAdjustment: CGFloat) {
         var point = scrollView?.documentVisibleRect.origin ?? .zero
         point.y += yAdjustment
         scrollView?.documentView?.scroll(point)
@@ -353,11 +390,11 @@ extension TextView: TextLayoutManagerDelegate {
 // MARK: - TextSelectionManagerDelegate
 
 extension TextView: TextSelectionManagerDelegate {
-    func setNeedsDisplay() {
+    public func setNeedsDisplay() {
         self.setNeedsDisplay(visibleRect)
     }
 
-    func estimatedLineHeight() -> CGFloat {
+    public func estimatedLineHeight() -> CGFloat {
         layoutManager.estimateLineHeight()
     }
 }

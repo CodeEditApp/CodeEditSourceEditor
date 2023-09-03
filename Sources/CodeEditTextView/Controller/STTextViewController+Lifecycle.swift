@@ -9,62 +9,62 @@ import AppKit
 import STTextView
 
 extension STTextViewController {
-    public override func loadView() {
-        textView = CETextView()
-
-        let scrollView = CEScrollView()
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.hasVerticalScroller = true
-        scrollView.documentView = textView
-        scrollView.automaticallyAdjustsContentInsets = contentInsets == nil
-
-        rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
-        rulerView.drawSeparator = false
-        rulerView.baselineOffset = baselineOffset
-        rulerView.allowsMarkers = false
-        rulerView.backgroundColor = theme.background
-        rulerView.textColor = .secondaryLabelColor
-
-        scrollView.verticalRulerView = rulerView
-        scrollView.rulersVisible = true
-
-        textView.typingAttributes = attributesFor(nil)
-        textView.typingAttributes[.paragraphStyle] = self.paragraphStyle
-        textView.font = self.font
-        textView.insertionPointWidth = 1.0
-        textView.backgroundColor = .clear
-
-        textView.string = self.text.wrappedValue
-        textView.allowsUndo = true
-        textView.setupMenus()
-        textView.delegate = self
-
-        scrollView.documentView = textView
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.backgroundColor = useThemeBackground ? theme.background : .clear
-
-        self.view = scrollView
-
-        NSLayoutConstraint.activate([
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            self.keyDown(with: event)
-            return event
-        }
-
-//        textViewUndoManager = CEUndoManager(textView: textView)
-        reloadUI()
-        setUpHighlighter()
-        setHighlightProvider(self.highlightProvider)
-        setUpTextFormation()
-
-        self.setCursorPosition(self.cursorPosition.wrappedValue)
-    }
+//    public override func loadView() {
+//        textView = CETextView()
+//
+//        let scrollView = CEScrollView()
+//        scrollView.translatesAutoresizingMaskIntoConstraints = false
+//        scrollView.hasVerticalScroller = true
+//        scrollView.documentView = textView
+//        scrollView.automaticallyAdjustsContentInsets = contentInsets == nil
+//
+//        rulerView = STLineNumberRulerView(textView: textView, scrollView: scrollView)
+//        rulerView.drawSeparator = false
+//        rulerView.baselineOffset = baselineOffset
+//        rulerView.allowsMarkers = false
+//        rulerView.backgroundColor = theme.background
+//        rulerView.textColor = .secondaryLabelColor
+//
+//        scrollView.verticalRulerView = rulerView
+//        scrollView.rulersVisible = true
+//
+//        textView.typingAttributes = attributesFor(nil)
+//        textView.typingAttributes[.paragraphStyle] = self.paragraphStyle
+//        textView.font = self.font
+//        textView.insertionPointWidth = 1.0
+//        textView.backgroundColor = .clear
+//
+//        textView.string = self.text.wrappedValue
+//        textView.allowsUndo = true
+//        textView.setupMenus()
+//        textView.delegate = self
+//
+//        scrollView.documentView = textView
+//        scrollView.translatesAutoresizingMaskIntoConstraints = false
+//        scrollView.backgroundColor = useThemeBackground ? theme.background : .clear
+//
+//        self.view = scrollView
+//
+//        NSLayoutConstraint.activate([
+//            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+//            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+//            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+//            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+//        ])
+//
+//        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+//            self.keyDown(with: event)
+//            return event
+//        }
+//
+////        textViewUndoManager = CEUndoManager(textView: textView)
+//        reloadUI()
+//        setUpHighlighter()
+//        setHighlightProvider(self.highlightProvider)
+//        setUpTextFormation()
+//
+//        self.setCursorPosition(self.cursorPosition.wrappedValue)
+//    }
 
     public override func viewDidLoad() {
         super.viewDidLoad()

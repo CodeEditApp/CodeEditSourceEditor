@@ -7,7 +7,7 @@
 
 import Foundation
 import AppKit
-import STTextView
+import CodeEditInputView
 
 /// The object `HighlightProviding` objects are given when asked for highlights.
 public protocol HighlighterTextView: AnyObject {
@@ -18,11 +18,7 @@ public protocol HighlighterTextView: AnyObject {
 }
 
 extension TextView: HighlighterTextView {
-    var documentRange: NSRange {
-        NSRange(location: 0, length: textStorage.length)
-    }
-
-    func stringForRange(_ nsRange: NSRange) -> String? {
+    public func stringForRange(_ nsRange: NSRange) -> String? {
         textStorage.substring(from: nsRange)
     }
 }

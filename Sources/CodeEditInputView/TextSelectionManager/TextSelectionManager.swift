@@ -6,9 +6,9 @@
 //
 
 import AppKit
-import TextStory
+import Common
 
-protocol TextSelectionManagerDelegate: AnyObject {
+public protocol TextSelectionManagerDelegate: AnyObject {
     var font: NSFont { get }
 
     func setNeedsDisplay()
@@ -19,7 +19,7 @@ protocol TextSelectionManagerDelegate: AnyObject {
 ///
 /// Draws selections using a draw method similar to the `TextLayoutManager` class, and adds cursor views when
 /// appropriate.
-class TextSelectionManager: NSObject {
+public class TextSelectionManager: NSObject {
     struct MarkedText {
         let range: NSRange
         let attributedString: NSAttributedString
@@ -27,9 +27,9 @@ class TextSelectionManager: NSObject {
 
     // MARK: - TextSelection
 
-    class TextSelection {
-        var range: NSRange
-        weak var view: CursorView?
+    public class TextSelection {
+        public var range: NSRange
+        internal weak var view: CursorView?
 
         init(range: NSRange, view: CursorView? = nil) {
             self.range = range
@@ -41,7 +41,7 @@ class TextSelectionManager: NSObject {
         }
     }
 
-    enum Destination {
+    public enum Destination {
         case character
         case word
         case line
@@ -50,7 +50,7 @@ class TextSelectionManager: NSObject {
         case document
     }
 
-    enum Direction {
+    public enum Direction {
         case up
         case down
         case forward
@@ -59,14 +59,14 @@ class TextSelectionManager: NSObject {
 
     // MARK: - Properties
 
-    class var selectionChangedNotification: Notification.Name {
+    open class var selectionChangedNotification: Notification.Name {
         Notification.Name("TextSelectionManager.TextSelectionChangedNotification")
     }
 
     public var selectedLineBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
 
-    private(set) var markedText: [MarkedText] = []
-    private(set) var textSelections: [TextSelection] = []
+    private var markedText: [MarkedText] = []
+    private(set) public var textSelections: [TextSelection] = []
     internal weak var layoutManager: TextLayoutManager?
     internal weak var textStorage: NSTextStorage?
     internal weak var layoutView: NSView?
@@ -211,7 +211,7 @@ private extension TextSelectionManager.TextSelection {
 // MARK: - Text Storage Delegate
 
 extension TextSelectionManager: NSTextStorageDelegate {
-    func textStorage(
+    public func textStorage(
         _ textStorage: NSTextStorage,
         didProcessEditing editedMask: NSTextStorageEditActions,
         range editedRange: NSRange,

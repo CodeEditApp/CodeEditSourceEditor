@@ -1,5 +1,5 @@
 import XCTest
-@testable import CodeEditTextView
+@testable import CodeEditInputView
 
 final class TextLayoutLineStorageTests: XCTestCase {
     func test_insert() {

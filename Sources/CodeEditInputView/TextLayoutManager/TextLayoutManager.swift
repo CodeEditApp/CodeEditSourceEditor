@@ -7,8 +7,9 @@
 
 import Foundation
 import AppKit
+import Common
 
-protocol TextLayoutManagerDelegate: AnyObject {
+public protocol TextLayoutManagerDelegate: AnyObject {
     func layoutManagerHeightDidUpdate(newHeight: CGFloat)
     func layoutManagerMaxWidthDidChange(newWidth: CGFloat)
     func textViewSize() -> CGSize
@@ -18,8 +19,8 @@ protocol TextLayoutManagerDelegate: AnyObject {
     var visibleRect: NSRect { get }
 }
 
-final class TextLayoutManager: NSObject {
-    // MARK: - Public Config
+public class TextLayoutManager: NSObject {
+    // MARK: - Public Properties
 
     public weak var delegate: TextLayoutManagerDelegate?
     public var typingAttributes: [NSAttributedString.Key: Any]
@@ -30,6 +31,11 @@ final class TextLayoutManager: NSObject {
         didSet {
             setNeedsLayout()
         }
+    }
+
+    /// The number of lines in the document
+    public var lineCount: Int {
+        lineStorage.count
     }
 
     // MARK: - Internal
@@ -378,7 +384,7 @@ extension TextLayoutManager: NSTextStorageDelegate {
     /// This method is to simplify keeping the layout manager in sync with attribute changes in the storage object.
     /// This does not handle cases where characters have been inserted or removed from the storage.
     /// For that, see the `willPerformEdit` method.
-    func textStorage(
+    public func textStorage(
         _ textStorage: NSTextStorage,
         didProcessEditing editedMask: NSTextStorageEditActions,
         range editedRange: NSRange,

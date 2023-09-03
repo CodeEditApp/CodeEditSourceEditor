@@ -9,12 +9,16 @@ import Foundation
 import AppKit
 
 /// Represents a displayable line of text.
-final class TextLine: Identifiable {
-    let id: UUID = UUID()
+public final class TextLine: Identifiable {
+    public let id: UUID = UUID()
 //    private weak var stringRef: NSTextStorage?
     private var needsLayout: Bool = true
     var maxWidth: CGFloat?
     private(set) var typesetter: Typesetter = Typesetter()
+
+    public var lineFragments: TextLineStorage<LineFragment> {
+        typesetter.lineFragments
+    }
 
     func setNeedsLayout() {
         needsLayout = true
