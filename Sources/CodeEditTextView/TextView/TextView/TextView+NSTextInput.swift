@@ -42,10 +42,8 @@ extension TextView: NSTextInputClient {
     ///   - replacementRange: The range of content to replace in the receiver’s text storage.
     @objc public func insertText(_ string: Any, replacementRange: NSRange) {
         guard isEditable else { return }
-        layoutManager.beginTransaction()
-        textStorage.beginEditing()
 
-        let insertString: String
+        var insertString: String
         switch string {
         case let string as NSString:
             insertString = string as String
@@ -56,14 +54,15 @@ extension TextView: NSTextInputClient {
             assertionFailure("\(#function) called with invalid string type. Expected String or NSAttributedString.")
         }
 
+        if LineEnding(rawValue: insertString) == .cr && layoutManager.detectedLineEnding == .crlf {
+            insertString = LineEnding.crlf.rawValue
+        }
+
         if replacementRange.location == NSNotFound {
-            replaceCharacters(in: selectionManager.textSelections.map { $0.range }, with: insertString)
+            replaceCharacters(in: selectionManager.textSelections.map(\.range), with: insertString)
         } else {
             replaceCharacters(in: replacementRange, with: insertString)
         }
-
-        textStorage.endEditing()
-        layoutManager.endTransaction()
     }
 
     // MARK: - Marked Text

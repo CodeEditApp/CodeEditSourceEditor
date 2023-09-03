@@ -56,11 +56,9 @@ extension TextView {
                 direction: direction,
                 destination: destination
             )
-            print(textSelection.range)
-            print(extendedRange, textSelection.range.union(extendedRange))
             textSelection.range.formUnion(extendedRange)
         }
-
+        print(#function, selectionManager.textSelections.map(\.range))
         replaceCharacters(in: selectionManager.textSelections.map(\.range), with: "")
     }
 }

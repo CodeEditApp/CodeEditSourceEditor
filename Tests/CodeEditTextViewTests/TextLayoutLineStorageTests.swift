@@ -57,10 +57,7 @@ final class TextLayoutLineStorageTests: XCTestCase {
         // Delete first
 
         tree = createTree()
-//        tree.printTree()
         tree.delete(lineAt: 0)
-//        print(tree.first)
-//        tree.printTree()
         XCTAssert(tree.count == 14, "Tree length incorrect")
         XCTAssert(tree.first?.range.length == 2, "Failed to delete leftmost node")
 

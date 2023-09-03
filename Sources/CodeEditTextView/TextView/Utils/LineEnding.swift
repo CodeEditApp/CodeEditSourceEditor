@@ -10,14 +10,13 @@ import AppKit
 enum LineEnding: String {
     /// The default unix `\n` character
     case lf = "\n"
-    /// MacOS Line ending `\r` character
+    /// MacOS line ending `\r` character
     case cr = "\r"
     /// Windows line ending sequence `\r\n`
     case crlf = "\r\n"
 
     /// Initialize a line ending from a line string.
     /// - Parameter line: The line to use
-    @inlinable
     init?(line: String) {
         var iterator = line.lazy.reversed().makeIterator()
         guard let endChar = iterator.next() else { return nil }

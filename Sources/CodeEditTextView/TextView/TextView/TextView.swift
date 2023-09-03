@@ -204,6 +204,8 @@ class TextView: NSView, NSTextContent {
         }
     }
 
+    // MARK: - Replace Characters
+
     public func replaceCharacters(in ranges: [NSRange], with string: String) {
         guard isEditable else { return }
         layoutManager.beginTransaction()
@@ -215,8 +217,8 @@ class TextView: NSView, NSTextContent {
                 TextMutation(string: string as String, range: range, limit: textStorage.length)
             )
         }
-        textStorage.endEditing()
         layoutManager.endTransaction()
+        textStorage.endEditing()
     }
 
     public func replaceCharacters(in range: NSRange, with string: String) {
@@ -224,6 +226,7 @@ class TextView: NSView, NSTextContent {
     }
 
     private func replaceCharactersNoCheck(in range: NSRange, with string: String) {
+        layoutManager.willReplaceCharactersInRange(range: range, with: string)
         textStorage.replaceCharacters(in: range, with: string)
     }
 
