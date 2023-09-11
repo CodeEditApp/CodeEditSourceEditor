@@ -44,6 +44,7 @@ public final class TextLineStorage<Data: Identifiable> {
     // MARK: - Public Methods
 
     /// Inserts a new line for the given range.
+    /// - Complexity: `O(log n)` where `n` is the number of lines in the storage object.
     /// - Parameters:
     ///   - line: The text line to insert
     ///   - range: The range the line represents. If the range is empty the line will be ignored.
@@ -94,12 +95,18 @@ public final class TextLineStorage<Data: Identifiable> {
             }
         }
 
+        metaFixup(
+            startingAt: insertedNode,
+            delta: insertedNode.length,
+            deltaHeight: insertedNode.height,
+            nodeAction: .inserted
+        )
         insertFixup(node: insertedNode)
     }
 
     /// Fetches a line for the given index.
     ///
-    /// Complexity: `O(log n)`
+    /// - Complexity: `O(log n)`
     /// - Parameter index: The index to fetch for.
     /// - Returns: A text line object representing a generated line object and the offset in the document of the line.
     public func getLine(atIndex index: Int) -> TextLinePosition? {
@@ -109,7 +116,7 @@ public final class TextLineStorage<Data: Identifiable> {
 
     /// Fetches a line for the given `y` value.
     ///
-    /// Complexity: `O(log n)`
+    /// - Complexity: `O(log n)`
     /// - Parameter position: The position to fetch for.
     /// - Returns: A text line object representing a generated line object and the offset in the document of the line.
     public func getLine(atPosition posY: CGFloat) -> TextLinePosition? {
@@ -150,12 +157,11 @@ public final class TextLineStorage<Data: Identifiable> {
     /// If a character was deleted, delta should be negative.
     /// The `index` parameter should represent where the edit began.
     ///
-    /// Complexity: `O(m log n)` where `m` is the number of lines that need to be deleted as a result of this update.
-    /// and `n` is the number of lines stored in the tree.
-    ///
     /// Lines will be deleted if the delta is both negative and encompasses the entire line.
     ///
     /// If the delta goes beyond the line's range, an error will be thrown.
+    /// - Complexity `O(m log n)` where `m` is the number of lines that need to be deleted as a result of this update.
+    ///              and `n` is the number of lines stored in the tree.
     /// - Parameters:
     ///   - index: The index where the edit began
     ///   - delta: The change in length of the document. Negative for deletes, positive for insertions.
@@ -305,7 +311,6 @@ private extension TextLineStorage {
                 currentYPosition += node.height + (node.right?.leftSubtreeHeight ?? 0)
                 currentIndex += 1 + (node.right?.leftSubtreeCount ?? 0)
             } else {
-                print(index, currentOffset, node.length)
                 currentNode = nil
             }
         }
@@ -314,49 +319,58 @@ private extension TextLineStorage {
 
     // MARK: - Delete
 
-    func deleteNode(_ node: Node<Data>) {
-        if node.left != nil, let nodeRight = node.right {
-            // Both children exist, replace with min of right
-            let replacementNode = nodeRight.minimum()
-            deleteNode(replacementNode)
-            transplant(node, with: replacementNode)
-            node.left?.parent = replacementNode
-            node.right?.parent = replacementNode
-            replacementNode.left = node.left
-            replacementNode.right = node.right
-            replacementNode.color = node.color
-            replacementNode.leftSubtreeCount = node.leftSubtreeCount
-            replacementNode.leftSubtreeHeight = node.leftSubtreeHeight
-            replacementNode.leftSubtreeOffset = node.leftSubtreeOffset
-            // The parent needs to be notified that the replacement node was inserted again, otherwise we lose
-            // the count of both the node being deleted *and* the replacement node.
-            // Check that delta > 0 or deltaHeight > 0 before updating.
-            let delta = -node.length + replacementNode.length
-            let deltaHeight = -node.height + replacementNode.height
-            if delta != 0 || deltaHeight != 0 {
-                // Use nodeAction = .none because the change in number of nodes is 0
-                metaFixup(startingAt: replacementNode, delta: delta, deltaHeight: deltaHeight, nodeAction: .none)
-            }
+    /// A basic RB-Tree node removal with specialization for node metadata.
+    /// - Parameter nodeZ: The node to remove.
+    func deleteNode(_ nodeZ: Node<Data>) {
+        metaFixup(startingAt: nodeZ, delta: -nodeZ.length, deltaHeight: -nodeZ.height, nodeAction: .deleted)
+
+        var nodeY = nodeZ
+        var nodeX: Node<Data>?
+        var originalColor = nodeY.color
+
+        if nodeZ.left == nil || nodeZ.right == nil {
+            nodeX = nodeZ.right ?? nodeZ.left
+            transplant(nodeZ, with: nodeX)
         } else {
-            // Either node's left or right is `nil`
-            metaFixup(startingAt: node, delta: -node.length, deltaHeight: -node.height, nodeAction: .deleted)
-            let replacementNode = node.left ?? node.right
-            transplant(node, with: replacementNode)
-            if node.color == .black {
-                if replacementNode != nil && replacementNode?.color == .red {
-                    replacementNode?.color = .black
-                } else if let replacementNode {
-                    deleteFixup(node: replacementNode)
-                }
+            nodeY = nodeZ.right!.minimum()
+
+            // Delete nodeY from it's original place in the tree.
+            metaFixup(startingAt: nodeY, delta: -nodeY.length, deltaHeight: -nodeY.height, nodeAction: .deleted)
+
+            originalColor = nodeY.color
+            nodeX = nodeY.right
+            if nodeY.parent === nodeZ {
+                nodeX?.parent = nodeY
+            } else {
+                transplant(nodeY, with: nodeY.right)
+
+                nodeY.right?.leftSubtreeCount = nodeY.leftSubtreeCount
+                nodeY.right?.leftSubtreeHeight = nodeY.leftSubtreeHeight
+                nodeY.right?.leftSubtreeOffset = nodeY.leftSubtreeOffset
+
+                nodeY.right = nodeZ.right
+                nodeY.right?.parent = nodeY
             }
+            transplant(nodeZ, with: nodeY)
+            nodeY.left = nodeZ.left
+            nodeY.left?.parent = nodeY
+            nodeY.color = nodeZ.color
+            nodeY.leftSubtreeCount = nodeZ.leftSubtreeCount
+            nodeY.leftSubtreeHeight = nodeZ.leftSubtreeHeight
+            nodeY.leftSubtreeOffset = nodeZ.leftSubtreeOffset
+
+            // We've inserted nodeY again into a new spot. Update tree meta
+            metaFixup(startingAt: nodeY, delta: nodeY.length, deltaHeight: nodeY.height, nodeAction: .inserted)
+        }
+
+        if originalColor == .black, let nodeX {
+            deleteFixup(node: nodeX)
         }
     }
 
     // MARK: - Fixup
 
     func insertFixup(node: Node<Data>) {
-        metaFixup(startingAt: node, delta: node.length, deltaHeight: node.height, nodeAction: .inserted)
-
         var nextNode: Node<Data>? = node
         while var nodeX = nextNode, nodeX !== root, let nodeXParent = nodeX.parent, nodeXParent.color == .red {
             let nodeY = nodeXParent.sibling()
@@ -402,65 +416,61 @@ private extension TextLineStorage {
         root?.color = .black
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
     func deleteFixup(node: Node<Data>) {
-        guard node.parent != nil, node.color == .black, var sibling = node.sibling() else { return }
-        // Case 1: Sibling is red
-        if sibling.color == .red {
-            // Recolor
-            sibling.color = .black
-            if let nodeParent = node.parent {
-                nodeParent.color = .red
+        var nodeX: Node<Data>? = node
+        while let node = nodeX, node !== root, node.color == .black {
+            var sibling = node.sibling()
+            if sibling?.color == .red {
+                sibling?.color = .black
+                node.parent?.color = .red
                 if isLeftChild(node) {
-                    leftRotate(node: nodeParent)
+                    leftRotate(node: node)
                 } else {
-                    rightRotate(node: nodeParent)
+                    rightRotate(node: node)
                 }
-                if let newSibling = node.sibling() {
-                    sibling = newSibling
-                }
-            }
-        }
-
-        // Case 2: Sibling is black with two black children
-        if sibling.left?.color == .black && sibling.right?.color == .black {
-            sibling.color = .red
-            if let nodeParent = node.parent {
-                deleteFixup(node: nodeParent)
-            }
-        } else {
-            // Case 3: Sibling black with one black child
-            if sibling.left?.color == .black || sibling.right?.color == .black {
-                let isLeftBlack = sibling.left?.color == .black
-                let siblingOtherChild = isLeftBlack ? sibling.right : sibling.left
-                sibling.color = .red
-                siblingOtherChild?.color = .black
-                if isLeftBlack {
-                    leftRotate(node: sibling)
-                } else {
-                    rightRotate(node: sibling)
-                }
-                if let newSibling = node.sibling() {
-                    sibling = newSibling
-                }
+                sibling = node.sibling()
             }
 
-            // Case 4: Sibling is black with red child
-            if let nodeParent = node.parent {
-                sibling.color = nodeParent.color
-                nodeParent.color = .black
+            if sibling?.left?.color == .black && sibling?.right?.color == .black {
+                sibling?.color = .red
+                nodeX = node.parent
+            } else {
                 if isLeftChild(node) {
-                    sibling.right?.color = .black
-                    leftRotate(node: nodeParent)
+                    if sibling?.right?.color == .black {
+                        sibling?.left?.color = .black
+                        sibling?.color = .red
+                        if let sibling {
+                            rightRotate(node: sibling)
+                        }
+                        sibling = node.parent?.right
+                    }
+                    sibling?.color = node.parent?.color ?? .black
+                    node.parent?.color = .black
+                    sibling?.right?.color = .black
+                    leftRotate(node: node)
+                    nodeX = root
                 } else {
-                    sibling.left?.color = .black
-                    rightRotate(node: nodeParent)
+                    if sibling?.left?.color == .black {
+                        sibling?.left?.color = .black
+                        sibling?.color = .red
+                        if let sibling {
+                            leftRotate(node: sibling)
+                        }
+                        sibling = node.parent?.left
+                    }
+                    sibling?.color = node.parent?.color ?? .black
+                    node.parent?.color = .black
+                    sibling?.left?.color = .black
+                    rightRotate(node: node)
+                    nodeX = root
                 }
-                root?.color = .black
-                return
+
+
+
+
             }
         }
-        node.color = .black
+        nodeX?.color = .black
     }
 
     /// Walk up the tree, updating any `leftSubtree` metadata.
@@ -489,11 +499,6 @@ private extension TextLineStorage {
             node = node?.parent
         }
     }
-
-    func calculateSize(_ node: Node<Data>?) -> Int {
-        guard let node else { return 0 }
-        return node.length + node.leftSubtreeOffset + calculateSize(node.right)
-    }
 }
 
 // MARK: - Rotations
@@ -512,6 +517,7 @@ private extension TextLineStorage {
 
         if left {
             nodeY = node.right
+            guard nodeY != nil else { return }
             nodeY?.leftSubtreeOffset += node.leftSubtreeOffset + node.length
             nodeY?.leftSubtreeHeight += node.leftSubtreeHeight + node.height
             nodeY?.leftSubtreeCount += node.leftSubtreeCount + 1
@@ -519,6 +525,7 @@ private extension TextLineStorage {
             node.right?.parent = node
         } else {
             nodeY = node.left
+            guard nodeY != nil else { return }
             node.left = nodeY?.right
             node.left?.parent = node
         }
@@ -526,7 +533,7 @@ private extension TextLineStorage {
         nodeY?.parent = node.parent
         if node.parent == nil {
             if let node = nodeY {
-                root = node
+                 root = node
             }
         } else if isLeftChild(node) {
             node.parent?.left = nodeY
@@ -538,10 +545,24 @@ private extension TextLineStorage {
             nodeY?.left = node
         } else {
             nodeY?.right = node
-            node.leftSubtreeOffset = (node.left?.length ?? 0) + (node.left?.leftSubtreeOffset ?? 0)
-            node.leftSubtreeHeight = (node.left?.height ?? 0) + (node.left?.leftSubtreeHeight ?? 0)
-            node.leftSubtreeCount = (node.left == nil ? 1 : 0) + (node.left?.leftSubtreeCount ?? 0)
+            let metadata = getSubtreeMeta(startingAt: node.left)
+            node.leftSubtreeOffset = metadata.offset
+            node.leftSubtreeHeight = metadata.height
+            node.leftSubtreeCount = metadata.count
         }
         node.parent = nodeY
+    }
+
+    /// Finds the correct subtree metadata starting at a node.
+    /// - Complexity: `O(log n)` where `n` is the number of nodes in the tree.
+    /// - Parameter node: The node to start finding metadata for.
+    /// - Returns: The metadata representing the entire subtree including `node`.
+    func getSubtreeMeta(startingAt node: Node<Data>?) -> NodeSubtreeMetadata {
+        guard let node else { return .zero }
+        return NodeSubtreeMetadata(
+            height: node.height + node.leftSubtreeHeight,
+            offset: node.length + node.leftSubtreeOffset,
+            count: 1 + node.leftSubtreeCount
+        ) + getSubtreeMeta(startingAt: node.right)
     }
 }

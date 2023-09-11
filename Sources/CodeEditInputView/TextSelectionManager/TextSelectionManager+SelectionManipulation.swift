@@ -17,7 +17,7 @@ public extension TextSelectionManager {
     ///   - destination: Determines how far the selection is.
     ///   - decomposeCharacters: Set to `true` to treat grapheme clusters as individual characters.
     /// - Returns: A range of a new selection based on the direction and destination.
-    public func rangeOfSelection(
+    func rangeOfSelection(
         from offset: Int,
         direction: Direction,
         destination: Destination,
@@ -25,6 +25,7 @@ public extension TextSelectionManager {
     ) -> NSRange {
         switch direction {
         case .backward:
+            guard offset > 0 else { return NSRange(location: offset, length: 0) } // Can't go backwards beyond 0
             return extendSelection(from: offset, destination: destination, delta: -1)
         case .forward:
             return extendSelection(from: offset, destination: destination, delta: 1)

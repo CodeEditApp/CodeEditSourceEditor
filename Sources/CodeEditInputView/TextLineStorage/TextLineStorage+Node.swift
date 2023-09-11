@@ -30,7 +30,7 @@ extension TextLineStorage {
     /// [c]_/
     ///
     /// ```
-    ///
+    /// - Note: Leaves the task of updating tree metadata to the caller.
     /// - Parameters:
     ///   - nodeU: The node to replace.
     ///   - nodeV: The node to insert in place of `nodeU`

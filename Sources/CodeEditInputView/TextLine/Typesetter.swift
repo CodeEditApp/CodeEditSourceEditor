@@ -71,18 +71,17 @@ final class Typesetter {
         var breakIndex: Int
         breakIndex = startingOffset + CTTypesetterSuggestClusterBreak(typesetter, startingOffset, constrainingWidth)
         // Ensure we're breaking at a whitespace, CT can sometimes suggest this incorrectly.
-        guard breakIndex < string.length ||
-                (breakIndex - 1 > 0 && ensureCharacterCanBreakLine(at: breakIndex - 1)) else {
-            return breakIndex
-        }
-
-        // Find a real break index at the closest whitespace/punctuation character
-        var index = breakIndex - 1
-        while index > 0 && breakIndex - index > 100 {
-            if ensureCharacterCanBreakLine(at: index) {
-                return index
+        guard breakIndex < string.length && breakIndex - 1 > 0 && ensureCharacterCanBreakLine(at: breakIndex - 1) else {
+            // Walk backwards until we find a valid break point. Max out at 100 characters.
+            var index = breakIndex - 1
+            while index > 0 && breakIndex - index > 100 {
+                if ensureCharacterCanBreakLine(at: index) {
+                    return index
+                } else {
+                    index -= 1
+                }
             }
-            index -= 1
+            return breakIndex
         }
 
         return breakIndex

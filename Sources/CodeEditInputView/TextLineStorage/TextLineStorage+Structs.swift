@@ -48,6 +48,24 @@ extension TextLineStorage where Data: Identifiable {
         let index: Int
     }
 
+    internal struct NodeSubtreeMetadata {
+        let height: CGFloat
+        let offset: Int
+        let count: Int
+
+        static var zero: NodeSubtreeMetadata {
+            NodeSubtreeMetadata(height: 0, offset: 0, count: 0)
+        }
+
+        static func + (lhs: NodeSubtreeMetadata, rhs: NodeSubtreeMetadata) -> NodeSubtreeMetadata {
+            NodeSubtreeMetadata(
+                height: lhs.height + rhs.height,
+                offset: lhs.offset + rhs.offset,
+                count: lhs.count + rhs.count
+            )
+        }
+    }
+
     public struct BuildItem {
         public let data: Data
         public let length: Int

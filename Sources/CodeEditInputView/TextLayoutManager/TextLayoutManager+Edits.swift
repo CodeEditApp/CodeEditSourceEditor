@@ -42,27 +42,49 @@ extension TextLayoutManager: NSTextStorageDelegate {
 
         // Loop through each line being inserted, inserting where necessary
         if !string.isEmpty {
-            print("Inserting...")
-            print(lineStorage.getLine(atIndex: range.location)!.range)
             var index = 0
             while let nextLine = (string as NSString).getNextLine(startingAt: index) {
-                print(nextLine)
+                let lineRange = NSRange(location: index, length: nextLine.max - index)
+                applyLineInsert((string as NSString).substring(with: lineRange) as NSString, at: range.location + index)
                 index = nextLine.max
             }
 
-            if index < string.lengthOfBytes(using: .utf16) {
+            if index < (string as NSString).length {
                 // Get the last line.
-                let lastLine = (string as NSString).substring(from: index)
-                print("Last line", lastLine, range.location + index)
-                lineStorage.update(
-                    atIndex: range.location + index,
-                    delta: lastLine.lengthOfBytes(using: .utf16),
-                    deltaHeight: 0.0
+                applyLineInsert(
+                    (string as NSString).substring(from: index) as NSString,
+                    at: range.location + index
                 )
             }
         }
 
         setNeedsLayout()
+    }
+
+    /// Applies a line insert to the internal line storage tree.
+    /// - Parameters:
+    ///   - insertedString: The string being inserted.
+    ///   - location: The location the string is being inserted into.
+    private func applyLineInsert(_ insertedString: NSString, at location: Int) {
+        if LineEnding(line: insertedString as String) != nil {
+            // Need to split the line inserting into and create a new line with the split section of the line
+            guard let linePosition = lineStorage.getLine(atIndex: location) else { return }
+            let splitLocation = location + insertedString.length
+            let splitLength = linePosition.range.max - location
+            let lineDelta = insertedString.length - splitLength // The difference in the line being edited
+            if lineDelta != 0 {
+                lineStorage.update(atIndex: location, delta: lineDelta, deltaHeight: 0.0)
+            }
+
+            lineStorage.insert(
+                line: TextLine(),
+                atIndex: splitLocation,
+                length: splitLength,
+                height: estimateLineHeight()
+            )
+        } else {
+            lineStorage.update(atIndex: location, delta: insertedString.length, deltaHeight: 0.0)
+        }
     }
 
     /// This method is to simplify keeping the layout manager in sync with attribute changes in the storage object.

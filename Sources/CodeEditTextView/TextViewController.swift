@@ -173,7 +173,6 @@ extension TextViewController: ThemeAttributesProviding {
         [
             .font: font,
             .foregroundColor: theme.colorFor(capture),
-//            .baselineOffset: baselineOffset,
 //            .paragraphStyle: paragraphStyle,
 //            .kern: kern
         ]

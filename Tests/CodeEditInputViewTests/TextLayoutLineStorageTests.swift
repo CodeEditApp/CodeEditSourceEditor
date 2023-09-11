@@ -1,51 +1,161 @@
 import XCTest
 @testable import CodeEditInputView
 
+fileprivate extension CGFloat {
+    func approxEqual(_ value: CGFloat) -> Bool {
+        return abs(self - value) < 0.05
+    }
+}
+
 final class TextLayoutLineStorageTests: XCTestCase {
-    func test_insert() {
+    /// Creates a balanced height=3 tree useful for testing and debugging.
+    /// - Returns: A new tree.
+    fileprivate func createBalancedTree() -> TextLineStorage<TextLine> {
         let tree = TextLineStorage<TextLine>()
-        var sum = 0
-        for i in 0..<20 {
-            tree.insert(
-                line: TextLine(),
-                atIndex: sum,
-                length: i + 1,
-                height: 1.0
-            )
-            sum += i + 1
+        var data = [TextLineStorage<TextLine>.BuildItem]()
+        for i in 0..<15 {
+            data.append(.init(data: TextLine(), length: i + 1))
         }
-        XCTAssert(tree.getLine(atIndex: 2)?.range.length == 2, "Found line incorrect, expected length of 2.")
-        XCTAssert(tree.getLine(atIndex: 36)?.range.length == 9, "Found line incorrect, expected length of 9.")
+        tree.build(from: data, estimatedLineHeight: 1.0)
+        return tree
     }
 
-    func test_update() {
-        let tree = TextLineStorage<TextLine>()
-        var sum = 0
-        for i in 0..<20 {
-            tree.insert(
-                line: TextLine(),
-                atIndex: sum,
-                length: i + 1,
-                height: 1.0
-            )
-            sum += i + 1
+    /// Recursively checks that the given tree has the correct metadata everywhere.
+    /// - Parameter tree: The tree to check.
+    fileprivate func assertTreeMetadataCorrect(_ tree: TextLineStorage<TextLine>) throws {
+        struct ChildData {
+            let length: Int
+            let count: Int
+            let height: CGFloat
         }
-        tree.update(atIndex: 7, delta: 1, deltaHeight: 0)
-        // TODO:
-//        XCTAssert(tree.getLine(atIndex: 7)?.range.length == 8, "")
+
+        func checkChildren(_ node: TextLineStorage<TextLine>.Node<TextLine>?) -> ChildData {
+            guard let node else { return ChildData(length: 0, count: 0, height: 0.0) }
+            let leftSubtreeData = checkChildren(node.left)
+            let rightSubtreeData = checkChildren(node.right)
+
+            XCTAssert(leftSubtreeData.length == node.leftSubtreeOffset, "Left subtree length incorrect")
+            XCTAssert(leftSubtreeData.count == node.leftSubtreeCount, "Left subtree node count incorrect")
+            XCTAssert(leftSubtreeData.height.approxEqual(node.leftSubtreeHeight), "Left subtree height incorrect")
+
+            return ChildData(
+                length: node.length + leftSubtreeData.length + rightSubtreeData.length,
+                count: 1 + leftSubtreeData.count + rightSubtreeData.count,
+                height: node.height + leftSubtreeData.height + rightSubtreeData.height
+            )
+        }
+
+        let rootData = checkChildren(tree.root)
+
+        XCTAssert(rootData.count == tree.count, "Node count incorrect")
+        XCTAssert(rootData.length == tree.length, "Length incorrect")
+        XCTAssert(rootData.height.approxEqual(tree.height), "Height incorrect")
+
+        var lastIdx = -1
+        for line in tree {
+            XCTAssert(lastIdx == line.index - 1, "Incorrect index found")
+            lastIdx = line.index
+        }
     }
 
-    func test_delete() {
+    func test_search() {
         var tree = TextLineStorage<TextLine>()
-        func createTree() -> TextLineStorage<TextLine> {
-            let tree = TextLineStorage<TextLine>()
-            var data = [TextLineStorage<TextLine>.BuildItem]()
-            for i in 0..<15 {
-                data.append(.init(data: TextLine(), length: i + 1))
-            }
-            tree.build(from: data, estimatedLineHeight: 1.0)
-            return tree
+        tree.insert(line: TextLine(), atIndex: 0, length: 1, height: 1.0)
+        tree.insert(line: TextLine(), atIndex: 1, length: 2, height: 1.0)
+        tree.insert(line: TextLine(), atIndex: 0, length: 3, height: 1.0)
+        tree.insert(line: TextLine(), atIndex: 0, length: 4, height: 1.0)
+        tree.insert(line: TextLine(), atIndex: 7, length: 5, height: 1.0)
+        tree.insert(line: TextLine(), atIndex: 12, length: 6, height: 1.0)
+        printTree(tree)
+        for line in tree {
+            print(line.index)
         }
+    }
+
+    func test_insert() throws {
+        var tree = TextLineStorage<TextLine>()
+
+        // Single Element
+        tree.insert(line: TextLine(), atIndex: 0, length: 1, height: 50.0)
+        XCTAssert(tree.length == 1, "Tree length incorrect")
+        XCTAssert(tree.count == 1, "Tree count incorrect")
+        XCTAssert(tree.height == 50.0, "Tree height incorrect")
+        XCTAssert(tree.root?.right == nil && tree.root?.left == nil, "Somehow inserted an extra node.")
+        try assertTreeMetadataCorrect(tree)
+
+        // Insert into first
+        tree = createBalancedTree()
+        tree.insert(line: TextLine(), atIndex: 0, length: 1, height: 1.0)
+        try assertTreeMetadataCorrect(tree)
+
+        // Insert into last
+        tree = createBalancedTree()
+        tree.insert(line: TextLine(), atIndex: tree.length - 1, length: 1, height: 1.0)
+        try assertTreeMetadataCorrect(tree)
+
+        //
+        tree = createBalancedTree()
+        tree.insert(line: TextLine(), atIndex: 45, length: 1, height: 1.0)
+        try assertTreeMetadataCorrect(tree)
+    }
+
+    func test_update() throws {
+        var tree = TextLineStorage<TextLine>()
+
+        // Single Element
+        tree.insert(line: TextLine(), atIndex: 0, length: 1, height: 1.0)
+        tree.update(atIndex: 0, delta: 20, deltaHeight: 5.0)
+        XCTAssert(tree.length == 21, "Tree length incorrect")
+        XCTAssert(tree.count == 1, "Tree count incorrect")
+        XCTAssert(tree.height == 6, "Tree height incorrect")
+        XCTAssert(tree.root?.right == nil && tree.root?.left == nil, "Somehow inserted an extra node.")
+        try assertTreeMetadataCorrect(tree)
+
+        // Update First
+        tree = createBalancedTree()
+        tree.update(atIndex: 0, delta: 12, deltaHeight: -0.5)
+        XCTAssert(tree.height == 14.5, "Tree height incorrect")
+        XCTAssert(tree.count == 15, "Tree count changed")
+        XCTAssert(tree.length == 132, "Tree length incorrect")
+        XCTAssert(tree.first?.range.length == 13, "First node wasn't updated correctly.")
+        try assertTreeMetadataCorrect(tree)
+
+        // Update Last
+        tree = createBalancedTree()
+        tree.update(atIndex: tree.length - 1, delta: -14, deltaHeight: 1.75)
+        XCTAssert(tree.height == 16.75, "Tree height incorrect")
+        XCTAssert(tree.count == 15, "Tree count changed")
+        XCTAssert(tree.length == 106, "Tree length incorrect")
+        XCTAssert(tree.last?.range.length == 1, "Last node wasn't updated correctly.")
+        try assertTreeMetadataCorrect(tree)
+
+        // Update middle
+        tree = createBalancedTree()
+        tree.update(atIndex: 45, delta: -9, deltaHeight: 1.0)
+        XCTAssert(tree.height == 16.0, "Tree height incorrect")
+        XCTAssert(tree.count == 15, "Tree count changed")
+        XCTAssert(tree.length == 111, "Tree length incorrect")
+        XCTAssert(tree.root?.right?.left?.height == 2.0 && tree.root?.right?.left?.length == 1, "Node wasn't updated")
+        try assertTreeMetadataCorrect(tree)
+
+        // Update at random
+        tree = createBalancedTree()
+        for _ in 0..<20 {
+            let delta = Int.random(in: 1..<20)
+            let deltaHeight = Double.random(in: 0..<20.0)
+            let originalHeight = tree.height
+            let originalCount = tree.count
+            let originalLength = tree.length
+            tree.update(atIndex: Int.random(in: 0..<tree.length), delta: delta, deltaHeight: deltaHeight)
+            XCTAssert(originalCount == tree.count, "Tree count should not change on update")
+            XCTAssert(originalHeight + deltaHeight == tree.height, "Tree height incorrect")
+            XCTAssert(originalLength + delta == tree.length, "Tree length incorrect")
+            try assertTreeMetadataCorrect(tree)
+        }
+    }
+
+    func test_delete() throws {
+        var tree = TextLineStorage<TextLine>()
 
         // Single Element
         tree.insert(line: TextLine(), atIndex: 0, length: 1, height: 1.0)
@@ -53,35 +163,46 @@ final class TextLayoutLineStorageTests: XCTestCase {
         tree.delete(lineAt: 0)
         XCTAssert(tree.length == 0, "Tree failed to delete single node")
         XCTAssert(tree.root == nil, "Tree root should be nil")
+        try assertTreeMetadataCorrect(tree)
 
         // Delete first
 
-        tree = createTree()
+        tree = createBalancedTree()
         tree.delete(lineAt: 0)
         XCTAssert(tree.count == 14, "Tree length incorrect")
         XCTAssert(tree.first?.range.length == 2, "Failed to delete leftmost node")
+        try assertTreeMetadataCorrect(tree)
 
         // Delete last
 
-        tree = createTree()
+        tree = createBalancedTree()
         tree.delete(lineAt: tree.length - 1)
         XCTAssert(tree.count == 14, "Tree length incorrect")
         XCTAssert(tree.last?.range.length == 14, "Failed to delete rightmost node")
+        try assertTreeMetadataCorrect(tree)
 
         // Delete mid leaf
 
-        tree = createTree()
-        printTree(tree)
+        tree = createBalancedTree()
         tree.delete(lineAt: 45)
-        printTree(tree)
         XCTAssert(tree.root?.right?.left?.length == 11, "Failed to remove node 10")
         XCTAssert(tree.root?.right?.leftSubtreeOffset == 20, "Failed to update metadata on parent of node 10")
         XCTAssert(tree.root?.right?.left?.right == nil, "Failed to replace node 10 with node 11")
         XCTAssert(tree.count == 14, "Tree length incorrect")
+        try assertTreeMetadataCorrect(tree)
+
+        tree = createBalancedTree()
+        tree.delete(lineAt: 66)
+        XCTAssert(tree.root?.right?.length == 13, "Failed to remove node 12")
+        XCTAssert(tree.root?.right?.leftSubtreeOffset == 30, "Failed to update metadata on parent of node 13")
+        XCTAssert(tree.root?.right?.left?.right?.left == nil, "Failed to replace node 12 with node 13")
+        XCTAssert(tree.count == 14, "Tree length incorrect")
+        try assertTreeMetadataCorrect(tree)
+
 
         // Delete root
 
-        tree = createTree()
+        tree = createBalancedTree()
         tree.delete(lineAt: tree.root!.leftSubtreeOffset + 1)
         XCTAssert(tree.root?.color == .black, "Root color incorrect")
         XCTAssert(tree.root?.right?.left?.left == nil, "Replacement node was not moved to root")
@@ -89,17 +210,23 @@ final class TextLayoutLineStorageTests: XCTestCase {
         XCTAssert(tree.root?.leftSubtreeHeight == 7.0, "Replacement node was not given correct metadata.")
         XCTAssert(tree.root?.leftSubtreeOffset == 28, "Replacement node was not given correct metadata.")
         XCTAssert(tree.count == 14, "Tree length incorrect")
+        try assertTreeMetadataCorrect(tree)
 
         // Delete a bunch of random
 
         for _ in 0..<20 {
-            tree = createTree()
-            tree.delete(lineAt: Int.random(in: 0..<tree.count ))
-            XCTAssert(tree.count == 14, "Tree length incorrect")
-            var last = -1
-            for line in tree {
-                XCTAssert(line.range.length > last, "Out of order after deletion")
-                last = line.range.length
+            tree = createBalancedTree()
+            var lastCount = 15
+            while !tree.isEmpty {
+                lastCount -= 1
+                tree.delete(lineAt: Int.random(in: 0..<tree.count))
+                XCTAssert(tree.count == lastCount, "Tree length incorrect")
+                var last = -1
+                for line in tree {
+                    XCTAssert(line.range.length > last, "Out of order after deletion")
+                    last = line.range.length
+                }
+                try assertTreeMetadataCorrect(tree)
             }
         }
     }
@@ -155,148 +282,3 @@ final class TextLayoutLineStorageTests: XCTestCase {
         }
     }
 }
-
-public func printTree(_ tree: TextLineStorage<TextLine>) {
-    print(
-        treeString(tree.root!) { node in
-            (
-                // swiftlint:disable:next line_length
-                "\(node.length)[\(node.leftSubtreeOffset)\(node.color == .red ? "R" : "B")][\(node.height), \(node.leftSubtreeHeight)]",
-                node.left,
-                node.right
-            )
-        }
-    )
-    print("")
-}
-
-// swiftlint:disable all
-// Awesome tree printing function from https://stackoverflow.com/a/43903427/10453550
-public func treeString<T>(_ node:T, reversed:Bool=false, isTop:Bool=true, using nodeInfo:(T)->(String,T?,T?)) -> String {
-    // node value string and sub nodes
-    let (stringValue, leftNode, rightNode) = nodeInfo(node)
-
-    let stringValueWidth  = stringValue.count
-
-    // recurse to sub nodes to obtain line blocks on left and right
-    let leftTextBlock     = leftNode  == nil ? []
-    : treeString(leftNode!,reversed:reversed,isTop:false,using:nodeInfo)
-        .components(separatedBy:"\n")
-
-    let rightTextBlock    = rightNode == nil ? []
-    : treeString(rightNode!,reversed:reversed,isTop:false,using:nodeInfo)
-        .components(separatedBy:"\n")
-
-    // count common and maximum number of sub node lines
-    let commonLines       = min(leftTextBlock.count,rightTextBlock.count)
-    let subLevelLines     = max(rightTextBlock.count,leftTextBlock.count)
-
-    // extend lines on shallower side to get same number of lines on both sides
-    let leftSubLines      = leftTextBlock
-    + Array(repeating:"", count: subLevelLines-leftTextBlock.count)
-    let rightSubLines     = rightTextBlock
-    + Array(repeating:"", count: subLevelLines-rightTextBlock.count)
-
-    // compute location of value or link bar for all left and right sub nodes
-    //   * left node's value ends at line's width
-    //   * right node's value starts after initial spaces
-    let leftLineWidths    = leftSubLines.map{$0.count}
-    let rightLineIndents  = rightSubLines.map{$0.prefix{$0==" "}.count  }
-
-    // top line value locations, will be used to determine position of current node & link bars
-    let firstLeftWidth    = leftLineWidths.first   ?? 0
-    let firstRightIndent  = rightLineIndents.first ?? 0
-
-
-    // width of sub node link under node value (i.e. with slashes if any)
-    // aims to center link bars under the value if value is wide enough
-    //
-    // ValueLine:    v     vv    vvvvvv   vvvvv
-    // LinkLine:    / \   /  \    /  \     / \
-    //
-    let linkSpacing       = min(stringValueWidth, 2 - stringValueWidth % 2)
-    let leftLinkBar       = leftNode  == nil ? 0 : 1
-    let rightLinkBar      = rightNode == nil ? 0 : 1
-    let minLinkWidth      = leftLinkBar + linkSpacing + rightLinkBar
-    let valueOffset       = (stringValueWidth - linkSpacing) / 2
-
-    // find optimal position for right side top node
-    //   * must allow room for link bars above and between left and right top nodes
-    //   * must not overlap lower level nodes on any given line (allow gap of minSpacing)
-    //   * can be offset to the left if lower subNodes of right node
-    //     have no overlap with subNodes of left node
-    let minSpacing        = 2
-    let rightNodePosition = zip(leftLineWidths,rightLineIndents[0..<commonLines])
-        .reduce(firstLeftWidth + minLinkWidth)
-    { max($0, $1.0 + minSpacing + firstRightIndent - $1.1) }
-
-
-    // extend basic link bars (slashes) with underlines to reach left and right
-    // top nodes.
-    //
-    //        vvvvv
-    //       __/ \__
-    //      L       R
-    //
-    let linkExtraWidth    = max(0, rightNodePosition - firstLeftWidth - minLinkWidth )
-    let rightLinkExtra    = linkExtraWidth / 2
-    let leftLinkExtra     = linkExtraWidth - rightLinkExtra
-
-    // build value line taking into account left indent and link bar extension (on left side)
-    let valueIndent       = max(0, firstLeftWidth + leftLinkExtra + leftLinkBar - valueOffset)
-    let valueLine         = String(repeating:" ", count:max(0,valueIndent))
-    + stringValue
-    let slash             = reversed ? "\\" : "/"
-    let backSlash         = reversed ? "/"  : "\\"
-    let uLine             = reversed ? "¯"  : "_"
-    // build left side of link line
-    let leftLink          = leftNode == nil ? ""
-    : String(repeating: " ", count:firstLeftWidth)
-    + String(repeating: uLine, count:leftLinkExtra)
-    + slash
-
-    // build right side of link line (includes blank spaces under top node value)
-    let rightLinkOffset   = linkSpacing + valueOffset * (1 - leftLinkBar)
-    let rightLink         = rightNode == nil ? ""
-    : String(repeating:  " ", count:rightLinkOffset)
-    + backSlash
-    + String(repeating:  uLine, count:rightLinkExtra)
-
-    // full link line (will be empty if there are no sub nodes)
-    let linkLine          = leftLink + rightLink
-
-    // will need to offset left side lines if right side sub nodes extend beyond left margin
-    // can happen if left subtree is shorter (in height) than right side subtree
-    let leftIndentWidth   = max(0,firstRightIndent - rightNodePosition)
-    let leftIndent        = String(repeating:" ", count:leftIndentWidth)
-    let indentedLeftLines = leftSubLines.map{ $0.isEmpty ? $0 : (leftIndent + $0) }
-
-    // compute distance between left and right sublines based on their value position
-    // can be negative if leading spaces need to be removed from right side
-    let mergeOffsets      = indentedLeftLines
-        .map{$0.count}
-        .map{leftIndentWidth + rightNodePosition - firstRightIndent - $0 }
-        .enumerated()
-        .map{ rightSubLines[$0].isEmpty ? 0  : $1 }
-
-
-    // combine left and right lines using computed offsets
-    //   * indented left sub lines
-    //   * spaces between left and right lines
-    //   * right sub line with extra leading blanks removed.
-    let mergedSubLines    = zip(mergeOffsets.enumerated(),indentedLeftLines)
-        .map{ ( $0.0, $0.1, $1 + String(repeating:" ", count:max(0,$0.1)) ) }
-        .map{ $2 + String(rightSubLines[$0].dropFirst(max(0,-$1))) }
-
-    // Assemble final result combining
-    //  * node value string
-    //  * link line (if any)
-    //  * merged lines from left and right sub trees (if any)
-    let treeLines = [leftIndent + valueLine]
-    + (linkLine.isEmpty ? [] : [leftIndent + linkLine])
-    + mergedSubLines
-
-    return (reversed && isTop ? treeLines.reversed(): treeLines)
-        .joined(separator:"\n")
-}
-// swiftlint:enable all

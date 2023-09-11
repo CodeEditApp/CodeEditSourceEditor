@@ -64,6 +64,25 @@ extension TextView: NSTextInputClient {
         }
     }
 
+    public override func insertText(_ insertString: Any) {
+        var string: String
+        switch insertString {
+        case let insertString as NSString:
+            string = insertString as String
+        case let insertString as NSAttributedString:
+            string = insertString.string
+        default:
+            string = ""
+            assertionFailure("\(#function) called with invalid string type. Expected String or NSAttributedString.")
+        }
+
+        if LineEnding(rawValue: string) == .cr && layoutManager.detectedLineEnding == .crlf {
+            string = LineEnding.crlf.rawValue
+        }
+
+        replaceCharacters(in: selectionManager.textSelections.map(\.range), with: string)
+    }
+
     // MARK: - Marked Text
 
     /// Replaces a specified range in the receiver’s text storage with the given string and sets the selection.

@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import Common
 
 final class LineFragmentView: NSView {
     private weak var lineFragment: LineFragment?
@@ -33,7 +34,7 @@ final class LineFragmentView: NSView {
         context.textPosition = CGPoint(
             x: 0,
             y: lineFragment.height - lineFragment.descent + (lineFragment.heightDifference/2)
-        )
+        ).pixelAligned
         CTLineDraw(lineFragment.ctLine, context)
         context.restoreGState()
     }

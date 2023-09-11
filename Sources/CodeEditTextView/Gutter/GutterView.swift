@@ -7,6 +7,7 @@
 
 import AppKit
 import CodeEditInputView
+import Common
 
 public class GutterView: NSView {
     struct EdgeInsets: Equatable, Hashable {
@@ -151,10 +152,7 @@ public class GutterView: NSView {
             // Leading padding + (width - linewidth)
             let xPos = edgeInsets.leading + (maxWidth - lineNumberWidth)
 
-            context.textPosition = CGPoint(
-                x: xPos,
-                y: yPos
-            )
+            context.textPosition = CGPoint(x: xPos, y: yPos).pixelAligned
             CTLineDraw(ctLine, context)
         }
         context.restoreGState()

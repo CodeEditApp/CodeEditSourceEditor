@@ -8,15 +8,15 @@
 import Foundation
 
 public extension TextLineStorage {
-    public func linesStartingAt(_ minY: CGFloat, until maxY: CGFloat) -> TextLineStorageYIterator {
+    func linesStartingAt(_ minY: CGFloat, until maxY: CGFloat) -> TextLineStorageYIterator {
         TextLineStorageYIterator(storage: self, minY: minY, maxY: maxY)
     }
 
-    public func linesInRange(_ range: NSRange) -> TextLineStorageRangeIterator {
+    func linesInRange(_ range: NSRange) -> TextLineStorageRangeIterator {
         TextLineStorageRangeIterator(storage: self, range: range)
     }
 
-    public struct TextLineStorageYIterator: LazySequenceProtocol, IteratorProtocol {
+    struct TextLineStorageYIterator: LazySequenceProtocol, IteratorProtocol {
         private let storage: TextLineStorage
         private let minY: CGFloat
         private let maxY: CGFloat
@@ -32,9 +32,9 @@ public extension TextLineStorage {
         public mutating func next() -> TextLinePosition? {
             if let currentPosition {
                 guard currentPosition.yPos < maxY,
-                      let nextPosition = storage.getLine(
-                        atIndex: currentPosition.range.max
-                      ) else { return nil }
+                      let nextPosition = storage.getLine(atIndex: currentPosition.range.max) else {
+                    return nil
+                }
                 self.currentPosition = nextPosition
                 return self.currentPosition!
             } else if let nextPosition = storage.getLine(atPosition: minY) {
@@ -46,7 +46,7 @@ public extension TextLineStorage {
         }
     }
 
-    public struct TextLineStorageRangeIterator: LazySequenceProtocol, IteratorProtocol {
+    struct TextLineStorageRangeIterator: LazySequenceProtocol, IteratorProtocol {
         private let storage: TextLineStorage
         private let range: NSRange
         private var currentPosition: TextLinePosition?
@@ -60,9 +60,9 @@ public extension TextLineStorage {
         public mutating func next() -> TextLinePosition? {
             if let currentPosition {
                 guard currentPosition.range.max < range.max,
-                      let nextPosition = storage.getLine(
-                        atIndex: currentPosition.range.max
-                      ) else { return nil }
+                      let nextPosition = storage.getLine(atIndex: currentPosition.range.max) else {
+                    return nil
+                }
                 self.currentPosition = nextPosition
                 return self.currentPosition!
             } else if let nextPosition = storage.getLine(atIndex: range.location) {
@@ -92,9 +92,9 @@ extension TextLineStorage: LazySequenceProtocol {
         public mutating func next() -> TextLinePosition? {
             if let currentPosition {
                 guard currentPosition.range.max < storage.length,
-                      let nextPosition = storage.getLine(
-                        atIndex: currentPosition.range.max
-                      ) else { return nil }
+                      let nextPosition = storage.getLine(atIndex: currentPosition.range.max) else {
+                    return nil
+                }
                 self.currentPosition = nextPosition
                 return self.currentPosition!
             } else if let nextPosition = storage.getLine(atIndex: 0) {

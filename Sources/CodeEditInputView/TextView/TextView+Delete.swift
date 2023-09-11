@@ -56,9 +56,9 @@ extension TextView {
                 direction: direction,
                 destination: destination
             )
+            guard extendedRange.location >= 0 else { continue }
             textSelection.range.formUnion(extendedRange)
         }
-        print(#function, selectionManager.textSelections.map(\.range))
         replaceCharacters(in: selectionManager.textSelections.map(\.range), with: "")
     }
 }
