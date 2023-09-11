@@ -119,9 +119,7 @@ public extension TextSelectionManager {
         if delta < 0 {
             enumerationOptions.formUnion(.reverse)
         }
-        guard let line = layoutManager?.textLineForOffset(offset),
-              let lineFragment = line.data.typesetter.lineFragments.getLine(atIndex: offset - line.range.location)
-        else {
+        guard let line = layoutManager?.textLineForOffset(offset) else {
             return NSRange(location: offset, length: 0)
         }
         var rangeToDelete = NSRange(location: offset, length: 0)

@@ -1,6 +1,8 @@
 import XCTest
 @testable import CodeEditInputView
 
+// swiftlint:disable function_body_length
+
 fileprivate extension CGFloat {
     func approxEqual(_ value: CGFloat) -> Bool {
         return abs(self - value) < 0.05
@@ -13,8 +15,8 @@ final class TextLayoutLineStorageTests: XCTestCase {
     fileprivate func createBalancedTree() -> TextLineStorage<TextLine> {
         let tree = TextLineStorage<TextLine>()
         var data = [TextLineStorage<TextLine>.BuildItem]()
-        for i in 0..<15 {
-            data.append(.init(data: TextLine(), length: i + 1))
+        for idx in 0..<15 {
+            data.append(.init(data: TextLine(), length: idx + 1))
         }
         tree.build(from: data, estimatedLineHeight: 1.0)
         return tree
@@ -58,20 +60,6 @@ final class TextLayoutLineStorageTests: XCTestCase {
         }
     }
 
-    func test_search() {
-        var tree = TextLineStorage<TextLine>()
-        tree.insert(line: TextLine(), atIndex: 0, length: 1, height: 1.0)
-        tree.insert(line: TextLine(), atIndex: 1, length: 2, height: 1.0)
-        tree.insert(line: TextLine(), atIndex: 0, length: 3, height: 1.0)
-        tree.insert(line: TextLine(), atIndex: 0, length: 4, height: 1.0)
-        tree.insert(line: TextLine(), atIndex: 7, length: 5, height: 1.0)
-        tree.insert(line: TextLine(), atIndex: 12, length: 6, height: 1.0)
-        printTree(tree)
-        for line in tree {
-            print(line.index)
-        }
-    }
-
     func test_insert() throws {
         var tree = TextLineStorage<TextLine>()
 
@@ -93,7 +81,6 @@ final class TextLayoutLineStorageTests: XCTestCase {
         tree.insert(line: TextLine(), atIndex: tree.length - 1, length: 1, height: 1.0)
         try assertTreeMetadataCorrect(tree)
 
-        //
         tree = createBalancedTree()
         tree.insert(line: TextLine(), atIndex: 45, length: 1, height: 1.0)
         try assertTreeMetadataCorrect(tree)
@@ -199,7 +186,6 @@ final class TextLayoutLineStorageTests: XCTestCase {
         XCTAssert(tree.count == 14, "Tree length incorrect")
         try assertTreeMetadataCorrect(tree)
 
-
         // Delete root
 
         tree = createBalancedTree()
@@ -234,10 +220,10 @@ final class TextLayoutLineStorageTests: XCTestCase {
     func test_insertPerformance() {
         let tree = TextLineStorage<TextLine>()
         var lines: [TextLineStorage<TextLine>.BuildItem] = []
-        for i in 0..<250_000 {
+        for idx in 0..<250_000 {
             lines.append(TextLineStorage<TextLine>.BuildItem(
                 data: TextLine(),
-                length: i + 1
+                length: idx + 1
             ))
         }
         tree.build(from: lines, estimatedLineHeight: 1.0)
@@ -267,18 +253,20 @@ final class TextLayoutLineStorageTests: XCTestCase {
     func test_iterationPerformance() {
         let tree = TextLineStorage<TextLine>()
         var lines: [TextLineStorage<TextLine>.BuildItem] = []
-        for i in 0..<100_000 {
+        for idx in 0..<100_000 {
             lines.append(TextLineStorage<TextLine>.BuildItem(
                 data: TextLine(),
-                length: i + 1
+                length: idx + 1
             ))
         }
         tree.build(from: lines, estimatedLineHeight: 1.0)
 
         measure {
             for line in tree {
-                let _ = line
+                _ = line
             }
         }
     }
 }
+
+// swiftlint:enable function_body_length

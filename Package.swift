@@ -76,14 +76,20 @@ let package = Package(
             dependencies: [
                 "CodeEditTextView",
                 "CodeEditLanguages",
+            ],
+            plugins: [
+                .plugin(name: "SwiftLint", package: "SwiftLintPlugin")
             ]
         ),
 
-            .testTarget(
-                name: "CodeEditInputViewTests",
-                dependencies: [
-                    "CodeEditInputView",
-                ]
-            ),
+        .testTarget(
+            name: "CodeEditInputViewTests",
+            dependencies: [
+                "CodeEditInputView",
+            ],
+            plugins: [
+                .plugin(name: "SwiftLint", package: "SwiftLintPlugin")
+            ]
+        ),
     ]
 )
