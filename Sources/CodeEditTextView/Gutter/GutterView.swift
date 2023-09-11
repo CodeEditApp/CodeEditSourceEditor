@@ -101,7 +101,7 @@ public class GutterView: NSView {
 
         if originalMaxWidth != maxWidth {
             self.frame.size.width = maxWidth + edgeInsets.horizontal
-            textView.layoutManager.gutterWidth = maxWidth + edgeInsets.horizontal
+            textView.edgeInsets.left = maxWidth + edgeInsets.horizontal
         }
     }
 
@@ -158,7 +158,7 @@ public class GutterView: NSView {
         context.restoreGState()
     }
 
-    public override func draw(_ dirtyRect: NSRect) {
+    override public func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext else {
             return
         }

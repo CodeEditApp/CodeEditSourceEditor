@@ -26,8 +26,9 @@ public class TextLayoutManager: NSObject {
     public var typingAttributes: [NSAttributedString.Key: Any]
     public var lineHeightMultiplier: CGFloat
     public var wrapLines: Bool
-    public var detectedLineEnding: LineEnding = .lf
-    public var gutterWidth: CGFloat = 20 {
+    public var detectedLineEnding: LineEnding = .lineFeed
+    /// The edge insets to inset all text layout with.
+    public var edgeInsets: HorizontalEdgeInsets = .zero {
         didSet {
             setNeedsLayout()
         }
@@ -46,7 +47,7 @@ public class TextLayoutManager: NSObject {
     private var visibleLineIds: Set<TextLine.ID> = []
     /// Used to force a complete re-layout using `setNeedsLayout`
     private var needsLayout: Bool = false
-    private var isInTransaction: Bool = false
+    private(set) public var isInTransaction: Bool = false
 
     weak private var layoutView: NSView?
 
@@ -136,7 +137,7 @@ public class TextLayoutManager: NSObject {
         }
         let fragment = fragmentPosition.data
 
-        if fragment.width < point.x - gutterWidth {
+        if fragment.width < point.x - edgeInsets.left {
             let fragmentRange = CTLineGetStringRange(fragment.ctLine)
             // Return eol
             return position.range.location + fragmentRange.location + fragmentRange.length - (
@@ -148,7 +149,7 @@ public class TextLayoutManager: NSObject {
             // Somewhere in the fragment
             let fragmentIndex = CTLineGetStringIndexForPosition(
                 fragment.ctLine,
-                CGPoint(x: point.x - gutterWidth, y: fragment.height/2)
+                CGPoint(x: point.x - edgeInsets.left, y: fragment.height/2)
             )
             return position.range.location + fragmentIndex
         }
@@ -183,9 +184,9 @@ public class TextLayoutManager: NSObject {
         )
 
         return CGRect(
-            x: minXPos + gutterWidth,
+            x: minXPos + edgeInsets.left,
             y: linePosition.yPos + fragmentPosition.yPos,
-            width: (maxXPos - minXPos) + gutterWidth,
+            width: (maxXPos - minXPos) + edgeInsets.left,
             height: fragmentPosition.data.scaledHeight
         )
     }
@@ -218,12 +219,12 @@ public class TextLayoutManager: NSObject {
 
     /// Begins a transaction, preventing the layout manager from performing layout until the `endTransaction` is called.
     /// Useful for grouping attribute modifications into one layout pass rather than laying out every update.
-    func beginTransaction() {
+    public func beginTransaction() {
         isInTransaction = true
     }
 
     /// Ends a transaction. When called, the layout manager will layout any necessary lines.
-    func endTransaction() {
+    public func endTransaction() {
         isInTransaction = false
         setNeedsLayout()
         layoutLines()
@@ -232,7 +233,7 @@ public class TextLayoutManager: NSObject {
     // MARK: - Layout
 
     /// Lays out all visible lines
-    internal func layoutLines() {
+    internal func layoutLines() { // swiftlint:disable:this function_body_length
         guard let visibleRect = delegate?.visibleRect, !isInTransaction else { return }
         let minY = max(visibleRect.minY, 0)
         let maxY = max(visibleRect.maxY, 0)
@@ -240,13 +241,16 @@ public class TextLayoutManager: NSObject {
         var usedFragmentIDs = Set<UUID>()
         var forceLayout: Bool = needsLayout
         let maxWidth: CGFloat = wrapLines
-            ? (delegate?.textViewSize().width ?? .greatestFiniteMagnitude) - gutterWidth
-            : .greatestFiniteMagnitude
+        ? (delegate?.textViewSize().width ?? .greatestFiniteMagnitude) - edgeInsets.horizontal
+        : .greatestFiniteMagnitude
         var newVisibleLines: Set<TextLine.ID> = []
         var yContentAdjustment: CGFloat = 0
 
         // Layout all lines
         for linePosition in lineStorage.linesStartingAt(minY, until: maxY) {
+            // Updating height in the loop may cause the iterator to be wrong
+            guard linePosition.yPos < maxY else { break }
+
             if forceLayout
                 || linePosition.data.needsLayout(maxWidth: maxWidth)
                 || !visibleLineIds.contains(linePosition.data.id) {
@@ -271,7 +275,7 @@ public class TextLayoutManager: NSObject {
                         yContentAdjustment += lineSize.height - linePosition.height
                     }
                 }
-                if maxLineWidth < lineSize.width {
+                if maxLineWidth < lineSize.width + edgeInsets.horizontal {
                     maxLineWidth = lineSize.width
                 }
             } else {
@@ -347,7 +351,7 @@ public class TextLayoutManager: NSObject {
     ) {
         let view = viewReuseQueue.getOrCreateView(forKey: lineFragment.data.id)
         view.setLineFragment(lineFragment.data)
-        view.frame.origin = CGPoint(x: gutterWidth, y: yPos)
+        view.frame.origin = CGPoint(x: edgeInsets.left, y: yPos)
         layoutView?.addSubview(view)
         view.needsDisplay = true
     }

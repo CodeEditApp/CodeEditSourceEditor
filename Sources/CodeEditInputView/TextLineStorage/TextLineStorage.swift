@@ -7,6 +7,10 @@
 
 import Foundation
 
+// Disabling the file length here due to the fact that we want to keep certain methods private even to this package.
+// Specifically, all rotation methods, fixup methods, and internal search methods must be kept private.
+// swiftlint:disable file_length
+
 /// Implements a red-black tree for efficiently editing, storing and retrieving lines of text in a document.
 public final class TextLineStorage<Data: Identifiable> {
     private enum MetaFixupAction {
@@ -464,10 +468,6 @@ private extension TextLineStorage {
                     rightRotate(node: node)
                     nodeX = root
                 }
-
-
-
-
             }
         }
         nodeX?.color = .black
@@ -566,3 +566,5 @@ private extension TextLineStorage {
         ) + getSubtreeMeta(startingAt: node.right)
     }
 }
+
+// swiftlint:enable file_length

@@ -103,7 +103,7 @@ public class TextSelectionManager: NSObject {
 
     // MARK: - Selection Views
 
-    internal func updateSelectionViews() {
+    func updateSelectionViews() {
         var didUpdate: Bool = false
 
         for textSelection in textSelections where textSelection.range.isEmpty {

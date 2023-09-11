@@ -253,7 +253,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         }
     }
 
-    public override func insertTab(_ sender: Any?) {
+    override public func insertTab(_ sender: Any?) {
         textView.insertText("\t", replacementRange: textView.selectedRange)
     }
 

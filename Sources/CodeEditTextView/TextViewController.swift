@@ -82,7 +82,7 @@ public class TextViewController: NSViewController {
     }
 
     // swiftlint:disable:next function_body_length
-    public override func loadView() {
+    override public func loadView() {
         scrollView = NSScrollView()
         textView = TextView(
             string: string.wrappedValue,
@@ -97,6 +97,7 @@ public class TextViewController: NSViewController {
         )
         textView.postsFrameChangedNotifications = true
         textView.translatesAutoresizingMaskIntoConstraints = false
+        textView.edgeInsets = HorizontalEdgeInsets(left: 50, right: 75)
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.contentView.postsFrameChangedNotifications = true
@@ -172,7 +173,7 @@ extension TextViewController: ThemeAttributesProviding {
     public func attributesFor(_ capture: CaptureName?) -> [NSAttributedString.Key: Any] {
         [
             .font: font,
-            .foregroundColor: theme.colorFor(capture),
+            .foregroundColor: theme.colorFor(capture)
 //            .paragraphStyle: paragraphStyle,
 //            .kern: kern
         ]
@@ -213,7 +214,7 @@ extension TextViewController {
 }
 
 extension TextViewController: TextViewDelegate {
-    public func textView(_ textView: TextView, didReplaceContents in: NSRange, with: String) {
+    public func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with: String) {
         gutterView.needsDisplay = true
     }
 }

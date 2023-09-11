@@ -8,7 +8,7 @@
 import Foundation
 
 public extension TextLayoutManager {
-    public func visibleLines() -> Iterator {
+    func visibleLines() -> Iterator {
         let visibleRect = delegate?.visibleRect ?? NSRect(
             x: 0,
             y: 0,
@@ -18,7 +18,7 @@ public extension TextLayoutManager {
         return Iterator(minY: max(visibleRect.minY, 0), maxY: max(visibleRect.maxY, 0), storage: self.lineStorage)
     }
 
-    public struct Iterator: LazySequenceProtocol, IteratorProtocol {
+    struct Iterator: LazySequenceProtocol, IteratorProtocol {
         private var storageIterator: TextLineStorage<TextLine>.TextLineStorageYIterator
 
         init(minY: CGFloat, maxY: CGFloat, storage: TextLineStorage<TextLine>) {

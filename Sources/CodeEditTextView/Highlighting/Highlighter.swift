@@ -175,6 +175,7 @@ private extension Highlighter {
             self?.validSet.formUnion(IndexSet(integersIn: rangeToHighlight))
 
             // Loop through each highlight and modify the textStorage accordingly.
+            textView.layoutManager.beginTransaction()
             textView.textStorage.beginEditing()
 
             // Create a set of indexes that were not highlighted.
@@ -202,10 +203,7 @@ private extension Highlighter {
             }
 
             textView.textStorage.endEditing()
-
-            // After applying edits to the text storage we need to invalidate the layout
-            // of the highlighted text.
-            textView.layoutManager.invalidateLayoutForRange(rangeToHighlight)
+            textView.layoutManager.endTransaction()
         }
     }
 

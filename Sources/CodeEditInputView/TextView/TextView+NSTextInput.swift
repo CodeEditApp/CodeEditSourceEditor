@@ -53,8 +53,9 @@ extension TextView: NSTextInputClient {
             assertionFailure("\(#function) called with invalid string type. Expected String or NSAttributedString.")
         }
 
-        if LineEnding(rawValue: insertString) == .cr && layoutManager.detectedLineEnding == .crlf {
-            insertString = LineEnding.crlf.rawValue
+        if LineEnding(rawValue: insertString) == .carriageReturn
+           && layoutManager.detectedLineEnding == .carriageReturnLineFeed {
+            insertString = LineEnding.carriageReturnLineFeed.rawValue
         }
 
         if replacementRange.location == NSNotFound {
@@ -64,7 +65,7 @@ extension TextView: NSTextInputClient {
         }
     }
 
-    public override func insertText(_ insertString: Any) {
+    override public func insertText(_ insertString: Any) {
         var string: String
         switch insertString {
         case let insertString as NSString:
@@ -76,8 +77,9 @@ extension TextView: NSTextInputClient {
             assertionFailure("\(#function) called with invalid string type. Expected String or NSAttributedString.")
         }
 
-        if LineEnding(rawValue: string) == .cr && layoutManager.detectedLineEnding == .crlf {
-            string = LineEnding.crlf.rawValue
+        if LineEnding(rawValue: string) == .carriageReturn
+           && layoutManager.detectedLineEnding == .carriageReturnLineFeed {
+            string = LineEnding.carriageReturnLineFeed.rawValue
         }
 
         replaceCharacters(in: selectionManager.textSelections.map(\.range), with: string)

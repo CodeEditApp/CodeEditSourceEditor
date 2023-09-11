@@ -8,7 +8,11 @@
 import AppKit
 
 extension TextView {
-    public override func insertNewline(_ sender: Any?) {
+    override public func insertNewline(_ sender: Any?) {
         insertText(layoutManager.detectedLineEnding.rawValue)
+    }
+
+    override public func insertTab(_ sender: Any?) {
+        insertText("\t")
     }
 }

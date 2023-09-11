@@ -8,13 +8,13 @@
 import Foundation
 
 public protocol TextViewDelegate: AnyObject {
-    func textView(_ textView: TextView, willReplaceContents in: NSRange, with: String)
-    func textView(_ textView: TextView, didReplaceContents in: NSRange, with: String)
-    func textView(_ textView: TextView, shouldReplaceContents in: NSRange, with: String) -> Bool
+    func textView(_ textView: TextView, willReplaceContentsIn range: NSRange, with: String)
+    func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with: String)
+    func textView(_ textView: TextView, shouldReplaceContentsIn range: NSRange, with: String) -> Bool
 }
 
 public extension TextViewDelegate {
-    func textView(_ textView: TextView, willReplaceContents in: NSRange, with: String) { }
-    func textView(_ textView: TextView, didReplaceContents in: NSRange, with: String) { }
-    func textView(_ textView: TextView, shouldReplaceContents in: NSRange, with: String) -> Bool { true }
+    func textView(_ textView: TextView, willReplaceContentsIn range: NSRange, with: String) { }
+    func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with: String) { }
+    func textView(_ textView: TextView, shouldReplaceContentsIn range: NSRange, with: String) -> Bool { true }
 }

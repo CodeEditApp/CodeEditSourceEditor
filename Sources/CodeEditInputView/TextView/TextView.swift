@@ -43,6 +43,13 @@ public class TextView: NSView, NSTextContent {
     @Invalidating(.display)
     public var isSelectable: Bool = true
     public var letterSpacing: Double
+    public var edgeInsets: HorizontalEdgeInsets = .zero {
+        didSet {
+            layoutManager.edgeInsets = edgeInsets
+            selectionManager.updateSelectionViews()
+            setNeedsDisplay()
+        }
+    }
 
     open var contentType: NSTextContentType?
 
@@ -143,7 +150,7 @@ public class TextView: NSView, NSTextContent {
         layoutManager = TextLayoutManager(
             textStorage: textStorage,
             typingAttributes: [
-                .font: font,
+                .font: font
             ],
             lineHeightMultiplier: lineHeight,
             wrapLines: wrapLines,
@@ -203,19 +210,19 @@ public class TextView: NSView, NSTextContent {
 
     // MARK: - View Lifecycle
 
-    public override func viewWillMove(toWindow newWindow: NSWindow?) {
+    override public func viewWillMove(toWindow newWindow: NSWindow?) {
         super.viewWillMove(toWindow: newWindow)
         layoutManager.layoutLines()
     }
 
-    public override func viewDidEndLiveResize() {
+    override public func viewDidEndLiveResize() {
         super.viewDidEndLiveResize()
         updateFrameIfNeeded()
     }
 
     // MARK: - Interaction
 
-    public override func keyDown(with event: NSEvent) {
+    override public func keyDown(with event: NSEvent) {
         guard isEditable else {
             super.keyDown(with: event)
             return
@@ -230,7 +237,7 @@ public class TextView: NSView, NSTextContent {
         }
     }
 
-    public override func mouseDown(with event: NSEvent) {
+    override public func mouseDown(with event: NSEvent) {
         // Set cursor
         guard let offset = layoutManager.textOffsetAtPoint(self.convert(event.locationInWindow, from: nil)) else {
             super.mouseDown(with: event)
@@ -247,7 +254,7 @@ public class TextView: NSView, NSTextContent {
 
     // MARK: - Layout
 
-    public override func draw(_ dirtyRect: NSRect) {
+    override public func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         if isSelectable {
             selectionManager.drawSelections(in: dirtyRect)
@@ -258,7 +265,7 @@ public class TextView: NSView, NSTextContent {
         true
     }
 
-    public override var visibleRect: NSRect {
+    override public var visibleRect: NSRect {
         if let scrollView = scrollView {
             var rect = scrollView.documentVisibleRect
             rect.origin.y += scrollView.contentInsets.top

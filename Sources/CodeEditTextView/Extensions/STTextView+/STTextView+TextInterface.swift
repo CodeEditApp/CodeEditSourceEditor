@@ -51,7 +51,7 @@ extension STTextView: TextInterface {
 
         let delegate = self.delegate
         self.delegate = nil
-        textDidChange(nil)
+        didChangeText()
         self.delegate = delegate
     }
 }

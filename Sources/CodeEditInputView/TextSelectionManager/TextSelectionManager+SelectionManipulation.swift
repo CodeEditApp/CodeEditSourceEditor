@@ -124,15 +124,13 @@ public extension TextSelectionManager {
         else {
             return NSRange(location: offset, length: 0)
         }
-        let lineStart = line.range.location + lineFragment.range.location
-        let lineEnd = line.range.location + lineFragment.range.max
         var rangeToDelete = NSRange(location: offset, length: 0)
 
         var hasFoundValidWordChar = false
         string.enumerateSubstrings(
             in: NSRange(
-                location: delta > 0 ? offset : lineStart,
-                length: delta > 0 ? lineEnd - offset : offset - lineStart
+                location: delta > 0 ? offset : 0,
+                length: delta > 0 ? string.length - offset : offset
             ),
             options: enumerationOptions
         ) { substring, _, _, stop in
@@ -142,6 +140,7 @@ public extension TextSelectionManager {
             }
 
             if hasFoundValidWordChar && CharacterSet.punctuationCharacters
+                .union(.whitespacesAndNewlines)
                 .isSuperset(of: CharacterSet(charactersIn: substring)) {
                 stop.pointee = true
                 return
@@ -188,7 +187,10 @@ public extension TextSelectionManager {
             return NSRange(location: offset, length: 0)
         }
         let lineBound = delta > 0
-        ? line.range.location + lineFragment.range.max
+        ? line.range.location + min(
+            lineFragment.range.max,
+            line.range.max - line.range.location - (layoutManager?.detectedLineEnding.length ?? 1)
+        )
         : line.range.location + lineFragment.range.location
 
         var foundRange = NSRange(

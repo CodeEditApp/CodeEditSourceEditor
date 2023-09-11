@@ -46,12 +46,13 @@ class CEUndoManager {
 
     /// Represents a group of mutations that should be treated as one mutation when undoing/redoing.
     private struct UndoGroup {
-        struct Mutation {
-            var mutation: TextMutation
-            var inverse: TextMutation
-        }
-
         var mutations: [Mutation]
+    }
+
+    /// A single undo mutation.
+    private struct Mutation {
+        var mutation: TextMutation
+        var inverse: TextMutation
     }
 
     public let manager: DelegatedUndoManager
@@ -128,7 +129,7 @@ class CEUndoManager {
               !isRedoing else {
             return
         }
-        let newMutation = UndoGroup.Mutation(mutation: mutation, inverse: textStorage.inverseMutation(for: mutation))
+        let newMutation = Mutation(mutation: mutation, inverse: textStorage.inverseMutation(for: mutation))
         if !undoStack.isEmpty, let lastMutation = undoStack.last?.mutations.last {
             if isGrouping || shouldContinueGroup(newMutation, lastMutation: lastMutation) {
                 undoStack[undoStack.count - 1].mutations.append(newMutation)
@@ -166,7 +167,7 @@ class CEUndoManager {
     ///   - mutation: The current mutation.
     ///   - lastMutation: The last mutation applied to the document.
     /// - Returns: Whether or not the given mutations can be grouped.
-    private func shouldContinueGroup(_ mutation: UndoGroup.Mutation, lastMutation: UndoGroup.Mutation) -> Bool {
+    private func shouldContinueGroup(_ mutation: Mutation, lastMutation: Mutation) -> Bool {
         // If last mutation was delete & new is insert or vice versa, split group
         if (mutation.mutation.range.length > 0 && lastMutation.mutation.range.length == 0)
             || (mutation.mutation.range.length == 0 && lastMutation.mutation.range.length > 0) {

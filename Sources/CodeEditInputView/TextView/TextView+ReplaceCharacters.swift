@@ -21,9 +21,9 @@ extension TextView {
         textStorage.beginEditing()
         // Can't insert an empty string into an empty range. One must be not empty
         for range in ranges where
-        (delegate?.textView(self, shouldReplaceContents: range, with: string) ?? true)
+        (delegate?.textView(self, shouldReplaceContentsIn: range, with: string) ?? true)
         && (!range.isEmpty || !string.isEmpty) {
-            delegate?.textView(self, willReplaceContents: range, with: string)
+            delegate?.textView(self, willReplaceContentsIn: range, with: string)
 
             layoutManager.willReplaceCharactersInRange(range: range, with: string)
             _undoManager?.registerMutation(
@@ -31,7 +31,7 @@ extension TextView {
             )
             textStorage.replaceCharacters(in: range, with: string)
 
-            delegate?.textView(self, didReplaceContents: range, with: string)
+            delegate?.textView(self, didReplaceContentsIn: range, with: string)
         }
         layoutManager.endTransaction()
         textStorage.endEditing()

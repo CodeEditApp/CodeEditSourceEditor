@@ -126,7 +126,6 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
 //        controller.contentInsets = contentInsets
 //        controller.bracketPairHighlight = bracketPairHighlight
 //
-//        // Updating the language, theme, tab width and indent option needlessly can cause highlights to be re-calculated
 //        if controller.language.id != language.id {
 //            controller.language = language
 //        }

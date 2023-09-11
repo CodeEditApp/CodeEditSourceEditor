@@ -9,11 +9,11 @@ import AppKit
 
 public enum LineEnding: String {
     /// The default unix `\n` character
-    case lf = "\n"
+    case lineFeed = "\n"
     /// MacOS line ending `\r` character
-    case cr = "\r"
+    case carriageReturn = "\r"
     /// Windows line ending sequence `\r\n`
-    case crlf = "\r\n"
+    case carriageReturnLineFeed = "\r\n"
 
     /// Initialize a line ending from a line string.
     /// - Parameter line: The line to use
@@ -22,12 +22,12 @@ public enum LineEnding: String {
         guard let endChar = iterator.next() else { return nil }
         if endChar == "\n" {
             if let nextEndChar = iterator.next(), nextEndChar == "\r" {
-                self = .crlf
+                self = .carriageReturnLineFeed
             } else {
-                self = .lf
+                self = .lineFeed
             }
         } else if endChar == "\r" {
-            self = .cr
+            self = .carriageReturn
         } else {
             return nil
         }
@@ -36,11 +36,14 @@ public enum LineEnding: String {
     /// Attempts to detect the line ending from a line storage.
     /// - Parameter lineStorage: The line storage to enumerate.
     /// - Returns: A line ending. Defaults to `.lf` if none could be found.
-    public static func detectLineEnding(lineStorage: TextLineStorage<TextLine>, textStorage: NSTextStorage) -> LineEnding {
+    public static func detectLineEnding(
+        lineStorage: TextLineStorage<TextLine>,
+        textStorage: NSTextStorage
+    ) -> LineEnding {
         var histogram: [LineEnding: Int] = [
-            .lf: 0,
-            .cr: 0,
-            .crlf: 0
+            .lineFeed: 0,
+            .carriageReturn: 0,
+            .carriageReturnLineFeed: 0
         ]
         var shouldContinue = true
         var lineIterator = lineStorage.makeIterator()
@@ -57,7 +60,7 @@ public enum LineEnding: String {
             }
         }
 
-        return histogram.max(by: { $0.value < $1.value })?.key ?? .lf
+        return histogram.max(by: { $0.value < $1.value })?.key ?? .lineFeed
     }
 
     public var length: Int {

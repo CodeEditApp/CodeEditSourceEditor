@@ -9,7 +9,7 @@ import AppKit
 import STTextView
 
 extension STTextViewController {
-//    public override func loadView() {
+//    override public func loadView() {
 //        textView = CETextView()
 //
 //        let scrollView = CEScrollView()
@@ -66,7 +66,7 @@ extension STTextViewController {
 //        self.setCursorPosition(self.cursorPosition.wrappedValue)
 //    }
 
-    public override func viewDidLoad() {
+    override public func viewDidLoad() {
         super.viewDidLoad()
 
         NotificationCenter.default.addObserver(forName: NSWindow.didResizeNotification,
@@ -117,7 +117,7 @@ extension STTextViewController {
             .store(in: &cancellables)
     }
 
-    public override func viewWillAppear() {
+    override public func viewWillAppear() {
         super.viewWillAppear()
         updateTextContainerWidthIfNeeded(true)
     }

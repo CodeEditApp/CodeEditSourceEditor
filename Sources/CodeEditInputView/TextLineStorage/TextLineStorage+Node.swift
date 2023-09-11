@@ -45,12 +45,12 @@ extension TextLineStorage {
         nodeV?.parent = nodeU.parent
     }
 
-    final class Node<Data: Identifiable> {
-        enum Color {
-            case red
-            case black
-        }
+    enum Color {
+        case red
+        case black
+    }
 
+    final class Node<Data: Identifiable> {
         // The length of the text line
         var length: Int
         // The height of this text line
