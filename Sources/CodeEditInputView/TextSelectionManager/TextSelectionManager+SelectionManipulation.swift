@@ -26,9 +26,19 @@ public extension TextSelectionManager {
         switch direction {
         case .backward:
             guard offset > 0 else { return NSRange(location: offset, length: 0) } // Can't go backwards beyond 0
-            return extendSelection(from: offset, destination: destination, delta: -1)
+            return extendSelection(
+                from: offset,
+                destination: destination,
+                delta: -1,
+                decomposeCharacters: decomposeCharacters
+            )
         case .forward:
-            return extendSelection(from: offset, destination: destination, delta: 1)
+            return extendSelection(
+                from: offset,
+                destination: destination,
+                delta: 1,
+                decomposeCharacters: decomposeCharacters
+            )
         case .up: // TODO: up
             return NSRange(location: offset, length: 0)
         case .down: // TODO: down
@@ -97,6 +107,12 @@ public extension TextSelectionManager {
         decomposeCharacters: Bool
     ) -> NSRange {
         let range = delta > 0 ? NSRange(location: offset, length: 1) : NSRange(location: offset - 1, length: 1)
+        if delta > 0 && offset == string.length - 1 {
+            return NSRange(location: offset, length: 0)
+        } else if delta < 0 && offset == 0 {
+            return NSRange(location: 0, length: 0)
+        }
+
         if decomposeCharacters {
             return range
         } else {
@@ -118,9 +134,6 @@ public extension TextSelectionManager {
         var enumerationOptions: NSString.EnumerationOptions = .byCaretPositions
         if delta < 0 {
             enumerationOptions.formUnion(.reverse)
-        }
-        guard let line = layoutManager?.textLineForOffset(offset) else {
-            return NSRange(location: offset, length: 0)
         }
         var rangeToDelete = NSRange(location: offset, length: 0)
 
