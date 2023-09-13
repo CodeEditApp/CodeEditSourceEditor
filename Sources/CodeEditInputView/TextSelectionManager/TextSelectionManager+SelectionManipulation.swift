@@ -16,12 +16,14 @@ public extension TextSelectionManager {
     ///   - direction: The direction the selection should be created in.
     ///   - destination: Determines how far the selection is.
     ///   - decomposeCharacters: Set to `true` to treat grapheme clusters as individual characters.
+    ///   - suggestedXPos: The suggested x position to stick to.
     /// - Returns: A range of a new selection based on the direction and destination.
     func rangeOfSelection(
         from offset: Int,
         direction: Direction,
         destination: Destination,
-        decomposeCharacters: Bool = false
+        decomposeCharacters: Bool = false,
+        suggestedXPos: CGFloat? = nil
     ) -> NSRange {
         switch direction {
         case .backward:
@@ -39,10 +41,20 @@ public extension TextSelectionManager {
                 delta: 1,
                 decomposeCharacters: decomposeCharacters
             )
-        case .up: // TODO: up
-            return NSRange(location: offset, length: 0)
-        case .down: // TODO: down
-            return NSRange(location: offset, length: 0)
+        case .up:
+            return extendSelectionVertical(
+                from: offset,
+                destination: destination,
+                up: true,
+                suggestedXPos: suggestedXPos
+            )
+        case .down:
+            return extendSelectionVertical(
+                from: offset,
+                destination: destination,
+                up: false,
+                suggestedXPos: suggestedXPos
+            )
         }
     }
 
@@ -74,10 +86,8 @@ public extension TextSelectionManager {
             )
         case .word:
             return extendSelectionWord(string: string, from: offset, delta: delta)
-        case .line:
+        case .line, .container:
             return extendSelectionLine(string: string, from: offset, delta: delta)
-        case .container:
-            return extendSelectionContainer(from: offset, delta: delta)
         case .document:
             if delta > 0 {
                 return NSRange(location: offset, length: string.length - offset)
@@ -231,12 +241,112 @@ public extension TextSelectionManager {
         return foundRange.length == 0 ? originalFoundRange : foundRange
     }
 
+    // MARK: - Vertical Methods
+
+    /// Extends a selection from the given offset vertically to the destination.
+    /// - Parameters:
+    ///   - offset: The offset to extend from.
+    ///   - destination: The destination to extend to.
+    ///   - up: Set to true if extending up.
+    ///   - suggestedXPos: The suggested x position to stick to.
+    /// - Returns: The range of the extended selection.
+    private func extendSelectionVertical(
+        from offset: Int,
+        destination: Destination,
+        up: Bool,
+        suggestedXPos: CGFloat?
+    ) -> NSRange {
+        switch destination {
+        case .character:
+            return extendSelectionVerticalCharacter(from: offset, up: up, suggestedXPos: suggestedXPos)
+        case .word, .line:
+            return extendSelectionVerticalLine(from: offset, up: up)
+        case .container:
+            return extendSelectionContainer(from: offset, delta: up ? 1 : -1)
+        case .document:
+            if up {
+                return NSRange(location: 0, length: offset)
+            } else {
+                return NSRange(location: offset, length: (textStorage?.length ?? 0) - offset - 1)
+            }
+        }
+    }
+
+    /// Extends the selection to the nearest character vertically.
+    /// - Parameters:
+    ///   - offset: The offset to extend from.
+    ///   - up: Set to true if extending up.
+    ///   - suggestedXPos: The suggested x position to stick to.
+    /// - Returns: The range of the extended selection.
+    private func extendSelectionVerticalCharacter(
+        from offset: Int,
+        up: Bool,
+        suggestedXPos: CGFloat?
+    ) -> NSRange {
+        guard let point = layoutManager?.rectForOffset(offset)?.origin,
+              let newOffset = layoutManager?.textOffsetAtPoint(
+                CGPoint(
+                    x: suggestedXPos == nil ? point.x : suggestedXPos! + (layoutManager?.edgeInsets.left ?? 0),
+                    y: point.y - (layoutManager?.estimateLineHeight() ?? 2.0)/2 * (up ? 1 : -3)
+                )
+              ) else {
+            return NSRange(location: offset, length: 0)
+        }
+
+        return NSRange(
+            location: up ? newOffset : offset,
+            length: up ? offset - newOffset : newOffset - offset
+        )
+    }
+
+    /// Extends the selection to the nearest line vertically.
+    ///
+    /// If moving up and the offset is in the middle of the line, it first extends it to the beginning of the line.
+    /// On the second call, it will extend it to the beginning of the previous line. When moving down, the
+    /// same thing will happen in the opposite direction.
+    ///
+    /// - Parameters:
+    ///   - offset: The offset to extend from.
+    ///   - up: Set to true if extending up.
+    ///   - suggestedXPos: The suggested x position to stick to.
+    /// - Returns: The range of the extended selection.
+    private func extendSelectionVerticalLine(
+        from offset: Int,
+        up: Bool
+    ) -> NSRange {
+        // Important distinction here, when moving up/down on a line and in the middle of the line, we move to the
+        // beginning/end of the *entire* line, not the line fragment.
+        guard let line = layoutManager?.textLineForOffset(offset) else {
+            return NSRange(location: offset, length: 0)
+        }
+        if up && line.range.location != offset {
+            return NSRange(location: line.range.location, length: offset - line.index)
+        } else if !up && line.range.max - (layoutManager?.detectedLineEnding.length ?? 0) != offset {
+            return NSRange(
+                location: offset,
+                length: line.range.max - offset - (layoutManager?.detectedLineEnding.length ?? 0)
+            )
+        } else {
+            let nextQueryIndex = up ? max(line.range.location - 1, 0) : min(line.range.max, (textStorage?.length ?? 0))
+            guard let nextLine = layoutManager?.textLineForOffset(nextQueryIndex) else {
+                return NSRange(location: offset, length: 0)
+            }
+            return NSRange(
+                location: up ? nextLine.range.location : offset,
+                length: up
+                ? offset - nextLine.range.location
+                : nextLine.range.max - offset - (layoutManager?.detectedLineEnding.length ?? 0)
+            )
+        }
+    }
+
     /// Extends a selection one "container" long.
     /// - Parameters:
     ///   - offset: The location to start extending the selection from.
     ///   - delta: The direction the selection should be extended. `1` for forwards, `-1` for backwards.
     /// - Returns: The range of the extended selection.
     private func extendSelectionContainer(from offset: Int, delta: Int) -> NSRange {
+        // TODO: Needs to force layout for the rect being moved by.
         guard let layoutView, let endOffset = layoutManager?.textOffsetAtPoint(
             CGPoint(
                 x: delta > 0 ? layoutView.frame.maxX : layoutView.frame.minX,

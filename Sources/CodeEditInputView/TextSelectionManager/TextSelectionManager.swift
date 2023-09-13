@@ -30,6 +30,7 @@ public class TextSelectionManager: NSObject {
     public class TextSelection {
         public var range: NSRange
         internal weak var view: CursorView?
+        public var suggestedXPos: CGFloat?
 
         init(range: NSRange, view: CursorView? = nil) {
             self.range = range
@@ -110,7 +111,6 @@ public class TextSelectionManager: NSObject {
             let lineFragment = layoutManager?
                 .textLineForOffset(textSelection.range.location)?
                 .data
-                .typesetter
                 .lineFragments
                 .first
             let cursorOrigin = (layoutManager?.rectForOffset(textSelection.range.location) ?? .zero).origin

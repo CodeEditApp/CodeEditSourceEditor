@@ -49,12 +49,16 @@ public class TextLayoutManager: NSObject {
     private var needsLayout: Bool = false
     private(set) public var isInTransaction: Bool = false
 
-    weak private var layoutView: NSView?
+    weak internal var layoutView: NSView?
 
-    private var maxLineWidth: CGFloat = 0 {
+    internal var maxLineWidth: CGFloat = 0 {
         didSet {
             delegate?.layoutManagerMaxWidthDidChange(newWidth: maxLineWidth)
         }
+    }
+    private var maxLineLayoutWidth: CGFloat {
+        wrapLines ? (delegate?.textViewSize().width ?? .greatestFiniteMagnitude) - edgeInsets.horizontal
+        : .greatestFiniteMagnitude
     }
 
     // MARK: - Init
@@ -110,87 +114,6 @@ public class TextLayoutManager: NSObject {
         return (ascent + descent + leading) * lineHeightMultiplier
     }
 
-    // MARK: - Public Methods
-
-    public func estimatedHeight() -> CGFloat {
-        lineStorage.height
-    }
-
-    public func estimatedWidth() -> CGFloat {
-        maxLineWidth
-    }
-
-    public func textLineForPosition(_ posY: CGFloat) -> TextLineStorage<TextLine>.TextLinePosition? {
-        lineStorage.getLine(atPosition: posY)
-    }
-
-    public func textLineForOffset(_ offset: Int) -> TextLineStorage<TextLine>.TextLinePosition? {
-        lineStorage.getLine(atIndex: offset)
-    }
-
-    public func textOffsetAtPoint(_ point: CGPoint) -> Int? {
-        guard let position = lineStorage.getLine(atPosition: point.y),
-              let fragmentPosition = position.data.typesetter.lineFragments.getLine(
-                atPosition: point.y - position.yPos
-              ) else {
-            return nil
-        }
-        let fragment = fragmentPosition.data
-
-        if fragment.width < point.x - edgeInsets.left {
-            let fragmentRange = CTLineGetStringRange(fragment.ctLine)
-            // Return eol
-            return position.range.location + fragmentRange.location + fragmentRange.length - (
-                // Before the eol character (insertion point is before the eol)
-                fragmentPosition.range.max == position.range.max ?
-                1 : detectedLineEnding.length
-            )
-        } else {
-            // Somewhere in the fragment
-            let fragmentIndex = CTLineGetStringIndexForPosition(
-                fragment.ctLine,
-                CGPoint(x: point.x - edgeInsets.left, y: fragment.height/2)
-            )
-            return position.range.location + fragmentIndex
-        }
-    }
-
-    /// Find a position for the character at a given offset.
-    /// Returns the rect of the character at the given offset.
-    /// The rect may represent more than one unicode unit, for instance if the offset is at the beginning of an
-    /// emoji or non-latin glyph.
-    /// - Parameter offset: The offset to create the rect for.
-    /// - Returns: The found rect for the given offset.
-    public func rectForOffset(_ offset: Int) -> CGRect? {
-        guard let linePosition = lineStorage.getLine(atIndex: offset),
-              let fragmentPosition = linePosition.data.typesetter.lineFragments.getLine(
-                atIndex: offset - linePosition.range.location
-              ) else {
-            return nil
-        }
-        // Get the *real* length of the character at the offset. If this is a surrogate pair it'll return the correct
-        // length of the character at the offset.
-        let charLengthAtOffset = (textStorage.string as NSString).rangeOfComposedCharacterSequence(at: offset).length
-
-        let minXPos = CTLineGetOffsetForStringIndex(
-            fragmentPosition.data.ctLine,
-            offset - linePosition.range.location,
-            nil
-        )
-        let maxXPos = CTLineGetOffsetForStringIndex(
-            fragmentPosition.data.ctLine,
-            offset - linePosition.range.location + charLengthAtOffset,
-            nil
-        )
-
-        return CGRect(
-            x: minXPos + edgeInsets.left,
-            y: linePosition.yPos + fragmentPosition.yPos,
-            width: (maxXPos - minXPos) + edgeInsets.left,
-            height: fragmentPosition.data.scaledHeight
-        )
-    }
-
     // MARK: - Invalidation
 
     /// Invalidates layout for the given rect.
@@ -240,9 +163,6 @@ public class TextLayoutManager: NSObject {
         let originalHeight = lineStorage.height
         var usedFragmentIDs = Set<UUID>()
         var forceLayout: Bool = needsLayout
-        let maxWidth: CGFloat = wrapLines
-        ? (delegate?.textViewSize().width ?? .greatestFiniteMagnitude) - edgeInsets.horizontal
-        : .greatestFiniteMagnitude
         var newVisibleLines: Set<TextLine.ID> = []
         var yContentAdjustment: CGFloat = 0
 
@@ -252,13 +172,13 @@ public class TextLayoutManager: NSObject {
             guard linePosition.yPos < maxY else { break }
 
             if forceLayout
-                || linePosition.data.needsLayout(maxWidth: maxWidth)
+                || linePosition.data.needsLayout(maxWidth: maxLineLayoutWidth)
                 || !visibleLineIds.contains(linePosition.data.id) {
                 let lineSize = layoutLine(
                     linePosition,
                     minY: linePosition.yPos,
                     maxY: maxY,
-                    maxWidth: maxWidth,
+                    maxWidth: maxLineLayoutWidth,
                     laidOutFragmentIDs: &usedFragmentIDs
                 )
                 if lineSize.height != linePosition.height {

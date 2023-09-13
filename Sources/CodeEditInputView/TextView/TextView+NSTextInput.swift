@@ -63,26 +63,12 @@ extension TextView: NSTextInputClient {
         } else {
             replaceCharacters(in: replacementRange, with: insertString)
         }
+
+        selectionManager.textSelections.forEach { $0.suggestedXPos = nil }
     }
 
     override public func insertText(_ insertString: Any) {
-        var string: String
-        switch insertString {
-        case let insertString as NSString:
-            string = insertString as String
-        case let insertString as NSAttributedString:
-            string = insertString.string
-        default:
-            string = ""
-            assertionFailure("\(#function) called with invalid string type. Expected String or NSAttributedString.")
-        }
-
-        if LineEnding(rawValue: string) == .carriageReturn
-           && layoutManager.detectedLineEnding == .carriageReturnLineFeed {
-            string = LineEnding.carriageReturnLineFeed.rawValue
-        }
-
-        replaceCharacters(in: selectionManager.textSelections.map(\.range), with: string)
+        insertText(insertString, replacementRange: NSRange(location: NSNotFound, length: 0))
     }
 
     // MARK: - Marked Text

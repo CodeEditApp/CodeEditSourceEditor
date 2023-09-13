@@ -331,6 +331,25 @@ public class TextView: NSView, NSTextContent {
         return didUpdate
     }
 
+    /// Scrolls the upmost selection to the visible rect if `scrollView` is not `nil`.
+    public func scrollSelectionToVisible() {
+        guard let scrollView,
+              let selection = selectionManager
+            .textSelections
+            .sorted(by: { $0.view?.frame.minY ?? 0.0 < $1.view?.frame.minY ?? 0.0 })
+            .first
+        else {
+            return
+        }
+        var lastFrame: CGRect = .zero
+        while lastFrame != selection.view?.frame, let view = selection.view {
+            lastFrame = view.frame
+            layoutManager.layoutLines()
+            selectionManager.updateSelectionViews()
+        }
+        scrollView.contentView.scrollToVisible(lastFrame)
+    }
+
     deinit {
         layoutManager = nil
         selectionManager = nil
