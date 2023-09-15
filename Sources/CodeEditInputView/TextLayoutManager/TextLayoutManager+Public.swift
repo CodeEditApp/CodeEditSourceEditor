@@ -33,7 +33,9 @@ extension TextLayoutManager {
         }
         let fragment = fragmentPosition.data
 
-        if fragment.width < point.x - edgeInsets.left {
+        if fragment.width == 0 {
+            return position.range.location + fragmentPosition.range.location
+        } else if fragment.width < point.x - edgeInsets.left {
             let fragmentRange = CTLineGetStringRange(fragment.ctLine)
             // Return eol
             return position.range.location + fragmentRange.location + fragmentRange.length - (
@@ -76,16 +78,16 @@ extension TextLayoutManager {
 
         // Get the *real* length of the character at the offset. If this is a surrogate pair it'll return the correct
         // length of the character at the offset.
-        let charLengthAtOffset = (textStorage.string as NSString).rangeOfComposedCharacterSequence(at: offset).length
+        let realRange = (textStorage.string as NSString).rangeOfComposedCharacterSequence(at: offset)
 
         let minXPos = CTLineGetOffsetForStringIndex(
             fragmentPosition.data.ctLine,
-            offset - linePosition.range.location,
+            realRange.location - linePosition.range.location - fragmentPosition.range.location,
             nil
         )
         let maxXPos = CTLineGetOffsetForStringIndex(
             fragmentPosition.data.ctLine,
-            offset - linePosition.range.location + charLengthAtOffset,
+            realRange.max - linePosition.range.location - fragmentPosition.range.location,
             nil
         )
 

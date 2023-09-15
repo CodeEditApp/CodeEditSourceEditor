@@ -47,7 +47,6 @@ public class TextView: NSView, NSTextContent {
         didSet {
             layoutManager.edgeInsets = edgeInsets
             selectionManager.updateSelectionViews()
-            setNeedsDisplay()
         }
     }
 
@@ -144,28 +143,6 @@ public class TextView: NSView, NSTextContent {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
-    }
-
-    private func setUpLayoutManager() {
-        layoutManager = TextLayoutManager(
-            textStorage: textStorage,
-            typingAttributes: [
-                .font: font
-            ],
-            lineHeightMultiplier: lineHeight,
-            wrapLines: wrapLines,
-            textView: self, // TODO: This is an odd syntax... consider reworking this
-            delegate: self
-        )
-    }
-
-    private func setUpSelectionManager() {
-        selectionManager = TextSelectionManager(
-            layoutManager: layoutManager,
-            textStorage: textStorage,
-            layoutView: self, // TODO: This is an odd syntax... consider reworking this
-            delegate: self
-        )
     }
 
     public var documentRange: NSRange {
@@ -334,11 +311,8 @@ public class TextView: NSView, NSTextContent {
     /// Scrolls the upmost selection to the visible rect if `scrollView` is not `nil`.
     public func scrollSelectionToVisible() {
         guard let scrollView,
-              let selection = selectionManager
-            .textSelections
-            .sorted(by: { $0.view?.frame.minY ?? 0.0 < $1.view?.frame.minY ?? 0.0 })
-            .first
-        else {
+              let selection = selectionManager.textSelections
+            .sorted(by: { $0.view?.frame.minY ?? 0.0 < $1.view?.frame.minY ?? 0.0 }).first else {
             return
         }
         var lastFrame: CGRect = .zero
@@ -355,39 +329,6 @@ public class TextView: NSView, NSTextContent {
         selectionManager = nil
         textStorage = nil
         NotificationCenter.default.removeObserver(self)
-    }
-}
-
-// MARK: - TextLayoutManagerDelegate
-
-extension TextView: TextLayoutManagerDelegate {
-    public func layoutManagerHeightDidUpdate(newHeight: CGFloat) {
-        updateFrameIfNeeded()
-    }
-
-    public func layoutManagerMaxWidthDidChange(newWidth: CGFloat) {
-        updateFrameIfNeeded()
-    }
-
-    public func textViewSize() -> CGSize {
-        if let scrollView = scrollView {
-            var size = scrollView.contentSize
-            size.height -= scrollView.contentInsets.top + scrollView.contentInsets.bottom
-            return size
-        } else {
-            return CGSize(width: CGFloat.infinity, height: CGFloat.infinity)
-        }
-    }
-
-    public func textLayoutSetNeedsDisplay() {
-        needsDisplay = true
-        needsLayout = true
-    }
-
-    public func layoutManagerYAdjustment(_ yAdjustment: CGFloat) {
-        var point = scrollView?.documentVisibleRect.origin ?? .zero
-        point.y += yAdjustment
-        scrollView?.documentView?.scroll(point)
     }
 }
 

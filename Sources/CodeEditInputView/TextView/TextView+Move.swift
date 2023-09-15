@@ -197,22 +197,32 @@ extension TextView {
             destination: destination,
             suggestedXPos: selection.suggestedXPos
         )
-        print(selection.suggestedXPos, layoutManager?.rectForOffset(range.location)?.minX)
+        switch direction {
+        case .up:
+            if destination != .line {
+                selection.suggestedXPos = selection.suggestedXPos ?? layoutManager?.rectForOffset(range.location)?.minX
+            } else {
+                selection.suggestedXPos = nil
+            }
+        case .down:
+            if destination == .line {
+                selection.suggestedXPos = layoutManager?.rectForOffset(range.max)?.minX
+            } else {
+                selection.suggestedXPos = selection.suggestedXPos ?? layoutManager?.rectForOffset(range.max)?.minX
+            }
+        case .forward:
+            selection.suggestedXPos = layoutManager?.rectForOffset(range.location)?.minX
+        case .backward:
+            selection.suggestedXPos = layoutManager?.rectForOffset(range.location)?.minX
+        }
+
         if modifySelection {
             selection.range.formUnion(range)
         } else {
             switch direction {
-            case .up:
-                selection.suggestedXPos = selection.suggestedXPos ?? layoutManager?.rectForOffset(range.location)?.minX
+            case .up, .backward:
                 selection.range = NSRange(location: range.location, length: 0)
-            case .down:
-                selection.suggestedXPos = selection.suggestedXPos ?? layoutManager?.rectForOffset(range.max)?.minX
-                selection.range = NSRange(location: range.max, length: 0)
-            case .backward:
-                selection.suggestedXPos = nil
-                selection.range = NSRange(location: range.location, length: 0)
-            case .forward:
-                selection.suggestedXPos = nil
+            case .down, .forward:
                 selection.range = NSRange(location: range.max, length: 0)
             }
         }

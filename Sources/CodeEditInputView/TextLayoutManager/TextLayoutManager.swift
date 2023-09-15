@@ -30,6 +30,7 @@ public class TextLayoutManager: NSObject {
     /// The edge insets to inset all text layout with.
     public var edgeInsets: HorizontalEdgeInsets = .zero {
         didSet {
+            delegate?.layoutManagerMaxWidthDidChange(newWidth: maxLineWidth + edgeInsets.horizontal)
             setNeedsLayout()
         }
     }
@@ -53,7 +54,7 @@ public class TextLayoutManager: NSObject {
 
     internal var maxLineWidth: CGFloat = 0 {
         didSet {
-            delegate?.layoutManagerMaxWidthDidChange(newWidth: maxLineWidth)
+            delegate?.layoutManagerMaxWidthDidChange(newWidth: maxLineWidth + edgeInsets.horizontal)
         }
     }
     private var maxLineLayoutWidth: CGFloat {
@@ -165,6 +166,7 @@ public class TextLayoutManager: NSObject {
         var forceLayout: Bool = needsLayout
         var newVisibleLines: Set<TextLine.ID> = []
         var yContentAdjustment: CGFloat = 0
+        var maxFoundLineWidth = maxLineWidth
 
         // Layout all lines
         for linePosition in lineStorage.linesStartingAt(minY, until: maxY) {
@@ -195,8 +197,8 @@ public class TextLayoutManager: NSObject {
                         yContentAdjustment += lineSize.height - linePosition.height
                     }
                 }
-                if maxLineWidth < lineSize.width + edgeInsets.horizontal {
-                    maxLineWidth = lineSize.width
+                if maxFoundLineWidth < lineSize.width {
+                    maxFoundLineWidth = lineSize.width
                 }
             } else {
                 // Make sure the used fragment views aren't dequeued.
@@ -213,6 +215,10 @@ public class TextLayoutManager: NSObject {
 
         if originalHeight != lineStorage.height || layoutView?.frame.size.height != lineStorage.height {
             delegate?.layoutManagerHeightDidUpdate(newHeight: lineStorage.height)
+        }
+
+        if maxFoundLineWidth > maxLineWidth {
+            maxLineWidth = maxFoundLineWidth
         }
 
         if yContentAdjustment != 0 {

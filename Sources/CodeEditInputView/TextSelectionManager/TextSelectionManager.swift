@@ -30,7 +30,7 @@ public class TextSelectionManager: NSObject {
     public class TextSelection {
         public var range: NSRange
         internal weak var view: CursorView?
-        public var suggestedXPos: CGFloat?
+        internal var suggestedXPos: CGFloat?
 
         init(range: NSRange, view: CursorView? = nil) {
             self.range = range
@@ -92,13 +92,19 @@ public class TextSelectionManager: NSObject {
 
     public func setSelectedRange(_ range: NSRange) {
         textSelections.forEach { $0.view?.removeFromSuperview() }
-        textSelections = [TextSelection(range: range)]
+        let selection = TextSelection(range: range)
+        selection.suggestedXPos = layoutManager?.rectForOffset(range.location)?.minX
+        textSelections = [selection]
         updateSelectionViews()
     }
 
     public func setSelectedRanges(_ ranges: [NSRange]) {
         textSelections.forEach { $0.view?.removeFromSuperview() }
-        textSelections = ranges.map { TextSelection(range: $0) }
+        textSelections = ranges.map {
+            let selection = TextSelection(range: $0)
+            selection.suggestedXPos = layoutManager?.rectForOffset($0.location)?.minX
+            return selection
+        }
         updateSelectionViews()
     }
 

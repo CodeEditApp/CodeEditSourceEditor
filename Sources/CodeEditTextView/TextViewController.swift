@@ -154,7 +154,7 @@ public class TextViewController: NSViewController {
             object: textView,
             queue: .main
         ) { [weak self] _ in
-            self?.gutterView.frame.size.height = self?.textView.frame.height ?? 0
+            self?.gutterView.frame.size.height = (self?.textView.frame.height ?? 0) + 10
             self?.gutterView.needsDisplay = true
         }
 

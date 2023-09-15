@@ -286,7 +286,7 @@ public extension TextSelectionManager {
         guard let point = layoutManager?.rectForOffset(offset)?.origin,
               let newOffset = layoutManager?.textOffsetAtPoint(
                 CGPoint(
-                    x: suggestedXPos == nil ? point.x : suggestedXPos! + (layoutManager?.edgeInsets.left ?? 0),
+                    x: suggestedXPos == nil ? point.x : suggestedXPos!,
                     y: point.y - (layoutManager?.estimateLineHeight() ?? 2.0)/2 * (up ? 1 : -3)
                 )
               ) else {
