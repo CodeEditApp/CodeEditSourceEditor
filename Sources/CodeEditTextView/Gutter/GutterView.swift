@@ -9,6 +9,10 @@ import AppKit
 import CodeEditInputView
 import Common
 
+public protocol GutterViewDelegate: AnyObject {
+    func gutterViewWidthDidUpdate(newWidth: CGFloat)
+}
+
 public class GutterView: NSView {
     struct EdgeInsets: Equatable, Hashable {
         let leading: CGFloat
@@ -37,7 +41,10 @@ public class GutterView: NSView {
     @Invalidating(.display)
     var selectedLineColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
 
+    private(set) public var gutterWidth: CGFloat = 0
+
     private weak var textView: TextView?
+    private weak var delegate: GutterViewDelegate?
     private var maxWidth: CGFloat = 0
     /// The maximum number of digits found for a line number.
     private var maxLineLength: Int = 0
@@ -49,11 +56,13 @@ public class GutterView: NSView {
     public init(
         font: NSFont,
         textColor: NSColor,
-        textView: TextView
+        textView: TextView,
+        delegate: GutterViewDelegate? = nil
     ) {
         self.font = font
         self.textColor = textColor
         self.textView = textView
+        self.delegate = delegate
 
         super.init(frame: .zero)
         wantsLayer = true
@@ -100,8 +109,8 @@ public class GutterView: NSView {
         }
 
         if originalMaxWidth != maxWidth {
-            self.frame.size.width = maxWidth + edgeInsets.horizontal
-            textView.edgeInsets.left = maxWidth + edgeInsets.horizontal
+            gutterWidth = maxWidth + edgeInsets.horizontal
+            delegate?.gutterViewWidthDidUpdate(newWidth: maxWidth + edgeInsets.horizontal)
         }
     }
 

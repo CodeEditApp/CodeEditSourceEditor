@@ -97,7 +97,6 @@ public class TextViewController: NSViewController {
         )
         textView.postsFrameChangedNotifications = true
         textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.edgeInsets = HorizontalEdgeInsets(left: 50, right: 75)
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.contentView.postsFrameChangedNotifications = true
@@ -110,7 +109,12 @@ public class TextViewController: NSViewController {
             scrollView.contentInsets = contentInsets
         }
 
-        gutterView = GutterView(font: font.rulerFont, textColor: .secondaryLabelColor, textView: textView)
+        gutterView = GutterView(
+            font: font.rulerFont,
+            textColor: .secondaryLabelColor,
+            textView: textView,
+            delegate: self
+        )
         gutterView.frame.origin.y = -scrollView.contentInsets.top
         gutterView.updateWidthIfNeeded()
         scrollView.addFloatingSubview(
@@ -216,5 +220,12 @@ extension TextViewController {
 extension TextViewController: TextViewDelegate {
     public func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with: String) {
         gutterView.needsDisplay = true
+    }
+}
+
+extension TextViewController: GutterViewDelegate {
+    public func gutterViewWidthDidUpdate(newWidth: CGFloat) {
+        gutterView?.frame.size.width = newWidth
+        textView?.edgeInsets.left = newWidth
     }
 }
