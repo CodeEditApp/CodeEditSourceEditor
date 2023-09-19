@@ -140,7 +140,7 @@ final class Typesetter {
             // Try to walk backwards until we hit a whitespace or punctuation
             var index = breakIndex - 1
 
-            while breakIndex - index < 100 {
+            while breakIndex - index < 100 && index > startingOffset {
                 if ensureCharacterCanBreakLine(at: index) {
                     return index + 1
                 }
