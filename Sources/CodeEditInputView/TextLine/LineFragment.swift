@@ -7,7 +7,7 @@
 
 import AppKit
 
-public final class LineFragment: Identifiable {
+public final class LineFragment: Identifiable, Equatable {
     public let id = UUID()
     private(set) public var ctLine: CTLine
     public let width: CGFloat
@@ -31,5 +31,9 @@ public final class LineFragment: Identifiable {
         self.height = height
         self.descent = descent
         self.scaledHeight = height * lineHeightMultiplier
+    }
+
+    public static func == (lhs: LineFragment, rhs: LineFragment) -> Bool {
+        lhs.id == rhs.id
     }
 }

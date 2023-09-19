@@ -9,7 +9,7 @@ import Foundation
 import AppKit
 
 /// Represents a displayable line of text.
-public final class TextLine: Identifiable {
+public final class TextLine: Identifiable, Equatable {
     public let id: UUID = UUID()
 //    private weak var stringRef: NSTextStorage?
     private var needsLayout: Bool = true
@@ -38,5 +38,9 @@ public final class TextLine: Identifiable {
             lineHeightMultiplier: lineHeightMultiplier
         )
         needsLayout = false
+    }
+
+    public static func == (lhs: TextLine, rhs: TextLine) -> Bool {
+        lhs.id == rhs.id
     }
 }
