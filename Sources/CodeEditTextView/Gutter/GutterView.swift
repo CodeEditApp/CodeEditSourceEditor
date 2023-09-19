@@ -39,6 +39,9 @@ public class GutterView: NSView {
     var highlightSelectedLines: Bool = true
 
     @Invalidating(.display)
+    var selectedLineTextColor: NSColor = .textColor
+
+    @Invalidating(.display)
     var selectedLineColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
 
     private(set) public var gutterWidth: CGFloat = 0
@@ -123,7 +126,8 @@ public class GutterView: NSView {
         }
         context.saveGState()
         context.setFillColor(selectedLineColor.cgColor)
-        for selection in selectionManager.textSelections {
+        for selection in selectionManager.textSelections
+        where selection.range.isEmpty {
             guard let line = textView.layoutManager.textLineForOffset(selection.range.location),
                   visibleRange.intersection(line.range) != nil else {
                 continue
@@ -142,14 +146,26 @@ public class GutterView: NSView {
 
     private func drawLineNumbers(_ context: CGContext) {
         guard let textView = textView else { return }
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: textColor
-        ]
+        var attributes: [NSAttributedString.Key: Any] = [.font: font]
+
+        var selectionRangeMap = IndexSet()
+        textView.selectionManager?.textSelections.forEach {
+            if $0.range.isEmpty {
+                selectionRangeMap.insert($0.range.location)
+            } else {
+                selectionRangeMap.insert(range: $0.range)
+            }
+        }
 
         context.saveGState()
         context.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
         for linePosition in textView.layoutManager.visibleLines() {
+            if selectionRangeMap.intersects(integersIn: linePosition.range) {
+                attributes[.foregroundColor] = selectedLineTextColor
+            } else {
+                attributes[.foregroundColor] = textColor
+            }
+
             let ctLine = CTLineCreateWithAttributedString(
                 NSAttributedString(string: "\(linePosition.index + 1)", attributes: attributes)
             )

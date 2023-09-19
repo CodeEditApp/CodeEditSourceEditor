@@ -45,6 +45,7 @@ extension TextView {
         selectionManager.updateSelectionViews()
         scrollSelectionToVisible()
         setNeedsDisplay()
+        NotificationCenter.default.post(Notification(name: TextSelectionManager.selectionChangedNotification))
     }
 
     /// Moves the cursors left one character extending the current selection.
@@ -64,6 +65,7 @@ extension TextView {
         selectionManager.updateSelectionViews()
         scrollSelectionToVisible()
         setNeedsDisplay()
+        NotificationCenter.default.post(Notification(name: TextSelectionManager.selectionChangedNotification))
     }
 
     /// Moves the cursors right one character extending the current selection.
@@ -177,6 +179,8 @@ extension TextView {
         selectionManager.updateSelectionViews()
         scrollSelectionToVisible()
         setNeedsDisplay()
+
+        NotificationCenter.default.post(Notification(name: TextSelectionManager.selectionChangedNotification))
     }
 
     /// Moves a single selection determined by the direction and destination provided.
@@ -211,7 +215,7 @@ extension TextView {
                 selection.suggestedXPos = selection.suggestedXPos ?? layoutManager?.rectForOffset(range.max)?.minX
             }
         case .forward:
-            selection.suggestedXPos = layoutManager?.rectForOffset(range.location)?.minX
+            selection.suggestedXPos = layoutManager?.rectForOffset(range.max)?.minX
         case .backward:
             selection.suggestedXPos = layoutManager?.rectForOffset(range.location)?.minX
         }

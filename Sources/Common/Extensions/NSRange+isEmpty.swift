@@ -8,7 +8,7 @@
 import Foundation
 
 public extension NSRange {
-    public var isEmpty: Bool {
+    var isEmpty: Bool {
         length == 0
     }
 }

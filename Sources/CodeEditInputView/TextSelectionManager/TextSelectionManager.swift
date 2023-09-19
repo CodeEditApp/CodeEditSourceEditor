@@ -65,6 +65,7 @@ public class TextSelectionManager: NSObject {
     }
 
     public var selectedLineBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
+    public var selectionBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor
 
     private var markedText: [MarkedText] = []
     private(set) public var textSelections: [TextSelection] = []
@@ -96,6 +97,7 @@ public class TextSelectionManager: NSObject {
         selection.suggestedXPos = layoutManager?.rectForOffset(range.location)?.minX
         textSelections = [selection]
         updateSelectionViews()
+        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification))
     }
 
     public func setSelectedRanges(_ ranges: [NSRange]) {
@@ -106,6 +108,7 @@ public class TextSelectionManager: NSObject {
             return selection
         }
         updateSelectionViews()
+        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification))
     }
 
     // MARK: - Selection Views
@@ -113,29 +116,34 @@ public class TextSelectionManager: NSObject {
     func updateSelectionViews() {
         var didUpdate: Bool = false
 
-        for textSelection in textSelections where textSelection.range.isEmpty {
-            let lineFragment = layoutManager?
-                .textLineForOffset(textSelection.range.location)?
-                .data
-                .lineFragments
-                .first
-            let cursorOrigin = (layoutManager?.rectForOffset(textSelection.range.location) ?? .zero).origin
-            if textSelection.view == nil
-                || textSelection.view?.frame.origin != cursorOrigin
-                || textSelection.view?.frame.height != lineFragment?.data.scaledHeight ?? 0 {
+        for textSelection in textSelections {
+            if textSelection.range.isEmpty {
+                let lineFragment = layoutManager?
+                    .textLineForOffset(textSelection.range.location)?
+                    .data
+                    .lineFragments
+                    .first
+                let cursorOrigin = (layoutManager?.rectForOffset(textSelection.range.location) ?? .zero).origin
+                if textSelection.view == nil
+                    || textSelection.view?.frame.origin != cursorOrigin
+                    || textSelection.view?.frame.height != lineFragment?.data.scaledHeight ?? 0 {
+                    textSelection.view?.removeFromSuperview()
+                    let cursorView = CursorView()
+                    cursorView.frame.origin = cursorOrigin
+                    cursorView.frame.size.height = lineFragment?.data.scaledHeight ?? 0
+                    layoutView?.addSubview(cursorView)
+                    textSelection.view = cursorView
+                    didUpdate = true
+                }
+            } else if !textSelection.range.isEmpty && textSelection.view != nil {
                 textSelection.view?.removeFromSuperview()
-                let cursorView = CursorView()
-                cursorView.frame.origin = cursorOrigin
-                cursorView.frame.size.height = lineFragment?.data.scaledHeight ?? 0
-                layoutView?.addSubview(cursorView)
-                textSelection.view = cursorView
+                textSelection.view = nil
                 didUpdate = true
             }
         }
 
         if didUpdate {
             delegate?.setNeedsDisplay()
-            NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification))
         }
     }
 
@@ -164,41 +172,98 @@ public class TextSelectionManager: NSObject {
         // For each selection in the rect
         for textSelection in textSelections {
             if textSelection.range.isEmpty {
-                // Highlight the line
-                guard let linePosition = layoutManager?.textLineForOffset(textSelection.range.location) else {
-                    continue
-                }
-                let selectionRect = CGRect(
-                    x: rect.minX,
-                    y: layoutManager?.rectForOffset(linePosition.range.location)?.minY ?? linePosition.yPos,
-                    width: rect.width,
-                    height: linePosition.height
-                )
-                if selectionRect.intersects(rect) {
-                    context.setFillColor(selectedLineBackgroundColor.cgColor)
-                    context.fill(selectionRect)
-                }
+                drawHighlightedLine(in: rect, for: textSelection, context: context)
             } else {
-                // TODO: Highlight Selection Ranges
-
-//                guard let selectionPointMin = layoutManager.pointForOffset(selection.range.location),
-//                      let selectionPointMax = layoutManager.pointForOffset(selection.range.max) else {
-//                    continue
-//                }
-//                let selectionRect = NSRect(
-//                    x: selectionPointMin.x,
-//                    y: selectionPointMin.y,
-//                    width: selectionPointMax.x - selectionPointMin.x,
-//                    height: selectionPointMax.y - selectionPointMin.y
-//                )
-//                if selectionRect.intersects(rect) {
-//                    // This selection has some portion in the visible rect, draw it.
-//                    for linePosition in layoutManager.lineStorage.linesInRange(selection.range) {
-//
-//                    }
-//                }
+                drawSelectedRange(in: rect, range: textSelection.range, context: context)
             }
         }
+        context.restoreGState()
+    }
+
+    /// Draws a highlighted line in the given rect.
+    /// - Parameters:
+    ///   - rect: The rect to draw in.
+    ///   - textSelection: The selection to draw.
+    ///   - context: The context to draw in.
+    private func drawHighlightedLine(in rect: NSRect, for textSelection: TextSelection, context: CGContext) {
+        guard let linePosition = layoutManager?.textLineForOffset(textSelection.range.location) else {
+            return
+        }
+        context.saveGState()
+        let selectionRect = CGRect(
+            x: rect.minX,
+            y: linePosition.yPos,
+            width: rect.width,
+            height: linePosition.height
+        )
+        if selectionRect.intersects(rect) {
+            context.setFillColor(selectedLineBackgroundColor.cgColor)
+            context.fill(selectionRect)
+        }
+        context.restoreGState()
+    }
+
+    /// Draws a selected range in the given context.
+    /// - Parameters:
+    ///   - rect: The rect to draw in.
+    ///   - range: The range to highlight.
+    ///   - context: The context to draw in.
+    private func drawSelectedRange(in rect: NSRect, range: NSRange, context: CGContext) {
+        guard let layoutManager else { return }
+        context.saveGState()
+        context.setFillColor(selectionBackgroundColor.cgColor)
+
+        var fillRects = [CGRect]()
+
+        for linePosition in layoutManager.lineStorage.linesInRange(range) {
+            if linePosition.range.intersection(range) == linePosition.range {
+                // If the selected range contains the entire line
+                fillRects.append(
+                    CGRect(
+                        x: rect.minX,
+                        y: linePosition.yPos,
+                        width: rect.width,
+                        height: linePosition.height
+                    )
+                )
+            } else {
+                // The selected range contains some portion of the line
+                for fragmentPosition in linePosition.data.lineFragments {
+                    guard let fragmentRange = fragmentPosition
+                        .range
+                        .shifted(by: linePosition.range.location),
+                          let intersectionRange = fragmentRange.intersection(range),
+                          let minRect = layoutManager.rectForOffset(intersectionRange.location) else {
+                        continue
+                    }
+
+                    let maxRect: CGRect
+                    if fragmentRange.max <= range.max || range.contains(fragmentRange.max) {
+                        maxRect = CGRect(
+                            x: rect.maxX,
+                            y: fragmentPosition.yPos + linePosition.yPos,
+                            width: 0,
+                            height: fragmentPosition.height
+                        )
+                    } else if let maxFragmentRect = layoutManager.rectForOffset(intersectionRange.max) {
+                        maxRect = maxFragmentRect
+                    } else {
+                        continue
+                    }
+
+                    fillRects.append(
+                        CGRect(
+                            x: minRect.origin.x,
+                            y: minRect.origin.y,
+                            width: maxRect.minX - minRect.minX,
+                            height: max(minRect.height, maxRect.height)
+                        )
+                    )
+                }
+            }
+        }
+
+        context.fill(fillRects)
         context.restoreGState()
     }
 }
@@ -240,5 +305,6 @@ extension TextSelectionManager: NSTextStorageDelegate {
             }
         }
         updateSelectionViews()
+        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification))
     }
 }

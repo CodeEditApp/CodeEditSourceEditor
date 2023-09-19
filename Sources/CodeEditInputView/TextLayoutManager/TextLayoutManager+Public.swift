@@ -82,19 +82,19 @@ extension TextLayoutManager {
 
         let minXPos = CTLineGetOffsetForStringIndex(
             fragmentPosition.data.ctLine,
-            realRange.location - linePosition.range.location - fragmentPosition.range.location,
+            realRange.location - linePosition.range.location, // CTLines have the same relative range as the line
             nil
         )
         let maxXPos = CTLineGetOffsetForStringIndex(
             fragmentPosition.data.ctLine,
-            realRange.max - linePosition.range.location - fragmentPosition.range.location,
+            realRange.max - linePosition.range.location,
             nil
         )
 
         return CGRect(
             x: minXPos + edgeInsets.left,
             y: linePosition.yPos + fragmentPosition.yPos,
-            width: (maxXPos - minXPos) + edgeInsets.left,
+            width: maxXPos - minXPos,
             height: fragmentPosition.data.scaledHeight
         )
     }
