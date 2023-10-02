@@ -86,6 +86,8 @@ public class TextView: NSView, NSTextContent {
     // MARK: - Private Properties
 
     internal var isFirstResponder: Bool = false
+    internal var mouseDragAnchor: CGPoint?
+    internal var mouseDragTimer: Timer?
 
     var _undoManager: CEUndoManager?
     @objc dynamic open var allowsUndo: Bool
@@ -224,9 +226,25 @@ public class TextView: NSView, NSTextContent {
             selectionManager.setSelectedRange(NSRange(location: offset, length: 0))
         }
 
+        mouseDragTimer?.invalidate()
+        // https://cocoadev.github.io/AutoScrolling/ (fired at ~45Hz)
+        mouseDragTimer = Timer.scheduledTimer(withTimeInterval: 0.022, repeats: true) { [weak self] _ in
+            if let event = self?.window?.currentEvent, event.type == .leftMouseDragged {
+                self?.mouseDragged(with: event)
+                self?.autoscroll(with: event)
+            }
+        }
+
         if !self.isFirstResponder {
             self.window?.makeFirstResponder(self)
         }
+    }
+
+    override public func mouseUp(with event: NSEvent) {
+        mouseDragAnchor = nil
+        mouseDragTimer?.invalidate()
+        mouseDragTimer = nil
+        super.mouseUp(with: event)
     }
 
     // MARK: - Layout
@@ -312,14 +330,15 @@ public class TextView: NSView, NSTextContent {
     public func scrollSelectionToVisible() {
         guard let scrollView,
               let selection = selectionManager.textSelections
-            .sorted(by: { $0.view?.frame.minY ?? 0.0 < $1.view?.frame.minY ?? 0.0 }).first else {
+            .sorted(by: { $0.boundingRect.origin.y < $1.boundingRect.origin.y }).first else {
             return
         }
         var lastFrame: CGRect = .zero
-        while lastFrame != selection.view?.frame, let view = selection.view {
-            lastFrame = view.frame
+        while lastFrame != selection.boundingRect {
+            lastFrame = selection.boundingRect
             layoutManager.layoutLines()
             selectionManager.updateSelectionViews()
+            selectionManager.drawSelections(in: visibleRect)
         }
         scrollView.contentView.scrollToVisible(lastFrame)
     }

@@ -30,7 +30,10 @@ public class TextSelectionManager: NSObject {
     public class TextSelection {
         public var range: NSRange
         internal weak var view: CursorView?
+        internal var boundingRect: CGRect = .zero
         internal var suggestedXPos: CGFloat?
+        /// The position this selection should 'rotate' around when modifying selections.
+        internal var pivot: Int?
 
         init(range: NSRange, view: CursorView? = nil) {
             self.range = range
@@ -125,14 +128,15 @@ public class TextSelectionManager: NSObject {
                     .first
                 let cursorOrigin = (layoutManager?.rectForOffset(textSelection.range.location) ?? .zero).origin
                 if textSelection.view == nil
-                    || textSelection.view?.frame.origin != cursorOrigin
-                    || textSelection.view?.frame.height != lineFragment?.data.scaledHeight ?? 0 {
+                    || textSelection.boundingRect.origin != cursorOrigin
+                    || textSelection.boundingRect.height != lineFragment?.data.scaledHeight ?? 0 {
                     textSelection.view?.removeFromSuperview()
                     let cursorView = CursorView()
                     cursorView.frame.origin = cursorOrigin
                     cursorView.frame.size.height = lineFragment?.data.scaledHeight ?? 0
                     layoutView?.addSubview(cursorView)
                     textSelection.view = cursorView
+                    textSelection.boundingRect = cursorView.frame
                     didUpdate = true
                 }
             } else if !textSelection.range.isEmpty && textSelection.view != nil {
@@ -174,7 +178,7 @@ public class TextSelectionManager: NSObject {
             if textSelection.range.isEmpty {
                 drawHighlightedLine(in: rect, for: textSelection, context: context)
             } else {
-                drawSelectedRange(in: rect, range: textSelection.range, context: context)
+                drawSelectedRange(in: rect, for: textSelection, context: context)
             }
         }
         context.restoreGState()
@@ -208,8 +212,9 @@ public class TextSelectionManager: NSObject {
     ///   - rect: The rect to draw in.
     ///   - range: The range to highlight.
     ///   - context: The context to draw in.
-    private func drawSelectedRange(in rect: NSRect, range: NSRange, context: CGContext) {
+    private func drawSelectedRange(in rect: NSRect, for textSelection: TextSelection, context: CGContext) {
         guard let layoutManager else { return }
+        let range = textSelection.range
         context.saveGState()
         context.setFillColor(selectionBackgroundColor.cgColor)
 
@@ -262,6 +267,14 @@ public class TextSelectionManager: NSObject {
                 }
             }
         }
+
+        let min = fillRects.min(by: { $0.origin.y < $1.origin.y })?.origin ?? .zero
+        let max = fillRects.max(by: { $0.origin.y < $1.origin.y }) ?? .zero
+        let size = CGSize(width: max.maxX - min.x, height: max.maxY - min.y)
+        textSelection.boundingRect = CGRect(
+            origin: min,
+            size: size
+        )
 
         context.fill(fillRects)
         context.restoreGState()
