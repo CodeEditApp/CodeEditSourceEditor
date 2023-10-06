@@ -58,11 +58,17 @@ extension TextSelectionManager {
             return
         }
 
-        // Find where to modify the selection from.
-        let startLocation = findSelectionStartLocation(selection, direction: direction)
-
         // Update pivot if necessary
-        updateSelectionPivot(selection, direction: direction)
+        if modifySelection {
+            updateSelectionPivot(selection, direction: direction)
+        }
+
+        // Find where to modify the selection from.
+        let startLocation = findSelectionStartLocation(
+            selection,
+            direction: direction,
+            modifySelection: modifySelection
+        )
 
         let range = rangeOfSelection(
             from: startLocation,
@@ -86,12 +92,34 @@ extension TextSelectionManager {
 
     private func findSelectionStartLocation(
         _ selection: TextSelectionManager.TextSelection,
-        direction: TextSelectionManager.Direction
+        direction: TextSelectionManager.Direction,
+        modifySelection: Bool
     ) -> Int {
-        if direction == .forward || (direction == .down && !selection.range.isEmpty) {
-            return selection.range.max
+        if modifySelection {
+            guard let pivot = selection.pivot else {
+                assertionFailure("Pivot should always exist when modifying a selection.")
+                return 0
+            }
+            switch direction {
+            case .up, .forward:
+                if pivot > selection.range.location {
+                    return selection.range.location
+                } else {
+                    return selection.range.max
+                }
+            case .down, .backward:
+                if pivot < selection.range.max {
+                    return selection.range.max
+                } else {
+                    return selection.range.location
+                }
+            }
         } else {
-            return selection.range.location
+            if direction == .forward || (direction == .down && !selection.range.isEmpty) {
+                return selection.range.max
+            } else {
+                return selection.range.location
+            }
         }
     }
 
@@ -99,8 +127,16 @@ extension TextSelectionManager {
         _ selection: TextSelectionManager.TextSelection,
         direction: TextSelectionManager.Direction
     ) {
-        if selection.pivot == nil {
-            // TODO: Pivot!!!!
+        guard selection.pivot == nil else { return }
+        switch direction {
+        case .up:
+            selection.pivot = selection.range.max
+        case .down:
+            selection.pivot = selection.range.location
+        case .forward:
+            selection.pivot = selection.range.location
+        case .backward:
+            selection.pivot = selection.range.max
         }
     }
 
@@ -138,13 +174,39 @@ extension TextSelectionManager {
         destination: TextSelectionManager.Destination
     ) {
         if modifySelection {
-            selection.range.formUnion(range)
+            guard let pivot = selection.pivot else {
+                assertionFailure("Pivot should always exist when modifying a selection.")
+                return
+            }
+            switch direction {
+            case .down, .forward:
+                if range.contains(pivot) {
+                    selection.range.location = pivot
+                    selection.range.length = range.length - (pivot - range.location)
+                } else if pivot > selection.range.location {
+                    selection.range.location += range.length
+                    selection.range.length -= range.length
+                } else {
+                    selection.range.formUnion(range)
+                }
+            case .up, .backward:
+                if range.contains(pivot) {
+                    selection.range.location = range.location
+                    selection.range.length = pivot - range.location
+                } else if pivot < selection.range.max {
+                    selection.range.length -= range.length
+                } else {
+                    selection.range.formUnion(range)
+                }
+            }
         } else {
             switch direction {
             case .up, .backward:
                 selection.range = NSRange(location: range.location, length: 0)
+                selection.pivot = range.location
             case .down, .forward:
                 selection.range = NSRange(location: range.max, length: 0)
+                selection.pivot = range.max
             }
         }
     }
