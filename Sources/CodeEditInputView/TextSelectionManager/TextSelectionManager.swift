@@ -49,6 +49,7 @@ public class TextSelectionManager: NSObject {
         case character
         case word
         case line
+        case visualLine
         /// Eg: Bottom of screen
         case container
         case document
@@ -207,6 +208,7 @@ public class TextSelectionManager: NSObject {
         context.restoreGState()
     }
 
+    // TODO: Move this drawing to `LineFragmentView`
     /// Draws a selected range in the given context.
     /// - Parameters:
     ///   - rect: The rect to draw in.
@@ -223,14 +225,12 @@ public class TextSelectionManager: NSObject {
         for linePosition in layoutManager.lineStorage.linesInRange(range) {
             if linePosition.range.intersection(range) == linePosition.range {
                 // If the selected range contains the entire line
-                fillRects.append(
-                    CGRect(
-                        x: rect.minX,
-                        y: linePosition.yPos,
-                        width: rect.width,
-                        height: linePosition.height
-                    )
-                )
+                fillRects.append(CGRect(
+                    x: rect.minX,
+                    y: linePosition.yPos,
+                    width: rect.width,
+                    height: linePosition.height
+                ))
             } else {
                 // The selected range contains some portion of the line
                 for fragmentPosition in linePosition.data.lineFragments {
@@ -256,14 +256,12 @@ public class TextSelectionManager: NSObject {
                         continue
                     }
 
-                    fillRects.append(
-                        CGRect(
-                            x: minRect.origin.x,
-                            y: minRect.origin.y,
-                            width: maxRect.minX - minRect.minX,
-                            height: max(minRect.height, maxRect.height)
-                        )
-                    )
+                    fillRects.append(CGRect(
+                        x: minRect.origin.x,
+                        y: minRect.origin.y,
+                        width: maxRect.minX - minRect.minX,
+                        height: max(minRect.height, maxRect.height)
+                    ))
                 }
             }
         }
@@ -271,10 +269,7 @@ public class TextSelectionManager: NSObject {
         let min = fillRects.min(by: { $0.origin.y < $1.origin.y })?.origin ?? .zero
         let max = fillRects.max(by: { $0.origin.y < $1.origin.y }) ?? .zero
         let size = CGSize(width: max.maxX - min.x, height: max.maxY - min.y)
-        textSelection.boundingRect = CGRect(
-            origin: min,
-            size: size
-        )
+        textSelection.boundingRect = CGRect(origin: min, size: size)
 
         context.fill(fillRects)
         context.restoreGState()

@@ -62,26 +62,8 @@ public class TextView: NSView, NSTextContent {
             needsLayout = true
         }
     }
-    public var layoutManager: TextLayoutManager! {
-        willSet {
-            if let oldValue = layoutManager {
-                storageDelegate.removeDelegate(oldValue)
-            }
-            if let newValue {
-                storageDelegate.addDelegate(newValue)
-            }
-        }
-    }
-    public var selectionManager: TextSelectionManager! {
-        willSet {
-            if let oldValue = selectionManager {
-                storageDelegate.removeDelegate(oldValue)
-            }
-            if let newValue {
-                storageDelegate.addDelegate(newValue)
-            }
-        }
-    }
+    private(set) public var layoutManager: TextLayoutManager!
+    private(set) public var selectionManager: TextSelectionManager!
 
     // MARK: - Private Properties
 
@@ -135,8 +117,10 @@ public class TextView: NSView, NSTextContent {
         textStorage.addAttributes([.font: font], range: documentRange)
         textStorage.delegate = storageDelegate
 
-        setUpLayoutManager()
-        setUpSelectionManager()
+        layoutManager = setUpLayoutManager()
+        storageDelegate.addDelegate(layoutManager)
+        selectionManager = setUpSelectionManager()
+        storageDelegate.addDelegate(selectionManager)
 
         _undoManager = CEUndoManager(textView: self)
 

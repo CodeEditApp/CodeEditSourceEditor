@@ -88,6 +88,8 @@ public extension TextSelectionManager {
             return extendSelectionWord(string: string, from: offset, delta: delta)
         case .line, .container:
             return extendSelectionLine(string: string, from: offset, delta: delta)
+        case .visualLine:
+            return extendSelectionVisualLine(string: string, from: offset, delta: delta)
         case .document:
             if delta > 0 {
                 return NSRange(location: offset, length: string.length - offset)
@@ -123,11 +125,7 @@ public extension TextSelectionManager {
             return NSRange(location: 0, length: 0)
         }
 
-        if decomposeCharacters {
-            return range
-        } else {
-            return string.rangeOfComposedCharacterSequences(for: range)
-        }
+        return decomposeCharacters ? range : string.rangeOfComposedCharacterSequences(for: range)
     }
 
     /// Extends the selection by one "word".
@@ -149,10 +147,7 @@ public extension TextSelectionManager {
 
         var hasFoundValidWordChar = false
         string.enumerateSubstrings(
-            in: NSRange(
-                location: delta > 0 ? offset : 0,
-                length: delta > 0 ? string.length - offset : offset
-            ),
+            in: NSRange(location: delta > 0 ? offset : 0, length: delta > 0 ? string.length - offset : offset),
             options: enumerationOptions
         ) { substring, _, _, stop in
             guard let substring = substring else {
@@ -178,7 +173,7 @@ public extension TextSelectionManager {
         return rangeToDelete
     }
 
-    /// Extends the selection by one line in the direction specified.
+    /// Extends the selection by one visual line in the direction specified (eg one line fragment).
     ///
     /// If extending backwards, this method will return the beginning of the leading non-whitespace characters
     /// in the line. If the offset is located in the leading whitespace it will return the real line beginning.
@@ -201,7 +196,7 @@ public extension TextSelectionManager {
     ///   - offset: The location to start extending the selection from.
     ///   - delta: The direction the selection should be extended. `1` for forwards, `-1` for backwards.
     /// - Returns: The range of the extended selection.
-    private func extendSelectionLine(string: NSString, from offset: Int, delta: Int) -> NSRange {
+    private func extendSelectionVisualLine(string: NSString, from offset: Int, delta: Int) -> NSRange {
         guard let line = layoutManager?.textLineForOffset(offset),
               let lineFragment = line.data.typesetter.lineFragments.getLine(atIndex: offset - line.range.location)
         else {
@@ -214,6 +209,37 @@ public extension TextSelectionManager {
         )
         : line.range.location + lineFragment.range.location
 
+        return _extendSelectionLine(string: string, lineBound: lineBound, offset: offset, delta: delta)
+    }
+
+    /// Extends the selection by one real line in the direction specified.
+    ///
+    /// If extending backwards, this method will return the beginning of the leading non-whitespace characters
+    /// in the line. If the offset is located in the leading whitespace it will return the real line beginning.
+    ///
+    /// - Parameters:
+    ///   - string: The reference string to use.
+    ///   - offset: The location to start extending the selection from.
+    ///   - delta: The direction the selection should be extended. `1` for forwards, `-1` for backwards.
+    /// - Returns: The range of the extended selection.
+    private func extendSelectionLine(string: NSString, from offset: Int, delta: Int) -> NSRange {
+        guard let line = layoutManager?.textLineForOffset(offset) else {
+            return NSRange(location: offset, length: 0)
+        }
+        let lineBound = delta > 0
+        ? line.range.max - (layoutManager?.detectedLineEnding.length ?? 1)
+        : line.range.location
+
+        return _extendSelectionLine(string: string, lineBound: lineBound, offset: offset, delta: delta)
+    }
+
+    /// Common code for `extendSelectionLine` and `extendSelectionVisualLine`
+    private func _extendSelectionLine(
+        string: NSString,
+        lineBound: Int,
+        offset: Int,
+        delta: Int
+    ) -> NSRange {
         var foundRange = NSRange(
             location: min(lineBound, offset),
             length: max(lineBound, offset) - min(lineBound, offset)
@@ -222,23 +248,34 @@ public extension TextSelectionManager {
 
         // Only do this if we're going backwards.
         if delta < 0 {
-            string.enumerateSubstrings(in: foundRange, options: .byCaretPositions) { substring, _, _, stop in
-                if let substring = substring as String? {
-                    if CharacterSet
-                        .whitespacesAndNewlines.subtracting(.newlines)
-                        .isSuperset(of: CharacterSet(charactersIn: substring)) {
-                        foundRange.location += 1
-                        foundRange.length -= 1
-                    } else {
-                        stop.pointee = true
-                    }
-                } else {
-                    stop.pointee = true
-                }
-            }
+            foundRange = findBeginningOfLineText(string: string, initialRange: foundRange)
         }
 
         return foundRange.length == 0 ? originalFoundRange : foundRange
+    }
+
+    /// Finds the beginning of text in a line not including whitespace.
+    /// - Parameters:
+    ///   - string: The string to look in.
+    ///   - initialRange: The range to begin looking from.
+    /// - Returns: A new range to replace the given range for the line.
+    private func findBeginningOfLineText(string: NSString, initialRange: NSRange) -> NSRange {
+        var foundRange = initialRange
+        string.enumerateSubstrings(in: foundRange, options: .byCaretPositions) { substring, _, _, stop in
+            if let substring = substring as String? {
+                if CharacterSet
+                    .whitespacesAndNewlines.subtracting(.newlines)
+                    .isSuperset(of: CharacterSet(charactersIn: substring)) {
+                    foundRange.location += 1
+                    foundRange.length -= 1
+                } else {
+                    stop.pointee = true
+                }
+            } else {
+                stop.pointee = true
+            }
+        }
+        return foundRange
     }
 
     // MARK: - Vertical Methods
@@ -259,7 +296,7 @@ public extension TextSelectionManager {
         switch destination {
         case .character:
             return extendSelectionVerticalCharacter(from: offset, up: up, suggestedXPos: suggestedXPos)
-        case .word, .line:
+        case .word, .line, .visualLine:
             return extendSelectionVerticalLine(from: offset, up: up)
         case .container:
             return extendSelectionContainer(from: offset, delta: up ? 1 : -1)

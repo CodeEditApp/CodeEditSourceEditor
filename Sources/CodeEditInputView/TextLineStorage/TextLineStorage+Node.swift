@@ -93,6 +93,18 @@ extension TextLineStorage {
             self.color = color
         }
 
+        convenience init(length: Int, data: NodeData, height: CGFloat) {
+            self.init(
+                length: length,
+                data: data,
+                leftSubtreeOffset: 0,
+                leftSubtreeHeight: 0.0,
+                leftSubtreeCount: 0,
+                height: height,
+                color: .black
+            )
+        }
+
         internal func sibling() -> Node<NodeData>? {
             if parent?.left === self {
                 return parent?.right

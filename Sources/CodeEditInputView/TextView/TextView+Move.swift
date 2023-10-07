@@ -82,25 +82,25 @@ extension TextView {
 
     /// Moves the cursors left to the end of the line.
     override public func moveToLeftEndOfLine(_ sender: Any?) {
-        selectionManager.moveSelections(direction: .backward, destination: .line)
+        selectionManager.moveSelections(direction: .backward, destination: .visualLine)
         scrollSelectionToVisible()
     }
 
     /// Moves the cursors left to the end of the line extending the current selection.
     override public func moveToLeftEndOfLineAndModifySelection(_ sender: Any?) {
-        selectionManager.moveSelections(direction: .backward, destination: .line, modifySelection: true)
+        selectionManager.moveSelections(direction: .backward, destination: .visualLine, modifySelection: true)
         scrollSelectionToVisible()
     }
 
     /// Moves the cursors right to the end of the line.
     override public func moveToRightEndOfLine(_ sender: Any?) {
-        selectionManager.moveSelections(direction: .forward, destination: .line)
+        selectionManager.moveSelections(direction: .forward, destination: .visualLine)
         scrollSelectionToVisible()
     }
 
     /// Moves the cursors right to the end of the line extending the current selection.
     override public func moveToRightEndOfLineAndModifySelection(_ sender: Any?) {
-        selectionManager.moveSelections(direction: .forward, destination: .line, modifySelection: true)
+        selectionManager.moveSelections(direction: .forward, destination: .visualLine, modifySelection: true)
         scrollSelectionToVisible()
     }
 

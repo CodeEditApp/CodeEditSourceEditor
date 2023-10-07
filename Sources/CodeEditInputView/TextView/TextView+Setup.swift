@@ -8,8 +8,8 @@
 import AppKit
 
 extension TextView {
-    internal func setUpLayoutManager() {
-        layoutManager = TextLayoutManager(
+    internal func setUpLayoutManager() -> TextLayoutManager {
+        TextLayoutManager(
             textStorage: textStorage,
             typingAttributes: [
                 .font: font
@@ -21,8 +21,8 @@ extension TextView {
         )
     }
 
-    internal func setUpSelectionManager() {
-        selectionManager = TextSelectionManager(
+    internal func setUpSelectionManager() -> TextSelectionManager {
+        TextSelectionManager(
             layoutManager: layoutManager,
             textStorage: textStorage,
             layoutView: self, // TODO: This is an odd syntax... consider reworking this

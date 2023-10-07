@@ -17,7 +17,7 @@ import TextStory
 /// If needed, the automatic undo grouping can be overridden using the `beginGrouping()` and `endGrouping()` methods.
 class CEUndoManager {
     /// An `UndoManager` subclass that forwards relevant actions to a `CEUndoManager`.
-    /// Allows for objects like `STTextView` to use the `UndoManager` API
+    /// Allows for objects like `TextView` to use the `UndoManager` API
     /// while CETV manages the undo/redo actions.
     class DelegatedUndoManager: UndoManager {
         weak var parent: CEUndoManager?
@@ -86,11 +86,9 @@ class CEUndoManager {
             return
         }
         isUndoing = true
-        textView.textStorage.beginEditing()
         for mutation in item.mutations.reversed() {
-            textView.textStorage.applyMutation(mutation.inverse)
+            textView.insertText(mutation.inverse.string, replacementRange: mutation.inverse.range)
         }
-        textView.textStorage.endEditing()
         redoStack.append(item)
         isUndoing = false
     }
@@ -101,11 +99,9 @@ class CEUndoManager {
             return
         }
         isRedoing = true
-        textView.textStorage.beginEditing()
         for mutation in item.mutations {
-            textView.textStorage.applyMutation(mutation.mutation)
+            textView.insertText(mutation.mutation.string, replacementRange: mutation.mutation.range)
         }
-        textView.textStorage.endEditing()
         undoStack.append(item)
         isRedoing = false
     }
@@ -123,8 +119,6 @@ class CEUndoManager {
     public func registerMutation(_ mutation: TextMutation) {
         guard let textView,
               let textStorage = textView.textStorage,
-              mutation.range.length > 0,
-              !mutation.string.isEmpty,
               !isUndoing,
               !isRedoing else {
             return

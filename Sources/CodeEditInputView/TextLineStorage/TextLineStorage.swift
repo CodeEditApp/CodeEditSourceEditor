@@ -72,15 +72,7 @@ public final class TextLineStorage<Data: Identifiable> {
             self.height += height
         }
 
-        let insertedNode = Node(
-            length: length,
-            data: line,
-            leftSubtreeOffset: 0,
-            leftSubtreeHeight: 0.0,
-            leftSubtreeCount: 0,
-            height: height,
-            color: .black
-        )
+        let insertedNode = Node(length: length, data: line, height: height)
         guard root != nil else {
             root = insertedNode
             return
