@@ -56,6 +56,10 @@ public class GutterView: NSView {
         true
     }
 
+    override public var wantsDefaultClipping: Bool {
+        false
+    }
+
     public init(
         font: NSFont,
         textColor: NSColor,
@@ -68,6 +72,7 @@ public class GutterView: NSView {
         self.delegate = delegate
 
         super.init(frame: .zero)
+        clipsToBounds = false
         wantsLayer = true
         layerContentsRedrawPolicy = .onSetNeedsDisplay
         translatesAutoresizingMaskIntoConstraints = false
@@ -187,6 +192,8 @@ public class GutterView: NSView {
         guard let context = NSGraphicsContext.current?.cgContext else {
             return
         }
+        superview?.clipsToBounds = false
+        superview?.layer?.masksToBounds = false
         layer?.backgroundColor = backgroundColor?.cgColor
         updateWidthIfNeeded()
         drawSelectedLines(context)

@@ -50,12 +50,12 @@ extension TextLineStorage {
         case black
     }
 
-    final class Node<Data: Identifiable> {
+    final class Node<NodeData: Identifiable> {
         // The length of the text line
         var length: Int
         // The height of this text line
         var height: CGFloat
-        var data: Data
+        var data: NodeData
 
         // The offset in characters of the entire left subtree
         var leftSubtreeOffset: Int
@@ -64,21 +64,21 @@ extension TextLineStorage {
         // The number of nodes in the left subtree
         var leftSubtreeCount: Int
 
-        var left: Node<Data>?
-        var right: Node<Data>?
-        unowned var parent: Node<Data>?
+        var left: Node<NodeData>?
+        var right: Node<NodeData>?
+        unowned var parent: Node<NodeData>?
         var color: Color
 
         init(
             length: Int,
-            data: Data,
+            data: NodeData,
             leftSubtreeOffset: Int,
             leftSubtreeHeight: CGFloat,
             leftSubtreeCount: Int,
             height: CGFloat,
-            left: Node<Data>? = nil,
-            right: Node<Data>? = nil,
-            parent: Node<Data>? = nil,
+            left: Node<NodeData>? = nil,
+            right: Node<NodeData>? = nil,
+            parent: Node<NodeData>? = nil,
             color: Color
         ) {
             self.length = length
@@ -93,7 +93,7 @@ extension TextLineStorage {
             self.color = color
         }
 
-        func sibling() -> Node<Data>? {
+        func sibling() -> Node<NodeData>? {
             if parent?.left === self {
                 return parent?.right
             } else {
@@ -101,7 +101,7 @@ extension TextLineStorage {
             }
         }
 
-        func minimum() -> Node<Data> {
+        func minimum() -> Node<NodeData> {
             if let left {
                 return left.minimum()
             } else {
@@ -109,7 +109,7 @@ extension TextLineStorage {
             }
         }
 
-        func maximum() -> Node<Data> {
+        func maximum() -> Node<NodeData> {
             if let right {
                 return right.maximum()
             } else {
@@ -117,7 +117,7 @@ extension TextLineStorage {
             }
         }
 
-        func getSuccessor() -> Node<Data>? {
+        func getSuccessor() -> Node<NodeData>? {
             // If node has right child: successor is the min of this right tree
             if let right {
                 return right.minimum()

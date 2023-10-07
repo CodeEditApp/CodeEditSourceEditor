@@ -11,6 +11,18 @@ import Foundation
 // Specifically, all rotation methods, fixup methods, and internal search methods must be kept private.
 // swiftlint:disable file_length
 
+// There is a lot of ugly `Unmanaged` code in this class. This is due to the fact that Swift often has a hard time
+// optimizing retain/release calls for object trees. For instance, the `metaFixup` method has a lot of retain/release
+// calls to each node/parent as we do a little walk up the tree.
+//
+// Using Unmanaged references resulted in a -30% decrease (0.667s -> 0.474s) in the
+// TextLayoutLineStorageTests.test_insertPerformance benchmark when initially tested, and similar optimizations
+// have also since been implemented in `insert`.
+//
+// See:
+// - https://github.com/apple/swift/blob/main/docs/OptimizationTips.rst#unsafe-code
+// - https://forums.swift.org/t/improving-linked-list-performance-swift-release-and-swift-retain-overhead/17205
+
 /// Implements a red-black tree for efficiently editing, storing and retrieving lines of text in a document.
 public final class TextLineStorage<Data: Identifiable> {
     private enum MetaFixupAction {
@@ -75,26 +87,28 @@ public final class TextLineStorage<Data: Identifiable> {
         }
         insertedNode.color = .red
 
-        var currentNode = root
+        var currentNode: Unmanaged<Node<Data>> = Unmanaged<Node<Data>>.passUnretained(root!)
+        var shouldContinue = true
         var currentOffset: Int = root?.leftSubtreeOffset ?? 0
-        while let node = currentNode {
+        while shouldContinue {
+            let node = currentNode.takeUnretainedValue()
             if currentOffset >= index {
                 if node.left != nil {
-                    currentNode = node.left
+                    currentNode = Unmanaged<Node<Data>>.passUnretained(node.left!)
                     currentOffset = (currentOffset - node.leftSubtreeOffset) + (node.left?.leftSubtreeOffset ?? 0)
                 } else {
                     node.left = insertedNode
                     insertedNode.parent = node
-                    currentNode = nil
+                    shouldContinue = false
                 }
             } else {
                 if node.right != nil {
-                    currentNode = node.right
+                    currentNode = Unmanaged<Node<Data>>.passUnretained(node.right!)
                     currentOffset += node.length + (node.right?.leftSubtreeOffset ?? 0)
                 } else {
                     node.right = insertedNode
                     insertedNode.parent = node
-                    currentNode = nil
+                    shouldContinue = false
                 }
             }
         }
@@ -481,22 +495,30 @@ private extension TextLineStorage {
         nodeAction: MetaFixupAction = .none
     ) {
         guard node.parent != nil else { return }
-        var node: Node? = node
-        while node != nil, node !== root {
-            if isLeftChild(node!) {
-                node?.parent?.leftSubtreeOffset += delta
-                node?.parent?.leftSubtreeHeight += deltaHeight
+        var ref = Unmanaged<Node<Data>>.passUnretained(node)
+        while let node = ref._withUnsafeGuaranteedRef({ $0.parent }), node !== root {
+            if node.left === ref.takeUnretainedValue() {
+                node.leftSubtreeOffset += delta
+                node.leftSubtreeHeight += deltaHeight
                 switch nodeAction {
                 case .inserted:
-                    node?.parent?.leftSubtreeCount += 1
+                    node.leftSubtreeCount += 1
                 case .deleted:
-                    node?.parent?.leftSubtreeCount -= 1
+                    node.leftSubtreeCount -= 1
                 case .none:
-                    node = node?.parent
-                    continue
+                    if node.parent != nil {
+                        ref = Unmanaged.passUnretained(node.parent!)
+                        continue
+                    } else {
+                        return
+                    }
                 }
             }
-            node = node?.parent
+            if node.parent != nil {
+                ref = Unmanaged.passUnretained(node.parent!)
+            } else {
+                return
+            }
         }
     }
 }
