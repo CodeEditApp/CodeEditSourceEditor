@@ -229,7 +229,7 @@ final class TextLayoutLineStorageTests: XCTestCase {
         tree.build(from: lines, estimatedLineHeight: 1.0)
         // Measure time when inserting randomly into an already built tree.
         // Start    0.667s
-        // 10/6/23  0.474s  -30%
+        // 10/6/23  0.563s  -15.59%
         measure {
             for _ in 0..<100_000 {
                 tree.insert(

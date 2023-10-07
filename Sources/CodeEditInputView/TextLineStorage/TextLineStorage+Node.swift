@@ -8,11 +8,11 @@
 import Foundation
 
 extension TextLineStorage {
-    func isRightChild(_ node: Node<Data>) -> Bool {
+    internal func isRightChild(_ node: Node<Data>) -> Bool {
         node.parent?.right === node
     }
 
-    func isLeftChild(_ node: Node<Data>) -> Bool {
+    internal func isLeftChild(_ node: Node<Data>) -> Bool {
         node.parent?.left === node
     }
 
@@ -34,7 +34,7 @@ extension TextLineStorage {
     /// - Parameters:
     ///   - nodeU: The node to replace.
     ///   - nodeV: The node to insert in place of `nodeU`
-    func transplant(_ nodeU: Node<Data>, with nodeV: Node<Data>?) {
+    internal func transplant(_ nodeU: Node<Data>, with nodeV: Node<Data>?) {
         if nodeU.parent == nil {
             root = nodeV
         } else if isLeftChild(nodeU) {
@@ -93,7 +93,7 @@ extension TextLineStorage {
             self.color = color
         }
 
-        func sibling() -> Node<NodeData>? {
+        internal func sibling() -> Node<NodeData>? {
             if parent?.left === self {
                 return parent?.right
             } else {
@@ -101,7 +101,7 @@ extension TextLineStorage {
             }
         }
 
-        func minimum() -> Node<NodeData> {
+        internal func minimum() -> Node<NodeData> {
             if let left {
                 return left.minimum()
             } else {
@@ -109,7 +109,7 @@ extension TextLineStorage {
             }
         }
 
-        func maximum() -> Node<NodeData> {
+        internal func maximum() -> Node<NodeData> {
             if let right {
                 return right.maximum()
             } else {
@@ -117,7 +117,7 @@ extension TextLineStorage {
             }
         }
 
-        func getSuccessor() -> Node<NodeData>? {
+        internal func getSuccessor() -> Node<NodeData>? {
             // If node has right child: successor is the min of this right tree
             if let right {
                 return right.minimum()

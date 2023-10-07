@@ -11,11 +11,11 @@ import Foundation
 // Specifically, all rotation methods, fixup methods, and internal search methods must be kept private.
 // swiftlint:disable file_length
 
-// There is a lot of ugly `Unmanaged` code in this class. This is due to the fact that Swift often has a hard time
+// There is some ugly `Unmanaged` code in this class. This is due to the fact that Swift often has a hard time
 // optimizing retain/release calls for object trees. For instance, the `metaFixup` method has a lot of retain/release
 // calls to each node/parent as we do a little walk up the tree.
 //
-// Using Unmanaged references resulted in a -30% decrease (0.667s -> 0.474s) in the
+// Using Unmanaged references resulted in a -15% decrease (0.667s -> 0.563s) in the
 // TextLayoutLineStorageTests.test_insertPerformance benchmark when initially tested, and similar optimizations
 // have also since been implemented in `insert`.
 //
@@ -496,7 +496,7 @@ private extension TextLineStorage {
     ) {
         guard node.parent != nil else { return }
         var ref = Unmanaged<Node<Data>>.passUnretained(node)
-        while let node = ref._withUnsafeGuaranteedRef({ $0.parent }), node !== root {
+        while let node = ref._withUnsafeGuaranteedRef({ $0.parent }), ref.takeUnretainedValue() !== root {
             if node.left === ref.takeUnretainedValue() {
                 node.leftSubtreeOffset += delta
                 node.leftSubtreeHeight += deltaHeight
@@ -506,16 +506,11 @@ private extension TextLineStorage {
                 case .deleted:
                     node.leftSubtreeCount -= 1
                 case .none:
-                    if node.parent != nil {
-                        ref = Unmanaged.passUnretained(node.parent!)
-                        continue
-                    } else {
-                        return
-                    }
+                    break
                 }
             }
             if node.parent != nil {
-                ref = Unmanaged.passUnretained(node.parent!)
+                ref = Unmanaged.passUnretained(node)
             } else {
                 return
             }

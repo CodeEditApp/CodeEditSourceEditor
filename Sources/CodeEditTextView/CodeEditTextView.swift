@@ -9,7 +9,6 @@ import SwiftUI
 import CodeEditInputView
 import CodeEditLanguages
 
-/// A `SwiftUI` wrapper for a ``STTextViewController``.
 public struct CodeEditTextView: NSViewControllerRepresentable {
 
     /// Initializes a Text Editor
