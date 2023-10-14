@@ -68,6 +68,12 @@ public class TextSelectionManager: NSObject {
         Notification.Name("TextSelectionManager.TextSelectionChangedNotification")
     }
 
+    public var insertionPointColor: NSColor = NSColor.labelColor {
+        didSet {
+            textSelections.forEach { $0.view?.color = insertionPointColor }
+        }
+    }
+    public var highlightSelectedLine: Bool = true
     public var selectedLineBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
     public var selectionBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor
 
@@ -101,7 +107,7 @@ public class TextSelectionManager: NSObject {
         selection.suggestedXPos = layoutManager?.rectForOffset(range.location)?.minX
         textSelections = [selection]
         updateSelectionViews()
-        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification))
+        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification, object: self))
     }
 
     public func setSelectedRanges(_ ranges: [NSRange]) {
@@ -112,7 +118,7 @@ public class TextSelectionManager: NSObject {
             return selection
         }
         updateSelectionViews()
-        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification))
+        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification, object: self))
     }
 
     // MARK: - Selection Views
@@ -132,7 +138,7 @@ public class TextSelectionManager: NSObject {
                     || textSelection.boundingRect.origin != cursorOrigin
                     || textSelection.boundingRect.height != lineFragment?.data.scaledHeight ?? 0 {
                     textSelection.view?.removeFromSuperview()
-                    let cursorView = CursorView()
+                    let cursorView = CursorView(color: insertionPointColor)
                     cursorView.frame.origin = cursorOrigin
                     cursorView.frame.size.height = lineFragment?.data.scaledHeight ?? 0
                     layoutView?.addSubview(cursorView)
@@ -150,15 +156,6 @@ public class TextSelectionManager: NSObject {
         if didUpdate {
             delegate?.setNeedsDisplay()
         }
-    }
-
-    /// Notifies the selection manager of an edit and updates all selections accordingly.
-    /// - Parameters:
-    ///   - delta: The change in length of the document
-    ///   - retainLength: Set to `true` if selections should keep their lengths after the edit.
-    ///                   By default all selection lengths are set to 0 after any edit.
-    func updateSelections(delta: Int, retainLength: Bool = false) {
-        textSelections.forEach { $0.didInsertText(length: delta, retainLength: retainLength) }
     }
 
     internal func removeCursors() {
@@ -208,7 +205,6 @@ public class TextSelectionManager: NSObject {
         context.restoreGState()
     }
 
-    // TODO: Move this drawing to `LineFragmentView`
     /// Draws a selected range in the given context.
     /// - Parameters:
     ///   - rect: The rect to draw in.
@@ -313,6 +309,6 @@ extension TextSelectionManager: NSTextStorageDelegate {
             }
         }
         updateSelectionViews()
-        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification))
+        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification, object: self))
     }
 }

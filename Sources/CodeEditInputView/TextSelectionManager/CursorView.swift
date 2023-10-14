@@ -9,10 +9,14 @@ import AppKit
 
 /// Animates a cursor.
 open class CursorView: NSView {
-    private let blinkDuration: TimeInterval?
-    private let color: NSColor
-    private let width: CGFloat
+    public var color: NSColor {
+        didSet {
+            layer?.backgroundColor = color.cgColor
+        }
+    }
 
+    private let blinkDuration: TimeInterval?
+    private let width: CGFloat
     private var timer: Timer?
 
     open override var isFlipped: Bool {

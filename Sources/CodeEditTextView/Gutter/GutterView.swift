@@ -39,7 +39,7 @@ public class GutterView: NSView {
     var highlightSelectedLines: Bool = true
 
     @Invalidating(.display)
-    var selectedLineTextColor: NSColor = .textColor
+    var selectedLineTextColor: NSColor? = .textColor
 
     @Invalidating(.display)
     var selectedLineColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
@@ -166,7 +166,7 @@ public class GutterView: NSView {
         context.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
         for linePosition in textView.layoutManager.visibleLines() {
             if selectionRangeMap.intersects(integersIn: linePosition.range) {
-                attributes[.foregroundColor] = selectedLineTextColor
+                attributes[.foregroundColor] = selectedLineTextColor ?? textColor
             } else {
                 attributes[.foregroundColor] = textColor
             }

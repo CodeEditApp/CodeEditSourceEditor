@@ -1,16 +1,16 @@
 //
-//  STTextViewController+TextFormation.swift
-//  
+//  TextViewController+TextFormation.swift
+//
 //
 //  Created by Khan Winter on 1/26/23.
 //
 
 import AppKit
-import STTextView
+import CodeEditInputView
 import TextFormation
 import TextStory
 
-extension STTextViewController {
+extension TextViewController {
 
     internal enum BracketPairs {
         static let allValues: [(String, String)] = [
@@ -88,7 +88,7 @@ extension STTextViewController {
     ///   - mutation: The text mutation.
     ///   - textView: The textView to use.
     /// - Returns: Return whether or not the mutation should be applied.
-    internal func shouldApplyMutation(_ mutation: TextMutation, to textView: STTextView) -> Bool {
+    internal func shouldApplyMutation(_ mutation: TextMutation, to textView: TextView) -> Bool {
         // don't perform any kind of filtering during undo operations
         if textView.undoManager?.isUndoing ?? false || textView.undoManager?.isRedoing ?? false {
             return true

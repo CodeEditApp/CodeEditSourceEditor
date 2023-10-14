@@ -8,12 +8,10 @@
 import AppKit
 
 extension TextView {
-    internal func setUpLayoutManager() -> TextLayoutManager {
+    internal func setUpLayoutManager(lineHeight: CGFloat, wrapLines: Bool) -> TextLayoutManager {
         TextLayoutManager(
             textStorage: textStorage,
-            typingAttributes: [
-                .font: font
-            ],
+            typingAttributes: typingAttributes,
             lineHeightMultiplier: lineHeight,
             wrapLines: wrapLines,
             textView: self, // TODO: This is an odd syntax... consider reworking this

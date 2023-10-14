@@ -29,7 +29,10 @@ extension TextView {
             _undoManager?.registerMutation(
                 TextMutation(string: string as String, range: range, limit: textStorage.length)
             )
-            textStorage.replaceCharacters(in: range, with: string)
+            textStorage.replaceCharacters(
+                in: range,
+                with: NSAttributedString(string: string, attributes: typingAttributes)
+            )
 
             delegate?.textView(self, didReplaceContentsIn: range, with: string)
         }

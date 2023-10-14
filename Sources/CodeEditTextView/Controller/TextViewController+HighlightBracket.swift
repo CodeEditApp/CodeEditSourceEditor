@@ -1,24 +1,22 @@
 //
-//  STTextViewController+HighlightRange.swift
+//  TextViewController+HighlightRange.swift
 //  CodeEditTextView
 //
 //  Created by Khan Winter on 4/26/23.
 //
 
 import AppKit
-import STTextView
 
-extension STTextViewController {
+extension TextViewController {
     /// Highlights bracket pairs using the current selection.
     internal func highlightSelectionPairs() {
         guard bracketPairHighlight != nil else { return }
         removeHighlightLayers()
-        for selection in textView.textLayoutManager.textSelections.flatMap(\.textRanges) {
-            if selection.isEmpty,
-               let range = selection.nsRange(using: textView.textContentManager),
+        for range in textView.selectionManager.textSelections.map({ $0.range }) {
+            if range.isEmpty,
                range.location > 0, // Range is not the beginning of the document
-               let preceedingCharacter = textView.textContentStorage?.textStorage?.substring(
-                from: NSRange(location: range.location - 1, length: 1) // The preceeding character exists
+               let preceedingCharacter = textView.textStorage.substring(
+                from: NSRange(location: range.location - 1, length: 1) // The preceding character exists
                ) {
                 for pair in BracketPairs.allValues {
                     if preceedingCharacter == pair.0 {
@@ -31,9 +29,9 @@ extension STTextViewController {
                                        NSMaxRange(textView.documentRange)),
                             reverse: false
                         ) {
-                            highlightRange(NSRange(location: characterIndex, length: 1))
+                            highlightCharacter(characterIndex)
                             if bracketPairHighlight?.highlightsSourceBracket ?? false {
-                                highlightRange(NSRange(location: range.location - 1, length: 1))
+                                highlightCharacter(range.location - 1)
                             }
                         }
                     } else if preceedingCharacter == pair.1 && range.location - 1 > 0 {
@@ -46,9 +44,9 @@ extension STTextViewController {
                                        textView.documentRange.location),
                             reverse: true
                         ) {
-                            highlightRange(NSRange(location: characterIndex, length: 1))
+                            highlightCharacter(characterIndex)
                             if bracketPairHighlight?.highlightsSourceBracket ?? false {
-                                highlightRange(NSRange(location: range.location - 1, length: 1))
+                                highlightCharacter(range.location - 1)
                             }
                         }
                     }
@@ -82,7 +80,7 @@ extension STTextViewController {
         }
         var closeCount = 0
         var index: Int?
-        textView.textContentStorage?.textStorage?.mutableString.enumerateSubstrings(
+        textView.textStorage.mutableString.enumerateSubstrings(
             in: reverse ?
                 NSRange(location: limit, length: from - limit) :
                 NSRange(location: from, length: limit - from),
@@ -103,17 +101,16 @@ extension STTextViewController {
         return index
     }
 
-    /// Adds a temporary highlight effect to the given range.
+    /// Adds a temporary highlight effect to the character at the given location.
     /// - Parameters:
-    ///   - range: The range to highlight
+    ///   - location: The location of the character to highlight
     ///   - scrollToRange: Set to true to scroll to the given range when highlighting. Defaults to `false`.
-    private func highlightRange(_ range: NSTextRange, scrollToRange: Bool = false) {
+    private func highlightCharacter(_ location: Int, scrollToRange: Bool = false) {
         guard let bracketPairHighlight = bracketPairHighlight,
-              var rectToHighlight = textView.textLayoutManager.textSegmentFrame(
-                in: range, type: .highlight
-        ) else {
+              var rectToHighlight = textView.layoutManager.rectForOffset(location) else {
             return
         }
+        print(rectToHighlight)
         let layer = CAShapeLayer()
 
         switch bracketPairHighlight {
@@ -145,7 +142,7 @@ extension STTextViewController {
             layer.frame = rectToHighlight
         case .underline:
             let path = CGMutablePath()
-            let pathY = rectToHighlight.maxY - (lineHeight - font.lineHeight)/4
+            let pathY = rectToHighlight.maxY - (rectToHighlight.height * (lineHeightMultiple - 1))/4
             path.move(to: CGPoint(x: rectToHighlight.minX, y: pathY))
             path.addLine(to: CGPoint(x: rectToHighlight.maxX, y: pathY))
             layer.path = path
@@ -207,18 +204,6 @@ extension STTextViewController {
         group.animations = [opacityAnim, boundsAnim]
         layer.add(group, forKey: nil)
         CATransaction.commit()
-    }
-
-    /// Adds a temporary highlight effect to the given range.
-    /// - Parameters:
-    ///   - range: The range to highlight
-    ///   - scrollToRange: Set to true to scroll to the given range when highlighting. Defaults to `false`.
-    public func highlightRange(_ range: NSRange, scrollToRange: Bool = false) {
-        guard let textRange = NSTextRange(range, provider: textView.textContentManager) else {
-            return
-        }
-
-        highlightRange(textRange, scrollToRange: scrollToRange)
     }
 
     /// Safely removes all highlight layers.

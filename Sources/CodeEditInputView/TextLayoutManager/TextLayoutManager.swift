@@ -24,8 +24,16 @@ public class TextLayoutManager: NSObject {
 
     public weak var delegate: TextLayoutManagerDelegate?
     public var typingAttributes: [NSAttributedString.Key: Any]
-    public var lineHeightMultiplier: CGFloat
-    public var wrapLines: Bool
+    public var lineHeightMultiplier: CGFloat {
+        didSet {
+            setNeedsLayout()
+        }
+    }
+    public var wrapLines: Bool {
+        didSet {
+            setNeedsLayout()
+        }
+    }
     public var detectedLineEnding: LineEnding = .lineFeed
     /// The edge insets to inset all text layout with.
     public var edgeInsets: HorizontalEdgeInsets = .zero {
@@ -104,7 +112,7 @@ public class TextLayoutManager: NSObject {
         print("Text Layout Manager built in: ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC), "ms")
     }
 
-    internal func estimateLineHeight() -> CGFloat {
+    public func estimateLineHeight() -> CGFloat {
         let string = NSAttributedString(string: "0", attributes: typingAttributes)
         let typesetter = CTTypesetterCreateWithAttributedString(string)
         let ctLine = CTTypesetterCreateLine(typesetter, CFRangeMake(0, 1))
@@ -136,7 +144,7 @@ public class TextLayoutManager: NSObject {
         layoutLines()
     }
 
-    func setNeedsLayout() {
+    public func setNeedsLayout() {
         needsLayout = true
         visibleLineIds.removeAll(keepingCapacity: true)
     }

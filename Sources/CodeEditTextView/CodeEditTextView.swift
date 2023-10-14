@@ -21,7 +21,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - indentOption: The behavior to use when the tab key is pressed. Defaults to 4 spaces.
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
     ///   - wrapLines: Whether lines wrap to the width of the editor
-    ///   - editorOverscroll: The percentage for overscroll, between 0-1 (default: `0.0`)
+    ///   - editorOverscroll: The distance to overscroll the editor by.
     ///   - cursorPosition: The cursor's position in the editor, measured in `(lineNum, columnNum)`
     ///   - useThemeBackground: Determines whether the editor uses the theme's background color, or a transparent
     ///                         background color
@@ -43,7 +43,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         indentOption: IndentOption = .spaces(count: 4),
         lineHeight: Double,
         wrapLines: Bool,
-        editorOverscroll: Double = 0.0,
+        editorOverscroll: CGFloat = 0,
         cursorPosition: Binding<(Int, Int)>,
         useThemeBackground: Bool = true,
         highlightProvider: HighlightProviding? = nil,
@@ -78,7 +78,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     private var indentOption: IndentOption
     private var lineHeight: Double
     private var wrapLines: Bool
-    private var editorOverscroll: Double
+    private var editorOverscroll: CGFloat
     @Binding private var cursorPosition: (Int, Int)
     private var useThemeBackground: Bool
     private var highlightProvider: HighlightProviding?
@@ -113,51 +113,54 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
         // Do manual diffing to reduce the amount of reloads.
         // This helps a lot in view performance, as it otherwise gets triggered on each environment change.
-//        guard !paramsAreEqual(controller: controller) else {
-//            return
-//        }
-//
+        guard !paramsAreEqual(controller: controller) else {
+            return
+        }
+
         controller.font = font
-//        controller.wrapLines = wrapLines
-//        controller.useThemeBackground = useThemeBackground
-//        controller.lineHeightMultiple = lineHeight
-//        controller.editorOverscroll = editorOverscroll
-//        controller.contentInsets = contentInsets
-//        controller.bracketPairHighlight = bracketPairHighlight
-//
+        controller.wrapLines = wrapLines
+        controller.useThemeBackground = useThemeBackground
+        controller.lineHeightMultiple = lineHeight
+        controller.editorOverscroll = editorOverscroll
+        controller.contentInsets = contentInsets
+        controller.bracketPairHighlight = bracketPairHighlight
+        if controller.isEditable != isEditable {
+            controller.isEditable = isEditable
+        }
+
 //        if controller.language.id != language.id {
 //            controller.language = language
 //        }
-//        if controller.theme != theme {
-//            controller.theme = theme
-//        }
-//        if controller.indentOption != indentOption {
-//            controller.indentOption = indentOption
-//        }
-//        if controller.tabWidth != tabWidth {
-//            controller.tabWidth = tabWidth
-//        }
-//        if controller.letterSpacing != letterSpacing {
-//            controller.letterSpacing = letterSpacing
-//        }
-//
-//        controller.reloadUI()
+        if controller.theme != theme {
+            controller.theme = theme
+        }
+        if controller.indentOption != indentOption {
+            controller.indentOption = indentOption
+        }
+        if controller.tabWidth != tabWidth {
+            controller.tabWidth = tabWidth
+        }
+        if controller.letterSpacing != letterSpacing {
+            controller.letterSpacing = letterSpacing
+        }
+
+        controller.reloadUI()
         return
     }
 
     func paramsAreEqual(controller: NSViewControllerType) -> Bool {
-        true
-//        controller.font == font &&
-//        controller.wrapLines == wrapLines &&
-//        controller.useThemeBackground == useThemeBackground &&
-//        controller.lineHeightMultiple == lineHeight &&
-//        controller.editorOverscroll == editorOverscroll &&
-//        controller.contentInsets == contentInsets &&
+        controller.font == font &&
+        controller.isEditable == isEditable &&
+        controller.wrapLines == wrapLines &&
+        controller.useThemeBackground == useThemeBackground &&
+        controller.lineHeightMultiple == lineHeight &&
+        controller.editorOverscroll == editorOverscroll &&
+        controller.contentInsets == contentInsets &&
 //        controller.language.id == language.id &&
-//        controller.theme == theme &&
-//        controller.indentOption == indentOption &&
-//        controller.tabWidth == tabWidth &&
-//        controller.letterSpacing == letterSpacing &&
-//        controller.bracketPairHighlight == bracketPairHighlight
+        controller.theme == theme &&
+        controller.indentOption == indentOption &&
+        controller.tabWidth == tabWidth &&
+        controller.letterSpacing == letterSpacing &&
+        controller.bracketPairHighlight == bracketPairHighlight
     }
 }

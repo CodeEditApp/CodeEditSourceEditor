@@ -6,9 +6,9 @@
 //
 
 import AppKit
-import STTextView
+import CodeEditInputView
 
-extension STTextView {
+extension TextView {
 
     /// Setup context menus
     func setupMenus() {

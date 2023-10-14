@@ -9,9 +9,12 @@ import AppKit
 import Common
 import TextStory
 
-/**
+// Disabling file length and type body length as the methods and variables contained in this file cannot be moved
+// to extensions without a lot of work.
+// swiftlint:disable type_body_length
 
-```
+/**
+ ```
  TextView
  |-> TextLayoutManager          Creates, manages, and lays out text lines from a line storage
  |  |-> [TextLine]              Represents a text line
@@ -24,29 +27,128 @@ import TextStory
  ```
  */
 public class TextView: NSView, NSTextContent {
-    // MARK: - Configuration
+    // MARK: - Statics
 
-    func setString(_ string: String) {
-        textStorage.setAttributedString(.init(string: string))
+    /// The default typing attributes. Defaults to:
+    /// - font: System font, size 12
+    /// - foregroundColor: System text color
+    /// - kern: 0.0
+    static public var defaultTypingAttributes: [NSAttributedString.Key: Any] {
+        [.font: NSFont.systemFont(ofSize: 12), .foregroundColor: NSColor.textColor, .kern: 0.0]
     }
 
-    public var font: NSFont {
+    // MARK: - Configuration
+
+    public var string: String {
+        get {
+            textStorage.string
+        }
+        set {
+            textStorage.setAttributedString(NSAttributedString(string: newValue, attributes: typingAttributes))
+        }
+    }
+
+    /// The attributes to apply to inserted text.
+    public var typingAttributes: [NSAttributedString.Key: Any] = [:] {
         didSet {
             setNeedsDisplay()
+            layoutManager?.setNeedsLayout()
+        }
+    }
+
+    /// The default font of the text view.
+    public var font: NSFont {
+        get {
+            (typingAttributes[.font] as? NSFont) ?? NSFont.systemFont(ofSize: 12)
+        }
+        set {
+            typingAttributes[.font] = newValue
+        }
+    }
+
+    /// The text color of the text view.
+    public var textColor: NSColor {
+        get {
+            (typingAttributes[.foregroundColor] as? NSColor) ?? NSColor.textColor
+        }
+        set {
+            typingAttributes[.foregroundColor] = newValue
+        }
+    }
+
+    /// The line height as a multiple of the font's line height. 1.0 represents no change in height.
+    public var lineHeight: CGFloat {
+        get {
+            layoutManager?.lineHeightMultiplier ?? 1.0
+        }
+        set {
+            layoutManager?.lineHeightMultiplier = newValue
+        }
+    }
+
+    /// Whether or not the editor should wrap lines
+    public var wrapLines: Bool {
+        get {
+            layoutManager?.wrapLines ?? false
+        }
+        set {
+            layoutManager?.wrapLines = newValue
+        }
+    }
+    public var editorOverscroll: CGFloat {
+        didSet {
+            setNeedsDisplay()
+            updateFrameIfNeeded()
+        }
+    }
+
+    /// A multiplier that determines the amount of space between characters. `1.0` indicates no space,
+    /// `2.0` indicates one character of space between other characters.
+    public var letterSpacing: Double {
+        didSet {
+            kern = fontCharWidth * (letterSpacing - 1.0)
             layoutManager.setNeedsLayout()
         }
     }
-    public var lineHeight: CGFloat
-    public var wrapLines: Bool
-    public var editorOverscroll: CGFloat
-    public var isEditable: Bool
-    @Invalidating(.display)
-    public var isSelectable: Bool = true
-    public var letterSpacing: Double
-    public var edgeInsets: HorizontalEdgeInsets = .zero {
+
+    public var isEditable: Bool {
         didSet {
-            layoutManager.edgeInsets = edgeInsets
+            setNeedsDisplay()
             selectionManager.updateSelectionViews()
+            if !isEditable && isFirstResponder {
+                _ = resignFirstResponder()
+            }
+        }
+    }
+
+    public var isSelectable: Bool = true {
+        didSet {
+            if !isSelectable {
+                selectionManager.removeCursors()
+                if isFirstResponder {
+                    _ = resignFirstResponder()
+                }
+            }
+            setNeedsDisplay()
+        }
+    }
+
+    public var edgeInsets: HorizontalEdgeInsets {
+        get {
+            layoutManager?.edgeInsets ?? .zero
+        }
+        set {
+            layoutManager?.edgeInsets = newValue
+        }
+    }
+
+    /// The kern to use for characters. Defaults to `0.0` and is updated when `letterSpacing` is set.
+    public var kern: CGFloat {
+        get {
+            typingAttributes[.kern] as? CGFloat ?? 0
+        }
+        set {
+            typingAttributes[.kern] = newValue
         }
     }
 
@@ -54,14 +156,7 @@ public class TextView: NSView, NSTextContent {
 
     public weak var delegate: TextViewDelegate?
 
-    public var textStorage: NSTextStorage! {
-        didSet {
-            setUpLayoutManager()
-            setUpSelectionManager()
-            needsDisplay = true
-            needsLayout = true
-        }
-    }
+    private(set) public var textStorage: NSTextStorage!
     private(set) public var layoutManager: TextLayoutManager!
     private(set) public var selectionManager: TextSelectionManager!
 
@@ -70,6 +165,10 @@ public class TextView: NSView, NSTextContent {
     internal var isFirstResponder: Bool = false
     internal var mouseDragAnchor: CGPoint?
     internal var mouseDragTimer: Timer?
+
+    private var fontCharWidth: CGFloat {
+        (" " as NSString).size(withAttributes: [.font: font]).width
+    }
 
     var _undoManager: CEUndoManager?
     @objc dynamic open var allowsUndo: Bool
@@ -86,6 +185,7 @@ public class TextView: NSView, NSTextContent {
     public init(
         string: String,
         font: NSFont,
+        textColor: NSColor,
         lineHeight: CGFloat,
         wrapLines: Bool,
         editorOverscroll: CGFloat,
@@ -98,9 +198,6 @@ public class TextView: NSView, NSTextContent {
         self.textStorage = NSTextStorage(string: string)
         self.storageDelegate = storageDelegate
 
-        self.font = font
-        self.lineHeight = lineHeight
-        self.wrapLines = wrapLines
         self.editorOverscroll = editorOverscroll
         self.isEditable = isEditable
         self.letterSpacing = letterSpacing
@@ -113,11 +210,15 @@ public class TextView: NSView, NSTextContent {
         postsBoundsChangedNotifications = true
         autoresizingMask = [.width, .height]
 
-        // TODO: Implement typing/default attributes
-        textStorage.addAttributes([.font: font], range: documentRange)
+        self.typingAttributes = [
+            .font: font,
+            .foregroundColor: textColor,
+        ]
+
+        textStorage.addAttributes(typingAttributes, range: documentRange)
         textStorage.delegate = storageDelegate
 
-        layoutManager = setUpLayoutManager()
+        layoutManager = setUpLayoutManager(lineHeight: lineHeight, wrapLines: wrapLines)
         storageDelegate.addDelegate(layoutManager)
         selectionManager = setUpSelectionManager()
         storageDelegate.addDelegate(selectionManager)
@@ -125,6 +226,20 @@ public class TextView: NSView, NSTextContent {
         _undoManager = CEUndoManager(textView: self)
 
         layoutManager.layoutLines()
+    }
+
+    /// Set a new text storage object for the view.
+    /// - Parameter textStorage: The new text storage to use.
+    public func setTextStorage(_ textStorage: NSTextStorage) {
+        let lineHeight = layoutManager.lineHeightMultiplier
+        let wrapLines = layoutManager.wrapLines
+        layoutManager = setUpLayoutManager(lineHeight: lineHeight, wrapLines: wrapLines)
+        storageDelegate.addDelegate(layoutManager)
+        selectionManager = setUpSelectionManager()
+        storageDelegate.addDelegate(selectionManager)
+        _undoManager?.clearStack()
+        needsDisplay = true
+        needsLayout = true
     }
 
     required init?(coder: NSCoder) {
@@ -339,10 +454,13 @@ public class TextView: NSView, NSTextContent {
 
 extension TextView: TextSelectionManagerDelegate {
     public func setNeedsDisplay() {
-        self.setNeedsDisplay(visibleRect)
+        self.setNeedsDisplay(frame)
     }
 
     public func estimatedLineHeight() -> CGFloat {
         layoutManager.estimateLineHeight()
     }
 }
+
+// swiftlint:enable type_body_length
+// swiftlint:disable:this file_length

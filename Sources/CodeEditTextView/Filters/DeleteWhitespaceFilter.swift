@@ -6,9 +6,9 @@
 //
 
 import Foundation
+import CodeEditInputView
 import TextFormation
 import TextStory
-import STTextView
 
 /// Filter for quickly deleting indent whitespace
 ///
@@ -59,8 +59,10 @@ struct DeleteWhitespaceFilter: Filter {
             )
         )
 
-        if let textView = interface as? STTextView, textView.textLayoutManager.textSelections.count == 1 {
-            textView.setSelectedRange(NSRange(location: leadingWhitespace.max - numberOfExtraSpaces, length: 0))
+        if let textView = interface as? TextView, textView.selectionManager.textSelections.count == 1 {
+            textView.selectionManager.setSelectedRange(
+                NSRange(location: leadingWhitespace.max - numberOfExtraSpaces, length: 0)
+            )
         }
 
         return .discard
