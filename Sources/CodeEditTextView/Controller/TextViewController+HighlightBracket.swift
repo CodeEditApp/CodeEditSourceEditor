@@ -110,7 +110,6 @@ extension TextViewController {
               var rectToHighlight = textView.layoutManager.rectForOffset(location) else {
             return
         }
-        print(rectToHighlight)
         let layer = CAShapeLayer()
 
         switch bracketPairHighlight {

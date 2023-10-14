@@ -123,7 +123,6 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         controller.lineHeightMultiple = lineHeight
         controller.editorOverscroll = editorOverscroll
         controller.contentInsets = contentInsets
-        controller.bracketPairHighlight = bracketPairHighlight
         if controller.isEditable != isEditable {
             controller.isEditable = isEditable
         }
@@ -143,6 +142,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         if controller.letterSpacing != letterSpacing {
             controller.letterSpacing = letterSpacing
         }
+
+        controller.bracketPairHighlight = bracketPairHighlight
 
         controller.reloadUI()
         return
