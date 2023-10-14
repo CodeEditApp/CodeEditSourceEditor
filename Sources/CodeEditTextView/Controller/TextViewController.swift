@@ -117,9 +117,7 @@ public class TextViewController: NSViewController {
     internal var storageDelegate: MultiStorageDelegate!
     internal var highlighter: Highlighter?
 
-    private var fontCharWidth: CGFloat {
-        (" " as NSString).size(withAttributes: [.font: font]).width
-    }
+    private var fontCharWidth: CGFloat { (" " as NSString).size(withAttributes: [.font: font]).width }
 
     /// Filters used when applying edits..
     internal var textFilters: [TextFormation.Filter] = []
@@ -127,9 +125,7 @@ public class TextViewController: NSViewController {
     /// The pixel value to overscroll the bottom of the editor.
     /// Calculated as the line height \* ``TextViewController/editorOverscroll``.
     /// Does not include ``TextViewController/contentInsets``.
-    private var bottomContentInset: CGFloat {
-        (textView?.estimatedLineHeight() ?? 0) * CGFloat(editorOverscroll)
-    }
+    private var bottomContentInset: CGFloat { (textView?.estimatedLineHeight() ?? 0) * CGFloat(editorOverscroll) }
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -238,7 +234,6 @@ public class TextViewController: NSViewController {
         )
 
         self.view = scrollView
-
         setUpHighlighter()
 
         NSLayoutConstraint.activate([
@@ -340,7 +335,6 @@ public class TextViewController: NSViewController {
         }
 
         highlighter?.invalidate()
-        //        highlightSelectionPairs()
     }
 
     deinit {
