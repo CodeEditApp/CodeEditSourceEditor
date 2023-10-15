@@ -42,7 +42,8 @@ final class STTextViewControllerTests: XCTestCase {
             editorOverscroll: 0.5,
             useThemeBackground: true,
             isEditable: true,
-            letterSpacing: 1.0
+            letterSpacing: 1.0,
+            undoManager: CEUndoManager()
         )
 
         controller.loadView()

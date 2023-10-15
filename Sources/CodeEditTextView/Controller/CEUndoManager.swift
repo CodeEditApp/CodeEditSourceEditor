@@ -16,30 +16,30 @@ import TextStory
 /// - Grouping pasted text
 ///
 /// If needed, the automatic undo grouping can be overridden using the `beginGrouping()` and `endGrouping()` methods.
-class CEUndoManager {
+public class CEUndoManager {
     /// An `UndoManager` subclass that forwards relevant actions to a `CEUndoManager`.
     /// Allows for objects like `STTextView` to use the `UndoManager` API
     /// while CETV manages the undo/redo actions.
-    class DelegatedUndoManager: UndoManager {
+    public class DelegatedUndoManager: UndoManager {
         weak var parent: CEUndoManager?
 
-        override var canUndo: Bool { parent?.canUndo ?? false }
-        override var canRedo: Bool { parent?.canRedo ?? false }
+        public override var canUndo: Bool { parent?.canUndo ?? false }
+        public override var canRedo: Bool { parent?.canRedo ?? false }
 
-        func registerMutation(_ mutation: TextMutation) {
+        public func registerMutation(_ mutation: TextMutation) {
             parent?.registerMutation(mutation)
             removeAllActions()
         }
 
-        override func undo() {
+        public override func undo() {
             parent?.undo()
         }
 
-        override func redo() {
+        public override func redo() {
             parent?.redo()
         }
 
-        override func registerUndo(withTarget target: Any, selector: Selector, object anObject: Any?) {
+        public override func registerUndo(withTarget target: Any, selector: Selector, object anObject: Any?) {
             // no-op, but just in case to save resources:
             removeAllActions()
         }
@@ -71,23 +71,25 @@ class CEUndoManager {
     /// A stack of operations that can be redone.
     private var redoStack: [UndoGroup] = []
 
-    private unowned let textView: STTextView
+    internal weak var textView: STTextView?
     private(set) var isGrouping: Bool = false
 
-    public init(textView: STTextView) {
-        self.textView = textView
+    public init() {
         self.manager = DelegatedUndoManager()
         manager.parent = self
     }
 
     /// Performs an undo operation if there is one available.
     public func undo() {
-        guard let item = undoStack.popLast() else {
+        guard let item = undoStack.popLast(),
+              let textView else {
             return
         }
         isUndoing = true
         for mutation in item.mutations.reversed() {
+            NotificationCenter.default.post(name: .NSUndoManagerWillUndoChange, object: self.manager)
             textView.applyMutationNoUndo(mutation.inverse)
+            NotificationCenter.default.post(name: .NSUndoManagerDidUndoChange, object: self.manager)
         }
         redoStack.append(item)
         isUndoing = false
@@ -95,12 +97,15 @@ class CEUndoManager {
 
     /// Performs a redo operation if there is one available.
     public func redo() {
-        guard let item = redoStack.popLast() else {
+        guard let item = redoStack.popLast(),
+              let textView else {
             return
         }
         isRedoing = true
         for mutation in item.mutations {
+            NotificationCenter.default.post(name: .NSUndoManagerWillRedoChange, object: self.manager)
             textView.applyMutationNoUndo(mutation.mutation)
+            NotificationCenter.default.post(name: .NSUndoManagerDidRedoChange, object: self.manager)
         }
         undoStack.append(item)
         isRedoing = false
@@ -117,6 +122,8 @@ class CEUndoManager {
     /// Calling this method while the manager is in an undo/redo operation will result in a no-op.
     /// - Parameter mutation: The mutation to register for undo/redo
     public func registerMutation(_ mutation: TextMutation) {
+        guard let textView else { return }
+
         if (mutation.range.length == 0 && mutation.string.isEmpty) || isUndoing || isRedoing { return }
         let newMutation = UndoGroup.Mutation(mutation: mutation, inverse: textView.inverseMutation(for: mutation))
         if !undoStack.isEmpty, let lastMutation = undoStack.last?.mutations.last {

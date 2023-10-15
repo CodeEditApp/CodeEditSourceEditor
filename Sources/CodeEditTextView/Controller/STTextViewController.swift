@@ -27,7 +27,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
     /// for every new selection.
     internal var lastTextSelections: [NSTextRange] = []
 
-    internal var textViewUndoManager: CEUndoManager!
+    internal var textViewUndoManager: CEUndoManager
 
     /// Binding for the `textView`s string
     public var text: Binding<String>
@@ -133,7 +133,8 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool,
         letterSpacing: Double,
-        bracketPairHighlight: BracketPairHighlight? = nil
+        bracketPairHighlight: BracketPairHighlight? = nil,
+        undoManager: CEUndoManager
     ) {
         self.text = text
         self.language = language
@@ -150,6 +151,7 @@ public class STTextViewController: NSViewController, STTextViewDelegate, ThemeAt
         self.contentInsets = contentInsets
         self.isEditable = isEditable
         self.bracketPairHighlight = bracketPairHighlight
+        self.textViewUndoManager = undoManager
         super.init(nibName: nil, bundle: nil)
     }
 
