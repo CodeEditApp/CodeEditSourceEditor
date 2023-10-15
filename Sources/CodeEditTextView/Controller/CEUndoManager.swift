@@ -123,7 +123,7 @@ public class CEUndoManager {
     /// - Parameter mutation: The mutation to register for undo/redo
     public func registerMutation(_ mutation: TextMutation) {
         guard let textView else { return }
-        
+
         if (mutation.range.length == 0 && mutation.string.isEmpty) || isUndoing || isRedoing { return }
         let newMutation = UndoGroup.Mutation(mutation: mutation, inverse: textView.inverseMutation(for: mutation))
         if !undoStack.isEmpty, let lastMutation = undoStack.last?.mutations.last {
