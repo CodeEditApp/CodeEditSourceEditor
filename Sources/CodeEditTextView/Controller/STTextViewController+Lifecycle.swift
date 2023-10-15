@@ -57,7 +57,7 @@ extension STTextViewController {
             return event
         }
 
-        textViewUndoManager = CEUndoManager(textView: textView)
+        textViewUndoManager.textView = textView
         reloadUI()
         setUpHighlighter()
         setHighlightProvider(self.highlightProvider)
