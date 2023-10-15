@@ -13,14 +13,15 @@ extension TextViewController {
     /// - Parameter position: The position to set. Lines and columns are 1-indexed.
     func setCursorPosition(_ position: (Int, Int)) {
         let (line, column) = position
-        guard line >= 0 && column >= 0 else { return }
+        guard line > 0 && column > 0 else { return }
+
+        _ = textView.becomeFirstResponder()
 
         if textView.textStorage.length == 0 {
             // If the file is blank, automatically place the cursor in the first index.
             let range = NSRange(location: 0, length: 0)
-            _ = self.textView.becomeFirstResponder()
             self.textView.selectionManager.setSelectedRange(range)
-        } else if line - 1 >= 0, let linePosition = textView.layoutManager.textLineForIndex(line - 1) {
+        } else if let linePosition = textView.layoutManager.textLineForIndex(line - 1) {
             // If this is a valid line, set the new position
             let index = max(
                 linePosition.range.lowerBound,

@@ -29,7 +29,7 @@ extension TextLayoutManager {
     /// - Parameter index: The line to find.
     /// - Returns: The text line position if any, `nil` if the index is out of bounds.
     public func textLineForIndex(_ index: Int) -> TextLineStorage<TextLine>.TextLinePosition? {
-        guard index > 0 && index < lineStorage.count else { return nil }
+        guard index >= 0 && index < lineStorage.count else { return nil }
         return lineStorage.getLine(atIndex: index)
     }
 

@@ -11,7 +11,7 @@ import CodeEditInputView
 import SwiftTreeSitter
 import CodeEditLanguages
 
-/// The `Highlighter` class handles efficiently highlighting the `STTextView` it's provided with.
+/// The `Highlighter` class handles efficiently highlighting the `TextView` it's provided with.
 /// It will listen for text and visibility changes, and highlight syntax as needed.
 ///
 /// One should rarely have to direcly modify or call methods on this class. Just keep it alive in

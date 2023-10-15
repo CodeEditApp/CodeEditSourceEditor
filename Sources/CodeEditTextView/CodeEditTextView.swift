@@ -87,7 +87,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     private var letterSpacing: Double
     private var bracketPairHighlight: BracketPairHighlight?
 
-    public typealias NSViewControllerType = TextViewController // STTextViewController
+    public typealias NSViewControllerType = TextViewController
 
     public func makeNSViewController(context: Context) -> TextViewController {
         return TextViewController(

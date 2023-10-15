@@ -66,7 +66,15 @@ extension TextLayoutManager: NSTextStorageDelegate {
     ///   - insertedString: The string being inserted.
     ///   - location: The location the string is being inserted into.
     private func applyLineInsert(_ insertedString: NSString, at location: Int) {
-        if LineEnding(line: insertedString as String) != nil {
+        if lineStorage.count == 0 && lineStorage.length == 0 {
+            // The text was completely empty before, insert.
+            lineStorage.insert(
+                line: TextLine(),
+                atIndex: location,
+                length: insertedString.length,
+                height: estimateLineHeight()
+            )
+        } else if LineEnding(line: insertedString as String) != nil {
             // Need to split the line inserting into and create a new line with the split section of the line
             guard let linePosition = lineStorage.getLine(atIndex: location) else { return }
             let splitLocation = location + insertedString.length

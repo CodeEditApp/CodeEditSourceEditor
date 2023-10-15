@@ -44,6 +44,7 @@ public class TextView: NSView, NSTextContent {
             textStorage.string
         }
         set {
+            layoutManager.willReplaceCharactersInRange(range: documentRange, with: newValue)
             textStorage.setAttributedString(NSAttributedString(string: newValue, attributes: typingAttributes))
         }
     }
@@ -93,12 +94,6 @@ public class TextView: NSView, NSTextContent {
         }
         set {
             layoutManager?.wrapLines = newValue
-        }
-    }
-    public var editorOverscroll: CGFloat {
-        didSet {
-            setNeedsDisplay()
-            updateFrameIfNeeded()
         }
     }
 
@@ -188,7 +183,6 @@ public class TextView: NSView, NSTextContent {
         textColor: NSColor,
         lineHeight: CGFloat,
         wrapLines: Bool,
-        editorOverscroll: CGFloat,
         isEditable: Bool,
         letterSpacing: Double,
         delegate: TextViewDelegate,
@@ -197,8 +191,6 @@ public class TextView: NSView, NSTextContent {
         self.delegate = delegate
         self.textStorage = NSTextStorage(string: string)
         self.storageDelegate = storageDelegate
-
-        self.editorOverscroll = editorOverscroll
         self.isEditable = isEditable
         self.letterSpacing = letterSpacing
         self.allowsUndo = true
@@ -399,8 +391,8 @@ public class TextView: NSView, NSTextContent {
 
         var didUpdate = false
 
-        if newHeight + editorOverscroll >= availableSize.height && frame.size.height != newHeight + editorOverscroll {
-            frame.size.height = newHeight + editorOverscroll
+        if newHeight >= availableSize.height && frame.size.height != newHeight {
+            frame.size.height = newHeight
             // No need to update layout after height adjustment
         }
 

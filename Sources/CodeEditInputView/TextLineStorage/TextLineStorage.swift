@@ -486,9 +486,11 @@ private extension TextLineStorage {
         deltaHeight: CGFloat,
         nodeAction: MetaFixupAction = .none
     ) {
-        guard node.parent != nil else { return }
+        guard node.parent != nil, root != nil else { return }
+        let rootRef = Unmanaged<Node<Data>>.passUnretained(root!)
         var ref = Unmanaged<Node<Data>>.passUnretained(node)
-        while let node = ref._withUnsafeGuaranteedRef({ $0.parent }), ref.takeUnretainedValue() !== root {
+        while let node = ref._withUnsafeGuaranteedRef({ $0.parent }),
+              ref.takeUnretainedValue() !== rootRef.takeUnretainedValue() {
             if node.left === ref.takeUnretainedValue() {
                 node.leftSubtreeOffset += delta
                 node.leftSubtreeHeight += deltaHeight

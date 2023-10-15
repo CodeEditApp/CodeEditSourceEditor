@@ -19,7 +19,7 @@ public class TextViewController: NSViewController {
     var gutterView: GutterView!
     /// Internal reference to any injected layers in the text view.
     internal var highlightLayers: [CALayer] = []
-    private var systemAppearance: NSAppearance.Name?
+    internal var systemAppearance: NSAppearance.Name?
 
     /// Binding for the `textView`s string
     public var string: Binding<String>
@@ -76,12 +76,11 @@ public class TextViewController: NSViewController {
     /// The current cursor position e.g. (1, 1)
     public var cursorPosition: Binding<(Int, Int)>
 
-    /// The height to overscroll the textview by.
-    public var editorOverscroll: CGFloat {
-        didSet {
-            textView.editorOverscroll = editorOverscroll
-        }
-    }
+    /// The editorOverscroll to use for the textView over scroll
+    ///
+    /// Measured in a percentage of the view's total height, meaning a `0.3` value will result in overscroll
+    /// of 1/3 of the view.
+    public var editorOverscroll: CGFloat
 
     /// Whether the code editor should use the theme background color or be transparent
     public var useThemeBackground: Bool
@@ -122,12 +121,19 @@ public class TextViewController: NSViewController {
     /// Filters used when applying edits..
     internal var textFilters: [TextFormation.Filter] = []
 
-    /// The pixel value to overscroll the bottom of the editor.
-    /// Calculated as the line height \* ``TextViewController/editorOverscroll``.
-    /// Does not include ``TextViewController/contentInsets``.
-    private var bottomContentInset: CGFloat { (textView?.estimatedLineHeight() ?? 0) * CGFloat(editorOverscroll) }
+    internal var cancellables = Set<AnyCancellable>()
 
-    private var cancellables = Set<AnyCancellable>()
+    /// ScrollView's bottom inset using as editor overscroll
+    private var bottomContentInsets: CGFloat {
+        let height = view.frame.height
+        var inset = editorOverscroll * height
+
+        if height - inset < font.lineHeight * lineHeightMultiple {
+            inset = height - font.lineHeight * lineHeightMultiple
+        }
+
+        return max(inset, .zero)
+    }
 
     // MARK: Init
 
@@ -188,121 +194,10 @@ public class TextViewController: NSViewController {
         return paragraph
     }
 
-    // MARK: Load View
-
-    // swiftlint:disable:next function_body_length
-    override public func loadView() {
-        scrollView = NSScrollView()
-        textView = TextView(
-            string: string.wrappedValue,
-            font: font,
-            textColor: theme.text,
-            lineHeight: lineHeightMultiple,
-            wrapLines: wrapLines,
-            editorOverscroll: bottomContentInset,
-            isEditable: isEditable,
-            letterSpacing: letterSpacing,
-            delegate: self,
-            storageDelegate: storageDelegate
-        )
-        textView.postsFrameChangedNotifications = true
-        textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.selectionManager.insertionPointColor = theme.insertionPoint
-
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.contentView.postsFrameChangedNotifications = true
-        scrollView.hasVerticalScroller = true
-        scrollView.hasHorizontalScroller = true
-        scrollView.documentView = textView
-        scrollView.contentView.postsBoundsChangedNotifications = true
-        if let contentInsets {
-            scrollView.automaticallyAdjustsContentInsets = false
-            scrollView.contentInsets = contentInsets
-        }
-
-        gutterView = GutterView(
-            font: font.rulerFont,
-            textColor: .secondaryLabelColor,
-            textView: textView,
-            delegate: self
-        )
-        gutterView.frame.origin.y = -scrollView.contentInsets.top
-        gutterView.updateWidthIfNeeded()
-        scrollView.addFloatingSubview(
-            gutterView,
-            for: .horizontal
-        )
-
-        self.view = scrollView
-        setUpHighlighter()
-
-        NSLayoutConstraint.activate([
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
-
-        // Layout on scroll change
-        NotificationCenter.default.addObserver(
-            forName: NSView.boundsDidChangeNotification,
-            object: scrollView.contentView,
-            queue: .main
-        ) { [weak self] _ in
-            self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
-            self?.gutterView.needsDisplay = true
-        }
-
-        // Layout on frame change
-        NotificationCenter.default.addObserver(
-            forName: NSView.frameDidChangeNotification,
-            object: scrollView.contentView,
-            queue: .main
-        ) { [weak self] _ in
-            self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
-            self?.gutterView.needsDisplay = true
-            if self?.bracketPairHighlight == .flash {
-                self?.removeHighlightLayers()
-            }
-        }
-
-        NotificationCenter.default.addObserver(
-            forName: NSView.frameDidChangeNotification,
-            object: textView,
-            queue: .main
-        ) { [weak self] _ in
-            self?.gutterView.frame.size.height = (self?.textView.frame.height ?? 0) + 10
-            self?.gutterView.needsDisplay = true
-        }
-
-        NotificationCenter.default.addObserver(
-            forName: TextSelectionManager.selectionChangedNotification,
-            object: textView.selectionManager,
-            queue: .main
-        ) { [weak self] _ in
-            self?.updateCursorPosition()
-            self?.highlightSelectionPairs()
-        }
-
-        textView.updateFrameIfNeeded()
-
-        NSApp.publisher(for: \.effectiveAppearance)
-            .receive(on: RunLoop.main)
-            .sink { [weak self] newValue in
-                guard let self = self else { return }
-
-                if self.systemAppearance != newValue.name {
-                    self.systemAppearance = newValue.name
-                }
-            }
-            .store(in: &cancellables)
-    }
-
     // MARK: - Reload UI
 
     func reloadUI() {
         textView.isEditable = isEditable
-        textView.editorOverscroll = bottomContentInset
 
         textView.selectionManager.selectionBackgroundColor = theme.selection
         textView.selectionManager.selectedLineBackgroundColor = useThemeBackground
@@ -331,7 +226,7 @@ public class TextViewController: NSViewController {
             if let contentInsets = contentInsets {
                 scrollView.contentInsets = contentInsets
             }
-            scrollView.contentInsets.bottom = bottomContentInset + (contentInsets?.bottom ?? 0)
+            scrollView.contentInsets.bottom = (contentInsets?.bottom ?? 0) + bottomContentInsets
         }
 
         highlighter?.invalidate()
@@ -343,12 +238,6 @@ public class TextViewController: NSViewController {
         storageDelegate = nil
         NotificationCenter.default.removeObserver(self)
         cancellables.forEach { $0.cancel() }
-    }
-}
-
-extension TextViewController: TextViewDelegate {
-    public func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with: String) {
-        gutterView.needsDisplay = true
     }
 }
 

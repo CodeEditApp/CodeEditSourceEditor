@@ -33,7 +33,8 @@ struct DeleteWhitespaceFilter: Filter {
         in interface: TextInterface,
         with providers: WhitespaceProviders
     ) -> FilterAction {
-        guard mutation.string == ""
+        guard mutation.delta < 0
+                && mutation.string == ""
                 && mutation.range.length == 1
                 && indentOption != .tab else {
             return .none
@@ -58,12 +59,6 @@ struct DeleteWhitespaceFilter: Filter {
                 limit: mutation.limit
             )
         )
-
-        if let textView = interface as? TextView, textView.selectionManager.textSelections.count == 1 {
-            textView.selectionManager.setSelectedRange(
-                NSRange(location: leadingWhitespace.max - numberOfExtraSpaces, length: 0)
-            )
-        }
 
         return .discard
     }
