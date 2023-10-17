@@ -119,7 +119,7 @@ public extension TextSelectionManager {
         decomposeCharacters: Bool
     ) -> NSRange {
         let range = delta > 0 ? NSRange(location: offset, length: 1) : NSRange(location: offset - 1, length: 1)
-        if delta > 0 && offset == string.length - 1 {
+        if delta > 0 && offset == string.length {
             return NSRange(location: offset, length: 0)
         } else if delta < 0 && offset == 0 {
             return NSRange(location: 0, length: 0)

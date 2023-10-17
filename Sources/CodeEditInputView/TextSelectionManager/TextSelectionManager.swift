@@ -128,19 +128,14 @@ public class TextSelectionManager: NSObject {
 
         for textSelection in textSelections {
             if textSelection.range.isEmpty {
-                let lineFragment = layoutManager?
-                    .textLineForOffset(textSelection.range.location)?
-                    .data
-                    .lineFragments
-                    .first
                 let cursorOrigin = (layoutManager?.rectForOffset(textSelection.range.location) ?? .zero).origin
                 if textSelection.view == nil
                     || textSelection.boundingRect.origin != cursorOrigin
-                    || textSelection.boundingRect.height != lineFragment?.data.scaledHeight ?? 0 {
+                    || textSelection.boundingRect.height != layoutManager?.estimateLineHeight() ?? 0 {
                     textSelection.view?.removeFromSuperview()
                     let cursorView = CursorView(color: insertionPointColor)
                     cursorView.frame.origin = cursorOrigin
-                    cursorView.frame.size.height = lineFragment?.data.scaledHeight ?? 0
+                    cursorView.frame.size.height = layoutManager?.estimateLineHeight() ?? 0
                     layoutView?.addSubview(cursorView)
                     textSelection.view = cursorView
                     textSelection.boundingRect = cursorView.frame

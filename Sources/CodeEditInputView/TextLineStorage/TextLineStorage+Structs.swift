@@ -69,5 +69,6 @@ extension TextLineStorage where Data: Identifiable {
     public struct BuildItem {
         public let data: Data
         public let length: Int
+        public let height: CGFloat?
     }
 }

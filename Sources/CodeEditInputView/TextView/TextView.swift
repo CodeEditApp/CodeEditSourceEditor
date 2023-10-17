@@ -386,7 +386,7 @@ public class TextView: NSView, NSTextContent {
     public func updateFrameIfNeeded() -> Bool {
         var availableSize = scrollView?.contentSize ?? .zero
         availableSize.height -= (scrollView?.contentInsets.top ?? 0) + (scrollView?.contentInsets.bottom ?? 0)
-        let newHeight = layoutManager.estimatedHeight()
+        let newHeight = max(layoutManager.estimatedHeight(), availableSize.height)
         let newWidth = layoutManager.estimatedWidth()
 
         var didUpdate = false

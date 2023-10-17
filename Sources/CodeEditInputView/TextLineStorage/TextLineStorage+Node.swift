@@ -34,7 +34,7 @@ extension TextLineStorage {
     /// - Parameters:
     ///   - nodeU: The node to replace.
     ///   - nodeV: The node to insert in place of `nodeU`
-    internal func transplant(_ nodeU: Node<Data>, with nodeV: Node<Data>?) {
+    internal func transplant(_ nodeU: borrowing Node<Data>, with nodeV: Node<Data>?) {
         if nodeU.parent == nil {
             root = nodeV
         } else if isLeftChild(nodeU) {

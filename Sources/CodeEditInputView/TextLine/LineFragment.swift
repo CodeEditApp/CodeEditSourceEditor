@@ -7,6 +7,8 @@
 
 import AppKit
 
+/// A ``LineFragment`` represents a subrange of characters in a line. Every text line contains at least one line
+/// fragments, and any lines that need to be broken due to width constraints will contain more than one fragment.
 public final class LineFragment: Identifiable, Equatable {
     public let id = UUID()
     private(set) public var ctLine: CTLine
@@ -14,7 +16,8 @@ public final class LineFragment: Identifiable, Equatable {
     public let height: CGFloat
     public let descent: CGFloat
     public let scaledHeight: CGFloat
-
+    
+    /// The difference between the real text height and the scaled height
     public var heightDifference: CGFloat {
         scaledHeight - height
     }

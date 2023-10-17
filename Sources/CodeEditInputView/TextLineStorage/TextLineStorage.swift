@@ -16,8 +16,7 @@ import Foundation
 // calls to each node/parent as we do a little walk up the tree.
 //
 // Using Unmanaged references resulted in a -15% decrease (0.667s -> 0.563s) in the
-// TextLayoutLineStorageTests.test_insertPerformance benchmark when initially tested, and similar optimizations
-// have also since been implemented in `insert`.
+// TextLayoutLineStorageTests.test_insertPerformance benchmark when first changed to use Unmanaged.
 //
 // See:
 // - https://github.com/apple/swift/blob/main/docs/OptimizationTips.rst#unsafe-code
@@ -51,8 +50,13 @@ public final class TextLineStorage<Data: Identifiable> {
     }
 
     public var last: TextLinePosition? {
-        guard length > 0, let position = search(for: length - 1) else { return nil }
+        guard count > 0, let position = search(forIndex: count - 1) else { return nil }
         return TextLinePosition(position: position)
+    }
+
+    private var lastNode: NodePosition? {
+        guard count > 0, let position = search(forIndex: count - 1) else { return nil }
+        return position
     }
 
     public init() { }
@@ -63,8 +67,10 @@ public final class TextLineStorage<Data: Identifiable> {
     /// - Complexity: `O(log n)` where `n` is the number of lines in the storage object.
     /// - Parameters:
     ///   - line: The text line to insert
-    ///   - range: The range the line represents. If the range is empty the line will be ignored.
-    public func insert(line: Data, atIndex index: Int, length: Int, height: CGFloat) {
+    ///   - index: The offset to insert the line at.
+    ///   - length: The length of the new line.
+    ///   - height: The height of the new line.
+    public func insert(line: Data, asOffset index: Int, length: Int, height: CGFloat) {
         assert(index >= 0 && index <= self.length, "Invalid index, expected between 0 and \(self.length). Got \(index)")
         defer {
             self.count += 1
@@ -130,6 +136,10 @@ public final class TextLineStorage<Data: Identifiable> {
     /// - Parameter position: The position to fetch for.
     /// - Returns: A text line object representing a generated line object and the offset in the document of the line.
     public func getLine(atPosition posY: CGFloat) -> TextLinePosition? {
+        guard posY < height else {
+            return last
+        }
+
         var currentNode = root
         var currentOffset: Int = root?.leftSubtreeOffset ?? 0
         var currentYPosition: CGFloat = root?.leftSubtreeHeight ?? 0
@@ -177,9 +187,15 @@ public final class TextLineStorage<Data: Identifiable> {
     ///   - delta: The change in length of the document. Negative for deletes, positive for insertions.
     ///   - deltaHeight: The change in height of the document.
     public func update(atIndex index: Int, delta: Int, deltaHeight: CGFloat) {
-        assert(index >= 0 && index < self.length, "Invalid index, expected between 0 and \(self.length). Got \(index)")
+        assert(index >= 0 && index <= self.length, "Invalid index, expected between 0 and \(self.length). Got \(index)")
         assert(delta != 0 || deltaHeight != 0, "Delta must be non-0")
-        guard let position = search(for: index) else {
+        let position: NodePosition?
+        if index == self.length { // Updates at the end of the document are valid
+            position = lastNode
+        } else {
+            position = search(for: index)
+        }
+        guard let position else {
             assertionFailure("No line found at index \(index)")
             return
         }
@@ -202,7 +218,7 @@ public final class TextLineStorage<Data: Identifiable> {
     /// is out of bounds.
     /// - Parameter index: The index to delete a line at.
     public func delete(lineAt index: Int) {
-        assert(index >= 0 && index < self.length, "Invalid index, expected between 0 and \(self.length). Got \(index)")
+        assert(index >= 0 && index <= self.length, "Invalid index, expected between 0 and \(self.length). Got \(index)")
         guard count > 1 else {
             removeAll()
             return
@@ -225,8 +241,10 @@ public final class TextLineStorage<Data: Identifiable> {
     }
 
     /// Efficiently builds the tree from the given array of lines.
+    /// - Note: Calls ``TextLineStorage/removeAll()`` before building.
     /// - Parameter lines: The lines to use to build the tree.
-    public func build(from lines: [BuildItem], estimatedLineHeight: CGFloat) {
+    public func build(from lines: borrowing [BuildItem], estimatedLineHeight: CGFloat) {
+        removeAll()
         root = build(lines: lines, estimatedLineHeight: estimatedLineHeight, left: 0, right: lines.count, parent: nil).0
         count = lines.count
     }
@@ -240,7 +258,7 @@ public final class TextLineStorage<Data: Identifiable> {
     ///   - parent: The parent of the subtree, `nil` if this is the root.
     /// - Returns: A node, if available, along with it's subtree's height and offset.
     private func build(
-        lines: [BuildItem],
+        lines: borrowing [BuildItem],
         estimatedLineHeight: CGFloat,
         left: Int,
         right: Int,
@@ -254,7 +272,7 @@ public final class TextLineStorage<Data: Identifiable> {
             leftSubtreeOffset: 0,
             leftSubtreeHeight: 0,
             leftSubtreeCount: 0,
-            height: estimatedLineHeight,
+            height: lines[mid].height ?? estimatedLineHeight,
             color: .black
         )
         node.parent = parent
@@ -298,30 +316,56 @@ public final class TextLineStorage<Data: Identifiable> {
 private extension TextLineStorage {
     // MARK: - Search
 
-    /// Searches for the given index. Returns a node and offset if found.
-    /// - Parameter index: The index to look for in the document.
+    /// Searches for the given offset.
+    /// - Parameter offset: The offset to look for in the document.
     /// - Returns: A tuple containing a node if it was found, and the offset of the node in the document.
-    func search(for index: Int) -> NodePosition? {
+    func search(for offset: Int) -> NodePosition? {
         var currentNode = root
         var currentOffset: Int = root?.leftSubtreeOffset ?? 0
         var currentYPosition: CGFloat = root?.leftSubtreeHeight ?? 0
         var currentIndex: Int = root?.leftSubtreeCount ?? 0
         while let node = currentNode {
             // If index is in the range [currentOffset..<currentOffset + length) it's in the line
-            if index >= currentOffset && index < currentOffset + node.length {
+            if offset == currentOffset || (offset >= currentOffset && offset < currentOffset + node.length) {
                 return NodePosition(node: node, yPos: currentYPosition, textPos: currentOffset, index: currentIndex)
-            } else if currentOffset > index {
+            } else if currentOffset > offset {
                 currentNode = node.left
                 currentOffset = (currentOffset - node.leftSubtreeOffset) + (node.left?.leftSubtreeOffset ?? 0)
                 currentYPosition = (currentYPosition - node.leftSubtreeHeight) + (node.left?.leftSubtreeHeight ?? 0)
                 currentIndex = (currentIndex - node.leftSubtreeCount) + (node.left?.leftSubtreeCount ?? 0)
-            } else if node.leftSubtreeOffset < index {
+            } else if node.leftSubtreeOffset < offset {
                 currentNode = node.right
                 currentOffset += node.length + (node.right?.leftSubtreeOffset ?? 0)
                 currentYPosition += node.height + (node.right?.leftSubtreeHeight ?? 0)
                 currentIndex += 1 + (node.right?.leftSubtreeCount ?? 0)
             } else {
                 currentNode = nil
+            }
+        }
+        return nil
+    }
+
+    /// Searches for the given index.
+    /// - Parameter index: The index to look for in the document.
+    /// - Returns: A tuple containing a node if it was found, and the offset of the node in the document.
+    func search(forIndex index: Int) -> NodePosition? {
+        var currentNode = root
+        var currentOffset: Int = root?.leftSubtreeOffset ?? 0
+        var currentYPosition: CGFloat = root?.leftSubtreeHeight ?? 0
+        var currentIndex: Int = root?.leftSubtreeCount ?? 0
+        while let node = currentNode {
+            if index == currentIndex {
+                return NodePosition(node: node, yPos: currentYPosition, textPos: currentOffset, index: currentIndex)
+            } else if currentIndex > index {
+                currentNode = node.left
+                currentOffset = (currentOffset - node.leftSubtreeOffset) + (node.left?.leftSubtreeOffset ?? 0)
+                currentYPosition = (currentYPosition - node.leftSubtreeHeight) + (node.left?.leftSubtreeHeight ?? 0)
+                currentIndex = (currentIndex - node.leftSubtreeCount) + (node.left?.leftSubtreeCount ?? 0)
+            } else {
+                currentNode = node.right
+                currentOffset += node.length + (node.right?.leftSubtreeOffset ?? 0)
+                currentYPosition += node.height + (node.right?.leftSubtreeHeight ?? 0)
+                currentIndex += 1 + (node.right?.leftSubtreeCount ?? 0)
             }
         }
         return nil
@@ -481,7 +525,7 @@ private extension TextLineStorage {
 
     /// Walk up the tree, updating any `leftSubtree` metadata.
     private func metaFixup(
-        startingAt node: Node<Data>,
+        startingAt node: borrowing Node<Data>,
         delta: Int,
         deltaHeight: CGFloat,
         nodeAction: MetaFixupAction = .none

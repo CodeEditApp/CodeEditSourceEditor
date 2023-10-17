@@ -17,39 +17,71 @@ final class Typesetter {
 
     init() { }
 
-    func prepareToTypeset(_ string: NSAttributedString, maxWidth: CGFloat, lineHeightMultiplier: CGFloat) {
+    func prepareToTypeset(
+        _ string: NSAttributedString,
+        maxWidth: CGFloat,
+        lineHeightMultiplier: CGFloat,
+        estimatedLineHeight: CGFloat
+    ) {
         lineFragments.removeAll()
         self.typesetter = CTTypesetterCreateWithAttributedString(string)
         self.string = string
-        generateLines(maxWidth: maxWidth, lineHeightMultiplier: lineHeightMultiplier)
+        generateLines(
+            maxWidth: maxWidth,
+            lineHeightMultiplier: lineHeightMultiplier,
+            estimatedLineHeight: estimatedLineHeight
+        )
     }
 
     // MARK: - Generate lines
-
-    private func generateLines(maxWidth: CGFloat, lineHeightMultiplier: CGFloat) {
+    
+    /// Generate line fragments.
+    /// - Parameters:
+    ///   - maxWidth: The maximum width the line can be.
+    ///   - lineHeightMultiplier: The multiplier to apply to an empty line's height.
+    ///   - estimatedLineHeight: The estimated height of an empty line.
+    private func generateLines(maxWidth: CGFloat, lineHeightMultiplier: CGFloat, estimatedLineHeight: CGFloat) {
         guard let typesetter else { return }
-        var startIndex = 0
-        while startIndex < string.length {
-            let lineBreak = suggestLineBreak(
-                using: typesetter,
-                strategy: .word, // TODO: Make this configurable
-                startingOffset: startIndex,
-                constrainingWidth: maxWidth
-            )
-            let lineFragment = typesetLine(
-                range: NSRange(location: startIndex, length: lineBreak - startIndex),
+        var lines: [TextLineStorage<LineFragment>.BuildItem] = []
+        var height: CGFloat = 0
+        if string.length == 0 {
+            // Insert an empty fragment
+            let ctLine = CTTypesetterCreateLine(typesetter, CFRangeMake(0, 0))
+            let fragment = LineFragment(
+                ctLine: ctLine,
+                width: 0,
+                height: estimatedLineHeight,
+                descent: 0,
                 lineHeightMultiplier: lineHeightMultiplier
             )
-            lineFragments.insert(
-                line: lineFragment,
-                atIndex: startIndex,
-                length: lineBreak - startIndex,
-                height: lineFragment.scaledHeight
-            )
-            startIndex = lineBreak
+            lines = [.init(data: fragment, length: 0, height: fragment.scaledHeight)]
+        } else {
+            var startIndex = 0
+            while startIndex < string.length {
+                let lineBreak = suggestLineBreak(
+                    using: typesetter,
+                    strategy: .word, // TODO: Make this configurable
+                    startingOffset: startIndex,
+                    constrainingWidth: maxWidth
+                )
+                let lineFragment = typesetLine(
+                    range: NSRange(location: startIndex, length: lineBreak - startIndex),
+                    lineHeightMultiplier: lineHeightMultiplier
+                )
+                lines.append(.init(data: lineFragment, length: lineBreak - startIndex, height: lineFragment.scaledHeight))
+                startIndex = lineBreak
+                height = lineFragment.scaledHeight
+            }
         }
+        // Use an efficient tree building algorithm rather than adding lines sequentially
+        lineFragments.build(from: lines, estimatedLineHeight: height)
     }
-
+    
+    /// Typeset a new fragment.
+    /// - Parameters:
+    ///   - range: The range of the fragment.
+    ///   - lineHeightMultiplier: The multiplier to apply to the line's height.
+    /// - Returns: A new line fragment.
     private func typesetLine(range: NSRange, lineHeightMultiplier: CGFloat) -> LineFragment {
         let ctLine = CTTypesetterCreateLine(typesetter!, CFRangeMake(range.location, range.length))
         var ascent: CGFloat = 0
@@ -150,7 +182,10 @@ final class Typesetter {
 
         return breakIndex
     }
-
+    
+    /// Ensures the character at the given index can break a line.
+    /// - Parameter index: The index to check at.
+    /// - Returns: True, if the character is a whitespace or punctuation character.
     private func ensureCharacterCanBreakLine(at index: Int) -> Bool {
         let set = CharacterSet(
             charactersIn: string.attributedSubstring(from: NSRange(location: index, length: 1)).string

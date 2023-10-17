@@ -9,7 +9,7 @@ import AppKit
 
 extension TextLayoutManager {
     public func estimatedHeight() -> CGFloat {
-        lineStorage.height
+        max(lineStorage.height, estimateLineHeight())
     }
 
     public func estimatedWidth() -> CGFloat {
@@ -34,6 +34,9 @@ extension TextLayoutManager {
     }
 
     public func textOffsetAtPoint(_ point: CGPoint) -> Int? {
+        guard point.y <= estimatedHeight() else { // End position is a special case.
+            return textStorage.length
+        }
         guard let position = lineStorage.getLine(atPosition: point.y),
               let fragmentPosition = position.data.typesetter.lineFragments.getLine(
                 atPosition: point.y - position.yPos
@@ -69,6 +72,9 @@ extension TextLayoutManager {
     /// - Parameter offset: The offset to create the rect for.
     /// - Returns: The found rect for the given offset.
     public func rectForOffset(_ offset: Int) -> CGRect? {
+        guard offset != lineStorage.length else {
+            return rectForEndOffset()
+        }
         guard let linePosition = lineStorage.getLine(atIndex: offset) else {
             return nil
         }
@@ -106,6 +112,28 @@ extension TextLayoutManager {
             width: maxXPos - minXPos,
             height: fragmentPosition.data.scaledHeight
         )
+    }
+
+    /// Finds a suitable cursor rect for the end position.
+    /// - Returns: A CGRect if it could be created.
+    private func rectForEndOffset() -> CGRect? {
+        if let last = lineStorage.last {
+            if last.range.isEmpty {
+                // Return a 0-width rect at the end of the last line.
+                return CGRect(x: edgeInsets.left, y: last.yPos, width: 0, height: last.height)
+            } else if let rect = rectForOffset(last.range.max - 1) {
+                return  CGRect(x: rect.maxX, y: rect.minY, width: 0, height: rect.height)
+            }
+        } else if lineStorage.isEmpty {
+            // Text is empty, create a new rect with estimated height at the origin
+            return CGRect(
+                x: edgeInsets.left,
+                y: 0.0,
+                width: 0,
+                height: estimateLineHeight()
+            )
+        }
+        return nil
     }
 
     /// Forces layout calculation for all lines up to and including the given offset.
@@ -147,6 +175,7 @@ extension TextLayoutManager {
         position.data.prepareForDisplay(
             maxWidth: maxLineWidth,
             lineHeightMultiplier: lineHeightMultiplier,
+            estimatedLineHeight: estimateLineHeight(),
             range: position.range,
             stringRef: textStorage
         )

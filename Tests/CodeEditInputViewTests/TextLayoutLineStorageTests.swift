@@ -16,7 +16,7 @@ final class TextLayoutLineStorageTests: XCTestCase {
         let tree = TextLineStorage<TextLine>()
         var data = [TextLineStorage<TextLine>.BuildItem]()
         for idx in 0..<15 {
-            data.append(.init(data: TextLine(), length: idx + 1))
+            data.append(.init(data: TextLine(), length: idx + 1, height: 0.0))
         }
         tree.build(from: data, estimatedLineHeight: 1.0)
         return tree
@@ -223,7 +223,8 @@ final class TextLayoutLineStorageTests: XCTestCase {
         for idx in 0..<250_000 {
             lines.append(TextLineStorage<TextLine>.BuildItem(
                 data: TextLine(),
-                length: idx + 1
+                length: idx + 1,
+                height: 0.0
             ))
         }
         tree.build(from: lines, estimatedLineHeight: 1.0)
@@ -244,7 +245,8 @@ final class TextLayoutLineStorageTests: XCTestCase {
         let lines: [TextLineStorage<TextLine>.BuildItem] = (0..<250_000).map {
             TextLineStorage<TextLine>.BuildItem(
                 data: TextLine(),
-                length: $0 + 1
+                length: $0 + 1,
+                height: 0.0
             )
         }
         // Start    0.113s
@@ -259,7 +261,8 @@ final class TextLayoutLineStorageTests: XCTestCase {
         for idx in 0..<100_000 {
             lines.append(TextLineStorage<TextLine>.BuildItem(
                 data: TextLine(),
-                length: idx + 1
+                length: idx + 1,
+                height: 0.0
             ))
         }
         tree.build(from: lines, estimatedLineHeight: 1.0)

@@ -134,7 +134,7 @@ public class GutterView: NSView {
         for selection in selectionManager.textSelections
         where selection.range.isEmpty {
             guard let line = textView.layoutManager.textLineForOffset(selection.range.location),
-                  visibleRange.intersection(line.range) != nil else {
+                  (visibleRange.intersection(line.range) != nil || selection.range.max == line.range.max) else {
                 continue
             }
             context.fill(

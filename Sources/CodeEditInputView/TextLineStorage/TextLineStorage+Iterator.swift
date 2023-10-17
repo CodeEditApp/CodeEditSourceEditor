@@ -32,7 +32,8 @@ public extension TextLineStorage {
         public mutating func next() -> TextLinePosition? {
             if let currentPosition {
                 guard currentPosition.yPos < maxY,
-                      let nextPosition = storage.getLine(atIndex: currentPosition.range.max) else {
+                      let nextPosition = storage.getLine(atIndex: currentPosition.range.max),
+                      nextPosition.index != currentPosition.index else {
                     return nil
                 }
                 self.currentPosition = nextPosition

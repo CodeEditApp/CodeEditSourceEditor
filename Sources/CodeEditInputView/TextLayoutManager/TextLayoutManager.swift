@@ -23,7 +23,11 @@ public class TextLayoutManager: NSObject {
     // MARK: - Public Properties
 
     public weak var delegate: TextLayoutManagerDelegate?
-    public var typingAttributes: [NSAttributedString.Key: Any]
+    public var typingAttributes: [NSAttributedString.Key: Any] {
+        didSet {
+            _estimateLineHeight = nil
+        }
+    }
     public var lineHeightMultiplier: CGFloat {
         didSet {
             setNeedsLayout()
@@ -111,17 +115,29 @@ public class TextLayoutManager: NSObject {
         let nanos = elapsed * UInt64(info.numer) / UInt64(info.denom)
         print("Text Layout Manager built in: ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC), "ms")
     }
-
+    
+    /// Estimates the line height for the current typing attributes.
+    /// Takes into account ``TextLayoutManager/lineHeightMultiplier``.
+    /// - Returns: The estimated line height.
     public func estimateLineHeight() -> CGFloat {
-        let string = NSAttributedString(string: "0", attributes: typingAttributes)
-        let typesetter = CTTypesetterCreateWithAttributedString(string)
-        let ctLine = CTTypesetterCreateLine(typesetter, CFRangeMake(0, 1))
-        var ascent: CGFloat = 0
-        var descent: CGFloat = 0
-        var leading: CGFloat = 0
-        CTLineGetTypographicBounds(ctLine, &ascent, &descent, &leading)
-        return (ascent + descent + leading) * lineHeightMultiplier
+        if let _estimateLineHeight {
+            return _estimateLineHeight
+        } else {
+            let string = NSAttributedString(string: "0", attributes: typingAttributes)
+            let typesetter = CTTypesetterCreateWithAttributedString(string)
+            let ctLine = CTTypesetterCreateLine(typesetter, CFRangeMake(0, 1))
+            var ascent: CGFloat = 0
+            var descent: CGFloat = 0
+            var leading: CGFloat = 0
+            CTLineGetTypographicBounds(ctLine, &ascent, &descent, &leading)
+            _estimateLineHeight = (ascent + descent + leading) * lineHeightMultiplier
+            return _estimateLineHeight!
+        }
     }
+
+    /// The last known line height estimate. If  set to `nil`, will be recalculated the next time
+    /// ``TextLayoutManager/estimateLineHeight()`` is called.
+    private var _estimateLineHeight: CGFloat?
 
     // MARK: - Invalidation
 
@@ -253,10 +269,15 @@ public class TextLayoutManager: NSObject {
         let line = position.data
         line.prepareForDisplay(
             maxWidth: maxWidth,
-            lineHeightMultiplier: lineHeightMultiplier,
+            lineHeightMultiplier: lineHeightMultiplier, 
+            estimatedLineHeight: estimateLineHeight(),
             range: position.range,
             stringRef: textStorage
         )
+
+        if position.range.isEmpty {
+            return CGSize(width: 0, height: estimateLineHeight())
+        }
 
         var height: CGFloat = 0
         var width: CGFloat = 0

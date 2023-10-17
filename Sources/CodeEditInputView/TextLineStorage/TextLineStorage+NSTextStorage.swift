@@ -17,22 +17,17 @@ extension TextLineStorage where Data == TextLine {
         var index = 0
         var lines: [BuildItem] = []
         while let range = textStorage.getNextLine(startingAt: index) {
-            lines.append(
-                BuildItem(
-                    data: TextLine(),
-                    length: range.max - index
-                )
-            )
+            lines.append(BuildItem(data: TextLine(), length: range.max - index, height: estimatedLineHeight))
             index = NSMaxRange(range)
         }
         // Create the last line
         if textStorage.length - index > 0 {
-            lines.append(
-                BuildItem(
-                    data: TextLine(),
-                    length: textStorage.length - index
-                )
-            )
+            lines.append(BuildItem(data: TextLine(), length: textStorage.length - index,height: estimatedLineHeight))
+        }
+
+        if textStorage.length == 0
+            || LineEnding(rawValue: textStorage.mutableString.substring(from: textStorage.length - 1)) != nil {
+            lines.append(BuildItem(data: TextLine(), length: 0, height: estimatedLineHeight))
         }
 
         // Use an efficient tree building algorithm rather than adding lines sequentially
