@@ -32,7 +32,7 @@ public extension TextLineStorage {
         public mutating func next() -> TextLinePosition? {
             if let currentPosition {
                 guard currentPosition.yPos < maxY,
-                      let nextPosition = storage.getLine(atIndex: currentPosition.range.max),
+                      let nextPosition = storage.getLine(atOffset: currentPosition.range.max),
                       nextPosition.index != currentPosition.index else {
                     return nil
                 }
@@ -61,12 +61,12 @@ public extension TextLineStorage {
         public mutating func next() -> TextLinePosition? {
             if let currentPosition {
                 guard currentPosition.range.max < range.max,
-                      let nextPosition = storage.getLine(atIndex: currentPosition.range.max) else {
+                      let nextPosition = storage.getLine(atOffset: currentPosition.range.max) else {
                     return nil
                 }
                 self.currentPosition = nextPosition
                 return self.currentPosition!
-            } else if let nextPosition = storage.getLine(atIndex: range.location) {
+            } else if let nextPosition = storage.getLine(atOffset: range.location) {
                 self.currentPosition = nextPosition
                 return nextPosition
             } else {
@@ -93,12 +93,12 @@ extension TextLineStorage: LazySequenceProtocol {
         public mutating func next() -> TextLinePosition? {
             if let currentPosition {
                 guard currentPosition.range.max < storage.length,
-                      let nextPosition = storage.getLine(atIndex: currentPosition.range.max) else {
+                      let nextPosition = storage.getLine(atOffset: currentPosition.range.max) else {
                     return nil
                 }
                 self.currentPosition = nextPosition
                 return self.currentPosition!
-            } else if let nextPosition = storage.getLine(atIndex: 0) {
+            } else if let nextPosition = storage.getLine(atOffset: 0) {
                 self.currentPosition = nextPosition
                 return nextPosition
             } else {

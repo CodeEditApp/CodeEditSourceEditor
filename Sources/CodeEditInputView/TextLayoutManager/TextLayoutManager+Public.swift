@@ -21,7 +21,11 @@ extension TextLayoutManager {
     }
 
     public func textLineForOffset(_ offset: Int) -> TextLineStorage<TextLine>.TextLinePosition? {
-        lineStorage.getLine(atIndex: offset)
+        if offset == lineStorage.length {
+            return lineStorage.last
+        } else {
+            return lineStorage.getLine(atOffset: offset)
+        }
     }
 
     /// Finds text line and returns it if found.
@@ -75,7 +79,7 @@ extension TextLayoutManager {
         guard offset != lineStorage.length else {
             return rectForEndOffset()
         }
-        guard let linePosition = lineStorage.getLine(atIndex: offset) else {
+        guard let linePosition = lineStorage.getLine(atOffset: offset) else {
             return nil
         }
         if linePosition.data.lineFragments.isEmpty {
@@ -86,7 +90,7 @@ extension TextLayoutManager {
         }
 
         guard let fragmentPosition = linePosition.data.typesetter.lineFragments.getLine(
-            atIndex: offset - linePosition.range.location
+            atOffset: offset - linePosition.range.location
         ) else {
             return nil
         }
@@ -139,7 +143,7 @@ extension TextLayoutManager {
     /// Forces layout calculation for all lines up to and including the given offset.
     /// - Parameter offset: The offset to ensure layout until.
     public func ensureLayoutUntil(_ offset: Int) {
-        guard let linePosition = lineStorage.getLine(atIndex: offset),
+        guard let linePosition = lineStorage.getLine(atOffset: offset),
               let visibleRect = delegate?.visibleRect,
               visibleRect.maxY < linePosition.yPos + linePosition.height,
               let startingLinePosition = lineStorage.getLine(atPosition: visibleRect.minY)

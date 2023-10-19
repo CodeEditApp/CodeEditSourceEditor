@@ -64,7 +64,7 @@ final class TextLayoutLineStorageTests: XCTestCase {
         var tree = TextLineStorage<TextLine>()
 
         // Single Element
-        tree.insert(line: TextLine(), atIndex: 0, length: 1, height: 50.0)
+        tree.insert(line: TextLine(), atOffset: 0, length: 1, height: 50.0)
         XCTAssert(tree.length == 1, "Tree length incorrect")
         XCTAssert(tree.count == 1, "Tree count incorrect")
         XCTAssert(tree.height == 50.0, "Tree height incorrect")
@@ -73,16 +73,16 @@ final class TextLayoutLineStorageTests: XCTestCase {
 
         // Insert into first
         tree = createBalancedTree()
-        tree.insert(line: TextLine(), atIndex: 0, length: 1, height: 1.0)
+        tree.insert(line: TextLine(), atOffset: 0, length: 1, height: 1.0)
         try assertTreeMetadataCorrect(tree)
 
         // Insert into last
         tree = createBalancedTree()
-        tree.insert(line: TextLine(), atIndex: tree.length - 1, length: 1, height: 1.0)
+        tree.insert(line: TextLine(), atOffset: tree.length - 1, length: 1, height: 1.0)
         try assertTreeMetadataCorrect(tree)
 
         tree = createBalancedTree()
-        tree.insert(line: TextLine(), atIndex: 45, length: 1, height: 1.0)
+        tree.insert(line: TextLine(), atOffset: 45, length: 1, height: 1.0)
         try assertTreeMetadataCorrect(tree)
     }
 
@@ -90,7 +90,7 @@ final class TextLayoutLineStorageTests: XCTestCase {
         var tree = TextLineStorage<TextLine>()
 
         // Single Element
-        tree.insert(line: TextLine(), atIndex: 0, length: 1, height: 1.0)
+        tree.insert(line: TextLine(), atOffset: 0, length: 1, height: 1.0)
         tree.update(atIndex: 0, delta: 20, deltaHeight: 5.0)
         XCTAssert(tree.length == 21, "Tree length incorrect")
         XCTAssert(tree.count == 1, "Tree count incorrect")
@@ -145,7 +145,7 @@ final class TextLayoutLineStorageTests: XCTestCase {
         var tree = TextLineStorage<TextLine>()
 
         // Single Element
-        tree.insert(line: TextLine(), atIndex: 0, length: 1, height: 1.0)
+        tree.insert(line: TextLine(), atOffset: 0, length: 1, height: 1.0)
         XCTAssert(tree.length == 1, "Tree length incorrect")
         tree.delete(lineAt: 0)
         XCTAssert(tree.length == 0, "Tree failed to delete single node")
@@ -234,7 +234,7 @@ final class TextLayoutLineStorageTests: XCTestCase {
         measure {
             for _ in 0..<100_000 {
                 tree.insert(
-                    line: TextLine(), atIndex: Int.random(in: 0..<tree.length), length: 1, height: 0.0
+                    line: TextLine(), atOffset: Int.random(in: 0..<tree.length), length: 1, height: 0.0
                 )
             }
         }

@@ -115,7 +115,7 @@ public class TextLayoutManager: NSObject {
         let nanos = elapsed * UInt64(info.numer) / UInt64(info.denom)
         print("Text Layout Manager built in: ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC), "ms")
     }
-    
+
     /// Estimates the line height for the current typing attributes.
     /// Takes into account ``TextLayoutManager/lineHeightMultiplier``.
     /// - Returns: The estimated line height.
@@ -269,7 +269,7 @@ public class TextLayoutManager: NSObject {
         let line = position.data
         line.prepareForDisplay(
             maxWidth: maxWidth,
-            lineHeightMultiplier: lineHeightMultiplier, 
+            lineHeightMultiplier: lineHeightMultiplier,
             estimatedLineHeight: estimateLineHeight(),
             range: position.range,
             stringRef: textStorage

@@ -198,7 +198,7 @@ public extension TextSelectionManager {
     /// - Returns: The range of the extended selection.
     private func extendSelectionVisualLine(string: NSString, from offset: Int, delta: Int) -> NSRange {
         guard let line = layoutManager?.textLineForOffset(offset),
-              let lineFragment = line.data.typesetter.lineFragments.getLine(atIndex: offset - line.range.location)
+              let lineFragment = line.data.typesetter.lineFragments.getLine(atOffset: offset - line.range.location)
         else {
             return NSRange(location: offset, length: 0)
         }

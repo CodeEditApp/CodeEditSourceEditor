@@ -16,7 +16,7 @@ public final class LineFragment: Identifiable, Equatable {
     public let height: CGFloat
     public let descent: CGFloat
     public let scaledHeight: CGFloat
-    
+
     /// The difference between the real text height and the scaled height
     public var heightDifference: CGFloat {
         scaledHeight - height

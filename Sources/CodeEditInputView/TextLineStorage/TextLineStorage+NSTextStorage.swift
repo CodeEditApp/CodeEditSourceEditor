@@ -22,7 +22,7 @@ extension TextLineStorage where Data == TextLine {
         }
         // Create the last line
         if textStorage.length - index > 0 {
-            lines.append(BuildItem(data: TextLine(), length: textStorage.length - index,height: estimatedLineHeight))
+            lines.append(BuildItem(data: TextLine(), length: textStorage.length - index, height: estimatedLineHeight))
         }
 
         if textStorage.length == 0

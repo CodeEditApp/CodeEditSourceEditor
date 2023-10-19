@@ -235,7 +235,7 @@ extension TextView: NSTextInputClient {
         // Return the `descent` value from the line fragment at the index
         guard let linePosition = layoutManager.textLineForOffset(anIndex),
               let fragmentPosition = linePosition.data.typesetter.lineFragments.getLine(
-                atIndex: anIndex - linePosition.range.location
+                atOffset: anIndex - linePosition.range.location
               ) else {
             return 0
         }

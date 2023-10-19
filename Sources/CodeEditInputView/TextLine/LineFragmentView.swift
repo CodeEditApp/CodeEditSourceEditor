@@ -15,13 +15,13 @@ final class LineFragmentView: NSView {
     override var isFlipped: Bool {
         true
     }
-    
+
     /// Prepare the view for reuse, clears the line fragment reference.
     override func prepareForReuse() {
         super.prepareForReuse()
         lineFragment = nil
     }
-    
+
     /// Set a new line fragment for this view, updating view size.
     /// - Parameter newFragment: The new fragment to use.
     public func setLineFragment(_ newFragment: LineFragment) {

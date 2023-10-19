@@ -42,10 +42,7 @@ public final class TextLineStorage<Data: Identifiable> {
     public var height: CGFloat = 0
 
     public var first: TextLinePosition? {
-        guard length > 0,
-              let position = search(for: 0) else {
-            return nil
-        }
+        guard count > 0, let position = search(forIndex: 0) else { return nil }
         return TextLinePosition(position: position)
     }
 
@@ -70,7 +67,7 @@ public final class TextLineStorage<Data: Identifiable> {
     ///   - index: The offset to insert the line at.
     ///   - length: The length of the new line.
     ///   - height: The height of the new line.
-    public func insert(line: Data, asOffset index: Int, length: Int, height: CGFloat) {
+    public func insert(line: Data, atOffset index: Int, length: Int, height: CGFloat) {
         assert(index >= 0 && index <= self.length, "Invalid index, expected between 0 and \(self.length). Got \(index)")
         defer {
             self.count += 1
@@ -120,13 +117,23 @@ public final class TextLineStorage<Data: Identifiable> {
         insertFixup(node: insertedNode)
     }
 
+    /// Fetches a line for the given offset.
+    ///
+    /// - Complexity: `O(log n)`
+    /// - Parameter offset: The offset to fetch for.
+    /// - Returns:A  ``TextLineStorage/TextLinePosition`` struct with relevant position and line information.
+    public func getLine(atOffset offset: Int) -> TextLinePosition? {
+        guard let nodePosition = search(for: offset) else { return nil }
+        return TextLinePosition(position: nodePosition)
+    }
+
     /// Fetches a line for the given index.
     ///
     /// - Complexity: `O(log n)`
     /// - Parameter index: The index to fetch for.
-    /// - Returns: A text line object representing a generated line object and the offset in the document of the line.
+    /// - Returns: A  ``TextLineStorage/TextLinePosition`` struct with relevant position and line information.
     public func getLine(atIndex index: Int) -> TextLinePosition? {
-        guard let nodePosition = search(for: index) else { return nil }
+        guard let nodePosition = search(forIndex: index) else { return nil }
         return TextLinePosition(position: nodePosition)
     }
 
@@ -134,7 +141,7 @@ public final class TextLineStorage<Data: Identifiable> {
     ///
     /// - Complexity: `O(log n)`
     /// - Parameter position: The position to fetch for.
-    /// - Returns: A text line object representing a generated line object and the offset in the document of the line.
+    /// - Returns: A  ``TextLineStorage/TextLinePosition`` struct with relevant position and line information.
     public func getLine(atPosition posY: CGFloat) -> TextLinePosition? {
         guard posY < height else {
             return last

@@ -34,7 +34,7 @@ final class Typesetter {
     }
 
     // MARK: - Generate lines
-    
+
     /// Generate line fragments.
     /// - Parameters:
     ///   - maxWidth: The maximum width the line can be.
@@ -50,7 +50,7 @@ final class Typesetter {
             let fragment = LineFragment(
                 ctLine: ctLine,
                 width: 0,
-                height: estimatedLineHeight,
+                height: estimatedLineHeight/lineHeightMultiplier,
                 descent: 0,
                 lineHeightMultiplier: lineHeightMultiplier
             )
@@ -68,7 +68,11 @@ final class Typesetter {
                     range: NSRange(location: startIndex, length: lineBreak - startIndex),
                     lineHeightMultiplier: lineHeightMultiplier
                 )
-                lines.append(.init(data: lineFragment, length: lineBreak - startIndex, height: lineFragment.scaledHeight))
+                lines.append(.init(
+                    data: lineFragment,
+                    length: lineBreak - startIndex,
+                    height: lineFragment.scaledHeight
+                ))
                 startIndex = lineBreak
                 height = lineFragment.scaledHeight
             }
@@ -76,7 +80,7 @@ final class Typesetter {
         // Use an efficient tree building algorithm rather than adding lines sequentially
         lineFragments.build(from: lines, estimatedLineHeight: height)
     }
-    
+
     /// Typeset a new fragment.
     /// - Parameters:
     ///   - range: The range of the fragment.
@@ -182,7 +186,7 @@ final class Typesetter {
 
         return breakIndex
     }
-    
+
     /// Ensures the character at the given index can break a line.
     /// - Parameter index: The index to check at.
     /// - Returns: True, if the character is a whitespace or punctuation character.

@@ -7,7 +7,7 @@
 
 import AppKit
 
-public enum LineEnding: String {
+public enum LineEnding: String, CaseIterable {
     /// The default unix `\n` character
     case lineFeed = "\n"
     /// MacOS line ending `\r` character
@@ -18,19 +18,9 @@ public enum LineEnding: String {
     /// Initialize a line ending from a line string.
     /// - Parameter line: The line to use
     public init?(line: String) {
-        var iterator = line.lazy.reversed().makeIterator()
-        guard let endChar = iterator.next() else { return nil }
-        if endChar == "\n" {
-            if let nextEndChar = iterator.next(), nextEndChar == "\r" {
-                self = .carriageReturnLineFeed
-            } else {
-                self = .lineFeed
-            }
-        } else if endChar == "\r" {
-            self = .carriageReturn
-        } else {
-            return nil
-        }
+        guard let lastChar = line.last,
+              let lineEnding = LineEnding(rawValue: String(lastChar)) else { return nil }
+        self = lineEnding
     }
 
     /// Attempts to detect the line ending from a line storage.
@@ -40,11 +30,9 @@ public enum LineEnding: String {
         lineStorage: TextLineStorage<TextLine>,
         textStorage: NSTextStorage
     ) -> LineEnding {
-        var histogram: [LineEnding: Int] = [
-            .lineFeed: 0,
-            .carriageReturn: 0,
-            .carriageReturnLineFeed: 0
-        ]
+        var histogram: [LineEnding: Int] = LineEnding.allCases.reduce(into: [LineEnding: Int]()) {
+            $0[$1] = 0
+        }
         var shouldContinue = true
         var lineIterator = lineStorage.makeIterator()
 
@@ -60,10 +48,22 @@ public enum LineEnding: String {
             }
         }
 
-        return histogram.max(by: { $0.value < $1.value })?.key ?? .lineFeed
+        let orderedValues = histogram.sorted(by: { $0.value > $1.value })
+        // Return the max of the histogram, but if there's no max
+        // we default to lineFeed. This should be a parameter in the future.
+        if orderedValues.count >= 2 {
+            if orderedValues[0].value == orderedValues[1].value {
+                return .lineFeed
+            } else {
+                return orderedValues[0].key
+            }
+        } else {
+            return .lineFeed
+        }
     }
 
+    /// The UTF-16 Length of the line ending.
     public var length: Int {
-        rawValue.count
+        rawValue.utf16.count
     }
 }
