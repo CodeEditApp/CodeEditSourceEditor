@@ -53,6 +53,7 @@ extension TextViewController {
 
         self.view = scrollView
         setUpHighlighter()
+        setUpTextFormation()
 
         NSLayoutConstraint.activate([
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),

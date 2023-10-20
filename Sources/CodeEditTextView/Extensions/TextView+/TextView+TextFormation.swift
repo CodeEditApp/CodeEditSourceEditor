@@ -35,6 +35,7 @@ extension TextView: TextInterface {
     /// Applies the mutation to the text view.
     /// - Parameter mutation: The mutation to apply.
     public func applyMutation(_ mutation: TextMutation) {
+        layoutManager.willReplaceCharactersInRange(range: mutation.range, with: mutation.string)
         textStorage.replaceCharacters(in: mutation.range, with: mutation.string)
     }
 }

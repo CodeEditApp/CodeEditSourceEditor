@@ -304,7 +304,7 @@ public extension TextSelectionManager {
             if up {
                 return NSRange(location: 0, length: offset)
             } else {
-                return NSRange(location: offset, length: (textStorage?.length ?? 0) - offset - 1)
+                return NSRange(location: offset, length: (textStorage?.length ?? 0) - offset)
             }
         }
     }

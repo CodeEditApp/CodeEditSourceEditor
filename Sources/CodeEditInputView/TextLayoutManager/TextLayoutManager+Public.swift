@@ -53,11 +53,18 @@ extension TextLayoutManager {
             return position.range.location + fragmentPosition.range.location
         } else if fragment.width < point.x - edgeInsets.left {
             let fragmentRange = CTLineGetStringRange(fragment.ctLine)
+            let globalFragmentRange = NSRange(
+                location: position.range.location + fragmentRange.location,
+                length: fragmentRange.length
+            )
+            let endPosition = position.range.location + fragmentRange.location + fragmentRange.length
             // Return eol
-            return position.range.location + fragmentRange.location + fragmentRange.length - (
+            return endPosition - (
                 // Before the eol character (insertion point is before the eol)
-                fragmentPosition.range.max == position.range.max ?
-                1 : detectedLineEnding.length
+                // And the line *has* an eol character
+                fragmentPosition.range.max == position.range.max
+                && LineEnding(line: textStorage.substring(from: globalFragmentRange) ?? "") != nil
+                ? detectedLineEnding.length : 0
             )
         } else {
             // Somewhere in the fragment
@@ -177,7 +184,7 @@ extension TextLayoutManager {
     /// - Parameter offset: The offset to ensure layout until.
     private func ensureLayoutFor(position: TextLineStorage<TextLine>.TextLinePosition) -> CGFloat {
         position.data.prepareForDisplay(
-            maxWidth: maxLineWidth,
+            maxWidth: maxLineLayoutWidth,
             lineHeightMultiplier: lineHeightMultiplier,
             estimatedLineHeight: estimateLineHeight(),
             range: position.range,

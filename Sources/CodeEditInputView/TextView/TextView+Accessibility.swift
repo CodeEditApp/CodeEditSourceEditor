@@ -7,6 +7,13 @@
 
 import AppKit
 
+/// # Notes
+///
+/// This implementation considers the entire document as one element, ignoring all subviews and lines.
+/// Another idea would be to make each line fragment an accessibility element, with options for navigating through
+/// lines from there. The text view would then only handle text input, and lines would handle reading out useful data
+/// to the user.
+/// More research needs to be done for the best option here.
 extension TextView {
     override open func isAccessibilityElement() -> Bool {
         true

@@ -12,13 +12,13 @@ import Common
 public protocol TextLayoutManagerDelegate: AnyObject {
     func layoutManagerHeightDidUpdate(newHeight: CGFloat)
     func layoutManagerMaxWidthDidChange(newWidth: CGFloat)
-    func textViewSize() -> CGSize
-    func textLayoutSetNeedsDisplay()
+    func textViewportSize() -> CGSize
     func layoutManagerYAdjustment(_ yAdjustment: CGFloat)
 
     var visibleRect: NSRect { get }
 }
 
+/// The text layout manager manages laying out lines in a code document.
 public class TextLayoutManager: NSObject {
     // MARK: - Public Properties
 
@@ -60,17 +60,25 @@ public class TextLayoutManager: NSObject {
     private var visibleLineIds: Set<TextLine.ID> = []
     /// Used to force a complete re-layout using `setNeedsLayout`
     private var needsLayout: Bool = false
-    private(set) public var isInTransaction: Bool = false
+
+    private var transactionCounter: Int = 0
+    public var isInTransaction: Bool {
+        transactionCounter > 0
+    }
 
     weak internal var layoutView: NSView?
 
+    /// The calculated maximum width of all laid out lines.
+    /// - Note: This does not indicate *the* maximum width of the text view if all lines have not been laid out.
+    ///         This will be updated if it comes across a wider line.
     internal var maxLineWidth: CGFloat = 0 {
         didSet {
             delegate?.layoutManagerMaxWidthDidChange(newWidth: maxLineWidth + edgeInsets.horizontal)
         }
     }
-    private var maxLineLayoutWidth: CGFloat {
-        wrapLines ? (delegate?.textViewSize().width ?? .greatestFiniteMagnitude) - edgeInsets.horizontal
+    /// The maximum width available to lay out lines in.
+    internal var maxLineLayoutWidth: CGFloat {
+        wrapLines ? (delegate?.textViewportSize().width ?? .greatestFiniteMagnitude) - edgeInsets.horizontal
         : .greatestFiniteMagnitude
     }
 
@@ -103,17 +111,21 @@ public class TextLayoutManager: NSObject {
     /// Parses the text storage object into lines and builds the `lineStorage` object from those lines.
     private func prepareTextLines() {
         guard lineStorage.count == 0 else { return }
+        #if DEBUG
         var info = mach_timebase_info()
         guard mach_timebase_info(&info) == KERN_SUCCESS else { return }
         let start = mach_absolute_time()
+        #endif
 
         lineStorage.buildFromTextStorage(textStorage, estimatedLineHeight: estimateLineHeight())
         detectedLineEnding = LineEnding.detectLineEnding(lineStorage: lineStorage, textStorage: textStorage)
 
+        #if DEBUG
         let end = mach_absolute_time()
         let elapsed = end - start
         let nanos = elapsed * UInt64(info.numer) / UInt64(info.denom)
         print("Text Layout Manager built in: ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC), "ms")
+        #endif
     }
 
     /// Estimates the line height for the current typing attributes.
@@ -167,15 +179,27 @@ public class TextLayoutManager: NSObject {
 
     /// Begins a transaction, preventing the layout manager from performing layout until the `endTransaction` is called.
     /// Useful for grouping attribute modifications into one layout pass rather than laying out every update.
+    ///
+    /// You can nest transaction start/end calls, the layout manager will not cause layout until the last transaction
+    /// group is ended.
+    ///
+    /// Ensure there is a balanced number of begin/end calls. If there is a missing endTranscaction call, the layout
+    /// manager will never lay out text. If there is a end call without matching a start call an assertionFailure
+    /// will occur.
     public func beginTransaction() {
-        isInTransaction = true
+        transactionCounter += 1
     }
 
     /// Ends a transaction. When called, the layout manager will layout any necessary lines.
     public func endTransaction() {
-        isInTransaction = false
-        setNeedsLayout()
-        layoutLines()
+        transactionCounter -= 1
+        if transactionCounter == 0 {
+            setNeedsLayout()
+            layoutLines()
+        } else if transactionCounter < 0 {
+            // swiftlint:disable:next line_length
+            assertionFailure("TextLayoutManager.endTransaction called without a matching TextLayoutManager.beginTransaction call")
+        }
     }
 
     // MARK: - Layout
@@ -196,7 +220,6 @@ public class TextLayoutManager: NSObject {
         for linePosition in lineStorage.linesStartingAt(minY, until: maxY) {
             // Updating height in the loop may cause the iterator to be wrong
             guard linePosition.yPos < maxY else { break }
-
             if forceLayout
                 || linePosition.data.needsLayout(maxWidth: maxLineLayoutWidth)
                 || !visibleLineIds.contains(linePosition.data.id) {

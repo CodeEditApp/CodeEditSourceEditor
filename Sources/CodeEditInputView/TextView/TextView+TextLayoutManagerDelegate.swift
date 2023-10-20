@@ -16,7 +16,7 @@ extension TextView: TextLayoutManagerDelegate {
         updateFrameIfNeeded()
     }
 
-    public func textViewSize() -> CGSize {
+    public func textViewportSize() -> CGSize {
         if let scrollView = scrollView {
             var size = scrollView.contentSize
             size.height -= scrollView.contentInsets.top + scrollView.contentInsets.bottom
@@ -24,11 +24,6 @@ extension TextView: TextLayoutManagerDelegate {
         } else {
             return CGSize(width: CGFloat.infinity, height: CGFloat.infinity)
         }
-    }
-
-    public func textLayoutSetNeedsDisplay() {
-        needsDisplay = true
-        needsLayout = true
     }
 
     public func layoutManagerYAdjustment(_ yAdjustment: CGFloat) {

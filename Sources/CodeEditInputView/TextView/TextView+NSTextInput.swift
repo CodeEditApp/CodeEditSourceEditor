@@ -7,25 +7,23 @@
 
 import AppKit
 
-/**
- # Marked Text Notes
-
- Marked text is used when a character may need more than one keystroke to insert text. For example pressing option-e
- then e again to insert the é character.
-
- The text view needs to maintain a range of marked text and apply attributes indicating the text is marked. When
- selection is updated, the marked text range can be discarded if the cursor leaves the marked text range.
-
- ## Notes for multiple cursors
-
- When inserting using multiple cursors, the marked text should be duplicated across all insertion points. However
- this should only happen if the `setMarkedText` method is called with `NSNotFound` for the replacement range's
- location (indicating that the marked text should appear at the insertion location)
-
- **Note: Visual studio code Does Not correctly support marked text with multiple cursors,*
- **use Xcode as an example of this behavior.*
- */
-
+/// # Notes for Marked Text
+///
+/// Marked text is used when a character may need more than one keystroke to insert text. For example pressing option-e
+/// then e again to insert the é character.
+///
+/// The text view needs to maintain a range of marked text and apply attributes indicating the text is marked. When
+/// selection is updated, the marked text range can be discarded if the cursor leaves the marked text range.
+///
+/// ## Notes for multiple cursors
+///
+/// When inserting using multiple cursors, the marked text should be duplicated across all insertion points. However
+/// this should only happen if the `setMarkedText` method is called with `NSNotFound` for the replacement range's
+/// location (indicating that the marked text should appear at the insertion location)
+///
+/// **Note: Visual studio code Does Not correctly support marked text with multiple cursors,*
+/// **use Xcode as an example of this behavior.*
+///
 /// All documentation in these methods is from the `NSTextInputClient` documentation, copied here for easy of use.
 extension TextView: NSTextInputClient {
     // MARK: - Insert Text

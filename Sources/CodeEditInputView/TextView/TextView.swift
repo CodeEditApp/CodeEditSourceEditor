@@ -13,19 +13,18 @@ import TextStory
 // to extensions without a lot of work.
 // swiftlint:disable type_body_length
 
-/**
- ```
- TextView
- |-> TextLayoutManager          Creates, manages, and lays out text lines from a line storage
- |  |-> [TextLine]              Represents a text line
- |  |   |-> Typesetter          Lays out and calculates line fragments
- |  |   |-> [LineFragment]      Represents a visual text line, stored in a line storage for long lines
- |  |-> [LineFragmentView]      Reusable line fragment view that draws a line fragment.
- |
- |-> TextSelectionManager       Maintains, modifies, and renders text selections
- |  |-> [TextSelection]
- ```
- */
+///
+/// ```
+/// TextView
+/// |-> TextLayoutManager          Creates, manages, and lays out text lines from a line storage
+/// |  |-> [TextLine]              Represents a text line
+/// |  |   |-> Typesetter          Lays out and calculates line fragments
+/// |  |   |-> [LineFragment]      Represents a visual text line, stored in a line storage for long lines
+/// |  |-> [LineFragmentView]      Reusable line fragment view that draws a line fragment.
+/// |
+/// |-> TextSelectionManager       Maintains, modifies, and renders text selections
+/// |  |-> [TextSelection]
+/// ```
 public class TextView: NSView, NSTextContent {
     // MARK: - Statics
 
