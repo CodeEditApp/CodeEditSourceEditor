@@ -16,10 +16,15 @@ final class LineFragmentView: NSView {
         true
     }
 
+    override var isOpaque: Bool {
+        false
+    }
+
     /// Prepare the view for reuse, clears the line fragment reference.
     override func prepareForReuse() {
         super.prepareForReuse()
         lineFragment = nil
+
     }
 
     /// Set a new line fragment for this view, updating view size.
@@ -35,6 +40,8 @@ final class LineFragmentView: NSView {
             return
         }
         context.saveGState()
+        context.setAllowsFontSmoothing(true)
+        context.setShouldSmoothFonts(true)
         context.textMatrix = .init(scaleX: 1, y: -1)
         context.textPosition = CGPoint(
             x: 0,

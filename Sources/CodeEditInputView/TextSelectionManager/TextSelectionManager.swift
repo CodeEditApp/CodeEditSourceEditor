@@ -9,7 +9,7 @@ import AppKit
 import Common
 
 public protocol TextSelectionManagerDelegate: AnyObject {
-    var font: NSFont { get }
+    var visibleTextRange: NSRange? { get }
 
     func setNeedsDisplay()
     func estimatedLineHeight() -> CGFloat
@@ -27,7 +27,7 @@ public class TextSelectionManager: NSObject {
 
     // MARK: - TextSelection
 
-    public class TextSelection {
+    public class TextSelection: Hashable {
         public var range: NSRange
         internal weak var view: CursorView?
         internal var boundingRect: CGRect = .zero
@@ -42,6 +42,14 @@ public class TextSelectionManager: NSObject {
 
         var isCursor: Bool {
             range.length == 0
+        }
+
+        public func hash(into hasher: inout Hasher) {
+            hasher.combine(range)
+        }
+
+        public static func == (lhs: TextSelection, rhs: TextSelection) -> Bool {
+            lhs.range == rhs.range
         }
     }
 
@@ -78,7 +86,7 @@ public class TextSelectionManager: NSObject {
     public var selectionBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor
 
     private var markedText: [MarkedText] = []
-    private(set) public var textSelections: [TextSelection] = []
+    private(set) public var textSelections: Set<TextSelection> = []
     internal weak var layoutManager: TextLayoutManager?
     internal weak var textStorage: NSTextStorage?
     internal weak var layoutView: NSView?
@@ -112,11 +120,19 @@ public class TextSelectionManager: NSObject {
 
     public func setSelectedRanges(_ ranges: [NSRange]) {
         textSelections.forEach { $0.view?.removeFromSuperview() }
-        textSelections = ranges.map {
+        textSelections = Set(ranges.map {
             let selection = TextSelection(range: $0)
             selection.suggestedXPos = layoutManager?.rectForOffset($0.location)?.minX
             return selection
-        }
+        })
+        updateSelectionViews()
+        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification, object: self))
+    }
+
+    public func addSelectedRange(_ range: NSRange) {
+        let selection = TextSelection(range: range)
+        guard !textSelections.contains(selection) else { return }
+        textSelections.insert(TextSelection(range: range))
         updateSelectionViews()
         NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification, object: self))
     }
@@ -211,51 +227,7 @@ public class TextSelectionManager: NSObject {
         context.saveGState()
         context.setFillColor(selectionBackgroundColor.cgColor)
 
-        var fillRects = [CGRect]()
-
-        for linePosition in layoutManager.lineStorage.linesInRange(range) {
-            if linePosition.range.intersection(range) == linePosition.range {
-                // If the selected range contains the entire line
-                fillRects.append(CGRect(
-                    x: rect.minX,
-                    y: linePosition.yPos,
-                    width: rect.width,
-                    height: linePosition.height
-                ))
-            } else {
-                // The selected range contains some portion of the line
-                for fragmentPosition in linePosition.data.lineFragments {
-                    guard let fragmentRange = fragmentPosition
-                        .range
-                        .shifted(by: linePosition.range.location),
-                          let intersectionRange = fragmentRange.intersection(range),
-                          let minRect = layoutManager.rectForOffset(intersectionRange.location) else {
-                        continue
-                    }
-
-                    let maxRect: CGRect
-                    if fragmentRange.max <= range.max || range.contains(fragmentRange.max) {
-                        maxRect = CGRect(
-                            x: rect.maxX,
-                            y: fragmentPosition.yPos + linePosition.yPos,
-                            width: 0,
-                            height: fragmentPosition.height
-                        )
-                    } else if let maxFragmentRect = layoutManager.rectForOffset(intersectionRange.max) {
-                        maxRect = maxFragmentRect
-                    } else {
-                        continue
-                    }
-
-                    fillRects.append(CGRect(
-                        x: minRect.origin.x,
-                        y: minRect.origin.y,
-                        width: maxRect.minX - minRect.minX,
-                        height: max(minRect.height, maxRect.height)
-                    ))
-                }
-            }
-        }
+        let fillRects = getFillRects(in: rect, for: textSelection)
 
         let min = fillRects.min(by: { $0.origin.y < $1.origin.y })?.origin ?? .zero
         let max = fillRects.max(by: { $0.origin.y < $1.origin.y }) ?? .zero
@@ -264,6 +236,98 @@ public class TextSelectionManager: NSObject {
 
         context.fill(fillRects)
         context.restoreGState()
+    }
+    
+    /// Calculate a set of rects for a text selection suitable for highlighting the selection.
+    /// - Parameters:
+    ///   - rect: The bounding rect of available draw space.
+    ///   - textSelection: The selection to use.
+    /// - Returns: An array of rects that the selection overlaps.
+     func getFillRects(in rect: NSRect, for textSelection: TextSelection) -> [CGRect] {
+         guard let layoutManager else { return [] }
+         let range = textSelection.range
+
+         var fillRects: [CGRect] = []
+         guard let firstLinePosition = layoutManager.lineStorage.getLine(atOffset: range.location),
+               let lastLinePosition = range.max == layoutManager.lineStorage.length
+                ? layoutManager.lineStorage.last
+                : layoutManager.lineStorage.getLine(atOffset: range.max) else {
+             return []
+         }
+
+         // Calculate the first line and any rects selected
+         // If the last line position is not the same as the first, calculate any rects from that line.
+         // If there's > 0 space between the first and last positions, add a rect between them to cover any
+         // intermediate lines.
+
+         fillRects.append(contentsOf: getFillRects(in: rect, selectionRange: range, forPosition: firstLinePosition))
+
+         if lastLinePosition.range != firstLinePosition.range {
+             fillRects.append(contentsOf: getFillRects(in: rect, selectionRange: range, forPosition: lastLinePosition))
+         }
+
+         if firstLinePosition.yPos + firstLinePosition.height < lastLinePosition.yPos {
+             fillRects.append(CGRect(
+                x: rect.minX,
+                y: firstLinePosition.yPos + firstLinePosition.height,
+                width: rect.width,
+                height: lastLinePosition.yPos - (firstLinePosition.yPos + firstLinePosition.height)
+             ))
+         }
+
+         return fillRects
+    }
+    
+    /// Find fill rects for a specific line position.
+    /// - Parameters:
+    ///   - rect: The bounding rect of the overall view.
+    ///   - range: The selected range to create fill rects for.
+    ///   - linePosition: The line position to use.
+    /// - Returns: An array of rects that the selection overlaps.
+    private func getFillRects(
+        in rect: NSRect,
+        selectionRange range: NSRange,
+        forPosition linePosition: TextLineStorage<TextLine>.TextLinePosition
+    ) -> [CGRect] {
+        guard let layoutManager else { return [] }
+        var fillRects: [CGRect] = []
+
+        // The selected range contains some portion of the line
+        for fragmentPosition in linePosition.data.lineFragments {
+            guard let fragmentRange = fragmentPosition
+                .range
+                .shifted(by: linePosition.range.location),
+                  let intersectionRange = fragmentRange.intersection(range),
+                  let minRect = layoutManager.rectForOffset(intersectionRange.location) else {
+                continue
+            }
+
+            let maxRect: CGRect
+            // If the selection is at the end of the line, or contains the end of the fragment, and is not the end
+            // of the document, we select the entire line to the right of the selection point.
+            if (fragmentRange.max <= range.max || range.contains(fragmentRange.max))
+                && range.max != layoutManager.lineStorage.length {
+                maxRect = CGRect(
+                    x: rect.maxX,
+                    y: fragmentPosition.yPos + linePosition.yPos,
+                    width: 0,
+                    height: fragmentPosition.height
+                )
+            } else if let maxFragmentRect = layoutManager.rectForOffset(intersectionRange.max) {
+                maxRect = maxFragmentRect
+            } else {
+                continue
+            }
+
+            fillRects.append(CGRect(
+                x: minRect.origin.x,
+                y: minRect.origin.y,
+                width: maxRect.minX - minRect.minX,
+                height: max(minRect.height, maxRect.height)
+            ))
+        }
+
+        return fillRects
     }
 }
 

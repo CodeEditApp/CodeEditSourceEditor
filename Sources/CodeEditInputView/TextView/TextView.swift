@@ -217,6 +217,7 @@ public class TextView: NSView, NSTextContent {
         _undoManager = CEUndoManager(textView: self)
 
         layoutManager.layoutLines()
+        setUpDragGesture()
     }
 
     /// Set a new text storage object for the view.
@@ -289,7 +290,7 @@ public class TextView: NSView, NSTextContent {
         updateFrameIfNeeded()
     }
 
-    // MARK: - Interaction
+    // MARK: - Key Down
 
     override public func keyDown(with event: NSEvent) {
         guard isEditable else {
@@ -304,37 +305,6 @@ public class TextView: NSView, NSTextContent {
         } else {
             // Handle key events?
         }
-    }
-
-    override public func mouseDown(with event: NSEvent) {
-        // Set cursor
-        guard let offset = layoutManager.textOffsetAtPoint(self.convert(event.locationInWindow, from: nil)) else {
-            super.mouseDown(with: event)
-            return
-        }
-        if isSelectable {
-            selectionManager.setSelectedRange(NSRange(location: offset, length: 0))
-        }
-
-        mouseDragTimer?.invalidate()
-        // https://cocoadev.github.io/AutoScrolling/ (fired at ~45Hz)
-        mouseDragTimer = Timer.scheduledTimer(withTimeInterval: 0.022, repeats: true) { [weak self] _ in
-            if let event = self?.window?.currentEvent, event.type == .leftMouseDragged {
-                self?.mouseDragged(with: event)
-                self?.autoscroll(with: event)
-            }
-        }
-
-        if !self.isFirstResponder {
-            self.window?.makeFirstResponder(self)
-        }
-    }
-
-    override public func mouseUp(with event: NSEvent) {
-        mouseDragAnchor = nil
-        mouseDragTimer?.invalidate()
-        mouseDragTimer = nil
-        super.mouseUp(with: event)
     }
 
     // MARK: - Layout

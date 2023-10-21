@@ -58,14 +58,15 @@ extension TextLayoutManager {
                 length: fragmentRange.length
             )
             let endPosition = position.range.location + fragmentRange.location + fragmentRange.length
-            // Return eol
-            return endPosition - (
-                // Before the eol character (insertion point is before the eol)
-                // And the line *has* an eol character
-                fragmentPosition.range.max == position.range.max
-                && LineEnding(line: textStorage.substring(from: globalFragmentRange) ?? "") != nil
-                ? detectedLineEnding.length : 0
-            )
+
+            // If the endPosition is at the end of the line, and the line ends with a line ending character
+            // return the index before the eol.
+            if endPosition == position.range.max,
+               let lineEnding = LineEnding(line: textStorage.substring(from: globalFragmentRange) ?? "") {
+                return endPosition - lineEnding.length
+            } else {
+                return endPosition
+            }
         } else {
             // Somewhere in the fragment
             let fragmentIndex = CTLineGetStringIndexForPosition(

@@ -36,7 +36,7 @@ extension NSFont {
         ]
 
         let features = [alt4, alt6and9, monoSpaceDigits]
-        let descriptor = self.fontDescriptor.addingAttributes([.featureSettings: features, .fixedAdvance: fontAdvance])
+        let descriptor = font.fontDescriptor.addingAttributes([.featureSettings: features, .fixedAdvance: fontAdvance])
         return NSFont(descriptor: descriptor, size: 0) ?? font
     }
 }
