@@ -86,7 +86,7 @@ public class TextSelectionManager: NSObject {
     public var selectionBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor
 
     private var markedText: [MarkedText] = []
-    private(set) public var textSelections: Set<TextSelection> = []
+    internal(set) public var textSelections: [TextSelection] = []
     internal weak var layoutManager: TextLayoutManager?
     internal weak var textStorage: NSTextStorage?
     internal weak var layoutView: NSView?
@@ -120,19 +120,34 @@ public class TextSelectionManager: NSObject {
 
     public func setSelectedRanges(_ ranges: [NSRange]) {
         textSelections.forEach { $0.view?.removeFromSuperview() }
-        textSelections = Set(ranges.map {
+        textSelections = Set(ranges).map {
             let selection = TextSelection(range: $0)
             selection.suggestedXPos = layoutManager?.rectForOffset($0.location)?.minX
             return selection
-        })
+        }
         updateSelectionViews()
         NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification, object: self))
     }
 
     public func addSelectedRange(_ range: NSRange) {
-        let selection = TextSelection(range: range)
-        guard !textSelections.contains(selection) else { return }
-        textSelections.insert(TextSelection(range: range))
+        let newTextSelection = TextSelection(range: range)
+        var didHandle = false
+        for textSelection in textSelections {
+            if textSelection.range == newTextSelection.range {
+                // Duplicate range, ignore
+                return
+            } else if (range.length > 0 && textSelection.range.intersection(range) != nil)
+                        || textSelection.range.max == range.location {
+                // Range intersects existing range, modify this range to be the union of both and don't add the new
+                // selection
+                textSelection.range = textSelection.range.union(range)
+                didHandle = true
+            }
+        }
+        if !didHandle {
+            textSelections.append(newTextSelection)
+        }
+
         updateSelectionViews()
         NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification, object: self))
     }
@@ -149,6 +164,7 @@ public class TextSelectionManager: NSObject {
                     || textSelection.boundingRect.origin != cursorOrigin
                     || textSelection.boundingRect.height != layoutManager?.estimateLineHeight() ?? 0 {
                     textSelection.view?.removeFromSuperview()
+                    textSelection.view = nil
                     let cursorView = CursorView(color: insertionPointColor)
                     cursorView.frame.origin = cursorOrigin
                     cursorView.frame.size.height = layoutManager?.estimateLineHeight() ?? 0
@@ -182,10 +198,16 @@ public class TextSelectionManager: NSObject {
     internal func drawSelections(in rect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext else { return }
         context.saveGState()
+        var highlightedLines: Set<UUID> = []
         // For each selection in the rect
         for textSelection in textSelections {
             if textSelection.range.isEmpty {
-                drawHighlightedLine(in: rect, for: textSelection, context: context)
+                drawHighlightedLine(
+                    in: rect,
+                    for: textSelection,
+                    context: context,
+                    highlightedLines: &highlightedLines
+                )
             } else {
                 drawSelectedRange(in: rect, for: textSelection, context: context)
             }
@@ -198,10 +220,19 @@ public class TextSelectionManager: NSObject {
     ///   - rect: The rect to draw in.
     ///   - textSelection: The selection to draw.
     ///   - context: The context to draw in.
-    private func drawHighlightedLine(in rect: NSRect, for textSelection: TextSelection, context: CGContext) {
-        guard let linePosition = layoutManager?.textLineForOffset(textSelection.range.location) else {
+    ///   - highlightedLines: The set of all lines that have already been highlighted, used to avoid highlighting lines
+    ///                       twice and updated if this function comes across a new line id.
+    private func drawHighlightedLine(
+        in rect: NSRect,
+        for textSelection: TextSelection,
+        context: CGContext,
+        highlightedLines: inout Set<UUID>
+    ) {
+        guard let linePosition = layoutManager?.textLineForOffset(textSelection.range.location),
+              !highlightedLines.contains(linePosition.data.id) else {
             return
         }
+        highlightedLines.insert(linePosition.data.id)
         context.saveGState()
         let selectionRect = CGRect(
             x: rect.minX,
@@ -237,7 +268,7 @@ public class TextSelectionManager: NSObject {
         context.fill(fillRects)
         context.restoreGState()
     }
-    
+
     /// Calculate a set of rects for a text selection suitable for highlighting the selection.
     /// - Parameters:
     ///   - rect: The bounding rect of available draw space.
@@ -277,7 +308,7 @@ public class TextSelectionManager: NSObject {
 
          return fillRects
     }
-    
+
     /// Find fill rects for a specific line position.
     /// - Parameters:
     ///   - rect: The bounding rect of the overall view.
@@ -306,7 +337,7 @@ public class TextSelectionManager: NSObject {
             // If the selection is at the end of the line, or contains the end of the fragment, and is not the end
             // of the document, we select the entire line to the right of the selection point.
             if (fragmentRange.max <= range.max || range.contains(fragmentRange.max))
-                && range.max != layoutManager.lineStorage.length {
+                && intersectionRange.max != layoutManager.lineStorage.length {
                 maxRect = CGRect(
                     x: rect.maxX,
                     y: fragmentPosition.yPos + linePosition.yPos,
@@ -339,35 +370,5 @@ private extension TextSelectionManager.TextSelection {
             range.length = 0
         }
         range.location += length
-    }
-}
-
-// MARK: - Text Storage Delegate
-
-extension TextSelectionManager: NSTextStorageDelegate {
-    public func textStorage(
-        _ textStorage: NSTextStorage,
-        didProcessEditing editedMask: NSTextStorageEditActions,
-        range editedRange: NSRange,
-        changeInLength delta: Int
-    ) {
-        guard editedMask.contains(.editedCharacters) else { return }
-        for textSelection in textSelections {
-            if textSelection.range.max < editedRange.location {
-                textSelection.range.location += delta
-                textSelection.range.length = 0
-            } else if textSelection.range.intersection(editedRange) != nil {
-                if delta > 0 {
-                    textSelection.range.location = editedRange.max
-                } else {
-                    textSelection.range.location = editedRange.location
-                }
-                textSelection.range.length = 0
-            } else {
-                textSelection.range.length = 0
-            }
-        }
-        updateSelectionViews()
-        NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification, object: self))
     }
 }

@@ -7,8 +7,53 @@
 
 import AppKit
 
+fileprivate class CursorTimerService {
+    static let notification: NSNotification.Name = .init("com.CodeEdit.CursorTimerService.notification")
+    var timer: Timer?
+    var isHidden: Bool = false
+    var listeners: Int = 0
+
+    func setUpTimer(blinkDuration: TimeInterval?) {
+        assertMain()
+        timer?.invalidate()
+        timer = nil
+        isHidden = false
+        NotificationCenter.default.post(name: Self.notification, object: nil)
+        if let blinkDuration {
+            timer = Timer.scheduledTimer(withTimeInterval: blinkDuration, repeats: true, block: { [weak self] _ in
+                self?.timerReceived()
+            })
+        }
+        listeners += 1
+    }
+
+    func timerReceived() {
+        assertMain()
+        isHidden.toggle()
+        NotificationCenter.default.post(name: Self.notification, object: nil)
+    }
+
+    func destroySharedTimer() {
+        assertMain()
+        listeners -= 1
+        if listeners == 0 {
+            timer?.invalidate()
+            timer = nil
+            isHidden = false
+        }
+    }
+
+    private func assertMain() {
+#if DEBUG
+        assert(Thread.isMainThread, "CursorTimerService used from non-main thread. This may cause a race condition.")
+#endif
+    }
+}
+
 /// Animates a cursor.
 open class CursorView: NSView {
+    fileprivate static let timerService: CursorTimerService = CursorTimerService()
+
     public var color: NSColor {
         didSet {
             layer?.backgroundColor = color.cgColor
@@ -17,7 +62,7 @@ open class CursorView: NSView {
 
     private let blinkDuration: TimeInterval?
     private let width: CGFloat
-    private var timer: Timer?
+    private var observer: NSObjectProtocol?
 
     open override var isFlipped: Bool {
         true
@@ -43,10 +88,14 @@ open class CursorView: NSView {
         wantsLayer = true
         layer?.backgroundColor = color.cgColor
 
-        if let blinkDuration {
-            timer = Timer.scheduledTimer(withTimeInterval: blinkDuration, repeats: true, block: { [weak self] _ in
-                self?.isHidden.toggle()
-            })
+        CursorView.timerService.setUpTimer(blinkDuration: blinkDuration)
+
+        observer = NotificationCenter.default.addObserver(
+            forName: CursorTimerService.notification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.isHidden = CursorView.timerService.isHidden
         }
     }
 
@@ -55,7 +104,10 @@ open class CursorView: NSView {
     }
 
     deinit {
-        timer?.invalidate()
-        timer = nil
+        if let observer {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        self.observer = nil
+        CursorView.timerService.destroySharedTimer()
     }
 }

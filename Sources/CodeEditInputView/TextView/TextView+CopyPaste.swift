@@ -12,7 +12,9 @@ extension TextView {
         guard let textSelections = selectionManager?
             .textSelections
             .compactMap({ textStorage.attributedSubstring(from: $0.range) }),
-            !textSelections.isEmpty else { return }
+              !textSelections.isEmpty else {
+            return
+        }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.writeObjects(textSelections)
     }
@@ -23,10 +25,11 @@ extension TextView {
     }
 
     @objc open func cut(_ sender: AnyObject) {
-
+        copy(sender)
+        deleteBackward(sender)
     }
 
     @objc open func delete(_ sender: AnyObject) {
-
+        deleteBackward(sender)
     }
 }

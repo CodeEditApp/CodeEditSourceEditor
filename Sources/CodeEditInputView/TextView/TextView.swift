@@ -212,7 +212,6 @@ public class TextView: NSView, NSTextContent {
         layoutManager = setUpLayoutManager(lineHeight: lineHeight, wrapLines: wrapLines)
         storageDelegate.addDelegate(layoutManager)
         selectionManager = setUpSelectionManager()
-        storageDelegate.addDelegate(selectionManager)
 
         _undoManager = CEUndoManager(textView: self)
 
@@ -228,7 +227,6 @@ public class TextView: NSView, NSTextContent {
         layoutManager = setUpLayoutManager(lineHeight: lineHeight, wrapLines: wrapLines)
         storageDelegate.addDelegate(layoutManager)
         selectionManager = setUpSelectionManager()
-        storageDelegate.addDelegate(selectionManager)
         _undoManager?.clearStack()
         needsDisplay = true
         needsLayout = true

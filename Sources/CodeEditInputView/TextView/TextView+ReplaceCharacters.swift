@@ -20,7 +20,7 @@ extension TextView {
         layoutManager.beginTransaction()
         textStorage.beginEditing()
         // Can't insert an empty string into an empty range. One must be not empty
-        for range in ranges where
+        for range in ranges.sorted(by: { $0.location > $1.location }) where
         (delegate?.textView(self, shouldReplaceContentsIn: range, with: string) ?? true)
         && (!range.isEmpty || !string.isEmpty) {
             delegate?.textView(self, willReplaceContentsIn: range, with: string)
@@ -33,11 +33,13 @@ extension TextView {
                 in: range,
                 with: NSAttributedString(string: string, attributes: typingAttributes)
             )
+            selectionManager.willReplaceCharacters(in: range, replacementLength: (string as NSString).length)
 
             delegate?.textView(self, didReplaceContentsIn: range, with: string)
         }
         layoutManager.endTransaction()
         textStorage.endEditing()
+        selectionManager.notifyAfterEdit()
     }
 
     /// Replace the characters in a range with a new string.
