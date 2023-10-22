@@ -7,61 +7,69 @@
 
 import AppKit
 
-fileprivate class CursorTimerService {
-    static let notification: NSNotification.Name = .init("com.CodeEdit.CursorTimerService.notification")
-    var timer: Timer?
-    var isHidden: Bool = false
-    var listeners: Int = 0
+/// Animates a cursor. Will sync animation with any other cursor views.
+open class CursorView: NSView {
+    /// Used to sync the cursor view animations when there's multiple cursors.
+    /// - Note: Do not use any methods in this class from a non-main thread.
+    private class CursorTimerService {
+        static let notification: NSNotification.Name = .init("com.CodeEdit.CursorTimerService.notification")
+        var timer: Timer?
+        var isHidden: Bool = false
+        var listeners: Int = 0
 
-    func setUpTimer(blinkDuration: TimeInterval?) {
-        assertMain()
-        timer?.invalidate()
-        timer = nil
-        isHidden = false
-        NotificationCenter.default.post(name: Self.notification, object: nil)
-        if let blinkDuration {
-            timer = Timer.scheduledTimer(withTimeInterval: blinkDuration, repeats: true, block: { [weak self] _ in
-                self?.timerReceived()
-            })
-        }
-        listeners += 1
-    }
-
-    func timerReceived() {
-        assertMain()
-        isHidden.toggle()
-        NotificationCenter.default.post(name: Self.notification, object: nil)
-    }
-
-    func destroySharedTimer() {
-        assertMain()
-        listeners -= 1
-        if listeners == 0 {
+        func setUpTimer(blinkDuration: TimeInterval?) {
+            assertMain()
             timer?.invalidate()
             timer = nil
             isHidden = false
+            NotificationCenter.default.post(name: Self.notification, object: nil)
+            if let blinkDuration {
+                timer = Timer.scheduledTimer(withTimeInterval: blinkDuration, repeats: true, block: { [weak self] _ in
+                    self?.timerReceived()
+                })
+            }
+            listeners += 1
+        }
+
+        func timerReceived() {
+            assertMain()
+            isHidden.toggle()
+            NotificationCenter.default.post(name: Self.notification, object: nil)
+        }
+
+        func destroySharedTimer() {
+            assertMain()
+            listeners -= 1
+            if listeners == 0 {
+                timer?.invalidate()
+                timer = nil
+                isHidden = false
+            }
+        }
+
+        private func assertMain() {
+#if DEBUG
+            // swiftlint:disable:next line_length
+            assert(Thread.isMainThread, "CursorTimerService used from non-main thread. This may cause a race condition.")
+#endif
         }
     }
 
-    private func assertMain() {
-#if DEBUG
-        assert(Thread.isMainThread, "CursorTimerService used from non-main thread. This may cause a race condition.")
-#endif
-    }
-}
+    /// The shared timer service
+    private static let timerService: CursorTimerService = CursorTimerService()
 
-/// Animates a cursor.
-open class CursorView: NSView {
-    fileprivate static let timerService: CursorTimerService = CursorTimerService()
-
+    /// The color of the cursor.
     public var color: NSColor {
         didSet {
             layer?.backgroundColor = color.cgColor
         }
     }
 
+    /// How often the cursor toggles it's visibility. Leave `nil` to never blink.
     private let blinkDuration: TimeInterval?
+    /// The width of the cursor.
     private let width: CGFloat
+    /// The timer observer.
     private var observer: NSObjectProtocol?
 
     open override var isFlipped: Bool {

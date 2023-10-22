@@ -28,9 +28,9 @@ extension TextSelectionManager {
 
         // Clean up duplicate selection ranges
         var allRanges: Set<NSRange> = []
-        for (i, selection) in self.textSelections.enumerated().reversed() {
+        for (idx, selection) in self.textSelections.enumerated().reversed() {
             if allRanges.contains(selection.range) {
-                self.textSelections.remove(at: i)
+                self.textSelections.remove(at: idx)
             } else {
                 allRanges.insert(selection.range)
             }
