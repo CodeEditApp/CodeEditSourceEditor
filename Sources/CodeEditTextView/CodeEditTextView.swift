@@ -34,6 +34,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///                    character's width between characters, etc. Defaults to `1.0`
     ///   - bracketPairHighlight: The type of highlight to use to highlight bracket pairs.
     ///                           See `BracketPairHighlight` for more information. Defaults to `nil`
+    ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
@@ -50,7 +51,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
         letterSpacing: Double = 1.0,
-        bracketPairHighlight: BracketPairHighlight? = nil
+        bracketPairHighlight: BracketPairHighlight? = nil,
+        undoManager: CEUndoManager? = nil
     ) {
         self._text = text
         self.language = language
@@ -68,6 +70,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self.isEditable = isEditable
         self.letterSpacing = letterSpacing
         self.bracketPairHighlight = bracketPairHighlight
+        self.undoManager = undoManager ?? CEUndoManager()
     }
 
     @Binding private var text: String
@@ -86,6 +89,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     private var isEditable: Bool
     private var letterSpacing: Double
     private var bracketPairHighlight: BracketPairHighlight?
+    private var undoManager: CEUndoManager
 
     public typealias NSViewControllerType = TextViewController
 
@@ -106,7 +110,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             contentInsets: contentInsets,
             isEditable: isEditable,
             letterSpacing: letterSpacing,
-            bracketPairHighlight: bracketPairHighlight
+            bracketPairHighlight: bracketPairHighlight,
+            undoManager: undoManager
         )
     }
 

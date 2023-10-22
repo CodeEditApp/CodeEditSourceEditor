@@ -15,30 +15,30 @@ import TextStory
 /// - Grouping pasted text
 ///
 /// If needed, the automatic undo grouping can be overridden using the `beginGrouping()` and `endGrouping()` methods.
-class CEUndoManager {
+public class CEUndoManager {
     /// An `UndoManager` subclass that forwards relevant actions to a `CEUndoManager`.
     /// Allows for objects like `TextView` to use the `UndoManager` API
     /// while CETV manages the undo/redo actions.
-    class DelegatedUndoManager: UndoManager {
+    public class DelegatedUndoManager: UndoManager {
         weak var parent: CEUndoManager?
 
-        override var canUndo: Bool { parent?.canUndo ?? false }
-        override var canRedo: Bool { parent?.canRedo ?? false }
+        public override var canUndo: Bool { parent?.canUndo ?? false }
+        public override var canRedo: Bool { parent?.canRedo ?? false }
 
-        func registerMutation(_ mutation: TextMutation) {
+        public func registerMutation(_ mutation: TextMutation) {
             parent?.registerMutation(mutation)
             removeAllActions()
         }
 
-        override func undo() {
+        public override func undo() {
             parent?.undo()
         }
 
-        override func redo() {
+        public override func redo() {
             parent?.redo()
         }
 
-        override func registerUndo(withTarget target: Any, selector: Selector, object anObject: Any?) {
+        public override func registerUndo(withTarget target: Any, selector: Selector, object anObject: Any?) {
             // no-op, but just in case to save resources:
             removeAllActions()
         }
@@ -87,7 +87,9 @@ class CEUndoManager {
         }
         isUndoing = true
         for mutation in item.mutations.reversed() {
+            NotificationCenter.default.post(name: .NSUndoManagerWillUndoChange, object: self.manager)
             textView.insertText(mutation.inverse.string, replacementRange: mutation.inverse.range)
+            NotificationCenter.default.post(name: .NSUndoManagerDidUndoChange, object: self.manager)
         }
         redoStack.append(item)
         isUndoing = false
@@ -100,7 +102,9 @@ class CEUndoManager {
         }
         isRedoing = true
         for mutation in item.mutations {
+            NotificationCenter.default.post(name: .NSUndoManagerWillRedoChange, object: self.manager)
             textView.insertText(mutation.mutation.string, replacementRange: mutation.mutation.range)
+            NotificationCenter.default.post(name: .NSUndoManagerDidRedoChange, object: self.manager)
         }
         undoStack.append(item)
         isRedoing = false
