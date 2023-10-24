@@ -31,7 +31,7 @@ final class TextViewControllerTests: XCTestCase {
             comments: .systemGreen
         )
         controller = TextViewController(
-            string: .constant(""),
+            string: "",
             language: .default,
             font: .monospacedSystemFont(ofSize: 11, weight: .medium),
             theme: theme,
@@ -45,6 +45,7 @@ final class TextViewControllerTests: XCTestCase {
             highlightProvider: nil,
             contentInsets: NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0),
             isEditable: true,
+            isSelectable: true,
             letterSpacing: 1.0,
             bracketPairHighlight: .flash
         )

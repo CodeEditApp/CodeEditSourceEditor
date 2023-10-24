@@ -105,7 +105,9 @@ extension TextLayoutManager {
 
         // Get the *real* length of the character at the offset. If this is a surrogate pair it'll return the correct
         // length of the character at the offset.
-        let realRange = (textStorage.string as NSString).rangeOfComposedCharacterSequence(at: offset)
+        let realRange = textStorage.length == 0
+        ? NSRange(location: offset, length: 0)
+        : (textStorage.string as NSString).rangeOfComposedCharacterSequence(at: offset)
 
         let minXPos = CTLineGetOffsetForStringIndex(
             fragmentPosition.data.ctLine,

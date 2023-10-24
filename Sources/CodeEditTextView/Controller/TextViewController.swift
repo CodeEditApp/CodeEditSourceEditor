@@ -166,7 +166,7 @@ public class TextViewController: NSViewController {
         isSelectable: Bool,
         letterSpacing: Double,
         bracketPairHighlight: BracketPairHighlight?,
-        undoManager: CEUndoManager?
+        undoManager: CEUndoManager? = nil
     ) {
         self.textStorage = NSTextStorage(string: string)
         self.language = language

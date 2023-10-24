@@ -16,7 +16,7 @@ final class TextLayoutLineStorageTests: XCTestCase {
         let tree = TextLineStorage<TextLine>()
         var data = [TextLineStorage<TextLine>.BuildItem]()
         for idx in 0..<15 {
-            data.append(.init(data: TextLine(), length: idx + 1, height: 0.0))
+            data.append(.init(data: TextLine(), length: idx + 1, height: 1.0))
         }
         tree.build(from: data, estimatedLineHeight: 1.0)
         return tree
@@ -92,36 +92,36 @@ final class TextLayoutLineStorageTests: XCTestCase {
         // Single Element
         tree.insert(line: TextLine(), atOffset: 0, length: 1, height: 1.0)
         tree.update(atIndex: 0, delta: 20, deltaHeight: 5.0)
-        XCTAssert(tree.length == 21, "Tree length incorrect")
-        XCTAssert(tree.count == 1, "Tree count incorrect")
-        XCTAssert(tree.height == 6, "Tree height incorrect")
+        XCTAssertEqual(tree.length, 21, "Tree length incorrect")
+        XCTAssertEqual(tree.count, 1, "Tree count incorrect")
+        XCTAssertEqual(tree.height, 6, "Tree height incorrect")
         XCTAssert(tree.root?.right == nil && tree.root?.left == nil, "Somehow inserted an extra node.")
         try assertTreeMetadataCorrect(tree)
 
         // Update First
         tree = createBalancedTree()
         tree.update(atIndex: 0, delta: 12, deltaHeight: -0.5)
-        XCTAssert(tree.height == 14.5, "Tree height incorrect")
-        XCTAssert(tree.count == 15, "Tree count changed")
-        XCTAssert(tree.length == 132, "Tree length incorrect")
-        XCTAssert(tree.first?.range.length == 13, "First node wasn't updated correctly.")
+        XCTAssertEqual(tree.height, 14.5, "Tree height incorrect")
+        XCTAssertEqual(tree.count, 15, "Tree count changed")
+        XCTAssertEqual(tree.length, 132, "Tree length incorrect")
+        XCTAssertEqual(tree.first?.range.length, 13, "First node wasn't updated correctly.")
         try assertTreeMetadataCorrect(tree)
 
         // Update Last
         tree = createBalancedTree()
         tree.update(atIndex: tree.length - 1, delta: -14, deltaHeight: 1.75)
-        XCTAssert(tree.height == 16.75, "Tree height incorrect")
-        XCTAssert(tree.count == 15, "Tree count changed")
-        XCTAssert(tree.length == 106, "Tree length incorrect")
-        XCTAssert(tree.last?.range.length == 1, "Last node wasn't updated correctly.")
+        XCTAssertEqual(tree.height, 16.75, "Tree height incorrect")
+        XCTAssertEqual(tree.count, 15, "Tree count changed")
+        XCTAssertEqual(tree.length, 106, "Tree length incorrect")
+        XCTAssertEqual(tree.last?.range.length, 1, "Last node wasn't updated correctly.")
         try assertTreeMetadataCorrect(tree)
 
         // Update middle
         tree = createBalancedTree()
         tree.update(atIndex: 45, delta: -9, deltaHeight: 1.0)
-        XCTAssert(tree.height == 16.0, "Tree height incorrect")
-        XCTAssert(tree.count == 15, "Tree count changed")
-        XCTAssert(tree.length == 111, "Tree length incorrect")
+        XCTAssertEqual(tree.height, 16.0, "Tree height incorrect")
+        XCTAssertEqual(tree.count, 15, "Tree count changed")
+        XCTAssertEqual(tree.length, 111, "Tree length incorrect")
         XCTAssert(tree.root?.right?.left?.height == 2.0 && tree.root?.right?.left?.length == 1, "Node wasn't updated")
         try assertTreeMetadataCorrect(tree)
 

@@ -53,8 +53,8 @@ final class TextSelectionManagerTests: XCTestCase {
 
     func test_updateSelectionRight() {
         let selectionManager = selectionManager()
-        let locations = [2, 0, 13, 12, 12]
-        let expectedRanges = [(2, 1), (0, 1), (13, 0), (12, 2), (12, 1)]
+        let locations = [2, 0, 14, 13, 12]
+        let expectedRanges = [(2, 1), (0, 1), (14, 0), (12, 2), (12, 1)]
         let decomposeCharacters = [false, false, false, false, true]
 
         for idx in locations.indices {
