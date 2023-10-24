@@ -30,6 +30,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - contentInsets: Insets to use to offset the content in the enclosing scroll view. Leave as `nil` to let the
     ///                    scroll view automatically adjust content insets.
     ///   - isEditable: A Boolean value that controls whether the text view allows the user to edit text.
+    ///   - isSelectable: A Boolean value that controls whether the text view allows the user to select text. If this
+    ///                   value is true, and `isEditable` is false, the editor is selectable but not editable.
     ///   - letterSpacing: The amount of space to use between letters, as a percent. Eg: `1.0` = no space, `1.5` = 1/2 a
     ///                    character's width between characters, etc. Defaults to `1.0`
     ///   - bracketPairHighlight: The type of highlight to use to highlight bracket pairs.
@@ -50,6 +52,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         highlightProvider: HighlightProviding? = nil,
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
+        isSelectable: Bool = true,
         letterSpacing: Double = 1.0,
         bracketPairHighlight: BracketPairHighlight? = nil,
         undoManager: CEUndoManager? = nil
@@ -68,9 +71,10 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
         self.isEditable = isEditable
+        self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
         self.bracketPairHighlight = bracketPairHighlight
-        self.undoManager = undoManager ?? CEUndoManager()
+        self.undoManager = undoManager
     }
 
     @Binding private var text: String
@@ -87,15 +91,16 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     private var highlightProvider: HighlightProviding?
     private var contentInsets: NSEdgeInsets?
     private var isEditable: Bool
+    private var isSelectable: Bool
     private var letterSpacing: Double
     private var bracketPairHighlight: BracketPairHighlight?
-    private var undoManager: CEUndoManager
+    private var undoManager: CEUndoManager?
 
     public typealias NSViewControllerType = TextViewController
 
     public func makeNSViewController(context: Context) -> TextViewController {
-        return TextViewController(
-            string: $text,
+        let controller = TextViewController(
+            string: _text.wrappedValue,
             language: language,
             font: font,
             theme: theme,
@@ -109,10 +114,17 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             highlightProvider: highlightProvider,
             contentInsets: contentInsets,
             isEditable: isEditable,
+            isSelectable: isSelectable,
             letterSpacing: letterSpacing,
             bracketPairHighlight: bracketPairHighlight,
             undoManager: undoManager
         )
+        context.coordinator.controller = controller
+        return controller
+    }
+
+    public func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
     }
 
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
@@ -120,6 +132,13 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         // This helps a lot in view performance, as it otherwise gets triggered on each environment change.
         guard !paramsAreEqual(controller: controller) else {
             return
+        }
+
+        if !context.coordinator.isUpdateFromTextView {
+            // Prevent infinite loop of update notifications
+            context.coordinator.isUpdatingFromRepresentable = true
+            controller.setText(_text.wrappedValue)
+            context.coordinator.isUpdatingFromRepresentable = false
         }
 
         controller.font = font
@@ -132,9 +151,13 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             controller.isEditable = isEditable
         }
 
-//        if controller.language.id != language.id {
-//            controller.language = language
-//        }
+        if controller.isSelectable != isSelectable {
+            controller.isSelectable = isSelectable
+        }
+
+        if controller.language.id != language.id {
+            controller.language = language
+        }
         if controller.theme != theme {
             controller.theme = theme
         }
@@ -157,16 +180,50 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     func paramsAreEqual(controller: NSViewControllerType) -> Bool {
         controller.font == font &&
         controller.isEditable == isEditable &&
+        controller.isSelectable == isSelectable &&
         controller.wrapLines == wrapLines &&
         controller.useThemeBackground == useThemeBackground &&
         controller.lineHeightMultiple == lineHeight &&
         controller.editorOverscroll == editorOverscroll &&
         controller.contentInsets == contentInsets &&
-//        controller.language.id == language.id &&
+        controller.language.id == language.id &&
         controller.theme == theme &&
         controller.indentOption == indentOption &&
         controller.tabWidth == tabWidth &&
         controller.letterSpacing == letterSpacing &&
         controller.bracketPairHighlight == bracketPairHighlight
+    }
+
+    public class Coordinator: NSObject {
+        var parent: CodeEditTextView
+        var controller: TextViewController?
+        var isUpdatingFromRepresentable: Bool = false
+        var isUpdateFromTextView: Bool = false
+
+        init(parent: CodeEditTextView) {
+            self.parent = parent
+            super.init()
+
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(textViewDidChangeText(_:)),
+                name: TextView.textDidChangeNotification,
+                object: nil
+            )
+        }
+
+        @objc func textViewDidChangeText(_ notification: Notification) {
+            guard let textView = notification.object as? TextView,
+                  controller?.textView === textView,
+                  !isUpdatingFromRepresentable else {
+                return
+            }
+            isUpdateFromTextView = true
+            parent.text = textView.string
+        }
+
+        deinit {
+            NotificationCenter.default.removeObserver(self)
+        }
     }
 }

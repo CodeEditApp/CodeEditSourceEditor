@@ -32,9 +32,15 @@ public class TextView: NSView, NSTextContent {
     /// - font: System font, size 12
     /// - foregroundColor: System text color
     /// - kern: 0.0
-    static public var defaultTypingAttributes: [NSAttributedString.Key: Any] {
+    public static var defaultTypingAttributes: [NSAttributedString.Key: Any] {
         [.font: NSFont.systemFont(ofSize: 12), .foregroundColor: NSColor.textColor, .kern: 0.0]
     }
+
+    // swiftlint:disable:next line_length
+    public static let textDidChangeNotification: Notification.Name = .init(rawValue: "com.CodeEdit.TextView.TextDidChangeNotification")
+
+    // swiftlint:disable:next line_length
+    public static let textWillChangeNotification: Notification.Name = .init(rawValue: "com.CodeEdit.TextView.TextWillChangeNotification")
 
     // MARK: - Configuration
 
@@ -176,21 +182,49 @@ public class TextView: NSView, NSTextContent {
 
     // MARK: - Init
 
-    public init(
+    public convenience init(
         string: String,
         font: NSFont,
         textColor: NSColor,
         lineHeight: CGFloat,
         wrapLines: Bool,
         isEditable: Bool,
+        isSelectable: Bool,
+        letterSpacing: Double,
+        delegate: TextViewDelegate,
+        storageDelegate: MultiStorageDelegate
+    ) {
+        self.init(
+            textStorage: NSTextStorage(string: string),
+            font: font,
+            textColor: textColor,
+            lineHeight: lineHeight,
+            wrapLines: wrapLines,
+            isEditable: isEditable,
+            isSelectable: isSelectable,
+            letterSpacing: letterSpacing,
+            delegate: delegate,
+            storageDelegate: storageDelegate
+        )
+    }
+
+    public init(
+        textStorage: NSTextStorage,
+        font: NSFont,
+        textColor: NSColor,
+        lineHeight: CGFloat,
+        wrapLines: Bool,
+        isEditable: Bool,
+        isSelectable: Bool,
         letterSpacing: Double,
         delegate: TextViewDelegate,
         storageDelegate: MultiStorageDelegate
     ) {
         self.delegate = delegate
-        self.textStorage = NSTextStorage(string: string)
+        self.textStorage = textStorage
         self.storageDelegate = storageDelegate
         self.isEditable = isEditable
+        self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
         self.allowsUndo = true
 
@@ -217,6 +251,13 @@ public class TextView: NSView, NSTextContent {
 
         layoutManager.layoutLines()
         setUpDragGesture()
+    }
+
+    /// Sets the text view's text to a new value.
+    /// - Parameter text: The new contents of the text view.
+    public func setText(_ text: String) {
+        let newStorage = NSTextStorage(string: text)
+        self.setTextStorage(newStorage)
     }
 
     /// Set a new text storage object for the view.

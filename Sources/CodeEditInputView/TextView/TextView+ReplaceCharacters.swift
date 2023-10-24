@@ -17,9 +17,10 @@ extension TextView {
     ///   - string: The string to insert in the ranges.
     public func replaceCharacters(in ranges: [NSRange], with string: String) {
         guard isEditable else { return }
+        NotificationCenter.default.post(name: Self.textWillChangeNotification, object: self)
         layoutManager.beginTransaction()
         textStorage.beginEditing()
-        // Can't insert an empty string into an empty range. One must be not empty
+        // Can't insert an ssempty string into an empty range. One must be not empty
         for range in ranges.sorted(by: { $0.location > $1.location }) where
         (delegate?.textView(self, shouldReplaceContentsIn: range, with: string) ?? true)
         && (!range.isEmpty || !string.isEmpty) {
@@ -40,6 +41,7 @@ extension TextView {
         layoutManager.endTransaction()
         textStorage.endEditing()
         selectionManager.notifyAfterEdit()
+        NotificationCenter.default.post(name: Self.textDidChangeNotification, object: self)
     }
 
     /// Replace the characters in a range with a new string.

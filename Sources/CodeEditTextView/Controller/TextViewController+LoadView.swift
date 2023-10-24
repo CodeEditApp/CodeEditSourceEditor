@@ -13,12 +13,13 @@ extension TextViewController {
     override public func loadView() {
         scrollView = NSScrollView()
         textView = TextView(
-            string: string.wrappedValue,
+            textStorage: textStorage,
             font: font,
             textColor: theme.text,
             lineHeight: lineHeightMultiple,
             wrapLines: wrapLines,
             isEditable: isEditable,
+            isSelectable: isSelectable,
             letterSpacing: letterSpacing,
             delegate: self,
             storageDelegate: storageDelegate
@@ -52,6 +53,9 @@ extension TextViewController {
         )
 
         self.view = scrollView
+        if let _undoManager {
+            textView.setUndoManager(_undoManager)
+        }
         setUpHighlighter()
         setUpTextFormation()
 

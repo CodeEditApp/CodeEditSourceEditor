@@ -8,6 +8,10 @@
 import AppKit
 
 extension TextView {
+    public func setUndoManager(_ newManager: CEUndoManager) {
+        self._undoManager = newManager
+    }
+
     override public var undoManager: UndoManager? {
         _undoManager?.manager
     }

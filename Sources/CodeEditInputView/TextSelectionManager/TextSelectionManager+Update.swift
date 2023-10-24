@@ -8,7 +8,7 @@
 import Foundation
 
 extension TextSelectionManager {
-    internal func willReplaceCharacters(in range: NSRange, replacementLength: Int) {
+    public func willReplaceCharacters(in range: NSRange, replacementLength: Int) {
         let delta = replacementLength == 0 ? -range.length : replacementLength
         for textSelection in self.textSelections {
             if textSelection.range.location > range.max {

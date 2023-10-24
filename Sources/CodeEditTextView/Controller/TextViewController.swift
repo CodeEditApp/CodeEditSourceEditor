@@ -17,12 +17,15 @@ public class TextViewController: NSViewController {
     var scrollView: NSScrollView!
     var textView: TextView!
     var gutterView: GutterView!
+    internal var _undoManager: CEUndoManager?
     /// Internal reference to any injected layers in the text view.
     internal var highlightLayers: [CALayer] = []
     internal var systemAppearance: NSAppearance.Name?
 
-    /// Binding for the `textView`s string
-    public var string: Binding<String>
+    /// The string contents.
+    public var string: String {
+        textStorage.string
+    }
 
     /// The associated `CodeLanguage`
     public var language: CodeLanguage {
@@ -98,6 +101,13 @@ public class TextViewController: NSViewController {
         }
     }
 
+    /// Whether or not text view is selectable by user
+    public var isSelectable: Bool {
+        didSet {
+            textView.isSelectable = isSelectable
+        }
+    }
+
     /// A multiplier that determines the amount of space between characters. `1.0` indicates no space,
     /// `2.0` indicates one character of space between other characters.
     public var letterSpacing: Double = 1.0 {
@@ -113,6 +123,7 @@ public class TextViewController: NSViewController {
         }
     }
 
+    internal var textStorage: NSTextStorage
     internal var storageDelegate: MultiStorageDelegate!
     internal var highlighter: Highlighter?
 
@@ -138,7 +149,7 @@ public class TextViewController: NSViewController {
     // MARK: Init
 
     init(
-        string: Binding<String>,
+        string: String,
         language: CodeLanguage,
         font: NSFont,
         theme: EditorTheme,
@@ -152,10 +163,12 @@ public class TextViewController: NSViewController {
         highlightProvider: HighlightProviding?,
         contentInsets: NSEdgeInsets?,
         isEditable: Bool,
+        isSelectable: Bool,
         letterSpacing: Double,
-        bracketPairHighlight: BracketPairHighlight?
+        bracketPairHighlight: BracketPairHighlight?,
+        undoManager: CEUndoManager?
     ) {
-        self.string = string
+        self.textStorage = NSTextStorage(string: string)
         self.language = language
         self.font = font
         self.theme = theme
@@ -169,8 +182,10 @@ public class TextViewController: NSViewController {
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
         self.isEditable = isEditable
+        self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
         self.bracketPairHighlight = bracketPairHighlight
+        self._undoManager = undoManager
 
         self.storageDelegate = MultiStorageDelegate()
 
@@ -179,6 +194,12 @@ public class TextViewController: NSViewController {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    /// Set the contents of the editor.
+    /// - Parameter text: The new contents of the editor.
+    public func setText(_ text: String) {
+        self.textView.setText(text)
     }
 
     // MARK: Paragraph Style
@@ -198,6 +219,7 @@ public class TextViewController: NSViewController {
 
     func reloadUI() {
         textView.isEditable = isEditable
+        textView.isSelectable = isSelectable
 
         textView.selectionManager.selectionBackgroundColor = theme.selection
         textView.selectionManager.selectedLineBackgroundColor = useThemeBackground

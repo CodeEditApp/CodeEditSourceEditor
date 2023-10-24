@@ -72,9 +72,8 @@ public class TextSelectionManager: NSObject {
 
     // MARK: - Properties
 
-    open class var selectionChangedNotification: Notification.Name {
-        Notification.Name("TextSelectionManager.TextSelectionChangedNotification")
-    }
+    // swiftlint:disable:next line_length
+    public static let selectionChangedNotification: Notification.Name = Notification.Name("com.CodeEdit.TextSelectionManager.TextSelectionChangedNotification")
 
     public var insertionPointColor: NSColor = NSColor.labelColor {
         didSet {
