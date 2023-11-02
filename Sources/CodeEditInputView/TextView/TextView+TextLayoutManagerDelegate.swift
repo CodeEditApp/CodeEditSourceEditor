@@ -16,6 +16,10 @@ extension TextView: TextLayoutManagerDelegate {
         updateFrameIfNeeded()
     }
 
+    public func layoutManagerTypingAttributes() -> [NSAttributedString.Key : Any] {
+        typingAttributes
+    }
+
     public func textViewportSize() -> CGSize {
         if let scrollView = scrollView {
             var size = scrollView.contentSize

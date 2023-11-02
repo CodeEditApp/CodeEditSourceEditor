@@ -34,6 +34,7 @@ extension TextViewController {
         scrollView.hasHorizontalScroller = true
         scrollView.documentView = textView
         scrollView.contentView.postsBoundsChangedNotifications = true
+        scrollView.backgroundColor = useThemeBackground ? theme.background : .clear
         if let contentInsets {
             scrollView.automaticallyAdjustsContentInsets = false
             scrollView.contentInsets = contentInsets
@@ -46,6 +47,7 @@ extension TextViewController {
             delegate: self
         )
         gutterView.frame.origin.y = -scrollView.contentInsets.top
+        gutterView.backgroundColor = useThemeBackground ? theme.background : .textBackgroundColor
         gutterView.updateWidthIfNeeded()
         scrollView.addFloatingSubview(
             gutterView,

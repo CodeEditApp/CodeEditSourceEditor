@@ -11,7 +11,6 @@ extension TextView {
     internal func setUpLayoutManager(lineHeight: CGFloat, wrapLines: Bool) -> TextLayoutManager {
         TextLayoutManager(
             textStorage: textStorage,
-            typingAttributes: typingAttributes,
             lineHeightMultiplier: lineHeight,
             wrapLines: wrapLines,
             textView: self, // TODO: This is an odd syntax... consider reworking this

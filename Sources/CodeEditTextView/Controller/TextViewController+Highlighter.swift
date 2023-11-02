@@ -10,6 +10,11 @@ import SwiftTreeSitter
 
 extension TextViewController {
     internal func setUpHighlighter() {
+        if let highlighter {
+            storageDelegate.removeDelegate(highlighter)
+            self.highlighter = nil
+        }
+
         self.highlighter = Highlighter(
             textView: textView,
             highlightProvider: highlightProvider,

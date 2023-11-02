@@ -12,6 +12,7 @@ import Common
 public protocol TextLayoutManagerDelegate: AnyObject {
     func layoutManagerHeightDidUpdate(newHeight: CGFloat)
     func layoutManagerMaxWidthDidChange(newWidth: CGFloat)
+    func layoutManagerTypingAttributes() -> [NSAttributedString.Key: Any]
     func textViewportSize() -> CGSize
     func layoutManagerYAdjustment(_ yAdjustment: CGFloat)
 
@@ -23,11 +24,6 @@ public class TextLayoutManager: NSObject {
     // MARK: - Public Properties
 
     public weak var delegate: TextLayoutManagerDelegate?
-    public var typingAttributes: [NSAttributedString.Key: Any] {
-        didSet {
-            _estimateLineHeight = nil
-        }
-    }
     public var lineHeightMultiplier: CGFloat {
         didSet {
             setNeedsLayout()
@@ -54,7 +50,7 @@ public class TextLayoutManager: NSObject {
 
     // MARK: - Internal
 
-    internal unowned var textStorage: NSTextStorage
+    internal weak var textStorage: NSTextStorage?
     internal var lineStorage: TextLineStorage<TextLine> = TextLineStorage()
     private let viewReuseQueue: ViewReuseQueue<LineFragmentView, UUID> = ViewReuseQueue()
     private var visibleLineIds: Set<TextLine.ID> = []
@@ -87,30 +83,30 @@ public class TextLayoutManager: NSObject {
     /// Initialize a text layout manager and prepare it for use.
     /// - Parameters:
     ///   - textStorage: The text storage object to use as a data source.
-    ///   - typingAttributes: The attributes to use while typing.
+    ///   - lineHeightMultiplier: The multiplier to use for line heights.
+    ///   - wrapLines: Set to true to wrap lines to the visible editor width.
+    ///   - textView: The view to layout text fragments in.
+    ///   - delegate: A delegate for the layout manager.
     init(
         textStorage: NSTextStorage,
-        typingAttributes: [NSAttributedString.Key: Any],
         lineHeightMultiplier: CGFloat,
         wrapLines: Bool,
         textView: NSView,
         delegate: TextLayoutManagerDelegate?
     ) {
         self.textStorage = textStorage
-        self.typingAttributes = typingAttributes
         self.lineHeightMultiplier = lineHeightMultiplier
         self.wrapLines = wrapLines
         self.layoutView = textView
         self.delegate = delegate
         super.init()
-        textStorage.addAttributes(typingAttributes, range: NSRange(location: 0, length: textStorage.length))
         prepareTextLines()
     }
 
     /// Prepares the layout manager for use.
     /// Parses the text storage object into lines and builds the `lineStorage` object from those lines.
-    private func prepareTextLines() {
-        guard lineStorage.count == 0 else { return }
+    internal func prepareTextLines() {
+        guard lineStorage.count == 0, let textStorage else { return }
         #if DEBUG
         var info = mach_timebase_info()
         guard mach_timebase_info(&info) == KERN_SUCCESS else { return }
@@ -127,6 +123,17 @@ public class TextLayoutManager: NSObject {
         print("Text Layout Manager built in: ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC), "ms")
         #endif
     }
+    
+    /// Resets the layout manager to an initial state.
+    internal func reset() {
+        lineStorage.removeAll()
+        visibleLineIds.removeAll()
+        viewReuseQueue.queuedViews.removeAll()
+        viewReuseQueue.usedViews.removeAll()
+        maxLineWidth = 0
+        prepareTextLines()
+        setNeedsLayout()
+    }
 
     /// Estimates the line height for the current typing attributes.
     /// Takes into account ``TextLayoutManager/lineHeightMultiplier``.
@@ -135,7 +142,7 @@ public class TextLayoutManager: NSObject {
         if let _estimateLineHeight {
             return _estimateLineHeight
         } else {
-            let string = NSAttributedString(string: "0", attributes: typingAttributes)
+            let string = NSAttributedString(string: "0", attributes: delegate?.layoutManagerTypingAttributes() ?? [:])
             let typesetter = CTTypesetterCreateWithAttributedString(string)
             let ctLine = CTTypesetterCreateLine(typesetter, CFRangeMake(0, 1))
             var ascent: CGFloat = 0
@@ -206,7 +213,7 @@ public class TextLayoutManager: NSObject {
 
     /// Lays out all visible lines
     internal func layoutLines() { // swiftlint:disable:this function_body_length
-        guard let visibleRect = delegate?.visibleRect, !isInTransaction else { return }
+        guard let visibleRect = delegate?.visibleRect, !isInTransaction, let textStorage else { return }
         let minY = max(visibleRect.minY, 0)
         let maxY = max(visibleRect.maxY, 0)
         let originalHeight = lineStorage.height
@@ -225,6 +232,7 @@ public class TextLayoutManager: NSObject {
                 || !visibleLineIds.contains(linePosition.data.id) {
                 let lineSize = layoutLine(
                     linePosition,
+                    textStorage: textStorage,
                     minY: linePosition.yPos,
                     maxY: maxY,
                     maxWidth: maxLineLayoutWidth,
@@ -278,12 +286,15 @@ public class TextLayoutManager: NSObject {
     /// Lays out a single text line.
     /// - Parameters:
     ///   - position: The line position from storage to use for layout.
+    ///   - textStorage: The text storage object to use for text info.
     ///   - minY: The minimum Y value to start at.
     ///   - maxY: The maximum Y value to end layout at.
+    ///   - maxWidth: The maximum layout width, infinite if ``TextLayoutManager/wrapLines`` is `false`.
     ///   - laidOutFragmentIDs: Updated by this method as line fragments are laid out.
     /// - Returns: A `CGSize` representing the max width and total height of the laid out portion of the line.
     private func layoutLine(
         _ position: TextLineStorage<TextLine>.TextLinePosition,
+        textStorage: NSTextStorage,
         minY: CGFloat,
         maxY: CGFloat,
         maxWidth: CGFloat,

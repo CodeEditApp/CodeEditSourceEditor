@@ -66,7 +66,7 @@ extension TextLayoutManager: NSTextStorageDelegate {
     ///   - location: The location the string is being inserted into.
     private func applyLineInsert(_ insertedString: NSString, at location: Int) {
         if LineEnding(line: insertedString as String) != nil {
-            if location == textStorage.length {
+            if location == textStorage?.length ?? 0 {
                 // Insert a new line at the end of the document, need to insert a new line 'cause there's nothing to
                 // split. Also, append the new text to the last line.
                 lineStorage.update(atIndex: location, delta: insertedString.length, deltaHeight: 0.0)

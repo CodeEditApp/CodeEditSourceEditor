@@ -39,7 +39,7 @@ extension TextLayoutManager {
 
     public func textOffsetAtPoint(_ point: CGPoint) -> Int? {
         guard point.y <= estimatedHeight() else { // End position is a special case.
-            return textStorage.length
+            return textStorage?.length
         }
         guard let position = lineStorage.getLine(atPosition: point.y),
               let fragmentPosition = position.data.typesetter.lineFragments.getLine(
@@ -62,7 +62,7 @@ extension TextLayoutManager {
             // If the endPosition is at the end of the line, and the line ends with a line ending character
             // return the index before the eol.
             if endPosition == position.range.max,
-               let lineEnding = LineEnding(line: textStorage.substring(from: globalFragmentRange) ?? "") {
+               let lineEnding = LineEnding(line: textStorage?.substring(from: globalFragmentRange) ?? "") {
                 return endPosition - lineEnding.length
             } else {
                 return endPosition
@@ -105,9 +105,10 @@ extension TextLayoutManager {
 
         // Get the *real* length of the character at the offset. If this is a surrogate pair it'll return the correct
         // length of the character at the offset.
-        let realRange = textStorage.length == 0
+        let realRange = textStorage?.length == 0
         ? NSRange(location: offset, length: 0)
-        : (textStorage.string as NSString).rangeOfComposedCharacterSequence(at: offset)
+        : (textStorage?.string as? NSString)?.rangeOfComposedCharacterSequence(at: offset)
+        ?? NSRange(location: offset, length: 0)
 
         let minXPos = CTLineGetOffsetForStringIndex(
             fragmentPosition.data.ctLine,
@@ -186,6 +187,7 @@ extension TextLayoutManager {
     /// Forces layout calculation for all lines up to and including the given offset.
     /// - Parameter offset: The offset to ensure layout until.
     private func ensureLayoutFor(position: TextLineStorage<TextLine>.TextLinePosition) -> CGFloat {
+        guard let textStorage else { return 0 }
         position.data.prepareForDisplay(
             maxWidth: maxLineLayoutWidth,
             lineHeightMultiplier: lineHeightMultiplier,

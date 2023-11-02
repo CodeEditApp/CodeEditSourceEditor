@@ -84,7 +84,7 @@ public class TextSelectionManager: NSObject {
     public var selectedLineBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
     public var selectionBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor
 
-    private var markedText: [MarkedText] = []
+    internal var markedText: [MarkedText] = []
     internal(set) public var textSelections: [TextSelection] = []
     internal weak var layoutManager: TextLayoutManager?
     internal weak var textStorage: NSTextStorage?

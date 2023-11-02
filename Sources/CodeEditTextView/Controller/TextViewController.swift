@@ -44,6 +44,8 @@ public class TextViewController: NSViewController {
     /// The associated `Theme` used for highlighting.
     public var theme: EditorTheme {
         didSet {
+            textView.layoutManager.setNeedsLayout()
+            textStorage.setAttributes(attributesFor(nil), range: NSRange(location: 0, length: textStorage.length))
             highlighter?.invalidate()
         }
     }
@@ -200,6 +202,7 @@ public class TextViewController: NSViewController {
     /// - Parameter text: The new contents of the editor.
     public func setText(_ text: String) {
         self.textView.setText(text)
+        self.setUpHighlighter()
     }
 
     // MARK: Paragraph Style
@@ -236,7 +239,7 @@ public class TextViewController: NSViewController {
         : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
         gutterView.highlightSelectedLines = isEditable
         gutterView.font = font.rulerFont
-        gutterView.backgroundColor = theme.background
+        gutterView.backgroundColor = useThemeBackground ? theme.background : .textBackgroundColor
         if self.isEditable == false {
             gutterView.selectedLineTextColor = nil
             gutterView.selectedLineColor = .clear
@@ -266,6 +269,6 @@ public class TextViewController: NSViewController {
 extension TextViewController: GutterViewDelegate {
     public func gutterViewWidthDidUpdate(newWidth: CGFloat) {
         gutterView?.frame.size.width = newWidth
-        textView?.edgeInsets.left = newWidth
+        textView?.edgeInsets = HorizontalEdgeInsets(left: newWidth, right: 0)
     }
 }

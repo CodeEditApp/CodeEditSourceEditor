@@ -263,12 +263,23 @@ public class TextView: NSView, NSTextContent {
     /// Set a new text storage object for the view.
     /// - Parameter textStorage: The new text storage to use.
     public func setTextStorage(_ textStorage: NSTextStorage) {
-        let lineHeight = layoutManager.lineHeightMultiplier
-        let wrapLines = layoutManager.wrapLines
-        layoutManager = setUpLayoutManager(lineHeight: lineHeight, wrapLines: wrapLines)
-        storageDelegate.addDelegate(layoutManager)
-        selectionManager = setUpSelectionManager()
+        self.textStorage = textStorage
+
+        subviews.forEach { view in
+            view.removeFromSuperview()
+        }
+
+        textStorage.addAttributes(typingAttributes, range: documentRange)
+        layoutManager.textStorage = textStorage
+        layoutManager.reset()
+
+        selectionManager.textStorage = textStorage
+        selectionManager.textSelections.removeAll()
+        selectionManager.markedText.removeAll()
+
         _undoManager?.clearStack()
+
+        textStorage.delegate = storageDelegate
         needsDisplay = true
         needsLayout = true
     }
