@@ -41,20 +41,23 @@ public final class TextLine: Identifiable, Equatable {
     ///   - estimatedLineHeight: The estimated height for an empty line.
     ///   - range: The range this text range represents in the entire document.
     ///   - stringRef: A reference to the string storage for the document.
+    ///   - markedRanges: Any marked ranges in the line.
     func prepareForDisplay(
         maxWidth: CGFloat,
         lineHeightMultiplier: CGFloat,
         estimatedLineHeight: CGFloat,
         range: NSRange,
-        stringRef: NSTextStorage
+        stringRef: NSTextStorage,
+        markedRanges: MarkedTextManager.MarkedRanges?
     ) {
         let string = stringRef.attributedSubstring(from: range)
         self.maxWidth = maxWidth
-        typesetter.prepareToTypeset(
+        typesetter.typeset(
             string,
             maxWidth: maxWidth,
             lineHeightMultiplier: lineHeightMultiplier,
-            estimatedLineHeight: estimatedLineHeight
+            estimatedLineHeight: estimatedLineHeight,
+            markedRanges: markedRanges
         )
         needsLayout = false
     }

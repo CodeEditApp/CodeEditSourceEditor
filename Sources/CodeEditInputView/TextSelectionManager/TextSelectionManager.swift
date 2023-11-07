@@ -20,11 +20,6 @@ public protocol TextSelectionManagerDelegate: AnyObject {
 /// Draws selections using a draw method similar to the `TextLayoutManager` class, and adds cursor views when
 /// appropriate.
 public class TextSelectionManager: NSObject {
-    struct MarkedText {
-        let range: NSRange
-        let attributedString: NSAttributedString
-    }
-
     // MARK: - TextSelection
 
     public class TextSelection: Hashable {
@@ -84,7 +79,6 @@ public class TextSelectionManager: NSObject {
     public var selectedLineBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
     public var selectionBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor
 
-    internal var markedText: [MarkedText] = []
     internal(set) public var textSelections: [TextSelection] = []
     internal weak var layoutManager: TextLayoutManager?
     internal weak var textStorage: NSTextStorage?

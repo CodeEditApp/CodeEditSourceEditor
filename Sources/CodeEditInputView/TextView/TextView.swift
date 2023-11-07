@@ -21,6 +21,7 @@ import TextStory
 /// |  |   |-> Typesetter          Lays out and calculates line fragments
 /// |  |   |-> [LineFragment]      Represents a visual text line, stored in a line storage for long lines
 /// |  |-> [LineFragmentView]      Reusable line fragment view that draws a line fragment.
+/// |  |-> MarkedRangeManager      Manages marked ranges, updates layout if needed to accomodate.
 /// |
 /// |-> TextSelectionManager       Maintains, modifies, and renders text selections
 /// |  |-> [TextSelection]
@@ -275,7 +276,6 @@ public class TextView: NSView, NSTextContent {
 
         selectionManager.textStorage = textStorage
         selectionManager.textSelections.removeAll()
-        selectionManager.markedText.removeAll()
 
         _undoManager?.clearStack()
 

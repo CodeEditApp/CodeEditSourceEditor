@@ -8,13 +8,15 @@
 import Foundation
 
 extension TextSelectionManager {
-    public func willReplaceCharacters(in range: NSRange, replacementLength: Int) {
+    public func didReplaceCharacters(in range: NSRange, replacementLength: Int) {
         let delta = replacementLength == 0 ? -range.length : replacementLength
         for textSelection in self.textSelections {
             if textSelection.range.location > range.max {
                 textSelection.range.location = max(0, textSelection.range.location + delta)
                 textSelection.range.length = 0
-            } else if textSelection.range.intersection(range) != nil || textSelection.range == range {
+            } else if textSelection.range.intersection(range) != nil
+                        || textSelection.range == range
+                        || (textSelection.range.isEmpty && textSelection.range.location == range.max) {
                 if replacementLength > 0 {
                     textSelection.range.location = range.location + replacementLength
                 } else {

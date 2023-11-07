@@ -9,7 +9,6 @@ final class TextSelectionManagerTests: XCTestCase {
         textStorage = NSTextStorage(string: "Loren Ipsum 💯")
         layoutManager = TextLayoutManager(
             textStorage: textStorage,
-            typingAttributes: [:],
             lineHeightMultiplier: 1.0,
             wrapLines: false,
             textView: NSView(),

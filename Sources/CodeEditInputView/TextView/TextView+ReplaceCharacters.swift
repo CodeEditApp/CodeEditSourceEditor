@@ -34,7 +34,7 @@ extension TextView {
                 in: range,
                 with: NSAttributedString(string: string, attributes: typingAttributes)
             )
-            selectionManager.willReplaceCharacters(in: range, replacementLength: (string as NSString).length)
+            selectionManager.didReplaceCharacters(in: range, replacementLength: (string as NSString).length)
 
             delegate?.textView(self, didReplaceContentsIn: range, with: string)
         }

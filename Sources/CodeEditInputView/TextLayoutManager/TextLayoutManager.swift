@@ -52,6 +52,7 @@ public class TextLayoutManager: NSObject {
 
     internal weak var textStorage: NSTextStorage?
     internal var lineStorage: TextLineStorage<TextLine> = TextLineStorage()
+    var markedTextManager: MarkedTextManager = MarkedTextManager()
     private let viewReuseQueue: ViewReuseQueue<LineFragmentView, UUID> = ViewReuseQueue()
     private var visibleLineIds: Set<TextLine.ID> = []
     /// Used to force a complete re-layout using `setNeedsLayout`
@@ -131,6 +132,7 @@ public class TextLayoutManager: NSObject {
         viewReuseQueue.queuedViews.removeAll()
         viewReuseQueue.usedViews.removeAll()
         maxLineWidth = 0
+        markedTextManager.removeAll()
         prepareTextLines()
         setNeedsLayout()
     }
@@ -306,7 +308,8 @@ public class TextLayoutManager: NSObject {
             lineHeightMultiplier: lineHeightMultiplier,
             estimatedLineHeight: estimateLineHeight(),
             range: position.range,
-            stringRef: textStorage
+            stringRef: textStorage,
+            markedRanges: markedTextManager.markedRanges(in: position.range)
         )
 
         if position.range.isEmpty {

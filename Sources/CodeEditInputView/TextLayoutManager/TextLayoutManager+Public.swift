@@ -193,7 +193,8 @@ extension TextLayoutManager {
             lineHeightMultiplier: lineHeightMultiplier,
             estimatedLineHeight: estimateLineHeight(),
             range: position.range,
-            stringRef: textStorage
+            stringRef: textStorage,
+            markedRanges: markedTextManager.markedRanges(in: position.range)
         )
         var height: CGFloat = 0
         for fragmentPosition in position.data.lineFragments {

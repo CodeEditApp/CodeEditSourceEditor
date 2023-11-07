@@ -28,31 +28,25 @@ import AppKit
 extension TextView: NSTextInputClient {
     // MARK: - Insert Text
 
-    /// Inserts the given string into the receiver, replacing the specified content.
-    ///
-    /// Programmatic modification of the text is best done by operating on the text storage directly.
-    /// Because this method pertains to the actions of the user, the text view must be editable for the
-    /// insertion to work.
-    ///
-    /// - Parameters:
-    ///   - string: The text to insert, either an NSString or NSAttributedString instance.
-    ///   - replacementRange: The range of content to replace in the receiver’s text storage.
-    @objc public func insertText(_ string: Any, replacementRange: NSRange) {
-        guard isEditable else { return }
-
-        var insertString: String
+    /// Converts an `Any` to a valid string type if possible.
+    /// Throws an `assertionFailure` if not a valid type (`NSAttributedString`, `NSString`, or `String`)
+    private func anyToString(_ string: Any) -> String? {
         switch string {
         case let string as NSString:
-            insertString = string as String
+            return string as String
         case let string as NSAttributedString:
-            insertString = string.string
+            return string.string
         default:
-            insertString = ""
             assertionFailure("\(#function) called with invalid string type. Expected String or NSAttributedString.")
+            return nil
         }
+    }
 
+    /// Inserts the string at the replacement range. If replacement range is `NSNotFound`, uses the selection ranges.
+    private func _insertText(insertString: String, replacementRange: NSRange) {
+        var insertString = insertString
         if LineEnding(rawValue: insertString) == .carriageReturn
-           && layoutManager.detectedLineEnding == .carriageReturnLineFeed {
+            && layoutManager.detectedLineEnding == .carriageReturnLineFeed {
             insertString = LineEnding.carriageReturnLineFeed.rawValue
         }
 
@@ -63,6 +57,26 @@ extension TextView: NSTextInputClient {
         }
 
         selectionManager.textSelections.forEach { $0.suggestedXPos = nil }
+    }
+
+    /// Inserts the given string into the receiver, replacing the specified content.
+    ///
+    /// Programmatic modification of the text is best done by operating on the text storage directly.
+    /// Because this method pertains to the actions of the user, the text view must be editable for the
+    /// insertion to work.
+    ///
+    /// - Parameters:
+    ///   - string: The text to insert, either an NSString or NSAttributedString instance.
+    ///   - replacementRange: The range of content to replace in the receiver’s text storage.
+    @objc public func insertText(_ string: Any, replacementRange: NSRange) {
+        guard isEditable, let insertString = anyToString(string) else { return }
+        if layoutManager.markedTextManager.hasMarkedText {
+            _undoManager?.disable()
+            replaceCharacters(in: layoutManager.markedTextManager.markedRanges, with: "")
+            _undoManager?.enable()
+            layoutManager.markedTextManager.removeAll()
+        }
+        _insertText(insertString: insertString, replacementRange: replacementRange)
     }
 
     override public func insertText(_ insertString: Any) {
@@ -84,7 +98,18 @@ extension TextView: NSTextInputClient {
     ///   - selectedRange: The range to set as the selection, computed from the beginning of the inserted string.
     ///   - replacementRange: The range to replace, computed from the beginning of the marked text.
     @objc public func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
-        // TODO: setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange)
+        guard isEditable, let insertString = anyToString(string) else { return }
+        // Needs to insert text, but not notify the undo manager. The undo/redo actions will handle
+        // removing marked text.
+        _undoManager?.disable()
+        layoutManager.markedTextManager.updateMarkedRanges(
+            insertLength: (insertString as NSString).length,
+            replacementRange: replacementRange,
+            selectedRange: selectedRange,
+            textSelections: selectionManager.textSelections
+        )
+        _insertText(insertString: insertString, replacementRange: replacementRange)
+        _undoManager?.enable()
     }
 
     /// Unmarks the marked text.
@@ -93,7 +118,9 @@ extension TextView: NSTextInputClient {
     /// The text view should accept the marked text as if it had been inserted normally.
     /// If there is no marked text, the invocation of this method has no effect.
     @objc public func unmarkText() {
-        // TODO: unmarkText()
+        print(#function)
+        layoutManager.markedTextManager.removeAll()
+        layoutManager.setNeedsLayout()
     }
 
     /// Returns the range of selected text.
@@ -111,8 +138,7 @@ extension TextView: NSTextInputClient {
     ///
     /// - Returns: The range of marked text or {NSNotFound, 0} if there is no marked range.
     @objc public func markedRange() -> NSRange {
-        // TODO: markedRange()
-        return NSRange(location: NSNotFound, length: 0)
+        return layoutManager?.markedTextManager.markedRanges.first ?? NSRange(location: NSNotFound, length: 0)
     }
 
     /// Returns a Boolean value indicating whether the receiver has marked text.
@@ -122,8 +148,7 @@ extension TextView: NSTextInputClient {
     ///
     /// - Returns: true if the receiver has marked text; otherwise false.
     @objc public func hasMarkedText() -> Bool {
-        // TODO: hasMarkedText()
-        return false
+        return layoutManager.markedTextManager.hasMarkedText
     }
 
     /// Returns an array of attribute names recognized by the receiver.
@@ -133,7 +158,7 @@ extension TextView: NSTextInputClient {
     ///
     /// - Returns: An array of NSString objects representing names for the supported attributes.
     @objc public func validAttributesForMarkedText() -> [NSAttributedString.Key] {
-        [.underlineStyle, .underlineColor]
+        [.underlineStyle, .underlineColor, .backgroundColor, .font, .foregroundColor]
     }
 
     // MARK: - Contents

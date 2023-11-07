@@ -17,15 +17,24 @@ final class Typesetter {
 
     init() { }
 
-    func prepareToTypeset(
+    func typeset(
         _ string: NSAttributedString,
         maxWidth: CGFloat,
         lineHeightMultiplier: CGFloat,
-        estimatedLineHeight: CGFloat
+        estimatedLineHeight: CGFloat,
+        markedRanges: MarkedTextManager.MarkedRanges?
     ) {
         lineFragments.removeAll()
-        self.typesetter = CTTypesetterCreateWithAttributedString(string)
-        self.string = string
+        if let markedRanges {
+            let mutableString = NSMutableAttributedString(attributedString: string)
+            for markedRange in markedRanges.ranges {
+                mutableString.addAttributes(markedRanges.attributes, range: markedRange)
+            }
+            self.string = mutableString
+        } else {
+            self.string = string
+        }
+        self.typesetter = CTTypesetterCreateWithAttributedString(self.string)
         generateLines(
             maxWidth: maxWidth,
             lineHeightMultiplier: lineHeightMultiplier,

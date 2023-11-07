@@ -21,13 +21,16 @@ extension TextView {
         switch event.clickCount {
         case 1:
             if event.modifierFlags.intersection(.deviceIndependentFlagsMask).isSuperset(of: [.control, .shift]) {
+                unmarkText()
                 selectionManager.addSelectedRange(NSRange(location: offset, length: 0))
             } else {
                 selectionManager.setSelectedRange(NSRange(location: offset, length: 0))
             }
         case 2:
+            unmarkText()
             selectWord(nil)
         case 3:
+            unmarkText()
             selectLine(nil)
         default:
             break

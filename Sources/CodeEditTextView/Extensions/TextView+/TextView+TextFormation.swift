@@ -36,7 +36,7 @@ extension TextView: TextInterface {
     /// - Parameter mutation: The mutation to apply.
     public func applyMutation(_ mutation: TextMutation) {
         layoutManager.willReplaceCharactersInRange(range: mutation.range, with: mutation.string)
-        selectionManager.willReplaceCharacters(
+        selectionManager.didReplaceCharacters(
             in: mutation.range,
             replacementLength: (mutation.string as NSString).length
         )

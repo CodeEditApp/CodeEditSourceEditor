@@ -56,8 +56,8 @@ public class CEUndoManager {
     }
 
     public let manager: DelegatedUndoManager
-    public var isUndoing: Bool = false
-    public var isRedoing: Bool = false
+    private(set) public var isUndoing: Bool = false
+    private(set) public var isRedoing: Bool = false
 
     public var canUndo: Bool {
         !undoStack.isEmpty
@@ -72,7 +72,11 @@ public class CEUndoManager {
     private var redoStack: [UndoGroup] = []
 
     private weak var textView: TextView?
-    private(set) var isGrouping: Bool = false
+    private(set) public var isGrouping: Bool = false
+    /// True when the manager is ignoring mutations.
+    private var isDisabled: Bool = false
+
+    // MARK: - Init
 
     public init(textView: TextView) {
         self.textView = textView
@@ -80,9 +84,11 @@ public class CEUndoManager {
         manager.parent = self
     }
 
+    // MARK: - Undo/Redo
+
     /// Performs an undo operation if there is one available.
     public func undo() {
-        guard let item = undoStack.popLast(), let textView else {
+        guard !isDisabled, let item = undoStack.popLast(), let textView else {
             return
         }
         isUndoing = true
@@ -97,7 +103,7 @@ public class CEUndoManager {
 
     /// Performs a redo operation if there is one available.
     public func redo() {
-        guard let item = redoStack.popLast(), let textView else {
+        guard !isDisabled, let item = redoStack.popLast(), let textView else {
             return
         }
         isRedoing = true
@@ -115,6 +121,8 @@ public class CEUndoManager {
         undoStack.removeAll()
         redoStack.removeAll()
     }
+
+    // MARK: - Mutations
 
     /// Registers a mutation into the undo stack.
     ///
@@ -142,6 +150,8 @@ public class CEUndoManager {
 
         redoStack.removeAll()
     }
+
+    // MARK: - Grouping
 
     /// Groups all incoming mutations.
     public func beginGrouping() {
@@ -195,5 +205,19 @@ public class CEUndoManager {
                 && mutation.mutation.string != "\n"
             )
         }
+    }
+
+    // MARK: - Disable
+    
+    /// Sets the undo manager to ignore incoming mutations until the matching `enable` method is called.
+    /// Cannot be nested.
+    public func disable() {
+        isDisabled = true
+    }
+
+    /// Sets the undo manager to begin receiving incoming mutations after a call to `disable`
+    /// Cannot be nested.
+    public func enable() {
+        isDisabled = false
     }
 }
