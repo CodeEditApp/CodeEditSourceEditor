@@ -29,7 +29,7 @@ class MarkedTextManager {
     func removeAll() {
         markedRanges.removeAll()
     }
-    
+
     /// Updates the stored marked ranges.
     /// - Parameters:
     ///   - insertLength: The length of the string being inserted.
@@ -50,7 +50,7 @@ class MarkedTextManager {
             markedRanges = [selectedRange]
         }
     }
-    
+
     /// Finds any marked ranges for a line and returns them.
     /// - Parameter lineRange: The range of the line.
     /// - Returns: A `MarkedRange` struct with information about attributes and ranges. `nil` if there is no marked
@@ -66,6 +66,33 @@ class MarkedTextManager {
             return nil
         } else {
             return MarkedRanges(ranges: ranges, attributes: attributes)
+        }
+    }
+
+    /// Updates marked text ranges for a new set of selections.
+    /// - Parameter textSelections: The new text selections.
+    /// - Returns: `True` if the marked text needs layout.
+    func updateForNewSelections(textSelections: [TextSelectionManager.TextSelection]) -> Bool {
+        // Ensure every marked range has a matching selection.
+        // If any marked ranges do not have a matching selection, unmark.
+        // Matching, in this context, means having a selection in the range location...max
+        var markedRanges = markedRanges
+        for textSelection in textSelections {
+            if let markedRangeIdx = markedRanges.firstIndex(where: {
+                ($0.location...$0.max).contains(textSelection.range.location)
+                && ($0.location...$0.max).contains(textSelection.range.max)
+            }) {
+                markedRanges.remove(at: markedRangeIdx)
+            } else {
+                return true
+            }
+        }
+
+        // If any remaining marked ranges, we need to unmark.
+        if !markedRanges.isEmpty {
+            return false
+        } else {
+            return true
         }
     }
 }

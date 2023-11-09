@@ -38,7 +38,7 @@ extension TextView: NSDraggingSource {
             selectionManager.getFillRects(in: frame, for: $0)
         }
         // TODO: This SUcks
-        let minX = (selectionRects.min(by: { $0.minX < $1.minX })?.minX ?? 0.0)
+        let minX = selectionRects.min(by: { $0.minX < $1.minX })?.minX ?? 0.0
         let minY = selectionRects.min(by: { $0.minY < $1.minY })?.minY ?? 0.0
         let maxX = selectionRects.max(by: { $0.maxX < $1.maxX })?.maxX ?? 0.0
         let maxY = selectionRects.max(by: { $0.maxY < $1.maxY })?.maxY ?? 0.0

@@ -60,5 +60,6 @@ extension TextView {
             textSelection.range.formUnion(extendedRange)
         }
         replaceCharacters(in: selectionManager.textSelections.map(\.range), with: "")
+        unmarkTextIfNeeded()
     }
 }

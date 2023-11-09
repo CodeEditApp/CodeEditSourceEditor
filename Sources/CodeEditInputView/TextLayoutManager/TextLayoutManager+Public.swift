@@ -188,13 +188,17 @@ extension TextLayoutManager {
     /// - Parameter offset: The offset to ensure layout until.
     private func ensureLayoutFor(position: TextLineStorage<TextLine>.TextLinePosition) -> CGFloat {
         guard let textStorage else { return 0 }
-        position.data.prepareForDisplay(
+        let displayData = TextLine.DisplayData(
             maxWidth: maxLineLayoutWidth,
             lineHeightMultiplier: lineHeightMultiplier,
-            estimatedLineHeight: estimateLineHeight(),
+            estimatedLineHeight: estimateLineHeight()
+        )
+        position.data.prepareForDisplay(
+            displayData: displayData,
             range: position.range,
             stringRef: textStorage,
-            markedRanges: markedTextManager.markedRanges(in: position.range)
+            markedRanges: markedTextManager.markedRanges(in: position.range),
+            breakStrategy: lineBreakStrategy
         )
         var height: CGFloat = 0
         for fragmentPosition in position.data.lineFragments {

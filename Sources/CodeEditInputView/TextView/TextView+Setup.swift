@@ -13,7 +13,7 @@ extension TextView {
             textStorage: textStorage,
             lineHeightMultiplier: lineHeight,
             wrapLines: wrapLines,
-            textView: self, // TODO: This is an odd syntax... consider reworking this
+            textView: self,
             delegate: self
         )
     }
@@ -22,7 +22,7 @@ extension TextView {
         TextSelectionManager(
             layoutManager: layoutManager,
             textStorage: textStorage,
-            layoutView: self, // TODO: This is an odd syntax... consider reworking this
+            layoutView: self,
             delegate: self
         )
     }

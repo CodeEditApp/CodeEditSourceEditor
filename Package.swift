@@ -29,10 +29,15 @@ let package = Package(
             url: "https://github.com/lukepistrol/SwiftLintPlugin",
             from: "0.2.2"
         ),
-        // Filters for indentation, pair completion, whitespace
+        // Text mutation, storage helpers
+        .package(
+            url: "https://github.com/ChimeHQ/TextStory",
+            from: "0.8.0"
+        ),
+        // Rules for indentation, pair completion, whitespace
         .package(
             url: "https://github.com/ChimeHQ/TextFormation",
-            from: "0.7.0"
+            from: "0.8.1"
         ),
         // Useful data structures
         .package(
@@ -45,7 +50,6 @@ let package = Package(
         .target(
             name: "CodeEditTextView",
             dependencies: [
-                "Common",
                 "CodeEditInputView",
                 "CodeEditLanguages",
                 "TextFormation",
@@ -59,18 +63,8 @@ let package = Package(
         .target(
             name: "CodeEditInputView",
             dependencies: [
-                "Common",
-                "TextFormation"
-            ],
-            plugins: [
-                .plugin(name: "SwiftLint", package: "SwiftLintPlugin")
-            ]
-        ),
-
-        // Common classes and extensions used in both CodeEditTextView and CodeEditInputView
-        .target(
-            name: "Common",
-            dependencies: [
+                "TextStory",
+                "TextFormation",
                 .product(name: "Collections", package: "swift-collections")
             ],
             plugins: [

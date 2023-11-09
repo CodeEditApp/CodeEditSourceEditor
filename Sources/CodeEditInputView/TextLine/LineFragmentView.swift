@@ -6,7 +6,6 @@
 //
 
 import AppKit
-import Common
 
 /// Displays a line fragment.
 final class LineFragmentView: NSView {

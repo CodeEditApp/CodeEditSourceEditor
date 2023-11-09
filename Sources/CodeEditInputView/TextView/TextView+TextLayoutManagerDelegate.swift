@@ -16,7 +16,7 @@ extension TextView: TextLayoutManagerDelegate {
         updateFrameIfNeeded()
     }
 
-    public func layoutManagerTypingAttributes() -> [NSAttributedString.Key : Any] {
+    public func layoutManagerTypingAttributes() -> [NSAttributedString.Key: Any] {
         typingAttributes
     }
 

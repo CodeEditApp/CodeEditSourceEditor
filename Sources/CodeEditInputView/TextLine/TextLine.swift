@@ -36,27 +36,24 @@ public final class TextLine: Identifiable, Equatable {
 
     /// Prepares the line for display, generating all potential line breaks and calculating the real height of the line.
     /// - Parameters:
-    ///   - maxWidth: The maximum width the line can be. Used to find line breaks.
-    ///   - lineHeightMultiplier: The multiplier to use for lines.
-    ///   - estimatedLineHeight: The estimated height for an empty line.
+    ///   - displayData: Information required to display a text line.
     ///   - range: The range this text range represents in the entire document.
     ///   - stringRef: A reference to the string storage for the document.
     ///   - markedRanges: Any marked ranges in the line.
+    ///   - breakStrategy: Determines how line breaks are calculated.
     func prepareForDisplay(
-        maxWidth: CGFloat,
-        lineHeightMultiplier: CGFloat,
-        estimatedLineHeight: CGFloat,
+        displayData: DisplayData,
         range: NSRange,
         stringRef: NSTextStorage,
-        markedRanges: MarkedTextManager.MarkedRanges?
+        markedRanges: MarkedTextManager.MarkedRanges?,
+        breakStrategy: LineBreakStrategy
     ) {
         let string = stringRef.attributedSubstring(from: range)
-        self.maxWidth = maxWidth
+        self.maxWidth = displayData.maxWidth
         typesetter.typeset(
             string,
-            maxWidth: maxWidth,
-            lineHeightMultiplier: lineHeightMultiplier,
-            estimatedLineHeight: estimatedLineHeight,
+            displayData: displayData,
+            breakStrategy: breakStrategy,
             markedRanges: markedRanges
         )
         needsLayout = false
@@ -64,5 +61,12 @@ public final class TextLine: Identifiable, Equatable {
 
     public static func == (lhs: TextLine, rhs: TextLine) -> Bool {
         lhs.id == rhs.id
+    }
+
+    /// Contains all required data to perform a typeset and layout operation on a text line.
+    struct DisplayData {
+        let maxWidth: CGFloat
+        let lineHeightMultiplier: CGFloat
+        let estimatedLineHeight: CGFloat
     }
 }

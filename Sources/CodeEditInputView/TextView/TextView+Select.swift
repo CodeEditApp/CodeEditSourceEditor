@@ -11,6 +11,7 @@ import TextStory
 extension TextView {
     override public func selectAll(_ sender: Any?) {
         selectionManager.setSelectedRange(documentRange)
+        unmarkTextIfNeeded()
         needsDisplay = true
     }
 
@@ -22,6 +23,7 @@ extension TextView {
             return linePosition.range
         }
         selectionManager.setSelectedRanges(newSelections)
+        unmarkTextIfNeeded()
         needsDisplay = true
     }
 
@@ -58,6 +60,7 @@ extension TextView {
             )
         }
         selectionManager.setSelectedRanges(newSelections)
+        unmarkTextIfNeeded()
         needsDisplay = true
     }
 }

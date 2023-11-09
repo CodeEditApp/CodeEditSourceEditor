@@ -223,11 +223,12 @@ public extension TextSelectionManager {
     ///   - delta: The direction the selection should be extended. `1` for forwards, `-1` for backwards.
     /// - Returns: The range of the extended selection.
     private func extendSelectionLine(string: NSString, from offset: Int, delta: Int) -> NSRange {
-        guard let line = layoutManager?.textLineForOffset(offset) else {
+        guard let line = layoutManager?.textLineForOffset(offset),
+              let lineText = textStorage?.substring(from: line.range) else {
             return NSRange(location: offset, length: 0)
         }
         let lineBound = delta > 0
-        ? line.range.max - (layoutManager?.detectedLineEnding.length ?? 1)
+        ? line.range.max - (LineEnding(line: lineText)?.length ?? 0)
         : line.range.location
 
         return _extendSelectionLine(string: string, lineBound: lineBound, offset: offset, delta: delta)
@@ -383,7 +384,6 @@ public extension TextSelectionManager {
     ///   - delta: The direction the selection should be extended. `1` for forwards, `-1` for backwards.
     /// - Returns: The range of the extended selection.
     private func extendSelectionContainer(from offset: Int, delta: Int) -> NSRange {
-        // TODO: Needs to force layout for the rect being moved by.
         guard let layoutView, let endOffset = layoutManager?.textOffsetAtPoint(
             CGPoint(
                 x: delta > 0 ? layoutView.frame.maxX : layoutView.frame.minX,

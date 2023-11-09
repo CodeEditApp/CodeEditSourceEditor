@@ -6,7 +6,6 @@
 //
 
 import AppKit
-import Common
 
 extension TextLineStorage where Data == TextLine {
     /// Builds the line storage object from the given `NSTextStorage`.

@@ -6,7 +6,6 @@
 //
 
 import AppKit
-import Common
 
 public protocol TextSelectionManagerDelegate: AnyObject {
     var visibleTextRange: NSRange? { get }
@@ -246,8 +245,6 @@ public class TextSelectionManager: NSObject {
     ///   - range: The range to highlight.
     ///   - context: The context to draw in.
     private func drawSelectedRange(in rect: NSRect, for textSelection: TextSelection, context: CGContext) {
-        guard let layoutManager else { return }
-        let range = textSelection.range
         context.saveGState()
         context.setFillColor(selectionBackgroundColor.cgColor)
 

@@ -7,7 +7,6 @@
 
 import Foundation
 import AppKit
-import Common
 
 public protocol TextLayoutManagerDelegate: AnyObject {
     func layoutManagerHeightDidUpdate(newHeight: CGFloat)
@@ -48,10 +47,17 @@ public class TextLayoutManager: NSObject {
         lineStorage.count
     }
 
+    /// The strategy to use when breaking lines. Defaults to ``LineBreakStrategy/word``.
+    public var lineBreakStrategy: LineBreakStrategy = .word {
+        didSet {
+            setNeedsLayout()
+        }
+    }
+
     // MARK: - Internal
 
-    internal weak var textStorage: NSTextStorage?
-    internal var lineStorage: TextLineStorage<TextLine> = TextLineStorage()
+    weak var textStorage: NSTextStorage?
+    var lineStorage: TextLineStorage<TextLine> = TextLineStorage()
     var markedTextManager: MarkedTextManager = MarkedTextManager()
     private let viewReuseQueue: ViewReuseQueue<LineFragmentView, UUID> = ViewReuseQueue()
     private var visibleLineIds: Set<TextLine.ID> = []
@@ -63,7 +69,7 @@ public class TextLayoutManager: NSObject {
         transactionCounter > 0
     }
 
-    weak internal var layoutView: NSView?
+    weak var layoutView: NSView?
 
     /// The calculated maximum width of all laid out lines.
     /// - Note: This does not indicate *the* maximum width of the text view if all lines have not been laid out.
@@ -77,6 +83,13 @@ public class TextLayoutManager: NSObject {
     internal var maxLineLayoutWidth: CGFloat {
         wrapLines ? (delegate?.textViewportSize().width ?? .greatestFiniteMagnitude) - edgeInsets.horizontal
         : .greatestFiniteMagnitude
+    }
+
+    /// Contains all data required to perform layout on a text line.
+    private struct LineLayoutData {
+        let minY: CGFloat
+        let maxY: CGFloat
+        let maxWidth: CGFloat
     }
 
     // MARK: - Init
@@ -124,7 +137,7 @@ public class TextLayoutManager: NSObject {
         print("Text Layout Manager built in: ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC), "ms")
         #endif
     }
-    
+
     /// Resets the layout manager to an initial state.
     internal func reset() {
         lineStorage.removeAll()
@@ -235,9 +248,7 @@ public class TextLayoutManager: NSObject {
                 let lineSize = layoutLine(
                     linePosition,
                     textStorage: textStorage,
-                    minY: linePosition.yPos,
-                    maxY: maxY,
-                    maxWidth: maxLineLayoutWidth,
+                    layoutData: LineLayoutData(minY: linePosition.yPos, maxY: maxY, maxWidth: maxLineLayoutWidth),
                     laidOutFragmentIDs: &usedFragmentIDs
                 )
                 if lineSize.height != linePosition.height {
@@ -297,19 +308,22 @@ public class TextLayoutManager: NSObject {
     private func layoutLine(
         _ position: TextLineStorage<TextLine>.TextLinePosition,
         textStorage: NSTextStorage,
-        minY: CGFloat,
-        maxY: CGFloat,
-        maxWidth: CGFloat,
+        layoutData: LineLayoutData,
         laidOutFragmentIDs: inout Set<UUID>
     ) -> CGSize {
+        let lineDisplayData = TextLine.DisplayData(
+            maxWidth: layoutData.maxWidth,
+            lineHeightMultiplier: lineHeightMultiplier,
+            estimatedLineHeight: estimateLineHeight()
+        )
+
         let line = position.data
         line.prepareForDisplay(
-            maxWidth: maxWidth,
-            lineHeightMultiplier: lineHeightMultiplier,
-            estimatedLineHeight: estimateLineHeight(),
+            displayData: lineDisplayData,
             range: position.range,
             stringRef: textStorage,
-            markedRanges: markedTextManager.markedRanges(in: position.range)
+            markedRanges: markedTextManager.markedRanges(in: position.range),
+            breakStrategy: lineBreakStrategy
         )
 
         if position.range.isEmpty {
@@ -323,7 +337,7 @@ public class TextLayoutManager: NSObject {
         for lineFragmentPosition in line.typesetter.lineFragments {
             let lineFragment = lineFragmentPosition.data
 
-            layoutFragmentView(for: lineFragmentPosition, at: minY + lineFragmentPosition.yPos)
+            layoutFragmentView(for: lineFragmentPosition, at: layoutData.minY + lineFragmentPosition.yPos)
 
             width = max(width, lineFragment.width)
             height += lineFragment.scaledHeight

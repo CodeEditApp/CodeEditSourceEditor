@@ -6,7 +6,6 @@
 //
 
 import AppKit
-import Common
 
 extension TextSelectionManager {
     /// Moves all selections, determined by the direction and destination provided.

@@ -70,12 +70,7 @@ extension TextView: NSTextInputClient {
     ///   - replacementRange: The range of content to replace in the receiver’s text storage.
     @objc public func insertText(_ string: Any, replacementRange: NSRange) {
         guard isEditable, let insertString = anyToString(string) else { return }
-        if layoutManager.markedTextManager.hasMarkedText {
-            _undoManager?.disable()
-            replaceCharacters(in: layoutManager.markedTextManager.markedRanges, with: "")
-            _undoManager?.enable()
-            layoutManager.markedTextManager.removeAll()
-        }
+        unmarkText()
         _insertText(insertString: insertString, replacementRange: replacementRange)
     }
 
@@ -99,8 +94,7 @@ extension TextView: NSTextInputClient {
     ///   - replacementRange: The range to replace, computed from the beginning of the marked text.
     @objc public func setMarkedText(_ string: Any, selectedRange: NSRange, replacementRange: NSRange) {
         guard isEditable, let insertString = anyToString(string) else { return }
-        // Needs to insert text, but not notify the undo manager. The undo/redo actions will handle
-        // removing marked text.
+        // Needs to insert text, but not notify the undo manager.
         _undoManager?.disable()
         layoutManager.markedTextManager.updateMarkedRanges(
             insertLength: (insertString as NSString).length,
@@ -112,15 +106,36 @@ extension TextView: NSTextInputClient {
         _undoManager?.enable()
     }
 
+    /// Unmarks text and causes layout if needed after a selection update.
+    func unmarkTextIfNeeded() {
+        guard layoutManager.markedTextManager.hasMarkedText,
+              layoutManager.markedTextManager.updateForNewSelections(
+                textSelections: selectionManager.textSelections
+              ) else {
+            return
+        }
+
+        layoutManager.markedTextManager.removeAll()
+        layoutManager.setNeedsLayout()
+        needsLayout = true
+        inputContext?.discardMarkedText()
+    }
+
     /// Unmarks the marked text.
     ///
     /// The receiver removes any marking from pending input text and disposes of the marked text as it wishes.
     /// The text view should accept the marked text as if it had been inserted normally.
     /// If there is no marked text, the invocation of this method has no effect.
     @objc public func unmarkText() {
-        print(#function)
-        layoutManager.markedTextManager.removeAll()
-        layoutManager.setNeedsLayout()
+        if layoutManager.markedTextManager.hasMarkedText {
+            _undoManager?.disable()
+            replaceCharacters(in: layoutManager.markedTextManager.markedRanges, with: "")
+            _undoManager?.enable()
+            layoutManager.markedTextManager.removeAll()
+            layoutManager.setNeedsLayout()
+            needsLayout = true
+            inputContext?.discardMarkedText()
+        }
     }
 
     /// Returns the range of selected text.

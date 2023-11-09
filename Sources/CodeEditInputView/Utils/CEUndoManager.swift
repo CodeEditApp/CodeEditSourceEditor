@@ -208,7 +208,7 @@ public class CEUndoManager {
     }
 
     // MARK: - Disable
-    
+
     /// Sets the undo manager to ignore incoming mutations until the matching `enable` method is called.
     /// Cannot be nested.
     public func disable() {

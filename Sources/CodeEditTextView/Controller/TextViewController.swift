@@ -9,7 +9,6 @@ import AppKit
 import CodeEditInputView
 import CodeEditLanguages
 import SwiftUI
-import Common
 import Combine
 import TextFormation
 

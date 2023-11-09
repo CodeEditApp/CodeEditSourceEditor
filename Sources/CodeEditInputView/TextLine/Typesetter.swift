@@ -19,9 +19,8 @@ final class Typesetter {
 
     func typeset(
         _ string: NSAttributedString,
-        maxWidth: CGFloat,
-        lineHeightMultiplier: CGFloat,
-        estimatedLineHeight: CGFloat,
+        displayData: TextLine.DisplayData,
+        breakStrategy: LineBreakStrategy,
         markedRanges: MarkedTextManager.MarkedRanges?
     ) {
         lineFragments.removeAll()
@@ -36,9 +35,10 @@ final class Typesetter {
         }
         self.typesetter = CTTypesetterCreateWithAttributedString(self.string)
         generateLines(
-            maxWidth: maxWidth,
-            lineHeightMultiplier: lineHeightMultiplier,
-            estimatedLineHeight: estimatedLineHeight
+            maxWidth: displayData.maxWidth,
+            lineHeightMultiplier: displayData.lineHeightMultiplier,
+            estimatedLineHeight: displayData.estimatedLineHeight,
+            breakStrategy: breakStrategy
         )
     }
 
@@ -49,7 +49,12 @@ final class Typesetter {
     ///   - maxWidth: The maximum width the line can be.
     ///   - lineHeightMultiplier: The multiplier to apply to an empty line's height.
     ///   - estimatedLineHeight: The estimated height of an empty line.
-    private func generateLines(maxWidth: CGFloat, lineHeightMultiplier: CGFloat, estimatedLineHeight: CGFloat) {
+    private func generateLines(
+        maxWidth: CGFloat,
+        lineHeightMultiplier: CGFloat,
+        estimatedLineHeight: CGFloat,
+        breakStrategy: LineBreakStrategy
+    ) {
         guard let typesetter else { return }
         var lines: [TextLineStorage<LineFragment>.BuildItem] = []
         var height: CGFloat = 0
@@ -69,7 +74,7 @@ final class Typesetter {
             while startIndex < string.length {
                 let lineBreak = suggestLineBreak(
                     using: typesetter,
-                    strategy: .word, // TODO: Make this configurable
+                    strategy: breakStrategy,
                     startingOffset: startIndex,
                     constrainingWidth: maxWidth
                 )

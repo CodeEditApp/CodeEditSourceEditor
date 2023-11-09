@@ -6,7 +6,6 @@
 //
 
 import AppKit
-import Common
 import TextStory
 
 // Disabling file length and type body length as the methods and variables contained in this file cannot be moved
@@ -150,6 +149,15 @@ public class TextView: NSView, NSTextContent {
         }
         set {
             typingAttributes[.kern] = newValue
+        }
+    }
+
+    public var lineBreakStrategy: LineBreakStrategy {
+        get {
+            layoutManager?.lineBreakStrategy ?? .word
+        }
+        set {
+            layoutManager.lineBreakStrategy = newValue
         }
     }
 
@@ -329,6 +337,11 @@ public class TextView: NSView, NSTextContent {
     }
 
     // MARK: - View Lifecycle
+
+    override public func layout() {
+        layoutManager.layoutLines()
+        super.layout()
+    }
 
     override public func viewWillMove(toWindow newWindow: NSWindow?) {
         super.viewWillMove(toWindow: newWindow)

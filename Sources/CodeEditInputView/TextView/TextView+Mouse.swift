@@ -6,7 +6,6 @@
 //
 
 import AppKit
-import Common
 
 extension TextView {
     override public func mouseDown(with event: NSEvent) {
@@ -25,6 +24,7 @@ extension TextView {
                 selectionManager.addSelectedRange(NSRange(location: offset, length: 0))
             } else {
                 selectionManager.setSelectedRange(NSRange(location: offset, length: 0))
+                unmarkTextIfNeeded()
             }
         case 2:
             unmarkText()

@@ -5,8 +5,8 @@ final class TextSelectionManagerTests: XCTestCase {
     var textStorage: NSTextStorage!
     var layoutManager: TextLayoutManager!
 
-    override func setUp() {
-        textStorage = NSTextStorage(string: "Loren Ipsum 💯")
+    func selectionManager(_ text: String = "Loren Ipsum 💯") -> TextSelectionManager {
+        textStorage = NSTextStorage(string: text)
         layoutManager = TextLayoutManager(
             textStorage: textStorage,
             lineHeightMultiplier: 1.0,
@@ -14,10 +14,7 @@ final class TextSelectionManagerTests: XCTestCase {
             textView: NSView(),
             delegate: nil
         )
-    }
-
-    func selectionManager() -> TextSelectionManager {
-        TextSelectionManager(
+        return TextSelectionManager(
             layoutManager: layoutManager,
             textStorage: textStorage,
             layoutView: nil,
@@ -76,18 +73,148 @@ final class TextSelectionManagerTests: XCTestCase {
     }
 
     func test_updateSelectionLeftWord() {
-        // TODO
+        let selectionManager = selectionManager()
+        let locations = [2, 0, 12]
+        let expectedRanges = [(0, 2), (0, 0), (6, 6)]
+
+        for idx in locations.indices {
+            let range = selectionManager.rangeOfSelection(
+                from: locations[idx],
+                direction: .backward,
+                destination: .word,
+                decomposeCharacters: false
+            )
+
+            XCTAssert(
+                range.location == expectedRanges[idx].0,
+                "Invalid Location. Testing location \(locations[idx]). Expected \(expectedRanges[idx]). Got \(range)"
+            )
+            XCTAssert(
+                range.length == expectedRanges[idx].1,
+                "Invalid Location. Testing location \(locations[idx]). Expected \(expectedRanges[idx]). Got \(range)"
+            )
+        }
     }
 
     func test_updateSelectionRightWord() {
-        // TODO
+        // "Loren Ipsum 💯"
+        let selectionManager = selectionManager()
+        let locations = [2, 0, 6]
+        let expectedRanges = [(2, 3), (0, 5), (6, 5)]
+
+        for idx in locations.indices {
+            let range = selectionManager.rangeOfSelection(
+                from: locations[idx],
+                direction: .forward,
+                destination: .word,
+                decomposeCharacters: false
+            )
+
+            XCTAssert(
+                range.location == expectedRanges[idx].0,
+                "Invalid Location. Testing location \(locations[idx]). Expected \(expectedRanges[idx]). Got \(range)"
+            )
+            XCTAssert(
+                range.length == expectedRanges[idx].1,
+                "Invalid Location. Testing location \(locations[idx]). Expected \(expectedRanges[idx]). Got \(range)"
+            )
+        }
     }
 
     func test_updateSelectionLeftLine() {
-        // TODO
+        // "Loren Ipsum 💯"
+        let selectionManager = selectionManager()
+        let locations = [2, 0, 14, 12]
+        let expectedRanges = [(0, 2), (0, 0), (0, 14), (0, 12)]
+
+        for idx in locations.indices {
+            let range = selectionManager.rangeOfSelection(
+                from: locations[idx],
+                direction: .backward,
+                destination: .line,
+                decomposeCharacters: false
+            )
+
+            XCTAssert(
+                range.location == expectedRanges[idx].0,
+                "Invalid Location. Testing location \(locations[idx]). Expected \(expectedRanges[idx]). Got \(range)"
+            )
+            XCTAssert(
+                range.length == expectedRanges[idx].1,
+                "Invalid Location. Testing location \(locations[idx]). Expected \(expectedRanges[idx]). Got \(range)"
+            )
+        }
     }
 
     func test_updateSelectionRightLine() {
-        // TODO
+        let selectionManager = selectionManager("Loren Ipsum 💯\nHello World")
+        let locations = [2, 0, 14, 12, 17]
+        let expectedRanges = [(2, 12), (0, 14), (14, 0), (12, 2), (17, 9)]
+
+        for idx in locations.indices {
+            let range = selectionManager.rangeOfSelection(
+                from: locations[idx],
+                direction: .forward,
+                destination: .line,
+                decomposeCharacters: false
+            )
+
+            XCTAssert(
+                range.location == expectedRanges[idx].0,
+                "Invalid Location. Testing location \(locations[idx]). Expected \(expectedRanges[idx]). Got \(range)"
+            )
+            XCTAssert(
+                range.length == expectedRanges[idx].1,
+                "Invalid Location. Testing location \(locations[idx]). Expected \(expectedRanges[idx]). Got \(range)"
+            )
+        }
+    }
+
+    func test_updateSelectionUpDocument() {
+        let selectionManager = selectionManager("Loren Ipsum 💯\nHello World\n1\n2\n3\n")
+        let locations = [0, 27, 30, 33]
+        let expectedRanges = [(0, 0), (0, 27), (0, 30), (0, 33)]
+
+        for idx in locations.indices {
+            let range = selectionManager.rangeOfSelection(
+                from: locations[idx],
+                direction: .up,
+                destination: .document,
+                decomposeCharacters: false
+            )
+
+            XCTAssert(
+                range.location == expectedRanges[idx].0,
+                "Invalid Location. Testing location \(locations[idx]). Expected \(expectedRanges[idx]). Got \(range)"
+            )
+            XCTAssert(
+                range.length == expectedRanges[idx].1,
+                "Invalid Location. Testing location \(locations[idx]). Expected \(expectedRanges[idx]). Got \(range)"
+            )
+        }
+    }
+
+    func test_updateSelectionDownDocument() {
+        let selectionManager = selectionManager("Loren Ipsum 💯\nHello World\n1\n2\n3\n")
+        let locations = [0, 2, 27, 30, 33]
+        let expectedRanges = [(0, 33), (2, 31), (27, 6), (30, 3), (33, 0)]
+
+        for idx in locations.indices {
+            let range = selectionManager.rangeOfSelection(
+                from: locations[idx],
+                direction: .down,
+                destination: .document,
+                decomposeCharacters: false
+            )
+
+            XCTAssert(
+                range.location == expectedRanges[idx].0,
+                "Invalid Location. Testing location \(locations[idx]). Expected \(expectedRanges[idx]). Got \(range)"
+            )
+            XCTAssert(
+                range.length == expectedRanges[idx].1,
+                "Invalid Location. Testing location \(locations[idx]). Expected \(expectedRanges[idx]). Got \(range)"
+            )
+        }
     }
 }
