@@ -78,10 +78,14 @@ public class CEUndoManager {
 
     // MARK: - Init
 
-    public init(textView: TextView) {
-        self.textView = textView
+    public init() {
         self.manager = DelegatedUndoManager()
         manager.parent = self
+    }
+
+    convenience init(textView: TextView) {
+        self.init()
+        self.textView = textView
     }
 
     // MARK: - Undo/Redo

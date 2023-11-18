@@ -8,10 +8,10 @@
 import AppKit
 
 extension TextView {
-    internal func setUpLayoutManager(lineHeight: CGFloat, wrapLines: Bool) -> TextLayoutManager {
+    internal func setUpLayoutManager(lineHeightMultiplier: CGFloat, wrapLines: Bool) -> TextLayoutManager {
         TextLayoutManager(
             textStorage: textStorage,
-            lineHeightMultiplier: lineHeight,
+            lineHeightMultiplier: lineHeightMultiplier,
             wrapLines: wrapLines,
             textView: self,
             delegate: self

@@ -1,6 +1,6 @@
 //
 //  TextViewController.swift
-//  
+//  CodeEditTextView
 //
 //  Created by Khan Winter on 6/25/23.
 //
@@ -12,7 +12,15 @@ import SwiftUI
 import Combine
 import TextFormation
 
+/// # TextViewController
+///
+/// A view controller class for managing a source editor. Uses ``CodeEditInputView/TextView`` for input and rendering,
+/// tree-sitter for syntax highlighting, and TextFormation for live editing completions.
+/// 
 public class TextViewController: NSViewController {
+    // swiftlint:disable:next line_length
+    public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
+
     var scrollView: NSScrollView!
     var textView: TextView!
     var gutterView: GutterView!
@@ -23,7 +31,7 @@ public class TextViewController: NSViewController {
 
     /// The string contents.
     public var string: String {
-        textStorage.string
+        textView.string
     }
 
     /// The associated `CodeLanguage`
@@ -37,6 +45,7 @@ public class TextViewController: NSViewController {
     public var font: NSFont {
         didSet {
             textView.font = font
+            highlighter?.invalidate()
         }
     }
 
@@ -44,7 +53,10 @@ public class TextViewController: NSViewController {
     public var theme: EditorTheme {
         didSet {
             textView.layoutManager.setNeedsLayout()
-            textStorage.setAttributes(attributesFor(nil), range: NSRange(location: 0, length: textStorage.length))
+            textView.textStorage.setAttributes(
+                attributesFor(nil),
+                range: NSRange(location: 0, length: textView.textStorage.length)
+            )
             highlighter?.invalidate()
         }
     }
@@ -53,6 +65,8 @@ public class TextViewController: NSViewController {
     public var tabWidth: Int {
         didSet {
             paragraphStyle = generateParagraphStyle()
+            textView.layoutManager.setNeedsLayout()
+            highlighter?.invalidate()
         }
     }
 
@@ -77,8 +91,8 @@ public class TextViewController: NSViewController {
         }
     }
 
-    /// The current cursor position e.g. (1, 1)
-    public var cursorPosition: Binding<(Int, Int)>
+    /// The current cursors' positions ordered by the location of the cursor.
+    internal(set) public var cursorPositions: [CursorPosition] = []
 
     /// The editorOverscroll to use for the textView over scroll
     ///
@@ -114,6 +128,7 @@ public class TextViewController: NSViewController {
     public var letterSpacing: Double = 1.0 {
         didSet {
             textView.letterSpacing = letterSpacing
+            highlighter?.invalidate()
         }
     }
 
@@ -124,8 +139,16 @@ public class TextViewController: NSViewController {
         }
     }
 
-    internal var textStorage: NSTextStorage
-    internal var storageDelegate: MultiStorageDelegate!
+    /// Passthrough value for the `textView`s string
+    public var text: String {
+        get {
+            textView.string
+        }
+        set {
+            self.setText(newValue)
+        }
+    }
+
     internal var highlighter: Highlighter?
 
     private var fontCharWidth: CGFloat { (" " as NSString).size(withAttributes: [.font: font]).width }
@@ -158,7 +181,7 @@ public class TextViewController: NSViewController {
         indentOption: IndentOption,
         lineHeight: CGFloat,
         wrapLines: Bool,
-        cursorPosition: Binding<(Int, Int)>,
+        cursorPositions: [CursorPosition],
         editorOverscroll: CGFloat,
         useThemeBackground: Bool,
         highlightProvider: HighlightProviding?,
@@ -169,7 +192,6 @@ public class TextViewController: NSViewController {
         bracketPairHighlight: BracketPairHighlight?,
         undoManager: CEUndoManager? = nil
     ) {
-        self.textStorage = NSTextStorage(string: string)
         self.language = language
         self.font = font
         self.theme = theme
@@ -177,7 +199,7 @@ public class TextViewController: NSViewController {
         self.indentOption = indentOption
         self.lineHeightMultiple = lineHeight
         self.wrapLines = wrapLines
-        self.cursorPosition = cursorPosition
+        self.cursorPositions = cursorPositions
         self.editorOverscroll = editorOverscroll
         self.useThemeBackground = useThemeBackground
         self.highlightProvider = highlightProvider
@@ -188,9 +210,19 @@ public class TextViewController: NSViewController {
         self.bracketPairHighlight = bracketPairHighlight
         self._undoManager = undoManager
 
-        self.storageDelegate = MultiStorageDelegate()
-
         super.init(nibName: nil, bundle: nil)
+
+        self.textView = TextView(
+            string: string,
+            font: font,
+            textColor: theme.text,
+            lineHeightMultiplier: lineHeightMultiple,
+            wrapLines: wrapLines,
+            isEditable: isEditable,
+            isSelectable: isSelectable,
+            letterSpacing: letterSpacing,
+            delegate: self
+        )
     }
 
     required init?(coder: NSCoder) {
@@ -202,6 +234,7 @@ public class TextViewController: NSViewController {
     public func setText(_ text: String) {
         self.textView.setText(text)
         self.setUpHighlighter()
+        self.gutterView.setNeedsDisplay(self.gutterView.frame)
     }
 
     // MARK: Paragraph Style
@@ -257,9 +290,11 @@ public class TextViewController: NSViewController {
     }
 
     deinit {
+        if let highlighter {
+            textView.removeStorageDelegate(highlighter)
+        }
         highlighter = nil
         highlightProvider = nil
-        storageDelegate = nil
         NotificationCenter.default.removeObserver(self)
         cancellables.forEach { $0.cancel() }
     }

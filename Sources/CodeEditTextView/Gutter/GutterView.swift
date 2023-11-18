@@ -194,12 +194,14 @@ public class GutterView: NSView {
         guard let context = NSGraphicsContext.current?.cgContext else {
             return
         }
+        CATransaction.begin()
         superview?.clipsToBounds = false
         superview?.layer?.masksToBounds = false
         layer?.backgroundColor = backgroundColor?.cgColor
         updateWidthIfNeeded()
         drawSelectedLines(context)
         drawLineNumbers(context)
+        CATransaction.commit()
     }
 
     deinit {

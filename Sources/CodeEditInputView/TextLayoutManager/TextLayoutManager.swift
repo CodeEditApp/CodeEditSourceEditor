@@ -122,6 +122,7 @@ public class TextLayoutManager: NSObject {
     internal func prepareTextLines() {
         guard lineStorage.count == 0, let textStorage else { return }
         #if DEBUG
+        // Grab some performance information if debugging.
         var info = mach_timebase_info()
         guard mach_timebase_info(&info) == KERN_SUCCESS else { return }
         let start = mach_absolute_time()
@@ -134,7 +135,8 @@ public class TextLayoutManager: NSObject {
         let end = mach_absolute_time()
         let elapsed = end - start
         let nanos = elapsed * UInt64(info.numer) / UInt64(info.denom)
-        print("Text Layout Manager built in: ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC), "ms")
+        let msec = TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC)
+        logger.info("TextLayoutManager built in: \(msec, privacy: .public)ms")
         #endif
     }
 
@@ -229,6 +231,7 @@ public class TextLayoutManager: NSObject {
     /// Lays out all visible lines
     internal func layoutLines() { // swiftlint:disable:this function_body_length
         guard let visibleRect = delegate?.visibleRect, !isInTransaction, let textStorage else { return }
+        CATransaction.begin()
         let minY = max(visibleRect.minY, 0)
         let maxY = max(visibleRect.maxY, 0)
         let originalHeight = lineStorage.height
@@ -294,6 +297,7 @@ public class TextLayoutManager: NSObject {
         }
 
         needsLayout = false
+        CATransaction.commit()
     }
 
     /// Lays out a single text line.

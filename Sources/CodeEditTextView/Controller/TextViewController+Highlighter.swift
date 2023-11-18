@@ -1,6 +1,6 @@
 //
 //  TextViewController+Highlighter.swift
-//  
+//  CodeEditTextView
 //
 //  Created by Khan Winter on 10/14/23.
 //
@@ -11,7 +11,7 @@ import SwiftTreeSitter
 extension TextViewController {
     internal func setUpHighlighter() {
         if let highlighter {
-            storageDelegate.removeDelegate(highlighter)
+            textView.removeStorageDelegate(highlighter)
             self.highlighter = nil
         }
 
@@ -22,7 +22,7 @@ extension TextViewController {
             attributeProvider: self,
             language: language
         )
-        storageDelegate.addDelegate(highlighter!)
+        textView.addStorageDelegate(highlighter!)
         setHighlightProvider(self.highlightProvider)
     }
 

@@ -1,6 +1,6 @@
 //
 //  TextViewController+LoadView.swift
-//
+//  CodeEditTextView
 //
 //  Created by Khan Winter on 10/14/23.
 //
@@ -12,18 +12,6 @@ extension TextViewController {
     // swiftlint:disable:next function_body_length
     override public func loadView() {
         scrollView = NSScrollView()
-        textView = TextView(
-            textStorage: textStorage,
-            font: font,
-            textColor: theme.text,
-            lineHeight: lineHeightMultiple,
-            wrapLines: wrapLines,
-            isEditable: isEditable,
-            isSelectable: isSelectable,
-            letterSpacing: letterSpacing,
-            delegate: self,
-            storageDelegate: storageDelegate
-        )
         textView.postsFrameChangedNotifications = true
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.selectionManager.insertionPointColor = theme.insertionPoint
@@ -67,6 +55,10 @@ extension TextViewController {
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+
+        if !cursorPositions.isEmpty {
+            setCursorPositions(cursorPositions)
+        }
 
         // Layout on scroll change
         NotificationCenter.default.addObserver(

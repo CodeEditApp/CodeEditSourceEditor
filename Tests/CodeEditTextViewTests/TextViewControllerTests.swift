@@ -31,7 +31,6 @@ final class TextViewControllerTests: XCTestCase {
             comments: .systemGreen
         )
         controller = TextViewController(
-            string: "",
             language: .default,
             font: .monospacedSystemFont(ofSize: 11, weight: .medium),
             theme: theme,
@@ -39,7 +38,7 @@ final class TextViewControllerTests: XCTestCase {
             indentOption: .spaces(count: 4),
             lineHeight: 1.0,
             wrapLines: true,
-            cursorPosition: .constant((1, 1)),
+            cursorPositions: [],
             editorOverscroll: 0.5,
             useThemeBackground: true,
             highlightProvider: nil,
@@ -52,6 +51,8 @@ final class TextViewControllerTests: XCTestCase {
 
         controller.loadView()
     }
+
+    // MARK: Capture Names
 
     func test_captureNames() throws {
         // test for "keyword"
@@ -76,6 +77,8 @@ final class TextViewControllerTests: XCTestCase {
         let color4 = controller.attributesFor(CaptureName(rawValue: captureName4))[.foregroundColor] as? NSColor
         XCTAssertEqual(color4, NSColor.textColor)
     }
+
+    // MARK: Overscroll
 
     func test_editorOverScroll() throws {
         let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
@@ -103,6 +106,8 @@ final class TextViewControllerTests: XCTestCase {
         // editorOverscroll: 1.0
         XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 87.0)
     }
+
+    // MARK: Insets
 
     func test_editorInsets() throws {
         let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
@@ -153,6 +158,8 @@ final class TextViewControllerTests: XCTestCase {
         // editorOverscroll: 0
         XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 0)
     }
+
+    // MARK: Indent
 
     func test_indentOptionString() {
         XCTAssertEqual(" ", IndentOption.spaces(count: 1).stringValue)
@@ -223,34 +230,36 @@ final class TextViewControllerTests: XCTestCase {
         controller.letterSpacing = 1.0
     }
 
+    // MARK: Bracket Highlights
+
     func test_bracketHighlights() {
         controller.viewDidLoad()
         controller.bracketPairHighlight = nil
         controller.textView.string = "{ Loren Ipsum {} }"
-        controller.setCursorPosition((1, 2)) // After first opening {
+        controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssert(controller.highlightLayers.isEmpty, "Controller added highlight layer when setting is set to `nil`")
-        controller.setCursorPosition((1, 3))
+        controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
 
         controller.bracketPairHighlight = .bordered(color: .black)
         controller.textView.setNeedsDisplay()
-        controller.setCursorPosition((1, 2)) // After first opening {
+        controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssert(controller.highlightLayers.count == 2, "Controller created an incorrect number of layers for bordered. Expected 2, found \(controller.highlightLayers.count)")
-        controller.setCursorPosition((1, 3))
+        controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
         XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove bracket pair layers.")
 
         controller.bracketPairHighlight = .underline(color: .black)
-        controller.setCursorPosition((1, 2)) // After first opening {
+        controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssert(controller.highlightLayers.count == 2, "Controller created an incorrect number of layers for underline. Expected 2, found \(controller.highlightLayers.count)")
-        controller.setCursorPosition((1, 3))
+        controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
         XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove bracket pair layers.")
 
         controller.bracketPairHighlight = .flash
-        controller.setCursorPosition((1, 2)) // After first opening {
+        controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssert(controller.highlightLayers.count == 1, "Controller created more than one layer for flash animation. Expected 1, found \(controller.highlightLayers.count)")
-        controller.setCursorPosition((1, 3))
+        controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
         XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove bracket pair layers.")
 
-        controller.setCursorPosition((1, 2)) // After first opening {
+        controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssert(controller.highlightLayers.count == 1, "Controller created more than one layer for flash animation. Expected 1, found \(controller.highlightLayers.count)")
         let exp = expectation(description: "Test after 0.8 seconds")
         let result = XCTWaiter.wait(for: [exp], timeout: 0.8)
@@ -292,6 +301,107 @@ final class TextViewControllerTests: XCTestCase {
         controller.textView.string = " Loren Ipsum {} }"
         idx = controller.findClosingPair("}", "{", from: 17, limit: 0, reverse: true)
         XCTAssert(idx == nil, "Walking backwards with missing pair failed. Expected `nil`, found: `\(String(describing: idx))`")
+    }
+
+    // MARK: Set Text
+
+    func test_setText() {
+        controller.textView.string = "Hello World"
+        controller.textView.selectionManager.setSelectedRange(NSRange(location: 1, length: 2))
+
+        controller.setText("\nHello World with newline!")
+
+        XCTAssert(controller.string == "\nHello World with newline!")
+        XCTAssertEqual(controller.cursorPositions.count, 1)
+        XCTAssertEqual(controller.cursorPositions[0].line, 2)
+        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+        XCTAssertEqual(controller.cursorPositions[0].range.location, 1)
+        XCTAssertEqual(controller.cursorPositions[0].range.length, 2)
+        XCTAssertEqual(controller.textView.selectionManager.textSelections.count, 1)
+        XCTAssertEqual(controller.textView.selectionManager.textSelections[0].range.location, 1)
+        XCTAssertEqual(controller.textView.selectionManager.textSelections[0].range.length, 2)
+    }
+
+    // MARK: Cursor Positions
+
+    func test_cursorPositionRangeInit() {
+        controller.setText("Hello World")
+
+        // Test adding a position returns a valid one
+        controller.setCursorPositions([CursorPosition(range: NSRange(location: 0, length: 5))])
+        XCTAssertEqual(controller.cursorPositions.count, 1)
+        XCTAssertEqual(controller.cursorPositions[0].range.location, 0)
+        XCTAssertEqual(controller.cursorPositions[0].range.length, 5)
+        XCTAssertEqual(controller.cursorPositions[0].line, 1)
+        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+
+        // Test an invalid position is ignored
+        controller.setCursorPositions([CursorPosition(range: NSRange(location: -1, length: 25))])
+        XCTAssertTrue(controller.cursorPositions.count == 0)
+
+        // Test that column and line are correct
+        controller.setText("1\n2\n3\n4\n")
+        controller.setCursorPositions([CursorPosition(range: NSRange(location: 2, length: 0))])
+        XCTAssertEqual(controller.cursorPositions.count, 1)
+        XCTAssertEqual(controller.cursorPositions[0].range.location, 2)
+        XCTAssertEqual(controller.cursorPositions[0].range.length, 0)
+        XCTAssertEqual(controller.cursorPositions[0].line, 2)
+        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+
+        // Test order and validity of multiple positions.
+        controller.setCursorPositions([
+            CursorPosition(range: NSRange(location: 2, length: 0)),
+            CursorPosition(range: NSRange(location: 5, length: 1))
+        ])
+        XCTAssertEqual(controller.cursorPositions.count, 2)
+        XCTAssertEqual(controller.cursorPositions[0].range.location, 2)
+        XCTAssertEqual(controller.cursorPositions[0].range.length, 0)
+        XCTAssertEqual(controller.cursorPositions[0].line, 2)
+        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+        XCTAssertEqual(controller.cursorPositions[1].range.location, 5)
+        XCTAssertEqual(controller.cursorPositions[1].range.length, 1)
+        XCTAssertEqual(controller.cursorPositions[1].line, 3)
+        XCTAssertEqual(controller.cursorPositions[1].column, 2)
+    }
+
+    func test_cursorPositionRowColInit() {
+        controller.setText("Hello World")
+
+        // Test adding a position returns a valid one
+        controller.setCursorPositions([CursorPosition(line: 1, column: 1)])
+        XCTAssertEqual(controller.cursorPositions.count, 1)
+        XCTAssertEqual(controller.cursorPositions[0].range.location, 0)
+        XCTAssertEqual(controller.cursorPositions[0].range.length, 0)
+        XCTAssertEqual(controller.cursorPositions[0].line, 1)
+        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+
+        // Test an invalid position is ignored
+        controller.setCursorPositions([CursorPosition(line: -1, column: 10)])
+        XCTAssertTrue(controller.cursorPositions.count == 0)
+
+        // Test that column and line are correct
+        controller.setText("1\n2\n3\n4\n")
+        controller.setCursorPositions([CursorPosition(line: 2, column: 1)])
+        XCTAssertEqual(controller.cursorPositions.count, 1)
+        XCTAssertEqual(controller.cursorPositions[0].range.location, 2)
+        XCTAssertEqual(controller.cursorPositions[0].range.length, 0)
+        XCTAssertEqual(controller.cursorPositions[0].line, 2)
+        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+
+        // Test order and validity of multiple positions.
+        controller.setCursorPositions([
+            CursorPosition(line: 1, column: 1),
+            CursorPosition(line: 3, column: 1)
+        ])
+        XCTAssertEqual(controller.cursorPositions.count, 2)
+        XCTAssertEqual(controller.cursorPositions[0].range.location, 0)
+        XCTAssertEqual(controller.cursorPositions[0].range.length, 0)
+        XCTAssertEqual(controller.cursorPositions[0].line, 1)
+        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+        XCTAssertEqual(controller.cursorPositions[1].range.location, 4)
+        XCTAssertEqual(controller.cursorPositions[1].range.length, 0)
+        XCTAssertEqual(controller.cursorPositions[1].line, 3)
+        XCTAssertEqual(controller.cursorPositions[1].column, 1)
     }
 }
 // swiftlint:enable all

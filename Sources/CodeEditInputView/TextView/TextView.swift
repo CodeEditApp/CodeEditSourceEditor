@@ -9,26 +9,38 @@ import AppKit
 import TextStory
 
 // Disabling file length and type body length as the methods and variables contained in this file cannot be moved
-// to extensions without a lot of work.
+// to extensions.
 // swiftlint:disable type_body_length
 
+/// # Text View
 ///
+/// A view that draws and handles user interactions with text.
+/// Optimized for line-based documents, does not attempt to have feature parity with `NSTextView`.
+///
+/// The text view maintains multiple helper classes for selecting, editing, and laying out text.
 /// ```
 /// TextView
-/// |-> TextLayoutManager          Creates, manages, and lays out text lines from a line storage
-/// |  |-> [TextLine]              Represents a text line
-/// |  |   |-> Typesetter          Lays out and calculates line fragments
-/// |  |   |-> [LineFragment]      Represents a visual text line, stored in a line storage for long lines
+/// |-> NSTextStorage              Base text storage.
+/// |-> TextLayoutManager          Creates, manages, and lays out text lines.
+/// |  |-> TextLineStorage         Extremely fast object for storing and querying lines of text. Does not store text.
+/// |  |-> [TextLine]              Represents a line of text.
+/// |  |   |-> Typesetter          Calculates line breaks and other layout information for text lines.
+/// |  |   |-> [LineFragment]      Represents a visual line of text, stored in an internal line storage object.
 /// |  |-> [LineFragmentView]      Reusable line fragment view that draws a line fragment.
-/// |  |-> MarkedRangeManager      Manages marked ranges, updates layout if needed to accomodate.
+/// |  |-> MarkedRangeManager      Manages marked ranges, updates layout if needed.
 /// |
 /// |-> TextSelectionManager       Maintains, modifies, and renders text selections
-/// |  |-> [TextSelection]
+/// |  |-> [TextSelection]         Represents a range of selected text.
 /// ```
+///
+/// Conforms to [`NSTextContent`](https://developer.apple.com/documentation/appkit/nstextcontent) and
+/// [`NSTextInputClient`](https://developer.apple.com/documentation/appkit/nstextinputclient) to work well with system
+/// text interactions such as inserting text and marked text.
+///
 public class TextView: NSView, NSTextContent {
     // MARK: - Statics
 
-    /// The default typing attributes. Defaults to:
+    /// The default typing attributes:
     /// - font: System font, size 12
     /// - foregroundColor: System text color
     /// - kern: 0.0
@@ -44,6 +56,7 @@ public class TextView: NSView, NSTextContent {
 
     // MARK: - Configuration
 
+    /// The string for the text view.
     public var string: String {
         get {
             textStorage.string
@@ -111,6 +124,7 @@ public class TextView: NSView, NSTextContent {
         }
     }
 
+    /// Determines if the text view's content can be edited.
     public var isEditable: Bool {
         didSet {
             setNeedsDisplay()
@@ -121,6 +135,7 @@ public class TextView: NSView, NSTextContent {
         }
     }
 
+    /// Determines if the text view responds to selection events, such as clicks.
     public var isSelectable: Bool = true {
         didSet {
             if !isSelectable {
@@ -133,6 +148,7 @@ public class TextView: NSView, NSTextContent {
         }
     }
 
+    /// The edge insets for the text view.
     public var edgeInsets: HorizontalEdgeInsets {
         get {
             layoutManager?.edgeInsets ?? .zero
@@ -152,6 +168,7 @@ public class TextView: NSView, NSTextContent {
         }
     }
 
+    /// The strategy to use when breaking lines. Defaults to ``LineBreakStrategy/word``.
     public var lineBreakStrategy: LineBreakStrategy {
         get {
             layoutManager?.lineBreakStrategy ?? .word
@@ -163,10 +180,17 @@ public class TextView: NSView, NSTextContent {
 
     open var contentType: NSTextContentType?
 
+    /// The text view's delegate.
     public weak var delegate: TextViewDelegate?
 
+    /// The text storage object for the text view.
+    /// - Warning: Do not update the text storage object directly. Doing so will very likely break the text view's
+    ///            layout system. Use methods like ``TextView/replaceCharacters(in:with:)-3h9uo`` or
+    ///            ``TextView/insertText(_:)`` to modify content.
     private(set) public var textStorage: NSTextStorage!
+    /// The layout manager for the text view.
     private(set) public var layoutManager: TextLayoutManager!
+    /// The selection manager for the text view.
     private(set) public var selectionManager: TextSelectionManager!
 
     // MARK: - Private Properties
@@ -187,57 +211,42 @@ public class TextView: NSView, NSTextContent {
         return enclosingScrollView
     }
 
-    private weak var storageDelegate: MultiStorageDelegate!
+    internal var storageDelegate: MultiStorageDelegate!
 
     // MARK: - Init
 
-    public convenience init(
+    /// Initializes the text view.
+    /// - Parameters:
+    ///   - string: The contents of the text view.
+    ///   - font: The default font.
+    ///   - textColor: The default text color.
+    ///   - lineHeightMultiplier: The multiplier to use for line heights.
+    ///   - wrapLines: Determines how the view will wrap lines to the viewport.
+    ///   - isEditable: Determines if the view is editable.
+    ///   - isSelectable: Determines if the view is selectable.
+    ///   - letterSpacing: Sets the letter spacing on the view.
+    ///   - delegate: The text view's delegate.
+    public init(
         string: String,
         font: NSFont,
         textColor: NSColor,
-        lineHeight: CGFloat,
+        lineHeightMultiplier: CGFloat,
         wrapLines: Bool,
         isEditable: Bool,
         isSelectable: Bool,
         letterSpacing: Double,
-        delegate: TextViewDelegate,
-        storageDelegate: MultiStorageDelegate
+        delegate: TextViewDelegate
     ) {
-        self.init(
-            textStorage: NSTextStorage(string: string),
-            font: font,
-            textColor: textColor,
-            lineHeight: lineHeight,
-            wrapLines: wrapLines,
-            isEditable: isEditable,
-            isSelectable: isSelectable,
-            letterSpacing: letterSpacing,
-            delegate: delegate,
-            storageDelegate: storageDelegate
-        )
-    }
-
-    public init(
-        textStorage: NSTextStorage,
-        font: NSFont,
-        textColor: NSColor,
-        lineHeight: CGFloat,
-        wrapLines: Bool,
-        isEditable: Bool,
-        isSelectable: Bool,
-        letterSpacing: Double,
-        delegate: TextViewDelegate,
-        storageDelegate: MultiStorageDelegate
-    ) {
+        self.textStorage = NSTextStorage(string: string)
         self.delegate = delegate
-        self.textStorage = textStorage
-        self.storageDelegate = storageDelegate
         self.isEditable = isEditable
         self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
         self.allowsUndo = true
 
         super.init(frame: .zero)
+
+        self.storageDelegate = MultiStorageDelegate()
 
         wantsLayer = true
         postsFrameChangedNotifications = true
@@ -252,7 +261,7 @@ public class TextView: NSView, NSTextContent {
         textStorage.addAttributes(typingAttributes, range: documentRange)
         textStorage.delegate = storageDelegate
 
-        layoutManager = setUpLayoutManager(lineHeight: lineHeight, wrapLines: wrapLines)
+        layoutManager = setUpLayoutManager(lineHeightMultiplier: lineHeightMultiplier, wrapLines: wrapLines)
         storageDelegate.addDelegate(layoutManager)
         selectionManager = setUpSelectionManager()
 
@@ -283,7 +292,7 @@ public class TextView: NSView, NSTextContent {
         layoutManager.reset()
 
         selectionManager.textStorage = textStorage
-        selectionManager.textSelections.removeAll()
+        selectionManager.setSelectedRanges(selectionManager.textSelections.map { $0.range })
 
         _undoManager?.clearStack()
 

@@ -19,6 +19,10 @@ extension TextView {
 
         switch event.clickCount {
         case 1:
+            guard isEditable else {
+                super.mouseDown(with: event)
+                return
+            }
             if event.modifierFlags.intersection(.deviceIndependentFlagsMask).isSuperset(of: [.control, .shift]) {
                 unmarkText()
                 selectionManager.addSelectedRange(NSRange(location: offset, length: 0))

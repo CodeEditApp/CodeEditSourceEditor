@@ -21,7 +21,7 @@ public protocol TextSelectionManagerDelegate: AnyObject {
 public class TextSelectionManager: NSObject {
     // MARK: - TextSelection
 
-    public class TextSelection: Hashable {
+    public class TextSelection: Hashable, Equatable {
         public var range: NSRange
         internal weak var view: CursorView?
         internal var boundingRect: CGRect = .zero
@@ -112,11 +112,17 @@ public class TextSelectionManager: NSObject {
 
     public func setSelectedRanges(_ ranges: [NSRange]) {
         textSelections.forEach { $0.view?.removeFromSuperview() }
-        textSelections = Set(ranges).map {
-            let selection = TextSelection(range: $0)
-            selection.suggestedXPos = layoutManager?.rectForOffset($0.location)?.minX
-            return selection
-        }
+        // Remove duplicates, invalid ranges, update suggested X position.
+        textSelections = Set(ranges)
+            .filter {
+                (0...(textStorage?.length ?? 0)).contains($0.location)
+                && (0...(textStorage?.length ?? 0)).contains($0.max)
+            }
+            .map {
+                let selection = TextSelection(range: $0)
+                selection.suggestedXPos = layoutManager?.rectForOffset($0.location)?.minX
+                return selection
+            }
         updateSelectionViews()
         NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification, object: self))
     }
