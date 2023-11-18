@@ -55,6 +55,12 @@ extension TextViewController {
         }
     }
 
+
+    /// # Dev Note
+    /// It's interesting to note that this problem could trivially be turned into a monoid, and the locations of each
+    /// pair start/end location determined when the view is loaded. It could then be parallelized for initial speed
+    /// and this lookup would be much faster.
+
     /// Finds a closing character given a pair of characters, ignores pairs inside the given pair.
     ///
     /// ```pseudocode
@@ -63,6 +69,7 @@ extension TextViewController {
     ///   } -- A naive algorithm may find this character as the closing pair, which would be incorrect.
     /// } -- Found
     /// ```
+    ///
     /// - Parameters:
     ///   - open: The opening pair to look for.
     ///   - close: The closing pair to look for.

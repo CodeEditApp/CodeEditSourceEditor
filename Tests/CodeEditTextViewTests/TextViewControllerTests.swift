@@ -234,6 +234,7 @@ final class TextViewControllerTests: XCTestCase {
     // MARK: Bracket Highlights
 
     func test_bracketHighlights() {
+        controller.scrollView.setFrameSize(NSSize(width: 500, height: 500))
         controller.viewDidLoad()
         controller.bracketPairHighlight = nil
         controller.textView.string = "{ Loren Ipsum {} }"
