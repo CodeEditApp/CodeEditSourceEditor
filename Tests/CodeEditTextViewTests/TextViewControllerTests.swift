@@ -31,6 +31,7 @@ final class TextViewControllerTests: XCTestCase {
             comments: .systemGreen
         )
         controller = TextViewController(
+            string: "",
             language: .default,
             font: .monospacedSystemFont(ofSize: 11, weight: .medium),
             theme: theme,
