@@ -55,7 +55,6 @@ extension TextViewController {
         }
     }
 
-
     /// # Dev Note
     /// It's interesting to note that this problem could trivially be turned into a monoid, and the locations of each
     /// pair start/end location determined when the view is loaded. It could then be parallelized for initial speed
