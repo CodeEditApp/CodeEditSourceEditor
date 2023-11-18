@@ -23,11 +23,11 @@ public class TextSelectionManager: NSObject {
 
     public class TextSelection: Hashable, Equatable {
         public var range: NSRange
-        internal weak var view: CursorView?
-        internal var boundingRect: CGRect = .zero
-        internal var suggestedXPos: CGFloat?
+        weak var view: CursorView?
+        var boundingRect: CGRect = .zero
+        var suggestedXPos: CGFloat?
         /// The position this selection should 'rotate' around when modifying selections.
-        internal var pivot: Int?
+        var pivot: Int?
 
         init(range: NSRange, view: CursorView? = nil) {
             self.range = range
@@ -79,10 +79,10 @@ public class TextSelectionManager: NSObject {
     public var selectionBackgroundColor: NSColor = NSColor.selectedTextBackgroundColor
 
     internal(set) public var textSelections: [TextSelection] = []
-    internal weak var layoutManager: TextLayoutManager?
-    internal weak var textStorage: NSTextStorage?
-    internal weak var layoutView: NSView?
-    internal weak var delegate: TextSelectionManagerDelegate?
+    weak var layoutManager: TextLayoutManager?
+    weak var textStorage: NSTextStorage?
+    weak var layoutView: NSView?
+    weak var delegate: TextSelectionManagerDelegate?
 
     init(
         layoutManager: TextLayoutManager,
@@ -183,7 +183,7 @@ public class TextSelectionManager: NSObject {
         }
     }
 
-    internal func removeCursors() {
+    func removeCursors() {
         for textSelection in textSelections {
             textSelection.view?.removeFromSuperview()
         }
@@ -193,7 +193,7 @@ public class TextSelectionManager: NSObject {
 
     /// Draws line backgrounds and selection rects for each selection in the given rect.
     /// - Parameter rect: The rect to draw in.
-    internal func drawSelections(in rect: NSRect) {
+    func drawSelections(in rect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext else { return }
         context.saveGState()
         var highlightedLines: Set<UUID> = []

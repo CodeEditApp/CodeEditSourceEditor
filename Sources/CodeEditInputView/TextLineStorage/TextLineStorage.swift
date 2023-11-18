@@ -30,7 +30,7 @@ public final class TextLineStorage<Data: Identifiable> {
         case none
     }
 
-    internal var root: Node<Data>?
+    var root: Node<Data>?
 
     /// The number of characters in the storage object.
     private(set) public var length: Int = 0

@@ -8,7 +8,7 @@
 import AppKit
 
 extension TextView {
-    internal func setUpLayoutManager(lineHeightMultiplier: CGFloat, wrapLines: Bool) -> TextLayoutManager {
+    func setUpLayoutManager(lineHeightMultiplier: CGFloat, wrapLines: Bool) -> TextLayoutManager {
         TextLayoutManager(
             textStorage: textStorage,
             lineHeightMultiplier: lineHeightMultiplier,
@@ -18,7 +18,7 @@ extension TextView {
         )
     }
 
-    internal func setUpSelectionManager() -> TextSelectionManager {
+    func setUpSelectionManager() -> TextSelectionManager {
         TextSelectionManager(
             layoutManager: layoutManager,
             textStorage: textStorage,

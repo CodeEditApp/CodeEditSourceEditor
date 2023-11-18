@@ -39,7 +39,7 @@ extension TextSelectionManager {
         }
     }
 
-    internal func notifyAfterEdit() {
+    func notifyAfterEdit() {
         updateSelectionViews()
         NotificationCenter.default.post(Notification(name: Self.selectionChangedNotification, object: self))
     }

@@ -26,7 +26,7 @@ extension TextView: NSDraggingSource {
         }
     }
 
-    internal func setUpDragGesture() {
+    func setUpDragGesture() {
         let dragGesture = DragSelectionGesture(target: self, action: #selector(dragGestureHandler(_:)))
         dragGesture.minimumPressDuration = NSEvent.doubleClickInterval / 3
         dragGesture.isEnabled = isSelectable

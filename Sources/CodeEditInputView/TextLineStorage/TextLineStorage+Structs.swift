@@ -9,7 +9,7 @@ import Foundation
 
 extension TextLineStorage where Data: Identifiable {
     public struct TextLinePosition {
-        internal init(data: Data, range: NSRange, yPos: CGFloat, height: CGFloat, index: Int) {
+        init(data: Data, range: NSRange, yPos: CGFloat, height: CGFloat, index: Int) {
             self.data = data
             self.range = range
             self.yPos = yPos
@@ -17,7 +17,7 @@ extension TextLineStorage where Data: Identifiable {
             self.index = index
         }
 
-        internal init(position: NodePosition) {
+        init(position: NodePosition) {
             self.data = position.node.data
             self.range = NSRange(location: position.textPos, length: position.node.length)
             self.yPos = position.yPos
@@ -37,7 +37,7 @@ extension TextLineStorage where Data: Identifiable {
         public let index: Int
     }
 
-    internal struct NodePosition {
+    struct NodePosition {
         /// The node storing information and the data stored at the position.
         let node: Node<Data>
         /// The y position of the data, on a top down y axis
@@ -48,7 +48,7 @@ extension TextLineStorage where Data: Identifiable {
         let index: Int
     }
 
-    internal struct NodeSubtreeMetadata {
+    struct NodeSubtreeMetadata {
         let height: CGFloat
         let offset: Int
         let count: Int

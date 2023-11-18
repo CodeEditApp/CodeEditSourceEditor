@@ -195,9 +195,9 @@ public class TextView: NSView, NSTextContent {
 
     // MARK: - Private Properties
 
-    internal var isFirstResponder: Bool = false
-    internal var mouseDragAnchor: CGPoint?
-    internal var mouseDragTimer: Timer?
+    var isFirstResponder: Bool = false
+    var mouseDragAnchor: CGPoint?
+    var mouseDragTimer: Timer?
 
     private var fontCharWidth: CGFloat {
         (" " as NSString).size(withAttributes: [.font: font]).width
@@ -211,7 +211,7 @@ public class TextView: NSView, NSTextContent {
         return enclosingScrollView
     }
 
-    internal var storageDelegate: MultiStorageDelegate!
+    var storageDelegate: MultiStorageDelegate!
 
     // MARK: - Init
 

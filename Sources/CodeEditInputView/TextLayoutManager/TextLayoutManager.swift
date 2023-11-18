@@ -74,13 +74,13 @@ public class TextLayoutManager: NSObject {
     /// The calculated maximum width of all laid out lines.
     /// - Note: This does not indicate *the* maximum width of the text view if all lines have not been laid out.
     ///         This will be updated if it comes across a wider line.
-    internal var maxLineWidth: CGFloat = 0 {
+    var maxLineWidth: CGFloat = 0 {
         didSet {
             delegate?.layoutManagerMaxWidthDidChange(newWidth: maxLineWidth + edgeInsets.horizontal)
         }
     }
     /// The maximum width available to lay out lines in.
-    internal var maxLineLayoutWidth: CGFloat {
+    var maxLineLayoutWidth: CGFloat {
         wrapLines ? (delegate?.textViewportSize().width ?? .greatestFiniteMagnitude) - edgeInsets.horizontal
         : .greatestFiniteMagnitude
     }
@@ -119,7 +119,7 @@ public class TextLayoutManager: NSObject {
 
     /// Prepares the layout manager for use.
     /// Parses the text storage object into lines and builds the `lineStorage` object from those lines.
-    internal func prepareTextLines() {
+    func prepareTextLines() {
         guard lineStorage.count == 0, let textStorage else { return }
         #if DEBUG
         // Grab some performance information if debugging.
@@ -141,7 +141,7 @@ public class TextLayoutManager: NSObject {
     }
 
     /// Resets the layout manager to an initial state.
-    internal func reset() {
+    func reset() {
         lineStorage.removeAll()
         visibleLineIds.removeAll()
         viewReuseQueue.queuedViews.removeAll()
@@ -229,7 +229,7 @@ public class TextLayoutManager: NSObject {
     // MARK: - Layout
 
     /// Lays out all visible lines
-    internal func layoutLines() { // swiftlint:disable:this function_body_length
+    func layoutLines() { // swiftlint:disable:this function_body_length
         guard let visibleRect = delegate?.visibleRect, !isInTransaction, let textStorage else { return }
         CATransaction.begin()
         let minY = max(visibleRect.minY, 0)
