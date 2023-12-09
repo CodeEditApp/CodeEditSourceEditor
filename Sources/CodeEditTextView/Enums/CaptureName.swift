@@ -1,5 +1,5 @@
 //
-//  STTextViewController+CaptureNames.swift
+//  CaptureNames.swift
 //  CodeEditTextView
 //
 //  Created by Lukas Pistrol on 16.08.22.

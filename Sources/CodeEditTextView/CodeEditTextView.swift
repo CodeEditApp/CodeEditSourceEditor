@@ -6,10 +6,9 @@
 //
 
 import SwiftUI
-import STTextView
+import CodeEditInputView
 import CodeEditLanguages
 
-/// A `SwiftUI` wrapper for a ``STTextViewController``.
 public struct CodeEditTextView: NSViewControllerRepresentable {
 
     /// Initializes a Text Editor
@@ -22,7 +21,7 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - indentOption: The behavior to use when the tab key is pressed. Defaults to 4 spaces.
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
     ///   - wrapLines: Whether lines wrap to the width of the editor
-    ///   - editorOverscroll: The percentage for overscroll, between 0-1 (default: `0.0`)
+    ///   - editorOverscroll: The distance to overscroll the editor by.
     ///   - cursorPosition: The cursor's position in the editor, measured in `(lineNum, columnNum)`
     ///   - useThemeBackground: Determines whether the editor uses the theme's background color, or a transparent
     ///                         background color
@@ -31,6 +30,8 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     ///   - contentInsets: Insets to use to offset the content in the enclosing scroll view. Leave as `nil` to let the
     ///                    scroll view automatically adjust content insets.
     ///   - isEditable: A Boolean value that controls whether the text view allows the user to edit text.
+    ///   - isSelectable: A Boolean value that controls whether the text view allows the user to select text. If this
+    ///                   value is true, and `isEditable` is false, the editor is selectable but not editable.
     ///   - letterSpacing: The amount of space to use between letters, as a percent. Eg: `1.0` = no space, `1.5` = 1/2 a
     ///                    character's width between characters, etc. Defaults to `1.0`
     ///   - bracketPairHighlight: The type of highlight to use to highlight bracket pairs.
@@ -45,15 +46,17 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         indentOption: IndentOption = .spaces(count: 4),
         lineHeight: Double,
         wrapLines: Bool,
-        editorOverscroll: Double = 0.0,
-        cursorPosition: Binding<(Int, Int)>,
+        editorOverscroll: CGFloat = 0,
+        cursorPositions: Binding<[CursorPosition]>,
         useThemeBackground: Bool = true,
         highlightProvider: HighlightProviding? = nil,
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
+        isSelectable: Bool = true,
         letterSpacing: Double = 1.0,
         bracketPairHighlight: BracketPairHighlight? = nil,
-        undoManager: CEUndoManager? = nil
+        undoManager: CEUndoManager? = nil,
+        coordinators: [any TextViewCoordinator] = []
     ) {
         self._text = text
         self.language = language
@@ -65,13 +68,15 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         self.lineHeight = lineHeight
         self.wrapLines = wrapLines
         self.editorOverscroll = editorOverscroll
-        self._cursorPosition = cursorPosition
+        self._cursorPositions = cursorPositions
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
         self.isEditable = isEditable
+        self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
         self.bracketPairHighlight = bracketPairHighlight
-        self.undoManager = undoManager ?? CEUndoManager()
+        self.undoManager = undoManager
+        self.coordinators = coordinators
     }
 
     @Binding private var text: String
@@ -82,21 +87,23 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
     private var indentOption: IndentOption
     private var lineHeight: Double
     private var wrapLines: Bool
-    private var editorOverscroll: Double
-    @Binding private var cursorPosition: (Int, Int)
+    private var editorOverscroll: CGFloat
+    @Binding private var cursorPositions: [CursorPosition]
     private var useThemeBackground: Bool
     private var highlightProvider: HighlightProviding?
     private var contentInsets: NSEdgeInsets?
     private var isEditable: Bool
+    private var isSelectable: Bool
     private var letterSpacing: Double
     private var bracketPairHighlight: BracketPairHighlight?
-    private var undoManager: CEUndoManager
+    private var undoManager: CEUndoManager?
+    private var coordinators: [any TextViewCoordinator]
 
-    public typealias NSViewControllerType = STTextViewController
+    public typealias NSViewControllerType = TextViewController
 
-    public func makeNSViewController(context: Context) -> NSViewControllerType {
-        let controller = NSViewControllerType(
-            text: $text,
+    public func makeNSViewController(context: Context) -> TextViewController {
+        let controller = TextViewController(
+            string: text,
             language: language,
             font: font,
             theme: theme,
@@ -104,20 +111,45 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             indentOption: indentOption,
             lineHeight: lineHeight,
             wrapLines: wrapLines,
-            cursorPosition: $cursorPosition,
+            cursorPositions: cursorPositions,
             editorOverscroll: editorOverscroll,
             useThemeBackground: useThemeBackground,
             highlightProvider: highlightProvider,
             contentInsets: contentInsets,
             isEditable: isEditable,
+            isSelectable: isSelectable,
             letterSpacing: letterSpacing,
             bracketPairHighlight: bracketPairHighlight,
             undoManager: undoManager
         )
+        if controller.textView == nil {
+            controller.loadView()
+        }
+        if !cursorPositions.isEmpty {
+            controller.setCursorPositions(cursorPositions)
+        }
+
+        context.coordinator.controller = controller
+        coordinators.forEach {
+            $0.prepareCoordinator(controller: controller)
+        }
         return controller
     }
 
-    public func updateNSViewController(_ controller: NSViewControllerType, context: Context) {
+    public func makeCoordinator() -> Coordinator {
+        Coordinator(parent: self)
+    }
+
+    public func updateNSViewController(_ controller: TextViewController, context: Context) {
+        if !context.coordinator.isUpdateFromTextView {
+            // Prevent infinite loop of update notifications
+            context.coordinator.isUpdatingFromRepresentable = true
+            controller.setCursorPositions(cursorPositions)
+            context.coordinator.isUpdatingFromRepresentable = false
+        } else {
+            context.coordinator.isUpdateFromTextView = false
+        }
+
         // Do manual diffing to reduce the amount of reloads.
         // This helps a lot in view performance, as it otherwise gets triggered on each environment change.
         guard !paramsAreEqual(controller: controller) else {
@@ -130,9 +162,14 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         controller.lineHeightMultiple = lineHeight
         controller.editorOverscroll = editorOverscroll
         controller.contentInsets = contentInsets
-        controller.bracketPairHighlight = bracketPairHighlight
+        if controller.isEditable != isEditable {
+            controller.isEditable = isEditable
+        }
 
-        // Updating the language, theme, tab width and indent option needlessly can cause highlights to be re-calculated
+        if controller.isSelectable != isSelectable {
+            controller.isSelectable = isSelectable
+        }
+
         if controller.language.id != language.id {
             controller.language = language
         }
@@ -149,12 +186,16 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             controller.letterSpacing = letterSpacing
         }
 
+        controller.bracketPairHighlight = bracketPairHighlight
+
         controller.reloadUI()
         return
     }
 
     func paramsAreEqual(controller: NSViewControllerType) -> Bool {
         controller.font == font &&
+        controller.isEditable == isEditable &&
+        controller.isSelectable == isSelectable &&
         controller.wrapLines == wrapLines &&
         controller.useThemeBackground == useThemeBackground &&
         controller.lineHeightMultiple == lineHeight &&
@@ -166,5 +207,66 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
         controller.tabWidth == tabWidth &&
         controller.letterSpacing == letterSpacing &&
         controller.bracketPairHighlight == bracketPairHighlight
+    }
+
+    @MainActor
+    public class Coordinator: NSObject {
+        var parent: CodeEditTextView
+        var controller: TextViewController?
+        var isUpdatingFromRepresentable: Bool = false
+        var isUpdateFromTextView: Bool = false
+
+        init(parent: CodeEditTextView) {
+            self.parent = parent
+            super.init()
+
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(textViewDidChangeText(_:)),
+                name: TextView.textDidChangeNotification,
+                object: nil
+            )
+
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(textControllerCursorsDidUpdate(_:)),
+                name: TextViewController.cursorPositionUpdatedNotification,
+                object: nil
+            )
+        }
+
+        @objc func textViewDidChangeText(_ notification: Notification) {
+            guard let textView = notification.object as? TextView,
+                  let controller,
+                  controller.textView === textView else {
+                return
+            }
+            parent.text = textView.string
+            parent.coordinators.forEach {
+                $0.textViewDidChangeText(controller: controller)
+            }
+        }
+
+        @objc func textControllerCursorsDidUpdate(_ notification: Notification) {
+            guard !isUpdatingFromRepresentable else { return }
+            self.isUpdateFromTextView = true
+            self.parent._cursorPositions.wrappedValue = self.controller?.cursorPositions ?? []
+            if self.controller != nil {
+                self.parent.coordinators.forEach {
+                    $0.textViewDidChangeSelection(
+                        controller: self.controller!,
+                        newPositions: self.controller!.cursorPositions
+                    )
+                }
+            }
+        }
+
+        deinit {
+            parent.coordinators.forEach {
+                $0.destroy()
+            }
+            parent.coordinators.removeAll()
+            NotificationCenter.default.removeObserver(self)
+        }
     }
 }

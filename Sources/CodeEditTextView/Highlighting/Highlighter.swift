@@ -7,11 +7,11 @@
 
 import Foundation
 import AppKit
-import STTextView
+import CodeEditInputView
 import SwiftTreeSitter
 import CodeEditLanguages
 
-/// The `Highlighter` class handles efficiently highlighting the `STTextView` it's provided with.
+/// The `Highlighter` class handles efficiently highlighting the `TextView` it's provided with.
 /// It will listen for text and visibility changes, and highlight syntax as needed.
 ///
 /// One should rarely have to direcly modify or call methods on this class. Just keep it alive in
@@ -32,7 +32,7 @@ class Highlighter: NSObject {
 
     /// The range of the entire document
     private var entireTextRange: Range<Int> {
-        return 0..<(textView.textContentStorage?.textStorage?.length ?? 0)
+        return 0..<(textView.textStorage.length)
     }
 
     /// The set of visible indexes in tht text view
@@ -43,19 +43,19 @@ class Highlighter: NSObject {
     // MARK: - UI
 
     /// The text view to highlight
-    private var textView: STTextView
+    private unowned var textView: TextView
 
     /// The editor theme
     private var theme: EditorTheme
 
     /// The object providing attributes for captures.
-    private var attributeProvider: ThemeAttributesProviding!
+    private weak var attributeProvider: ThemeAttributesProviding!
 
     /// The current language of the editor.
     private var language: CodeLanguage
 
     /// Calculates invalidated ranges given an edit.
-    private var highlightProvider: HighlightProviding?
+    private weak var highlightProvider: HighlightProviding?
 
     /// The length to chunk ranges into when passing to the highlighter.
     fileprivate let rangeChunkLimit = 256
@@ -68,7 +68,7 @@ class Highlighter: NSObject {
     ///   - treeSitterClient: The tree-sitter client to handle tree updates and highlight queries.
     ///   - theme: The theme to use for highlights.
     init(
-        textView: STTextView,
+        textView: TextView,
         highlightProvider: HighlightProviding?,
         theme: EditorTheme,
         attributeProvider: ThemeAttributesProviding,
@@ -82,12 +82,6 @@ class Highlighter: NSObject {
 
         super.init()
 
-        guard textView.textContentStorage?.textStorage != nil else {
-            assertionFailure("Text view does not have a textStorage")
-            return
-        }
-
-        textView.textContentStorage?.textStorage?.delegate = self
         highlightProvider?.setUp(textView: textView, codeLanguage: language)
 
         if let scrollView = textView.enclosingScrollView {
@@ -167,8 +161,10 @@ private extension Highlighter {
     func highlight(range rangeToHighlight: NSRange) {
         pendingSet.insert(integersIn: rangeToHighlight)
 
-        highlightProvider?.queryHighlightsFor(textView: self.textView,
-                                              range: rangeToHighlight) { [weak self] highlightRanges in
+        highlightProvider?.queryHighlightsFor(
+            textView: self.textView,
+            range: rangeToHighlight
+        ) { [weak self] highlightRanges in
             guard let attributeProvider = self?.attributeProvider,
                   let textView = self?.textView else { return }
 
@@ -178,26 +174,16 @@ private extension Highlighter {
             }
             self?.validSet.formUnion(IndexSet(integersIn: rangeToHighlight))
 
-            // Try to create a text range for invalidating. If this fails we fail silently
-            guard let textContentManager = textView.textLayoutManager.textContentManager,
-                  let textRange = NSTextRange(rangeToHighlight, provider: textContentManager) else {
-                return
-            }
-
             // Loop through each highlight and modify the textStorage accordingly.
-            textView.textContentStorage?.textStorage?.beginEditing()
+            textView.layoutManager.beginTransaction()
+            textView.textStorage.beginEditing()
 
             // Create a set of indexes that were not highlighted.
             var ignoredIndexes = IndexSet(integersIn: rangeToHighlight)
 
             // Apply all highlights that need color
             for highlight in highlightRanges {
-                // Does not work:
-//                textView.textLayoutManager.setRenderingAttributes(attributeProvider.attributesFor(highlight.capture),
-//                                                                  for: NSTextRange(highlight.range,
-//                                                                       provider: textView.textContentStorage)!)
-                // Temp solution (until Apple fixes above)
-                textView.textContentStorage?.textStorage?.setAttributes(
+                textView.textStorage.setAttributes(
                     attributeProvider.attributesFor(highlight.capture),
                     range: highlight.range
                 )
@@ -210,17 +196,14 @@ private extension Highlighter {
             // This fixes the case where characters are changed to have a non-text color, and then are skipped when
             // they need to be changed back.
             for ignoredRange in ignoredIndexes.rangeView {
-                textView.textContentStorage?.textStorage?.setAttributes(
+                textView.textStorage.setAttributes(
                     attributeProvider.attributesFor(nil),
                     range: NSRange(ignoredRange)
                 )
             }
 
-            textView.textContentStorage?.textStorage?.endEditing()
-
-            // After applying edits to the text storage we need to invalidate the layout
-            // of the highlighted text.
-            textView.textLayoutManager.invalidateLayout(for: textRange)
+            textView.textStorage.endEditing()
+            textView.layoutManager.endTransaction()
         }
     }
 

@@ -5,8 +5,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CodeEditApp/CodeEditLanguages.git",
       "state" : {
-        "revision" : "aa7d922b2aa783ae6f2a1a2cb7010ae62b700e17",
-        "version" : "0.1.16"
+        "revision" : "af29ab4a15474a0a38ef88ef65c20e58a0812e43",
+        "version" : "0.1.17"
+      }
+    },
+    {
+      "identity" : "mainoffender",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/mattmassicotte/MainOffender",
+      "state" : {
+        "revision" : "343cc3797618c29b48b037b4e2beea0664e75315",
+        "version" : "0.1.0"
       }
     },
     {
@@ -19,12 +28,12 @@
       }
     },
     {
-      "identity" : "sttextview",
+      "identity" : "swift-collections",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/krzyzanowskim/STTextView.git",
+      "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "branch" : "897c5ff",
-        "revision" : "897c5ffe3c6b35664ab085d43238b3a95e79440d"
+        "revision" : "937e904258d22af6e447a0b72c0bc67583ef64a2",
+        "version" : "1.0.4"
       }
     },
     {
@@ -50,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/TextFormation",
       "state" : {
-        "revision" : "158a603054ed5176f18d7c08ba355c0e05cb0586",
-        "version" : "0.7.0"
+        "revision" : "b4987856bc860643ac2c9cdbc7d5f3e9ade68377",
+        "version" : "0.8.1"
       }
     },
     {
@@ -59,8 +68,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/TextStory",
       "state" : {
-        "revision" : "b7b3fc551bd0177c32b3dc46d0478e9f0b6f8c6f",
-        "version" : "0.7.2"
+        "revision" : "8883fa739aa213e70e6cb109bfbf0a0b551e4cb5",
+        "version" : "0.8.0"
       }
     }
   ],

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://user-images.githubusercontent.com/806104/175655252-d77cef62-31f5-4f40-a2ad-c1406a6dd1b9.png" height="128">
+  <img src="https://github.com/CodeEditApp/CodeEditTextView/assets/806104/b304b004-3bfc-413b-9db6-76d2af122acc" height="128">
   <h1 align="center">CodeEditTextView</h1>
 </p>
 
@@ -67,11 +67,10 @@ See this issue https://github.com/CodeEditApp/CodeEditLanguages/issues/10 on `Co
 
 ## Dependencies
 
-Special thanks to both [Marcin Krzyzanowski](https://twitter.com/krzyzanowskim) & [Matt Massicotte](https://twitter.com/mattie) for the great work they've done!
+Special thanks to [Matt Massicotte](https://twitter.com/mattie) for the great work he's done!
 
 | Package | Source | Author |
 | :- | :- | :- |
-| `STTextView` | [GitHub](https://github.com/krzyzanowskim/STTextView) | [Marcin Krzyzanowski](https://twitter.com/krzyzanowskim) |
 | `SwiftTreeSitter` | [GitHub](https://github.com/ChimeHQ/SwiftTreeSitter) | [Matt Massicotte](https://twitter.com/mattie) |
 
 ## License

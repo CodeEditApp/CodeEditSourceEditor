@@ -7,7 +7,6 @@
 
 import Foundation
 import CodeEditLanguages
-import STTextView
 import AppKit
 
 /// The protocol a class must conform to to be used for highlighting.
