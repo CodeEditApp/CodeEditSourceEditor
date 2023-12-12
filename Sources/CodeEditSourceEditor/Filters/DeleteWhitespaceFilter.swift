@@ -1,12 +1,12 @@
 //
 //  DeleteWhitespaceFilter.swift
-//  
+//  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 1/28/23.
 //
 
 import Foundation
-import CodeEditInputView
+import CodeEditTextView
 import TextFormation
 import TextStory
 

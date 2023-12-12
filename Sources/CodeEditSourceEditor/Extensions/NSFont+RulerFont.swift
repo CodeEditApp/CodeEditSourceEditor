@@ -1,6 +1,6 @@
 //
 //  NSFont+RulerFont.swift
-//  
+//  CodeEditSourceEditor
 //
 //  Created by Elias Wahl on 17.03.23.
 //

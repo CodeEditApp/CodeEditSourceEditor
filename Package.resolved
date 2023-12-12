@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CodeEditApp/CodeEditTextView.git",
       "state" : {
-        "revision" : "6a04ca72975b25b28829e419a43cce5cabb97891",
-        "version" : "0.6.8"
+        "revision" : "c867fed329b2b4ce91a13742e20626f50cf233bb",
+        "version" : "0.7.0"
       }
     },
     {
@@ -37,12 +37,12 @@
       }
     },
     {
-      "identity" : "sttextview",
+      "identity" : "swift-collections",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/krzyzanowskim/STTextView.git",
+      "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "1046965bd62dc05cf17beb4b4e901cdae851395e",
-        "version" : "0.8.7"
+        "revision" : "a902f1823a7ff3c9ab2fba0f992396b948eda307",
+        "version" : "1.0.5"
       }
     },
     {

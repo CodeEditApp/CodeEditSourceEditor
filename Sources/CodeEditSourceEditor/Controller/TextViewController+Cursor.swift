@@ -1,6 +1,6 @@
 //
 //  TextViewController+Cursor.swift
-//  CodeEditTextView
+//  CodeEditSourceEditor
 //
 //  Created by Elias Wahl on 15.03.23.
 //

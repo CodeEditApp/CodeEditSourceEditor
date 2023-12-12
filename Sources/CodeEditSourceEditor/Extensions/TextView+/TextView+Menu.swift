@@ -1,12 +1,12 @@
 //
 //  TextView+Menu.swift
-//  CodeEditTextView
+//  CodeEditSourceEditor
 //
 //  Created by Lukas Pistrol on 25.05.22.
 //
 
 import AppKit
-import CodeEditInputView
+import CodeEditTextView
 
 extension TextView {
 

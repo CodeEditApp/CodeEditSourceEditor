@@ -1,12 +1,12 @@
 //
 //  TextViewController+TextViewDelegate.swift
-//  CodeEditTextView
+//  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 10/14/23.
 //
 
 import Foundation
-import CodeEditInputView
+import CodeEditTextView
 import TextStory
 
 extension TextViewController: TextViewDelegate {

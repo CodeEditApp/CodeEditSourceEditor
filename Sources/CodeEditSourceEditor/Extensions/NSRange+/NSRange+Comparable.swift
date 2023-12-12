@@ -1,6 +1,6 @@
 //
 //  NSRange+Comparable.swift
-//  
+//  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 3/15/23.
 //

@@ -1,12 +1,12 @@
 //
 //  NSFont+LineHeight.swift
-//  CodeEditTextView
+//  CodeEditSourceEditor
 //
 //  Created by Lukas Pistrol on 28.05.22.
 //
 
 import AppKit
-import CodeEditInputView
+import CodeEditTextView
 
 public extension NSFont {
     /// The default line height of the font.

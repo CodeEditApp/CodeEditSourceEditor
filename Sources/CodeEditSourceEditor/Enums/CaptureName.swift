@@ -1,6 +1,6 @@
 //
 //  CaptureNames.swift
-//  CodeEditTextView
+//  CodeEditSourceEditor
 //
 //  Created by Lukas Pistrol on 16.08.22.
 //

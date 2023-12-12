@@ -1,12 +1,12 @@
 //
 //  GutterView.swift
-//  
+//  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 8/22/23.
 //
 
 import AppKit
-import CodeEditInputView
+import CodeEditTextView
 
 public protocol GutterViewDelegate: AnyObject {
     func gutterViewWidthDidUpdate(newWidth: CGFloat)

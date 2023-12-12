@@ -1,6 +1,6 @@
 //
 //  String+encoding.swift
-//  
+//  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 1/19/23.
 //

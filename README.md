@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://github.com/CodeEditApp/CodeEditSourceEditor/assets/806104/b304b004-3bfc-413b-9db6-76d2af122acc" height="128">
+  <img src="https://github.com/CodeEditApp/CodeEditTextView/blob/main/.github/CodeEditSourceEditor-Icon-128@2x.png?raw=true" height="128">
   <h1 align="center">CodeEditSourceEditor</h1>
 </p>
 
@@ -11,7 +11,7 @@
   <a aria-label="Join the community on Discord" href="https://discord.gg/vChUXVf9Em" target="_blank">
     <img alt="" src="https://img.shields.io/badge/Join%20the%20community-black.svg?style=for-the-badge&logo=Discord">
   </a>
-  <a aria-label="Read the Documentation" href="https://codeeditapp.github.io/CodeEditTextView/documentation/codeedittextview/" target="_blank">
+  <a aria-label="Read the Documentation" href="https://codeeditapp.github.io/CodeEditSourceEditor/documentation/codeeditsourceeditor/" target="_blank">
     <img alt="" src="https://img.shields.io/badge/Documentation-black.svg?style=for-the-badge&logo=readthedocs&logoColor=blue">
   </a>
 </p>
@@ -20,11 +20,11 @@ An Xcode-inspired code editor view written in Swift powered by tree-sitter for [
 
 <img width="1012" alt="social-cover-textview" src="https://user-images.githubusercontent.com/806104/194083584-91555dce-ad4c-4066-922e-1eab889134be.png">
 
-![GitHub release](https://img.shields.io/github/v/release/CodeEditApp/CodeEditTextView?color=orange&label=latest%20release&sort=semver&style=flat-square)
-![Github Tests](https://img.shields.io/github/actions/workflow/status/CodeEditApp/CodeEditTextView/tests.yml?branch=main&label=tests&style=flat-square)
-![Documentation](https://img.shields.io/github/actions/workflow/status/CodeEditApp/CodeEditTextView/build-documentation.yml?branch=main&label=docs&style=flat-square)
-![GitHub Repo stars](https://img.shields.io/github/stars/CodeEditApp/CodeEditTextView?style=flat-square)
-![GitHub forks](https://img.shields.io/github/forks/CodeEditApp/CodeEditTextView?style=flat-square)
+![GitHub release](https://img.shields.io/github/v/release/CodeEditApp/CodeEditSourceEditor?color=orange&label=latest%20release&sort=semver&style=flat-square)
+![Github Tests](https://img.shields.io/github/actions/workflow/status/CodeEditApp/CodeEditSourceEditor/tests.yml?branch=main&label=tests&style=flat-square)
+![Documentation](https://img.shields.io/github/actions/workflow/status/CodeEditApp/CodeEditSourceEditor/build-documentation.yml?branch=main&label=docs&style=flat-square)
+![GitHub Repo stars](https://img.shields.io/github/stars/CodeEditApp/CodeEditSourceEditor?style=flat-square)
+![GitHub forks](https://img.shields.io/github/forks/CodeEditApp/CodeEditSourceEditor?style=flat-square)
 [![Discord Badge](https://img.shields.io/discord/951544472238444645?color=5865F2&label=Discord&logo=discord&logoColor=white&style=flat-square)](https://discord.gg/vChUXVf9Em)
 
 | :warning: | **CodeEditSourceEditor is currently in development and it is not ready for production use.** <br> Please check back later for updates on this project. Contributors are welcome as we build out the features mentioned above! |
@@ -87,6 +87,12 @@ Licensed under the [MIT license](https://github.com/CodeEditApp/CodeEdit/blob/ma
         <img src="https://user-images.githubusercontent.com/806104/163099605-4eaedd33-8441-4125-9ca1-a7ccb2f62a74.png" height="128">
         <p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;CodeEdit&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p>
       </a>
+    </td>
+    <td align="center">
+      <a href="https://github.com/CodeEditApp/CodeEditTextView">
+        <img src="https://github.com/CodeEditApp/CodeEditTextView/blob/main/.github/CodeEditTextView-Icon-128@2x.png?raw=true" height="128">
+      </a>
+      <p><a href="https://github.com/CodeEditApp/CodeEditTextView">CodeEditTextView</a></p>
     </td>
     <td align="center">
       <a href="https://github.com/CodeEditApp/CodeEditKit">

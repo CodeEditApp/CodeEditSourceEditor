@@ -1,6 +1,6 @@
 //
 //  String+NSRange.swift
-//  CodeEditTextView
+//  CodeEditSourceEditor
 //
 //  Created by Lukas Pistrol on 25.05.22.
 //

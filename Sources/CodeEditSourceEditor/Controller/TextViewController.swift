@@ -1,12 +1,12 @@
 //
 //  TextViewController.swift
-//  CodeEditTextView
+//  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 6/25/23.
 //
 
 import AppKit
-import CodeEditInputView
+import CodeEditTextView
 import CodeEditLanguages
 import SwiftUI
 import Combine
@@ -14,7 +14,7 @@ import TextFormation
 
 /// # TextViewController
 ///
-/// A view controller class for managing a source editor. Uses ``CodeEditInputView/TextView`` for input and rendering,
+/// A view controller class for managing a source editor. Uses ``CodeEditTextView/TextView`` for input and rendering,
 /// tree-sitter for syntax highlighting, and TextFormation for live editing completions.
 /// 
 public class TextViewController: NSViewController {

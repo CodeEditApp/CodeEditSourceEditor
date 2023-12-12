@@ -2,7 +2,7 @@ import XCTest
 @testable import CodeEditSourceEditor
 
 // swiftlint:disable all
-final class CodeEditTextViewTests: XCTestCase {
+final class CodeEditSourceEditorTests: XCTestCase {
 
     // MARK: NSFont Line Height
 

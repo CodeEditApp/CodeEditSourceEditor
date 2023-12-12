@@ -1,9 +1,9 @@
-# ``CodeEditTextView/CodeEditTextView``
+# ``CodeEditSourceEditor/CodeEditSourceEditor``
 
 ## Usage
 
 ```swift
-import CodeEditTextView
+import CodeEditSourceEditor
 
 struct ContentView: View {
 
@@ -15,7 +15,7 @@ struct ContentView: View {
     @State var editorOverscroll = 0.3
 
     var body: some View { 
-        CodeEditTextView(
+        CodeEditSourceEditor(
             $text,
             language: .swift,
             theme: $theme,

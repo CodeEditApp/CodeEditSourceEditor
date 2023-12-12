@@ -1,4 +1,4 @@
-# ``CodeEditTextView``
+# ``CodeEditSourceEditor``
 
 A code editor with syntax highlighting powered by tree-sitter. 
 
@@ -14,7 +14,7 @@ This package includes both `AppKit` and `SwiftUI` components. It also relies on 
 
 ## Syntax Highlighting
 
-``CodeEditTextView`` uses `tree-sitter` for syntax highlighting. A list of already supported languages can be found [here](https://github.com/CodeEditApp/CodeEditTextView/issues/15).
+``CodeEditSourceEditor`` uses `tree-sitter` for syntax highlighting. A list of already supported languages can be found [here](https://github.com/CodeEditApp/CodeEditSourceEditor/issues/15).
 
 New languages need to be added to the [CodeEditLanguages](https://github.com/CodeEditApp/CodeEditLanguages) repo.
 
@@ -31,8 +31,8 @@ Special thanks to both [Marcin Krzyzanowski](https://twitter.com/krzyzanowskim) 
 
 ### Text View
 
-- ``CodeEditTextView/CodeEditTextView``
-- ``CodeEditTextView/STTextViewController``
+- ``CodeEditSourceEditor/CodeEditSourceEditor``
+- ``CodeEditSourceEditor/TextViewController``
 
 ### Theme
 

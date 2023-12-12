@@ -1,6 +1,6 @@
 //
 //  TextViewController+HighlightRange.swift
-//  CodeEditTextView
+//  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 4/26/23.
 //

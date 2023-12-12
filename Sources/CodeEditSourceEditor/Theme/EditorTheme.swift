@@ -1,6 +1,6 @@
 //
 //  EditorTheme.swift
-//  CodeEditTextView
+//  CodeEditSourceEditor
 //
 //  Created by Lukas Pistrol on 29.05.22.
 //

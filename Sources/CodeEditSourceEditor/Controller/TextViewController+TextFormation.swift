@@ -1,12 +1,12 @@
 //
 //  TextViewController+TextFormation.swift
-//  CodeEditTextView
+//  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 1/26/23.
 //
 
 import AppKit
-import CodeEditInputView
+import CodeEditTextView
 import TextFormation
 import TextStory
 

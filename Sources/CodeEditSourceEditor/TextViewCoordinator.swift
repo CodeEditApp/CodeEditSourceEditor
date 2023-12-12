@@ -1,24 +1,23 @@
 //
 //  TextViewCoordinator.swift
-//  CodeEditTextView
+//  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 11/14/23.
 //
 
 import AppKit
-import CodeEditInputView
 
 /// # TextViewCoordinator
 ///
-/// A protocol that can be used to provide extra functionality to ``CodeEditTextView/CodeEditTextView`` while avoiding
-/// some of the inefficiencies of SwiftUI.
+/// A protocol that can be used to provide extra functionality to ``CodeEditSourceEditor/CodeEditSourceEditor`` while
+/// avoiding some of the inefficiencies of SwiftUI.
 ///
 public protocol TextViewCoordinator: AnyObject {
     /// Called when an instance of ``TextViewController`` is available. Use this method to install any delegates,
     /// perform any modifications on the text view or controller, or capture the text view for later use in your app.
     ///
     /// - Parameter controller: The text controller. This is safe to keep a weak reference to, as long as it is
-    ///                         dereferenced when ``TextViewCoordinator/destroy()-49rej`` is called.
+    ///                         dereferenced when ``TextViewCoordinator/destroy()-9nzfl`` is called.
     func prepareCoordinator(controller: TextViewController)
 
     /// Called when the text view's text changed.

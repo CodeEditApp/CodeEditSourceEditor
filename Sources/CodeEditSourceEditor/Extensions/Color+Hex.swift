@@ -1,6 +1,6 @@
 //
 //  Color+HEX.swift
-//  CodeEditTextView/Theme
+//  CodeEditSourceEditor
 //
 //  Created by Lukas Pistrol on 27.05.22.
 //

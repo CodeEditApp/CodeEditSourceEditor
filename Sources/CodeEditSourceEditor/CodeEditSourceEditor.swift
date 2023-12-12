@@ -1,12 +1,12 @@
 //
-//  CodeEditTextView.swift
-//  CodeEditTextView
+//  CodeEditSourceEditor.swift
+//  CodeEditSourceEditor
 //
 //  Created by Lukas Pistrol on 24.05.22.
 //
 
 import SwiftUI
-import CodeEditInputView
+import CodeEditTextView
 import CodeEditLanguages
 
 public struct CodeEditSourceEditor: NSViewControllerRepresentable {
@@ -272,8 +272,32 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
 }
 
 // swiftlint:disable:next line_length
-@available(*, deprecated, renamed: "CodeEditSourceEditor", message: "CodeEditTextView has been renamed to CodeEditSourceEditor.")
+@available(*, unavailable, renamed: "CodeEditSourceEditor", message: "CodeEditTextView has been renamed to CodeEditSourceEditor.")
 public struct CodeEditTextView: View {
+    public init(
+        _ text: Binding<String>,
+        language: CodeLanguage,
+        theme: EditorTheme,
+        font: NSFont,
+        tabWidth: Int,
+        indentOption: IndentOption = .spaces(count: 4),
+        lineHeight: Double,
+        wrapLines: Bool,
+        editorOverscroll: CGFloat = 0,
+        cursorPositions: Binding<[CursorPosition]>,
+        useThemeBackground: Bool = true,
+        highlightProvider: HighlightProviding? = nil,
+        contentInsets: NSEdgeInsets? = nil,
+        isEditable: Bool = true,
+        isSelectable: Bool = true,
+        letterSpacing: Double = 1.0,
+        bracketPairHighlight: BracketPairHighlight? = nil,
+        undoManager: CEUndoManager? = nil,
+        coordinators: [any TextViewCoordinator] = []
+    ) {
+
+    }
+
     public var body: some View {
         EmptyView()
     }

@@ -1,13 +1,13 @@
 //
 //  Highlighter.swift
-//
+//  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 9/12/22.
 //
 
 import Foundation
 import AppKit
-import CodeEditInputView
+import CodeEditTextView
 import SwiftTreeSitter
 import CodeEditLanguages
 

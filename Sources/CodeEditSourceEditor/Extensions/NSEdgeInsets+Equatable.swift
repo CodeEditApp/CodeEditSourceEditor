@@ -1,6 +1,6 @@
 //
 //  NSEdgeInsets+Equatable.swift
-//  
+//  CodeEditSourceEditor
 //
 //  Created by Wouter Hennen on 29/04/2023.
 //
