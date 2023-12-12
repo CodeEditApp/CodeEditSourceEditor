@@ -1,5 +1,5 @@
 import XCTest
-@testable import CodeEditTextView
+@testable import CodeEditSourceEditor
 
 // swiftlint:disable all
 fileprivate class TestTextView: HighlighterTextView {

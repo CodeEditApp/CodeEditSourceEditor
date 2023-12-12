@@ -1,5 +1,5 @@
 import XCTest
-@testable import CodeEditTextView
+@testable import CodeEditSourceEditor
 import SwiftTreeSitter
 import AppKit
 import SwiftUI

@@ -1,7 +1,8 @@
 <p align="center">
-  <img src="https://github.com/CodeEditApp/CodeEditTextView/assets/806104/b304b004-3bfc-413b-9db6-76d2af122acc" height="128">
-  <h1 align="center">CodeEditTextView</h1>
+  <img src="https://github.com/CodeEditApp/CodeEditSourceEditor/assets/806104/b304b004-3bfc-413b-9db6-76d2af122acc" height="128">
+  <h1 align="center">CodeEditSourceEditor</h1>
 </p>
+
 
 <p align="center">
   <a aria-label="Follow CodeEdit on Twitter" href="https://twitter.com/CodeEditApp" target="_blank">
@@ -26,17 +27,17 @@ An Xcode-inspired code editor view written in Swift powered by tree-sitter for [
 ![GitHub forks](https://img.shields.io/github/forks/CodeEditApp/CodeEditTextView?style=flat-square)
 [![Discord Badge](https://img.shields.io/discord/951544472238444645?color=5865F2&label=Discord&logo=discord&logoColor=white&style=flat-square)](https://discord.gg/vChUXVf9Em)
 
-| :warning: | **CodeEditTextView is currently in development and it is not ready for production use.** <br> Please check back later for updates on this project. Contributors are welcome as we build out the features mentioned above! |
+| :warning: | **CodeEditSourceEditor is currently in development and it is not ready for production use.** <br> Please check back later for updates on this project. Contributors are welcome as we build out the features mentioned above! |
 | - |:-|
 
 ## Documentation
 
-This package is fully documented [here](https://codeeditapp.github.io/CodeEditTextView/documentation/codeedittextview/).
+This package is fully documented [here](https://codeeditapp.github.io/CodeEditSourceEditor/documentation/codeeditsourceeditor/).
 
 ## Usage
 
 ```swift
-import CodeEditTextView
+import CodeEditSourceEditor
 
 struct ContentView: View {
 
@@ -48,7 +49,7 @@ struct ContentView: View {
     @State var editorOverscroll = 0.3
 
     var body: some View { 
-        CodeEditTextView(
+        CodeEditSourceEditor(
             $text,
             language: .swift,
             theme: $theme,
@@ -107,4 +108,3 @@ Licensed under the [MIT license](https://github.com/CodeEditApp/CodeEdit/blob/ma
     </td>
   </tr>
 </table>
-

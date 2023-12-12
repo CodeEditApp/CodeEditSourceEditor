@@ -9,7 +9,7 @@ import SwiftUI
 import CodeEditInputView
 import CodeEditLanguages
 
-public struct CodeEditTextView: NSViewControllerRepresentable {
+public struct CodeEditSourceEditor: NSViewControllerRepresentable {
 
     /// Initializes a Text Editor
     /// - Parameters:
@@ -211,12 +211,12 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
 
     @MainActor
     public class Coordinator: NSObject {
-        var parent: CodeEditTextView
+        var parent: CodeEditSourceEditor
         var controller: TextViewController?
         var isUpdatingFromRepresentable: Bool = false
         var isUpdateFromTextView: Bool = false
 
-        init(parent: CodeEditTextView) {
+        init(parent: CodeEditSourceEditor) {
             self.parent = parent
             super.init()
 
@@ -268,5 +268,13 @@ public struct CodeEditTextView: NSViewControllerRepresentable {
             parent.coordinators.removeAll()
             NotificationCenter.default.removeObserver(self)
         }
+    }
+}
+
+// swiftlint:disable:next line_length
+@available(*, deprecated, renamed: "CodeEditSourceEditor", message: "CodeEditTextView has been renamed to CodeEditSourceEditor.")
+public struct CodeEditTextView: View {
+    public var body: some View {
+        EmptyView()
     }
 }
