@@ -26,10 +26,7 @@ extension TextViewController {
                     newSelectedRanges.append(NSRange(location: 0, length: 0))
                 } else if let linePosition = textView.layoutManager.textLineForIndex(line - 1) {
                     // If this is a valid line, set the new position
-                    let index = max(
-                        linePosition.range.lowerBound,
-                        min(linePosition.range.upperBound, column - 1)
-                    )
+                    let index = linePosition.range.lowerBound + min(linePosition.range.upperBound, column - 1)
                     newSelectedRanges.append(NSRange(location: index, length: 0))
                 }
             } else {
