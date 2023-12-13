@@ -4,7 +4,7 @@ on:
   workflow_call:
 jobs:
   code-edit-text-view-tests:
-    name: Testing CodeEditTextView
+    name: Testing CodeEditSourceEditor
     runs-on: [self-hosted, macOS]
     steps:
       - name: Checkout repository

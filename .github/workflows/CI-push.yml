@@ -10,7 +10,7 @@ jobs:
     uses: ./.github/workflows/swiftlint.yml
     secrets: inherit
   test:
-    name: Testing CodeEditTextView
+    name: Testing CodeEditSourceEditor
     needs: swiftlint
     uses: ./.github/workflows/tests.yml
     secrets: inherit
