@@ -27,8 +27,8 @@ An Xcode-inspired code editor view written in Swift powered by tree-sitter for [
 ![GitHub forks](https://img.shields.io/github/forks/CodeEditApp/CodeEditSourceEditor?style=flat-square)
 [![Discord Badge](https://img.shields.io/discord/951544472238444645?color=5865F2&label=Discord&logo=discord&logoColor=white&style=flat-square)](https://discord.gg/vChUXVf9Em)
 
-| :warning: | **CodeEditSourceEditor is currently in development and it is not ready for production use.** <br> Please check back later for updates on this project. Contributors are welcome as we build out the features mentioned above! |
-| - |:-|
+> [!IMPORTANT]
+> **CodeEditSourceEditor is currently in development and it is not ready for production use.** <br> Please check back later for updates on this project. Contributors are welcome as we build out the features mentioned above!
 
 ## Documentation
 
