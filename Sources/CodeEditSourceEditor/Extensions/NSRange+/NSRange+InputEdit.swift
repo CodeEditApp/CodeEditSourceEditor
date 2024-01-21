@@ -6,10 +6,11 @@
 //
 
 import Foundation
+import CodeEditTextView
 import SwiftTreeSitter
 
 extension InputEdit {
-    init?(range: NSRange, delta: Int, oldEndPoint: Point) {
+    init?(range: NSRange, delta: Int, oldEndPoint: Point, textView: TextView) {
         let newEndLocation = NSMaxRange(range) + delta
 
         if newEndLocation < 0 {
@@ -17,16 +18,18 @@ extension InputEdit {
             return nil
         }
 
-        // TODO: - Ask why Neon only uses .zero for these
-        let startPoint: Point = .zero
-        let newEndPoint: Point = .zero
+        let newRange = NSRange(location: range.location, length: range.length + delta)
+        let startPoint = textView.pointForLocation(range.location) ?? .zero
+        let newEndPoint = textView.pointForLocation(newEndLocation) ?? .zero
 
-        self.init(startByte: UInt32(range.location * 2),
-                  oldEndByte: UInt32(NSMaxRange(range) * 2),
-                  newEndByte: UInt32(newEndLocation * 2),
-                  startPoint: startPoint,
-                  oldEndPoint: oldEndPoint,
-                  newEndPoint: newEndPoint)
+        self.init(
+            startByte: UInt32(range.location * 2),
+            oldEndByte: UInt32(NSMaxRange(range) * 2),
+            newEndByte: UInt32(newEndLocation * 2),
+            startPoint: startPoint,
+            oldEndPoint: oldEndPoint,
+            newEndPoint: newEndPoint
+        )
     }
 }
 

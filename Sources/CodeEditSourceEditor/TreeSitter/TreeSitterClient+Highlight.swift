@@ -10,14 +10,8 @@ import SwiftTreeSitter
 import CodeEditLanguages
 
 extension TreeSitterClient {
-    internal func queryHighlightsForRange(
-        range: NSRange,
-        runningAsync: Bool,
-        completion: @escaping (([HighlightRange]) -> Void)
-    ) {
-        stateLock.lock()
-        guard let textView, let state = state?.copy() else { return }
-        stateLock.unlock()
+    func queryHighlightsForRange(range: NSRange) -> [HighlightRange] {
+        guard let state = self.state, let readCallback else { return [] }
 
         var highlights: [HighlightRange] = []
         var injectedSet = IndexSet(integersIn: range)
@@ -26,12 +20,13 @@ extension TreeSitterClient {
             // Query injected only if a layer's ranges intersects with `range`
             for layerRange in layer.ranges {
                 if let rangeIntersection = range.intersection(layerRange) {
-                    highlights.append(contentsOf: queryLayerHighlights(
+                    let queryResult = queryLayerHighlights(
                         layer: layer,
-                        textView: textView,
-                        range: rangeIntersection
-                    ))
+                        range: rangeIntersection,
+                        readCallback: readCallback
+                    )
 
+                    highlights.append(contentsOf: queryResult)
                     injectedSet.remove(integersIn: rangeIntersection)
                 }
             }
@@ -39,43 +34,26 @@ extension TreeSitterClient {
 
         // Query primary for any ranges that weren't used in the injected layers.
         for range in injectedSet.rangeView {
-            highlights.append(contentsOf: queryLayerHighlights(
+            let queryResult = queryLayerHighlights(
                 layer: state.layers[0],
-                textView: textView,
-                range: NSRange(range)
-            ))
+                range: NSRange(range),
+                readCallback: readCallback
+            )
+            highlights.append(contentsOf: queryResult)
         }
 
-        stateLock.unlock()
-        if !runningAsync {
-            completion(highlights)
-        } else {
-            DispatchQueue.main.async {
-                completion(highlights)
-            }
-        }
-    }
-
-    internal func queryHighlightsForRangeAsync(
-        range: NSRange,
-        completion: @escaping (([HighlightRange]) -> Void)
-    ) {
-        queuedQueries.append {
-            self.queryHighlightsForRange(range: range, runningAsync: true, completion: completion)
-        }
-        beginTasksIfNeeded()
+        return highlights
     }
 
     /// Queries the given language layer for any highlights.
     /// - Parameters:
     ///   - layer: The layer to query.
-    ///   - textView: A text view to use for contextual data.
     ///   - range: The range to query for.
     /// - Returns: Any ranges to highlight.
     internal func queryLayerHighlights(
         layer: LanguageLayer,
-        textView: HighlighterTextView,
-        range: NSRange
+        range: NSRange,
+        readCallback: SwiftTreeSitter.Predicate.TextProvider
     ) -> [HighlightRange] {
         guard let tree = layer.tree,
               let rootNode = tree.rootNode else {
@@ -84,13 +62,13 @@ extension TreeSitterClient {
 
         // This needs to be on the main thread since we're going to use the `textProvider` in
         // the `highlightsFromCursor` method, which uses the textView's text storage.
-        guard let cursor = layer.languageQuery?.execute(node: rootNode, in: tree) else {
+        guard let queryCursor = layer.languageQuery?.execute(node: rootNode, in: tree) else {
             return []
         }
-        cursor.setRange(range)
-        cursor.matchLimit = Constants.treeSitterMatchLimit
+        queryCursor.setRange(range)
+        queryCursor.matchLimit =  Constants.treeSitterMatchLimit
 
-        return highlightsFromCursor(cursor: ResolvingQueryCursor(cursor: cursor), includedRange: range)
+        return highlightsFromCursor(cursor: queryCursor, includedRange: range, readCallback: readCallback)
     }
 
     /// Resolves a query cursor to the highlight ranges it contains.
@@ -99,15 +77,18 @@ extension TreeSitterClient {
     ///     - cursor: The cursor to resolve.
     ///     - includedRange: The range to include highlights from.
     /// - Returns: Any highlight ranges contained in the cursor.
-    internal func highlightsFromCursor(cursor: ResolvingQueryCursor, includedRange: NSRange) -> [HighlightRange] {
-        cursor.prepare(with: self.textProvider)
+    internal func highlightsFromCursor(
+        cursor: QueryCursor,
+        includedRange: NSRange,
+        readCallback: SwiftTreeSitter.Predicate.TextProvider
+    ) -> [HighlightRange] {
         return cursor
             .flatMap { $0.captures }
             .compactMap {
-                // Sometimes `cursor.setRange` just doesnt work :( so we have to do a redundant check for a valid range
+                // Sometimes `cursor.setRange` just doesn't work :( so we have to do a redundant check for a valid range
                 // in the included range
                 let intersectionRange = $0.range.intersection(includedRange) ?? .zero
-                // Check that the capture name is one CETV can parse. If not, ignore it completely.
+                // Check that the capture name is one CESE can parse. If not, ignore it completely.
                 if intersectionRange.length > 0, let captureName = CaptureName.fromString($0.name ?? "") {
                     return HighlightRange(range: intersectionRange, capture: captureName)
                 }

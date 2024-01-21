@@ -6,7 +6,7 @@
 //
 
 /// A collection of possible capture names for `tree-sitter` with their respected raw values.
-public enum CaptureName: String, CaseIterable {
+public enum CaptureName: String, CaseIterable, Sendable {
     case include
     case constructor
     case keyword

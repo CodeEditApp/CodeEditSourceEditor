@@ -6,42 +6,43 @@
 //
 
 import Foundation
+import CodeEditTextView
 import CodeEditLanguages
 import AppKit
 
 /// The protocol a class must conform to to be used for highlighting.
 public protocol HighlightProviding: AnyObject {
-    /// A unique identifier for the highlighter object.
-    /// Example: `"CodeEdit.TreeSitterHighlighter"`
-    /// - Note: This does not need to be *globally* unique, merely unique across all the highlighters used.
-    var identifier: String { get }
-
     /// Called once to set up the highlight provider with a data source and language.
     /// - Parameters:
     ///   - textView: The text view to use as a text source.
-    ///   - codeLanguage: The langugage that should be used by the highlighter.
-    func setUp(textView: HighlighterTextView, codeLanguage: CodeLanguage)
+    ///   - codeLanguage: The language that should be used by the highlighter.
+    func setUp(textView: TextView, codeLanguage: CodeLanguage) async
+    
+    /// Notifies the highlighter that an edit is going to happen in the given range.
+    /// - Parameters:
+    ///   - textView: The text view to use.
+    ///   - range: The range of the incoming edit.
+    func willApplyEdit(textView: TextView, range: NSRange) async
 
     /// Notifies the highlighter of an edit and in exchange gets a set of indices that need to be re-highlighted.
     /// The returned `IndexSet` should include all indexes that need to be highlighted, including any inserted text.
     /// - Parameters:
-    ///   - textView:The text view to use.
+    ///   - textView: The text view to use.
     ///   - range: The range of the edit.
     ///   - delta: The length of the edit, can be negative for deletions.
-    ///   - completion: The function to call with an `IndexSet` containing all Indices to invalidate.
-    func applyEdit(textView: HighlighterTextView,
-                   range: NSRange,
-                   delta: Int,
-                   completion: @escaping ((IndexSet) -> Void))
+    /// - Returns: an `IndexSet` containing all Indices to invalidate.
+    func applyEdit(textView: TextView, range: NSRange, delta: Int) async -> IndexSet
 
     /// Queries the highlight provider for any ranges to apply highlights to. The highlight provider should return an
     /// array containing all ranges to highlight, and the capture type for the range. Any ranges or indexes
     /// excluded from the returned array will be treated as plain text and highlighted as such.
     /// - Parameters:
     ///   - textView: The text view to use.
-    ///   - range: The range to operate on.
-    ///   - completion: Function to call with all ranges to highlight
-    func queryHighlightsFor(textView: HighlighterTextView,
-                            range: NSRange,
-                            completion: @escaping (([HighlightRange]) -> Void))
+    ///   - range: The range to query.
+    /// - Returns: All highlight ranges for the queried ranges.
+    func queryHighlightsFor(textView: TextView, range: NSRange) async -> [HighlightRange]
+}
+
+extension HighlightProviding {
+    public func willApplyEdit(textView: TextView, range: NSRange) async { }
 }

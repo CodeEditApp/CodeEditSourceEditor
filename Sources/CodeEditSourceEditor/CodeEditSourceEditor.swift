@@ -212,7 +212,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     @MainActor
     public class Coordinator: NSObject {
         var parent: CodeEditSourceEditor
-        var controller: TextViewController?
+        weak var controller: TextViewController?
         var isUpdatingFromRepresentable: Bool = false
         var isUpdateFromTextView: Bool = false
 

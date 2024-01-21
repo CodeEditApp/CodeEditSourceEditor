@@ -149,7 +149,12 @@ public class TextViewController: NSViewController {
         }
     }
 
-    internal var highlighter: Highlighter?
+    var highlighter: Highlighter?
+
+    /// The tree sitter client managed by the source editor.
+    ///
+    /// This will be `nil` if another highlighter provider is passed to the source editor.
+    internal(set) public var treeSitterClient: TreeSitterClient?
 
     private var fontCharWidth: CGFloat { (" " as NSString).size(withAttributes: [.font: font]).width }
 
@@ -292,6 +297,11 @@ public class TextViewController: NSViewController {
     deinit {
         if let highlighter {
             textView.removeStorageDelegate(highlighter)
+            Task {
+                // We can safely do this async operation here b/c the highlighter will not deinit until its
+                // tasks are finished.
+                await highlighter.cancelAllTasks()
+            }
         }
         highlighter = nil
         highlightProvider = nil

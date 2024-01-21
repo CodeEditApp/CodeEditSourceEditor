@@ -7,13 +7,8 @@
 
 import Foundation
 
-/// This class represents a range to highlight, as well as the capture name for syntax coloring.
-public class HighlightRange {
-    init(range: NSRange, capture: CaptureName?) {
-        self.range = range
-        self.capture = capture
-    }
-
+/// This struct represents a range to highlight, as well as the capture name for syntax coloring.
+public struct HighlightRange: Sendable {
     let range: NSRange
     let capture: CaptureName?
 }
