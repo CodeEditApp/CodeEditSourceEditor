@@ -38,7 +38,7 @@ class Highlighter: NSObject {
 
     // MARK: - Tasks
 
-    var runningTasks: Set<Task<Void, Never>> = []
+    private var runningTasks: [UUID: Task<Void, Never>] = [:]
 
     // MARK: - UI
 
@@ -82,11 +82,10 @@ class Highlighter: NSObject {
 
         super.init()
 
-        let setupTask = Task {
+        addTask {
             await highlightProvider?.setUp(textView: textView, codeLanguage: language)
             return
         }
-        runningTasks.insert(setupTask)
 
         if let scrollView = textView.enclosingScrollView {
             NotificationCenter.default.addObserver(
@@ -119,13 +118,12 @@ class Highlighter: NSObject {
     public func setLanguage(language: CodeLanguage) {
         cancelAllTasks()
 
-        let setLanguageTask = Task {
-            guard let textView else { return }
-            await highlightProvider?.setUp(textView: textView, codeLanguage: language)
+        addTask {
+            guard let textView = self.textView else { return }
+            await self.highlightProvider?.setUp(textView: textView, codeLanguage: language)
             guard !Task.isCancelled else { return }
-            invalidate()
+            self.invalidate()
         }
-        runningTasks.insert(setLanguageTask)
     }
 
     /// Sets the highlight provider. Will cause a re-highlight of the entire text.
@@ -134,25 +132,41 @@ class Highlighter: NSObject {
         cancelAllTasks()
 
         highlightProvider = provider
-        let setHighlightProviderTask = Task {
-            guard let textView else { return }
-            await highlightProvider?.setUp(textView: textView, codeLanguage: language)
+        addTask {
+            guard let textView = self.textView else { return }
+            await self.highlightProvider?.setUp(textView: textView, codeLanguage: self.language)
             guard !Task.isCancelled else { return }
-            invalidate()
+            self.invalidate()
         }
-        runningTasks.insert(setHighlightProviderTask)
+    }
+    
+    /// Add a task to the set of tracked tasks for this highlighter.
+    ///
+    /// This method wraps the operation in a task that will remove itself from the list of running tasks, allowing
+    /// this class to track and cancel tasks itself.
+    ///
+    /// - Parameters:
+    ///   - detached: Set to true to detach the task from the current context.
+    ///   - operation: The operation to perform asynchronously.
+    func addTask(detached: Bool = false, operation: @MainActor @Sendable @escaping () async -> Void) {
+        // Add the new task to the running tasks list.
+        let taskId = UUID()
+        let newTask = Task {
+            await operation()
+            runningTasks.removeValue(forKey: taskId)
+        }
+        runningTasks[taskId] = newTask
     }
 
     func cancelAllTasks() {
-        for task in runningTasks {
+        for task in runningTasks.values {
             task.cancel()
         }
         runningTasks.removeAll()
     }
 
     deinit {
-        print("Highlighter deinit")
-        for task in runningTasks {
+        for task in runningTasks.values {
             task.cancel()
         }
         runningTasks.removeAll()
@@ -199,8 +213,7 @@ private extension Highlighter {
         for range in rangesToHighlight {
             pendingSet.insert(integersIn: range)
         }
-
-        let queryTask = Task.detached {
+        addTask(detached: true) {
             await withTaskGroup(of: Void.self) { group in
                 for range in rangesToHighlight {
                     group.addTask { [weak self] in
@@ -210,7 +223,7 @@ private extension Highlighter {
                             textView: textView,
                             range: range
                         )
-                        
+
                         guard !Task.isCancelled else { return }
 
                         await self?.applyHighlightResult(highlights ?? [], rangeToHighlight: range)
@@ -218,7 +231,6 @@ private extension Highlighter {
                 }
             }
         }
-        runningTasks.insert(queryTask)
     }
 
     /// Applies a highlight query result to the text view.

@@ -1,6 +1,15 @@
 {
   "pins" : [
     {
+      "identity" : "codeedittextview",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CodeEditApp/CodeEditTextView.git",
+      "state" : {
+        "revision" : "6abce20f1827a3665a5159195157f592352e38b4",
+        "version" : "0.7.1"
+      }
+    },
+    {
       "identity" : "mainoffender",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/mattmassicotte/MainOffender",
@@ -39,7 +48,7 @@
     {
       "identity" : "swifttreesitter",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/ChimeHQ/SwiftTreeSitter",
+      "location" : "https://github.com/ChimeHQ/SwiftTreeSitter.git",
       "state" : {
         "revision" : "2599e95310b3159641469d8a21baf2d3d200e61f",
         "version" : "0.8.0"

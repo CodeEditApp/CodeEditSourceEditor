@@ -20,11 +20,10 @@ extension Highlighter: NSTextStorageDelegate {
         // each time an attribute is applied, we check to make sure this is in response to an edit.
         guard editedMask.contains(.editedCharacters) else { return }
 
-        let editTask = Task {
-            await storageDidEdit(editedRange: editedRange, delta: delta)
+        addTask {
+            await self.storageDidEdit(editedRange: editedRange, delta: delta)
             return // To keep the compiler happy
         }
-        runningTasks.insert(editTask)
     }
 
     func textStorage(
@@ -35,10 +34,9 @@ extension Highlighter: NSTextStorageDelegate {
     ) {
         guard editedMask.contains(.editedCharacters) else { return }
 
-        let editTask = Task {
-            await storageWillEdit(editedRange: editedRange)
+        addTask {
+            await self.storageWillEdit(editedRange: editedRange)
             return;
         }
-        runningTasks.insert(editTask)
     }
 }
