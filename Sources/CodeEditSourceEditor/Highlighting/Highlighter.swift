@@ -139,7 +139,7 @@ class Highlighter: NSObject {
             self.invalidate()
         }
     }
-    
+
     /// Add a task to the set of tracked tasks for this highlighter.
     ///
     /// This method wraps the operation in a task that will remove itself from the list of running tasks, allowing

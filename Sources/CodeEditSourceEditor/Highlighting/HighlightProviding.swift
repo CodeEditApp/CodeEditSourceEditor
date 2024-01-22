@@ -17,7 +17,7 @@ public protocol HighlightProviding: AnyObject {
     ///   - textView: The text view to use as a text source.
     ///   - codeLanguage: The language that should be used by the highlighter.
     func setUp(textView: TextView, codeLanguage: CodeLanguage) async
-    
+
     /// Notifies the highlighter that an edit is going to happen in the given range.
     /// - Parameters:
     ///   - textView: The text view to use.

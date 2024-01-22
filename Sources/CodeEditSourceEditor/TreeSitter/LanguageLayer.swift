@@ -122,7 +122,7 @@ public class LanguageLayer: Hashable {
 
         // Check every timeout to see if the task is canceled to avoid parsing after the editor has been closed.
         // We can continue a parse after a timeout causes it to cancel by calling parse on the same tree.
-        var newTree: MutableTree? = nil
+        var newTree: MutableTree?
         while newTree == nil && !Task.isCancelled {
             newTree = parser.parse(tree: tree, readBlock: readBlock)
         }

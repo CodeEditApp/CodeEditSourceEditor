@@ -36,7 +36,7 @@ extension Highlighter: NSTextStorageDelegate {
 
         addTask {
             await self.storageWillEdit(editedRange: editedRange)
-            return;
+            return
         }
     }
 }
