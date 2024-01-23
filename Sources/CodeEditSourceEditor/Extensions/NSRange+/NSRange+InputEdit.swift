@@ -19,7 +19,7 @@ extension InputEdit {
         }
 
         let newRange = NSRange(location: range.location, length: range.length + delta)
-        let startPoint = textView.pointForLocation(range.location) ?? .zero
+        let startPoint = textView.pointForLocation(newRange.location) ?? .zero
         let newEndPoint = textView.pointForLocation(newEndLocation) ?? .zero
 
         self.init(
