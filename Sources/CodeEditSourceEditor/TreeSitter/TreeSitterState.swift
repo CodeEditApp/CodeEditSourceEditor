@@ -39,7 +39,7 @@ public class TreeSitterState {
 
     /// Sets the language for the state. Removing all existing layers.
     /// - Parameter codeLanguage: The language to use.
-    public func setLanguage(_ codeLanguage: CodeLanguage) {
+    private func setLanguage(_ codeLanguage: CodeLanguage) {
         layers.removeAll()
 
         primaryLayer = codeLanguage
@@ -62,7 +62,7 @@ public class TreeSitterState {
     /// - Parameters:
     ///   - readCallback: The callback to use to read content from the document.
     ///   - readBlock: The callback to use to read blocks of content from the document.
-    public func parseDocument(
+    private func parseDocument(
         readCallback: @escaping SwiftTreeSitter.Predicate.TextProvider,
         readBlock: @escaping Parser.ReadBlock
     ) {

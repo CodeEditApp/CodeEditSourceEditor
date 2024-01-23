@@ -30,8 +30,8 @@ final class TreeSitterClientTests: XCTestCase {
         
         let primaryLanguage = await client.state?.primaryLayer.id
         let layerCount = await client.state?.layers.count
-        XCTAssert(primaryLanguage == .swift, "Client set up incorrect language")
-        XCTAssert(layerCount == 1, "Client set up too many layers")
+        XCTAssertEqual(primaryLanguage, .swift, "Client set up incorrect language")
+        XCTAssertEqual(layerCount, 1, "Client set up too many layers")
     }
 }
 // swiftlint:enable all
