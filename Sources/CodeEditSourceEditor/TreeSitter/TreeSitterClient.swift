@@ -64,18 +64,21 @@ public actor TreeSitterClient: HighlightProviding {
 
         let task = Task.detached {
             await self.setState(
-                newState: TreeSitterState(
-                    codeLanguage: codeLanguage,
-                    readCallback: self.readCallback!,
-                    readBlock: self.readBlock!
-                )
+                language: codeLanguage,
+                readCallback: self.readCallback!,
+                readBlock: self.readBlock!
             )
         }
         await task.value
     }
 
-    private func setState(newState: TreeSitterState) async {
-        self.state = newState
+    private func setState(
+        language: CodeLanguage,
+        readCallback: @escaping SwiftTreeSitter.Predicate.TextProvider,
+        readBlock: @escaping Parser.ReadBlock
+    ) async {
+        self.state?.setLanguage(language)
+        self.state?.parseDocument(readCallback: readCallback, readBlock: readBlock)
     }
 
     /// Notifies the highlighter of an edit and in exchange gets a set of indices that need to be re-highlighted.

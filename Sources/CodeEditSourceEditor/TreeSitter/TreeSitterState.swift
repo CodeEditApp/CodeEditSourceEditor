@@ -27,27 +27,8 @@ public class TreeSitterState {
         readBlock: @escaping Parser.ReadBlock
     ) {
         self.primaryLayer = codeLanguage
-
         self.setLanguage(codeLanguage)
-
-        layers[0].parser.timeout = 0.0
-        layers[0].tree = layers[0].parser.parse(tree: nil as Tree?, readBlock: readBlock)
-
-        var layerSet = Set<LanguageLayer>(arrayLiteral: layers[0])
-        var touchedLayers = Set<LanguageLayer>()
-
-        var idx = 0
-        while idx < layers.count {
-            updateInjectedLanguageLayer(
-                readCallback: readCallback,
-                readBlock: readBlock,
-                layer: layers[idx],
-                layerSet: &layerSet,
-                touchedLayers: &touchedLayers
-            )
-
-            idx += 1
-        }
+        self.parseDocument(readCallback: readCallback, readBlock: readBlock)
     }
 
     /// Private initializer used by `copy`
@@ -75,6 +56,34 @@ public class TreeSitterState {
 
         guard let treeSitterLanguage = codeLanguage.language else { return }
         try? layers[0].parser.setLanguage(treeSitterLanguage)
+    }
+
+    /// Performs the initial document parse for the primary layer.
+    /// - Parameters:
+    ///   - readCallback: The callback to use to read content from the document.
+    ///   - readBlock: The callback to use to read blocks of content from the document.
+    public func parseDocument(
+        readCallback: @escaping SwiftTreeSitter.Predicate.TextProvider,
+        readBlock: @escaping Parser.ReadBlock
+    ) {
+        layers[0].parser.timeout = 0.0
+        layers[0].tree = layers[0].parser.parse(tree: nil as Tree?, readBlock: readBlock)
+
+        var layerSet = Set<LanguageLayer>(arrayLiteral: layers[0])
+        var touchedLayers = Set<LanguageLayer>()
+
+        var idx = 0
+        while idx < layers.count {
+            updateInjectedLanguageLayer(
+                readCallback: readCallback,
+                readBlock: readBlock,
+                layer: layers[idx],
+                layerSet: &layerSet,
+                touchedLayers: &touchedLayers
+            )
+
+            idx += 1
+        }
     }
 
     // MARK: - Layer Management
