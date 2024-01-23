@@ -25,8 +25,8 @@ extension TextView {
     }
 
     func createReadCallback() -> SwiftTreeSitter.Predicate.TextProvider {
-        return { range, _ in
-            return self.stringForRange(range)
+        return { [weak self] range, _ in
+            return self?.stringForRange(range)
         }
     }
 }
