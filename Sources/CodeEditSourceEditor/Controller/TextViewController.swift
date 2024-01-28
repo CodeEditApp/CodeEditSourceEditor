@@ -297,11 +297,6 @@ public class TextViewController: NSViewController {
     deinit {
         if let highlighter {
             textView.removeStorageDelegate(highlighter)
-            Task {
-                // We can safely do this async operation here b/c the highlighter will not deinit until its
-                // tasks are finished.
-                await highlighter.cancelAllTasks()
-            }
         }
         highlighter = nil
         highlightProvider = nil

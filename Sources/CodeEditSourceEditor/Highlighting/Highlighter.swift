@@ -58,7 +58,7 @@ class Highlighter: NSObject {
     private(set) weak var highlightProvider: HighlightProviding?
 
     /// The length to chunk ranges into when passing to the highlighter.
-    private let rangeChunkLimit = 256
+    private let rangeChunkLimit = 1024
 
     // MARK: - Init
 
@@ -82,10 +82,7 @@ class Highlighter: NSObject {
 
         super.init()
 
-        addTask {
-            await highlightProvider?.setUp(textView: textView, codeLanguage: language)
-            return
-        }
+        highlightProvider?.setUp(textView: textView, codeLanguage: language)
 
         if let scrollView = textView.enclosingScrollView {
             NotificationCenter.default.addObserver(
@@ -116,60 +113,21 @@ class Highlighter: NSObject {
     /// Sets the language and causes a re-highlight of the entire text.
     /// - Parameter language: The language to update to.
     public func setLanguage(language: CodeLanguage) {
-        cancelAllTasks()
-
-        addTask {
-            guard let textView = self.textView else { return }
-            await self.highlightProvider?.setUp(textView: textView, codeLanguage: language)
-            guard !Task.isCancelled else { return }
-            self.invalidate()
-        }
+        guard let textView = self.textView else { return }
+        highlightProvider?.setUp(textView: textView, codeLanguage: language)
+        invalidate()
     }
 
     /// Sets the highlight provider. Will cause a re-highlight of the entire text.
     /// - Parameter provider: The provider to use for future syntax highlights.
     public func setHighlightProvider(_ provider: HighlightProviding) {
-        cancelAllTasks()
-
-        highlightProvider = provider
-        addTask {
-            guard let textView = self.textView else { return }
-            await self.highlightProvider?.setUp(textView: textView, codeLanguage: self.language)
-            guard !Task.isCancelled else { return }
-            self.invalidate()
-        }
-    }
-
-    /// Add a task to the set of tracked tasks for this highlighter.
-    ///
-    /// This method wraps the operation in a task that will remove itself from the list of running tasks, allowing
-    /// this class to track and cancel tasks itself.
-    ///
-    /// - Parameters:
-    ///   - detached: Set to true to detach the task from the current context.
-    ///   - operation: The operation to perform asynchronously.
-    func addTask(detached: Bool = false, operation: @MainActor @Sendable @escaping () async -> Void) {
-        // Add the new task to the running tasks list.
-        let taskId = UUID()
-        let newTask = Task {
-            await operation()
-            runningTasks.removeValue(forKey: taskId)
-        }
-        runningTasks[taskId] = newTask
-    }
-
-    func cancelAllTasks() {
-        for task in runningTasks.values {
-            task.cancel()
-        }
-        runningTasks.removeAll()
+        self.highlightProvider = provider
+        guard let textView = self.textView else { return }
+        highlightProvider?.setUp(textView: textView, codeLanguage: self.language)
+        invalidate()
     }
 
     deinit {
-        for task in runningTasks.values {
-            task.cancel()
-        }
-        runningTasks.removeAll()
         self.attributeProvider = nil
         self.textView = nil
         self.highlightProvider = nil
@@ -210,24 +168,23 @@ private extension Highlighter {
     /// Highlights the given ranges
     /// - Parameter ranges: The ranges to request highlights for.
     func queryHighlights(for rangesToHighlight: [NSRange]) {
-        for range in rangesToHighlight {
-            pendingSet.insert(integersIn: range)
-        }
-        addTask(detached: true) {
-            await withTaskGroup(of: Void.self) { group in
+        guard let textView else { return }
+
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { [weak self] in
                 for range in rangesToHighlight {
-                    group.addTask { [weak self] in
-                        guard let textView = await self?.textView else { return }
-
-                        let highlights = await self?.highlightProvider?.queryHighlightsFor(
-                            textView: textView,
-                            range: range
-                        )
-
-                        guard !Task.isCancelled else { return }
-
-                        await self?.applyHighlightResult(highlights ?? [], rangeToHighlight: range)
+                    self?.highlightProvider?.queryHighlightsFor(
+                        textView: textView,
+                        range: range
+                    ) { [weak self] highlights in
+                        self?.applyHighlightResult(highlights, rangeToHighlight: range)
                     }
+                }
+            }
+        } else {
+            for range in rangesToHighlight {
+                highlightProvider?.queryHighlightsFor(textView: textView, range: range) { [weak self] highlights in
+                    self?.applyHighlightResult(highlights, rangeToHighlight: range)
                 }
             }
         }
@@ -237,7 +194,6 @@ private extension Highlighter {
     /// - Parameters:
     ///   - results: The result of a highlight query.
     ///   - rangeToHighlight: The range to apply the highlight to.
-    @MainActor
     private func applyHighlightResult(_ results: [HighlightRange], rangeToHighlight: NSRange) {
         guard let attributeProvider = self.attributeProvider else {
             return
@@ -257,7 +213,8 @@ private extension Highlighter {
         var ignoredIndexes = IndexSet(integersIn: rangeToHighlight)
 
         // Apply all highlights that need color
-        for highlight in results {
+        for highlight in results
+        where textView?.documentRange.upperBound ?? 0 > highlight.range.upperBound {
             textView?.textStorage.setAttributes(
                 attributeProvider.attributesFor(highlight.capture),
                 range: highlight.range
@@ -270,7 +227,8 @@ private extension Highlighter {
         // For any indices left over, we need to apply normal attributes to them
         // This fixes the case where characters are changed to have a non-text color, and then are skipped when
         // they need to be changed back.
-        for ignoredRange in ignoredIndexes.rangeView {
+        for ignoredRange in ignoredIndexes.rangeView
+        where textView?.documentRange.upperBound ?? 0 > ignoredRange.upperBound {
             textView?.textStorage.setAttributes(
                 attributeProvider.attributesFor(nil),
                 range: NSRange(ignoredRange)
@@ -313,10 +271,17 @@ private extension Highlighter {
 
     /// Updates the view to highlight newly visible text when the textview is scrolled or bounds change.
     @objc func visibleTextChanged(_ notification: Notification) {
-        guard let clipView = notification.object as? NSClipView,
-              let textView = clipView.enclosingScrollView?.documentView as? TextView else {
+        let textView: TextView
+        if let clipView = notification.object as? NSClipView,
+           let documentView = clipView.enclosingScrollView?.documentView as? TextView {
+            textView = documentView
+        } else if let scrollView = notification.object as? NSScrollView,
+                  let documentView = scrollView.documentView as? TextView {
+            textView = documentView
+        } else {
             return
         }
+
         updateVisibleSet(textView: textView)
 
         // Any indices that are both *not* valid and in the visible text range should be invalidated
@@ -331,7 +296,7 @@ private extension Highlighter {
 // MARK: - Editing
 
 extension Highlighter {
-    func storageDidEdit(editedRange: NSRange, delta: Int) async {
+    func storageDidEdit(editedRange: NSRange, delta: Int) {
         guard let textView else { return }
 
         let range = NSRange(location: editedRange.location, length: editedRange.length - delta)
@@ -339,26 +304,20 @@ extension Highlighter {
             visibleSet.insert(range: editedRange)
         }
 
-        guard let invalidatedIndexSet = await highlightProvider?.applyEdit(
-            textView: textView,
-            range: range,
-            delta: delta
-        ) else {
-            return
-        }
+        highlightProvider?.applyEdit(textView: textView, range: range, delta: delta) { [weak self] invalidIndexSet in
+            let indexSet = invalidIndexSet
+                .union(IndexSet(integersIn: editedRange))
+                // Only invalidate indices that are visible.
+                .intersection(self?.visibleSet ?? IndexSet())
 
-        let indexSet = invalidatedIndexSet
-            .union(IndexSet(integersIn: editedRange))
-            // Only invalidate indices that are visible.
-            .intersection(visibleSet)
-
-        for range in indexSet.rangeView {
-            invalidate(range: NSRange(range))
+            for range in indexSet.rangeView {
+                self?.invalidate(range: NSRange(range))
+            }
         }
     }
 
-    func storageWillEdit(editedRange: NSRange) async {
+    func storageWillEdit(editedRange: NSRange) {
         guard let textView else { return }
-        await highlightProvider?.willApplyEdit(textView: textView, range: editedRange)
+        highlightProvider?.willApplyEdit(textView: textView, range: editedRange)
     }
 }

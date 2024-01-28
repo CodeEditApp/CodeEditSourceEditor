@@ -77,7 +77,7 @@ public class LanguageLayer: Hashable {
         parser.timeout = timeout ?? 0
 
         let newTree = calculateNewState(
-            tree: self.tree,
+            tree: self.tree?.mutableCopy(),
             parser: self.parser,
             edit: edit,
             readBlock: readBlock
@@ -150,12 +150,5 @@ public class LanguageLayer: Hashable {
 
     enum Error: Swift.Error, LocalizedError {
         case parserTimeout
-
-        var localizedDescription: String {
-            switch self {
-            case .parserTimeout:
-                return "Parser Timed Out."
-            }
-        }
     }
 }

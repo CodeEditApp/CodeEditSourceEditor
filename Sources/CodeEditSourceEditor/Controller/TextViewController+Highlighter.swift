@@ -12,7 +12,6 @@ extension TextViewController {
     internal func setUpHighlighter() {
         if let highlighter {
             textView.removeStorageDelegate(highlighter)
-            highlighter.cancelAllTasks()
             self.highlighter = nil
         }
 
