@@ -19,33 +19,19 @@ public class TreeSitterState {
     /// Initialize a state object with a language and text view.
     /// - Parameters:
     ///   - codeLanguage: The language to use.
-    ///   - textView: The text view to use as a text data source.
-    init(codeLanguage: CodeLanguage, textView: HighlighterTextView) {
+    ///   - readCallback: Callback used to read text for a specific range.
+    ///   - readBlock: Callback used to read blocks of text.
+    init(
+        codeLanguage: CodeLanguage,
+        readCallback: @escaping SwiftTreeSitter.Predicate.TextProvider,
+        readBlock: @escaping Parser.ReadBlock
+    ) {
         self.primaryLayer = codeLanguage
-
         self.setLanguage(codeLanguage)
-        let readBlock = textView.createReadBlock()
-
-        layers[0].parser.timeout = 0.0
-        layers[0].tree = layers[0].parser.createTree(readBlock: readBlock)
-
-        var layerSet = Set<LanguageLayer>(arrayLiteral: layers[0])
-        var touchedLayers = Set<LanguageLayer>()
-
-        var idx = 0
-        while idx < layers.count {
-            updateInjectedLanguageLayer(
-                textView: textView,
-                layer: layers[idx],
-                layerSet: &layerSet,
-                touchedLayers: &touchedLayers
-            )
-
-            idx += 1
-        }
+        self.parseDocument(readCallback: readCallback, readBlock: readBlock)
     }
 
-    /// Private initilizer used by `copy`
+    /// Private initializer used by `copy`
     private init(codeLanguage: CodeLanguage, layers: [LanguageLayer]) {
         self.primaryLayer = codeLanguage
         self.layers = layers
@@ -53,7 +39,7 @@ public class TreeSitterState {
 
     /// Sets the language for the state. Removing all existing layers.
     /// - Parameter codeLanguage: The language to use.
-    public func setLanguage(_ codeLanguage: CodeLanguage) {
+    private func setLanguage(_ codeLanguage: CodeLanguage) {
         layers.removeAll()
 
         primaryLayer = codeLanguage
@@ -72,10 +58,32 @@ public class TreeSitterState {
         try? layers[0].parser.setLanguage(treeSitterLanguage)
     }
 
-    /// Creates a copy of this state object.
-    /// - Returns: The copied object
-    public func copy() -> TreeSitterState {
-        return TreeSitterState(codeLanguage: primaryLayer, layers: layers.map { $0.copy() })
+    /// Performs the initial document parse for the primary layer.
+    /// - Parameters:
+    ///   - readCallback: The callback to use to read content from the document.
+    ///   - readBlock: The callback to use to read blocks of content from the document.
+    private func parseDocument(
+        readCallback: @escaping SwiftTreeSitter.Predicate.TextProvider,
+        readBlock: @escaping Parser.ReadBlock
+    ) {
+        layers[0].parser.timeout = 0.0
+        layers[0].tree = layers[0].parser.parse(tree: nil as Tree?, readBlock: readBlock)
+
+        var layerSet = Set<LanguageLayer>(arrayLiteral: layers[0])
+        var touchedLayers = Set<LanguageLayer>()
+
+        var idx = 0
+        while idx < layers.count {
+            updateInjectedLanguageLayer(
+                readCallback: readCallback,
+                readBlock: readBlock,
+                layer: layers[idx],
+                layerSet: &layerSet,
+                touchedLayers: &touchedLayers
+            )
+
+            idx += 1
+        }
     }
 
     // MARK: - Layer Management
@@ -89,7 +97,7 @@ public class TreeSitterState {
     /// Removes all languagel ayers in the given set.
     /// - Parameter set: A set of all language layers to remove.
     public func removeLanguageLayers(in set: Set<LanguageLayer>) {
-        layers.removeAll(where: { set.contains($0 )})
+        layers.removeAll(where: { set.contains($0) })
     }
 
     /// Attempts to create a language layer and load a highlights file.
@@ -130,13 +138,15 @@ public class TreeSitterState {
 
     /// Inserts any new language layers, and removes any that may have been deleted after an edit.
     /// - Parameters:
-    ///   - textView: The data source for text ranges.
+    ///   - readCallback: Callback used to read text for a specific range.
+    ///   - readBlock: Callback used to read blocks of text.
     ///   - touchedLayers: A set of layers. Each time a layer is visited, it will be removed from this set.
     ///                    Use this to determine if any layers were not modified after this method was run.
     ///                    Those layers should be removed.
     /// - Returns: A set of indices of any new layers. This set indicates ranges that should be re-highlighted.
     public func updateInjectedLayers(
-        textView: HighlighterTextView,
+        readCallback: @escaping SwiftTreeSitter.Predicate.TextProvider,
+        readBlock: @escaping Parser.ReadBlock,
         touchedLayers: Set<LanguageLayer>
     ) -> IndexSet {
         var layerSet = Set(layers)
@@ -152,7 +162,8 @@ public class TreeSitterState {
             if layer.supportsInjections {
                 rangeSet.formUnion(
                     updateInjectedLanguageLayer(
-                        textView: textView,
+                        readCallback: readCallback,
+                        readBlock: readBlock,
                         layer: layer,
                         layerSet: &layerSet,
                         touchedLayers: &touchedLayers
@@ -172,7 +183,8 @@ public class TreeSitterState {
     /// Performs an injections query on the given language layer.
     /// Updates any existing layers with new ranges and adds new layers if needed.
     /// - Parameters:
-    ///   - textView: The text view to use.
+    ///   - readCallback: Callback used to read text for a specific range.
+    ///   - readBlock: Callback used to read blocks of text.
     ///   - layer: The language layer to perform the query on.
     ///   - layerSet: The set of layers that exist in the document.
     ///               Used for efficient lookup of existing `(language, range)` pairs
@@ -181,7 +193,8 @@ public class TreeSitterState {
     /// - Returns: An index set of any updated indexes.
     @discardableResult
     private func updateInjectedLanguageLayer(
-        textView: HighlighterTextView,
+        readCallback: @escaping SwiftTreeSitter.Predicate.TextProvider,
+        readBlock: @escaping Parser.ReadBlock,
         layer: LanguageLayer,
         layerSet: inout Set<LanguageLayer>,
         touchedLayers: inout Set<LanguageLayer>
@@ -194,8 +207,8 @@ public class TreeSitterState {
 
         cursor.matchLimit = TreeSitterClient.Constants.treeSitterMatchLimit
 
-        let languageRanges = self.injectedLanguagesFrom(cursor: cursor) { range, _ in
-            return textView.stringForRange(range)
+        let languageRanges = self.injectedLanguagesFrom(cursor: cursor) { range, point in
+            return readCallback(range, point)
         }
 
         var updatedRanges = IndexSet()
@@ -222,12 +235,11 @@ public class TreeSitterState {
                     // If we've found this layer, it means it should exist after an edit.
                     touchedLayers.remove(layer)
                 } else {
-                    let readBlock = textView.createReadBlock()
                     // New range, make a new layer!
                     if let addedLayer = addLanguageLayer(layerId: treeSitterLanguage, readBlock: readBlock) {
                         addedLayer.ranges = [range.range]
                         addedLayer.parser.includedRanges = addedLayer.ranges.map { $0.tsRange }
-                        addedLayer.tree = addedLayer.parser.createTree(readBlock: readBlock)
+                        addedLayer.tree = addedLayer.parser.parse(tree: nil as Tree?, readBlock: readBlock)
 
                         layerSet.insert(addedLayer)
                         updatedRanges.insert(range: range.range)
@@ -247,7 +259,7 @@ public class TreeSitterState {
     /// - Returns: A map of each language to all the ranges they have been injected into.
     private func injectedLanguagesFrom(
         cursor: QueryCursor,
-        textProvider: @escaping ResolvingQueryCursor.TextProvider
+        textProvider: @escaping SwiftTreeSitter.Predicate.TextProvider
     ) -> [String: [NamedRange]] {
         var languages: [String: [NamedRange]] = [:]
 

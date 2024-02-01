@@ -149,7 +149,12 @@ public class TextViewController: NSViewController {
         }
     }
 
-    internal var highlighter: Highlighter?
+    var highlighter: Highlighter?
+
+    /// The tree sitter client managed by the source editor.
+    ///
+    /// This will be `nil` if another highlighter provider is passed to the source editor.
+    internal(set) public var treeSitterClient: TreeSitterClient?
 
     private var fontCharWidth: CGFloat { (" " as NSString).size(withAttributes: [.font: font]).width }
 

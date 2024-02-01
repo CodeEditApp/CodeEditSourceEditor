@@ -32,11 +32,8 @@ extension TextViewController {
         if let highlightProvider = highlightProvider {
             provider = highlightProvider
         } else {
-            let textProvider: ResolvingQueryCursor.TextProvider = { [weak self] range, _ -> String? in
-                return self?.textView.textStorage.mutableString.substring(with: range)
-            }
-
-            provider = TreeSitterClient(textProvider: textProvider)
+            self.treeSitterClient = TreeSitterClient()
+            provider = self.treeSitterClient!
         }
 
         if let provider = provider {

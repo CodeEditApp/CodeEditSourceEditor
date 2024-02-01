@@ -237,7 +237,7 @@ final class TextViewControllerTests: XCTestCase {
         controller.scrollView.setFrameSize(NSSize(width: 500, height: 500))
         controller.viewDidLoad()
         controller.bracketPairHighlight = nil
-        controller.textView.string = "{ Loren Ipsum {} }"
+        controller.setText("{ Loren Ipsum {} }")
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssert(controller.highlightLayers.isEmpty, "Controller added highlight layer when setting is set to `nil`")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])

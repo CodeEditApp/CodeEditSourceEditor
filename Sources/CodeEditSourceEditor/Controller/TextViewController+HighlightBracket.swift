@@ -15,11 +15,11 @@ extension TextViewController {
         for range in textView.selectionManager.textSelections.map({ $0.range }) {
             if range.isEmpty,
                range.location > 0, // Range is not the beginning of the document
-               let preceedingCharacter = textView.textStorage.substring(
+               let precedingCharacter = textView.textStorage.substring(
                 from: NSRange(location: range.location - 1, length: 1) // The preceding character exists
                ) {
                 for pair in BracketPairs.allValues {
-                    if preceedingCharacter == pair.0 {
+                    if precedingCharacter == pair.0 {
                         // Walk forwards
                         if let characterIndex = findClosingPair(
                             pair.0,
@@ -34,7 +34,7 @@ extension TextViewController {
                                 highlightCharacter(range.location - 1)
                             }
                         }
-                    } else if preceedingCharacter == pair.1 && range.location - 1 > 0 {
+                    } else if precedingCharacter == pair.1 && range.location - 1 > 0 {
                         // Walk backwards
                         if let characterIndex = findClosingPair(
                             pair.1,

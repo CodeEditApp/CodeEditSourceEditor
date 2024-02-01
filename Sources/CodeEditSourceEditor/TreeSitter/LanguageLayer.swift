@@ -22,7 +22,7 @@ public class LanguageLayer: Hashable {
         id: TreeSitterLanguage,
         parser: Parser,
         supportsInjections: Bool,
-        tree: Tree? = nil,
+        tree: MutableTree? = nil,
         languageQuery: Query? = nil,
         ranges: [NSRange]
     ) {
@@ -39,7 +39,7 @@ public class LanguageLayer: Hashable {
     let id: TreeSitterLanguage
     let parser: Parser
     let supportsInjections: Bool
-    var tree: Tree?
+    var tree: MutableTree?
     var languageQuery: Query?
     var ranges: [NSRange]
 
@@ -48,7 +48,7 @@ public class LanguageLayer: Hashable {
             id: id,
             parser: parser,
             supportsInjections: supportsInjections,
-            tree: tree?.copy(),
+            tree: tree?.mutableCopy(),
             languageQuery: languageQuery,
             ranges: ranges
         )
@@ -65,38 +65,36 @@ public class LanguageLayer: Hashable {
 
     /// Calculates a series of ranges that have been invalidated by a given edit.
     /// - Parameters:
-    ///   - textView: The text view to use for text.
     ///   - edit: The edit to act on.
     ///   - timeout: The maximum time interval the parser can run before halting.
     ///   - readBlock: A callback for fetching blocks of text.
     /// - Returns: An array of distinct `NSRanges` that need to be re-highlighted.
     func findChangedByteRanges(
-        textView: HighlighterTextView,
         edit: InputEdit,
         timeout: TimeInterval?,
         readBlock: @escaping Parser.ReadBlock
     ) throws -> [NSRange] {
         parser.timeout = timeout ?? 0
 
-        let (oldTree, newTree) = calculateNewState(
-            tree: self.tree,
+        let newTree = calculateNewState(
+            tree: self.tree?.mutableCopy(),
             parser: self.parser,
             edit: edit,
             readBlock: readBlock
         )
 
-        if oldTree == nil && newTree == nil {
+        if self.tree == nil && newTree == nil {
             // There was no existing tree, make a new one and return all indexes.
-            tree = parser.createTree(readBlock: readBlock)
-            return [NSRange(textView.documentRange.intRange)]
-        } else if oldTree != nil && newTree == nil {
+            self.tree = parser.parse(tree: nil as Tree?, readBlock: readBlock)
+            return [self.tree?.rootNode?.range ?? .zero]
+        } else if self.tree != nil && newTree == nil {
             // The parser timed out,
             throw Error.parserTimeout
         }
 
-        let ranges = changedByteRanges(oldTree, rhs: newTree).map { $0.range }
+        let ranges = changedByteRanges(self.tree, newTree).map { $0.range }
 
-        tree = newTree
+        self.tree = newTree
 
         return ranges
     }
@@ -110,21 +108,26 @@ public class LanguageLayer: Hashable {
     ///   - readBlock: The block to use to read text.
     /// - Returns: (The old state, the new state).
     internal func calculateNewState(
-        tree: Tree?,
+        tree: MutableTree?,
         parser: Parser,
         edit: InputEdit,
         readBlock: @escaping Parser.ReadBlock
-    ) -> (Tree?, Tree?) {
-        guard let oldTree = tree else {
-            return (nil, nil)
+    ) -> MutableTree? {
+        guard let tree else {
+            return nil
         }
 
         // Apply the edit to the old tree
-        oldTree.edit(edit)
+        tree.edit(edit)
 
-        let newTree = parser.parse(tree: oldTree, readBlock: readBlock)
+        // Check every timeout to see if the task is canceled to avoid parsing after the editor has been closed.
+        // We can continue a parse after a timeout causes it to cancel by calling parse on the same tree.
+        var newTree: MutableTree?
+        while newTree == nil && !Task.isCancelled {
+            newTree = parser.parse(tree: tree, readBlock: readBlock)
+        }
 
-        return (oldTree.copy(), newTree)
+        return newTree
     }
 
     /// Calculates the changed byte ranges between two trees.
@@ -132,7 +135,7 @@ public class LanguageLayer: Hashable {
     ///   - lhs: The first (older) tree.
     ///   - rhs: The second (newer) tree.
     /// - Returns: Any changed ranges.
-    internal func changedByteRanges(_ lhs: Tree?, rhs: Tree?) -> [Range<UInt32>] {
+    internal func changedByteRanges(_ lhs: MutableTree?, _ rhs: MutableTree?) -> [Range<UInt32>] {
         switch (lhs, rhs) {
         case (let tree1?, let tree2?):
             return tree1.changedRanges(from: tree2).map({ $0.bytes })
@@ -145,7 +148,7 @@ public class LanguageLayer: Hashable {
         }
     }
 
-    enum Error: Swift.Error {
+    enum Error: Swift.Error, LocalizedError {
         case parserTimeout
     }
 }
