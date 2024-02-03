@@ -12,6 +12,7 @@ extension TextViewController {
     /// Sets new cursor positions.
     /// - Parameter positions: The positions to set. Lines and columns are 1-indexed.
     public func setCursorPositions(_ positions: [CursorPosition]) {
+        if isPostingCursorNotification { return }
         _ = textView.becomeFirstResponder()
 
         var newSelectedRanges: [NSRange] = []
@@ -48,6 +49,9 @@ extension TextViewController {
             positions.append(CursorPosition(range: selectedRange.range, line: row, column: column))
         }
         cursorPositions = positions.sorted(by: { $0.range.location < $1.range.location })
+
+        isPostingCursorNotification = true
         NotificationCenter.default.post(name: Self.cursorPositionUpdatedNotification, object: nil)
+        isPostingCursorNotification = false
     }
 }

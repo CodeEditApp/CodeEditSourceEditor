@@ -29,6 +29,8 @@ public class TextViewController: NSViewController {
     internal var highlightLayers: [CALayer] = []
     internal var systemAppearance: NSAppearance.Name?
 
+    package var isPostingCursorNotification: Bool = false
+
     /// The string contents.
     public var string: String {
         textView.string
