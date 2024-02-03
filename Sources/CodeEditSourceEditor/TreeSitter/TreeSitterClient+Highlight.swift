@@ -67,6 +67,7 @@ extension TreeSitterClient {
 
         var highlights: [HighlightRange] = []
 
+        // See https://github.com/CodeEditApp/CodeEditSourceEditor/pull/228
         if layer.id == .jsdoc {
             highlights.append(HighlightRange(range: range, capture: .comment))
         }
