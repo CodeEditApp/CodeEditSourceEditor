@@ -14,7 +14,6 @@ extension TextViewController {
         scrollView = NSScrollView()
         textView.postsFrameChangedNotifications = true
         textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.selectionManager.insertionPointColor = theme.insertionPoint
 
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.contentView.postsFrameChangedNotifications = true
@@ -22,7 +21,6 @@ extension TextViewController {
         scrollView.hasHorizontalScroller = true
         scrollView.documentView = textView
         scrollView.contentView.postsBoundsChangedNotifications = true
-        scrollView.backgroundColor = useThemeBackground ? theme.background : .clear
         if let contentInsets {
             scrollView.automaticallyAdjustsContentInsets = false
             scrollView.contentInsets = contentInsets
@@ -35,7 +33,6 @@ extension TextViewController {
             delegate: self
         )
         gutterView.frame.origin.y = -scrollView.contentInsets.top
-        gutterView.backgroundColor = useThemeBackground ? theme.background : .textBackgroundColor
         gutterView.updateWidthIfNeeded()
         scrollView.addFloatingSubview(
             gutterView,
@@ -46,6 +43,10 @@ extension TextViewController {
         if let _undoManager {
             textView.setUndoManager(_undoManager)
         }
+
+        styleTextView()
+        styleGutterView()
+        styleScrollView()
         setUpHighlighter()
         setUpTextFormation()
 
