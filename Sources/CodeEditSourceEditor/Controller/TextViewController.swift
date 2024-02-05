@@ -59,6 +59,7 @@ public class TextViewController: NSViewController {
                 attributesFor(nil),
                 range: NSRange(location: 0, length: textView.textStorage.length)
             )
+            textView.selectionManager.selectedLineBackgroundColor = theme.selection
             highlighter?.invalidate()
         }
     }
@@ -263,16 +264,39 @@ public class TextViewController: NSViewController {
         textView.isEditable = isEditable
         textView.isSelectable = isSelectable
 
+        styleTextView()
+        styleGutterView()
+        styleScrollView()
+
+        highlighter?.invalidate()
+    }
+
+    /// Style the text view.
+    package func styleTextView() {
         textView.selectionManager.selectionBackgroundColor = theme.selection
-        textView.selectionManager.selectedLineBackgroundColor = useThemeBackground
-        ? theme.lineHighlight
-        : systemAppearance == .darkAqua
-        ? NSColor.quaternaryLabelColor : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
+        textView.selectionManager.selectedLineBackgroundColor = getThemeBackground()
         textView.selectionManager.highlightSelectedLine = isEditable
         textView.selectionManager.insertionPointColor = theme.insertionPoint
         paragraphStyle = generateParagraphStyle()
         textView.typingAttributes = attributesFor(nil)
+    }
 
+    /// Finds the preferred use theme background.
+    /// - Returns: The background color to use.
+    private func getThemeBackground() -> NSColor {
+        if useThemeBackground {
+            return theme.lineHighlight
+        }
+
+        if systemAppearance == .darkAqua {
+            return NSColor.quaternaryLabelColor
+        }
+
+        return NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
+    }
+
+    /// Style the gutter view.
+    package func styleGutterView() {
         gutterView.selectedLineColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
         ? NSColor.quaternaryLabelColor
         : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
@@ -283,17 +307,17 @@ public class TextViewController: NSViewController {
             gutterView.selectedLineTextColor = nil
             gutterView.selectedLineColor = .clear
         }
+    }
 
-        if let scrollView = view as? NSScrollView {
-            scrollView.drawsBackground = useThemeBackground
-            scrollView.backgroundColor = useThemeBackground ? theme.background : .clear
-            if let contentInsets = contentInsets {
-                scrollView.contentInsets = contentInsets
-            }
-            scrollView.contentInsets.bottom = (contentInsets?.bottom ?? 0) + bottomContentInsets
+    /// Style the scroll view.
+    package func styleScrollView() {
+        guard let scrollView = view as? NSScrollView else { return }
+        scrollView.drawsBackground = useThemeBackground
+        scrollView.backgroundColor = useThemeBackground ? theme.background : .clear
+        if let contentInsets = contentInsets {
+            scrollView.contentInsets = contentInsets
         }
-
-        highlighter?.invalidate()
+        scrollView.contentInsets.bottom = (contentInsets?.bottom ?? 0) + bottomContentInsets
     }
 
     deinit {
