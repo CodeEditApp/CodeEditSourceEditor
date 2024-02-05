@@ -17,7 +17,14 @@ extension TextViewController {
             ("{", "}"),
             ("[", "]"),
             ("(", ")"),
-            ("<", ">")
+            ("\"", "\""),
+            ("'", "'")
+        ]
+
+        static let highlightValues: [(String, String)] = [
+            ("{", "}"),
+            ("[", "]"),
+            ("(", ")")
         ]
     }
 
