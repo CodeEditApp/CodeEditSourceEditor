@@ -18,7 +18,7 @@ extension TextViewController {
                let precedingCharacter = textView.textStorage.substring(
                 from: NSRange(location: range.location - 1, length: 1) // The preceding character exists
                ) {
-                for pair in BracketPairs.allValues {
+                for pair in BracketPairs.highlightValues {
                     if precedingCharacter == pair.0 {
                         // Walk forwards
                         if let characterIndex = findClosingPair(

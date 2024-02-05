@@ -20,6 +20,12 @@ extension TextViewController {
             ("\"", "\""),
             ("'", "'")
         ]
+
+        static let highlightValues: [(String, String)] = [
+            ("{", "}"),
+            ("[", "]"),
+            ("(", ")")
+        ]
     }
 
     // MARK: - Filter Configuration
