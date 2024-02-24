@@ -7,6 +7,7 @@
 
 import AppKit
 import CodeEditTextView
+import CodeEditTextViewObjC
 
 public protocol GutterViewDelegate: AnyObject {
     func gutterViewWidthDidUpdate(newWidth: CGFloat)
@@ -55,10 +56,6 @@ public class GutterView: NSView {
         true
     }
 
-    override public var wantsDefaultClipping: Bool {
-        false
-    }
-
     public init(
         font: NSFont,
         textColor: NSColor,
@@ -71,11 +68,11 @@ public class GutterView: NSView {
         self.delegate = delegate
 
         super.init(frame: .zero)
-        clipsToBounds = false
+        clipsToBounds = true
         wantsLayer = true
         layerContentsRedrawPolicy = .onSetNeedsDisplay
         translatesAutoresizingMaskIntoConstraints = false
-        layer?.masksToBounds = false
+        layer?.masksToBounds = true
 
         NotificationCenter.default.addObserver(
             forName: TextSelectionManager.selectionChangedNotification,
@@ -165,6 +162,16 @@ public class GutterView: NSView {
         }
 
         context.saveGState()
+
+        context.setAllowsAntialiasing(true)
+        context.setShouldAntialias(true)
+        context.setAllowsFontSmoothing(false)
+        context.setAllowsFontSubpixelPositioning(true)
+        context.setShouldSubpixelPositionFonts(true)
+        context.setAllowsFontSubpixelQuantization(true)
+        context.setShouldSubpixelQuantizeFonts(true)
+        ContextSetHiddenSmoothingStyle(context, 16)
+
         context.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
         for linePosition in textView.layoutManager.visibleLines() {
             if selectionRangeMap.intersects(integersIn: linePosition.range) {
