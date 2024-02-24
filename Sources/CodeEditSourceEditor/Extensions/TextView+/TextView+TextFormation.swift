@@ -35,11 +35,20 @@ extension TextView: TextInterface {
     /// Applies the mutation to the text view.
     /// - Parameter mutation: The mutation to apply.
     public func applyMutation(_ mutation: TextMutation) {
+        layoutManager.beginTransaction()
+        textStorage.beginEditing()
+        _undoManager?.beginGrouping()
+
         layoutManager.willReplaceCharactersInRange(range: mutation.range, with: mutation.string)
+        _undoManager?.registerMutation(mutation)
+        textStorage.replaceCharacters(in: mutation.range, with: mutation.string)
         selectionManager.didReplaceCharacters(
             in: mutation.range,
             replacementLength: (mutation.string as NSString).length
         )
-        textStorage.replaceCharacters(in: mutation.range, with: mutation.string)
+
+        _undoManager?.endGrouping()
+        textStorage.endEditing()
+        layoutManager.endTransaction()
     }
 }

@@ -20,9 +20,13 @@ struct TabReplacementFilter: Filter {
         with providers: WhitespaceProviders
     ) -> FilterAction {
         if mutation.string == "\t" && indentOption != .tab && mutation.delta > 0 {
-            interface.applyMutation(TextMutation(insert: indentOption.stringValue,
-                                                 at: mutation.range.location,
-                                                 limit: mutation.limit))
+            interface.applyMutation(
+                TextMutation(
+                    insert: indentOption.stringValue,
+                    at: mutation.range.location,
+                    limit: mutation.limit
+                )
+            )
             return .discard
         } else {
             return .none
