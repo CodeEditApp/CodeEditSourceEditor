@@ -276,7 +276,7 @@ final class TextViewControllerTests: XCTestCase {
 
     func test_findClosingPair() {
         let _ = controller.textView.becomeFirstResponder()
-        controller.textView.string = "{ Loren Ipsum {} }"
+        controller.textView.string = "{ Lorem Ipsum {} }"
         var idx: Int?
 
         // Test walking forwards
