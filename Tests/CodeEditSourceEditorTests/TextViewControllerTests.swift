@@ -239,7 +239,7 @@ final class TextViewControllerTests: XCTestCase {
         controller.viewDidLoad()
         let _ = controller.textView.becomeFirstResponder()
         controller.bracketPairHighlight = nil
-        controller.setText("{ Loren Ipsum {} }")
+        controller.setText("{ Lorem Ipsum {} }")
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssert(controller.highlightLayers.isEmpty, "Controller added highlight layer when setting is set to `nil`")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
