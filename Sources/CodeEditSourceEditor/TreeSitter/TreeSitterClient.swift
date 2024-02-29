@@ -218,7 +218,7 @@ public final class TreeSitterClient: HighlightProviding {
             let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
 
             if longEdit || longDocument {
-
+                throw Error.syncUnavailable
             }
             try performSync(operation)
         } catch {

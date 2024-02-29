@@ -309,6 +309,8 @@ extension Highlighter {
             visibleSet.insert(range: editedRange)
         }
 
+        updateVisibleSet(textView: textView)
+
         highlightProvider?.applyEdit(textView: textView, range: range, delta: delta) { [weak self] invalidIndexSet in
             let indexSet = invalidIndexSet
                 .union(IndexSet(integersIn: editedRange))
