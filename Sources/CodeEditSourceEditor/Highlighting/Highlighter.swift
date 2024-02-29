@@ -112,13 +112,14 @@ class Highlighter: NSObject {
         guard let textView = self.textView else { return }
         // Remove all current highlights. Makes the language setting feel snappier and tells the user we're doing
         // something immediately.
-        validSet.removeAll()
-        pendingSet.removeAll()
-        highlightProvider?.setUp(textView: textView, codeLanguage: language)
         textView.textStorage.setAttributes(
             attributeProvider.attributesFor(nil),
             range: NSRange(location: 0, length: textView.textStorage.length)
         )
+        textView.layoutManager.invalidateLayoutForRect(textView.visibleRect)
+        validSet.removeAll()
+        pendingSet.removeAll()
+        highlightProvider?.setUp(textView: textView, codeLanguage: language)
         invalidate()
     }
 
