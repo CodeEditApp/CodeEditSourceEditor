@@ -38,12 +38,6 @@ extension TextView: TextInterface {
         layoutManager.beginTransaction()
         textStorage.beginEditing()
 
-        var wasGrouping = true
-        if !(_undoManager?.isGrouping ?? false) {
-            _undoManager?.beginGrouping()
-            wasGrouping = false
-        }
-
         layoutManager.willReplaceCharactersInRange(range: mutation.range, with: mutation.string)
         _undoManager?.registerMutation(mutation)
         textStorage.replaceCharacters(in: mutation.range, with: mutation.string)
@@ -52,9 +46,6 @@ extension TextView: TextInterface {
             replacementLength: (mutation.string as NSString).length
         )
 
-        if !wasGrouping {
-            _undoManager?.endGrouping()
-        }
         textStorage.endEditing()
         layoutManager.endTransaction()
     }
