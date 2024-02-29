@@ -36,10 +36,6 @@ class Highlighter: NSObject {
         return IndexSet(integersIn: textView?.visibleTextRange ?? NSRange())
     }()
 
-    // MARK: - Tasks
-
-    private var runningTasks: [UUID: Task<Void, Never>] = [:]
-
     // MARK: - UI
 
     /// The text view to highlight
@@ -114,6 +110,15 @@ class Highlighter: NSObject {
     /// - Parameter language: The language to update to.
     public func setLanguage(language: CodeLanguage) {
         guard let textView = self.textView else { return }
+        // Remove all current highlights. Makes the language setting feel snappier and tells the user we're doing
+        // something immediately.
+        textView.textStorage.setAttributes(
+            attributeProvider.attributesFor(nil),
+            range: NSRange(location: 0, length: textView.textStorage.length)
+        )
+        textView.layoutManager.invalidateLayoutForRect(textView.visibleRect)
+        validSet.removeAll()
+        pendingSet.removeAll()
         highlightProvider?.setUp(textView: textView, codeLanguage: language)
         invalidate()
     }
@@ -304,11 +309,11 @@ extension Highlighter {
             visibleSet.insert(range: editedRange)
         }
 
+        updateVisibleSet(textView: textView)
+
         highlightProvider?.applyEdit(textView: textView, range: range, delta: delta) { [weak self] invalidIndexSet in
             let indexSet = invalidIndexSet
                 .union(IndexSet(integersIn: editedRange))
-                // Only invalidate indices that are visible.
-                .intersection(self?.visibleSet ?? IndexSet())
 
             for range in indexSet.rangeView {
                 self?.invalidate(range: NSRange(range))

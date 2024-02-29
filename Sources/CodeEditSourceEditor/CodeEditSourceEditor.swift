@@ -156,12 +156,16 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             return
         }
 
-        controller.font = font
+        if controller.font != font {
+            controller.font = font
+        }
+
         controller.wrapLines = wrapLines
         controller.useThemeBackground = useThemeBackground
         controller.lineHeightMultiple = lineHeight
         controller.editorOverscroll = editorOverscroll
         controller.contentInsets = contentInsets
+
         if controller.isEditable != isEditable {
             controller.isEditable = isEditable
         }
@@ -173,15 +177,19 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         if controller.language.id != language.id {
             controller.language = language
         }
+
         if controller.theme != theme {
             controller.theme = theme
         }
+
         if controller.indentOption != indentOption {
             controller.indentOption = indentOption
         }
+
         if controller.tabWidth != tabWidth {
             controller.tabWidth = tabWidth
         }
+
         if controller.letterSpacing != letterSpacing {
             controller.letterSpacing = letterSpacing
         }
