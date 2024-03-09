@@ -14,8 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CodeEditApp/CodeEditTextView.git",
       "state" : {
-        "revision" : "6653c21a603babf365a12d4d331fadc8f8b52d99",
-        "version" : "0.7.2"
+        "revision" : "86b980464bcb67693e2053283c7a99bdc6f358bc",
+        "version" : "0.7.3"
       }
     },
     {
@@ -68,8 +68,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/TextFormation",
       "state" : {
-        "revision" : "b4987856bc860643ac2c9cdbc7d5f3e9ade68377",
-        "version" : "0.8.1"
+        "revision" : "f6faed6abd768ae95b70d10113d4008a7cac57a7",
+        "version" : "0.8.2"
       }
     },
     {
