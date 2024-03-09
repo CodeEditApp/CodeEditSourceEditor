@@ -264,9 +264,9 @@ public class TextViewController: NSViewController {
         textView.isEditable = isEditable
         textView.isSelectable = isSelectable
 
+        styleScrollView()
         styleTextView()
         styleGutterView()
-        styleScrollView()
 
         highlighter?.invalidate()
     }
@@ -297,6 +297,7 @@ public class TextViewController: NSViewController {
 
     /// Style the gutter view.
     package func styleGutterView() {
+        gutterView.frame.origin.y = -scrollView.contentInsets.top
         gutterView.selectedLineColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
         ? NSColor.quaternaryLabelColor
         : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
@@ -314,8 +315,11 @@ public class TextViewController: NSViewController {
         guard let scrollView = view as? NSScrollView else { return }
         scrollView.drawsBackground = useThemeBackground
         scrollView.backgroundColor = useThemeBackground ? theme.background : .clear
-        if let contentInsets = contentInsets {
+        if let contentInsets {
+            scrollView.automaticallyAdjustsContentInsets = false
             scrollView.contentInsets = contentInsets
+        } else {
+            scrollView.automaticallyAdjustsContentInsets = true
         }
         scrollView.contentInsets.bottom = (contentInsets?.bottom ?? 0) + bottomContentInsets
     }

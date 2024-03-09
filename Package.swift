@@ -32,7 +32,7 @@ let package = Package(
         // Rules for indentation, pair completion, whitespace
         .package(
             url: "https://github.com/ChimeHQ/TextFormation",
-            from: "0.8.1"
+            from: "0.8.2"
         )
     ],
     targets: [
