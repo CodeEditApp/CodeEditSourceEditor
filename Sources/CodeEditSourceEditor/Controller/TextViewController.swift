@@ -20,6 +20,8 @@ import TextFormation
 public class TextViewController: NSViewController {
     // swiftlint:disable:next line_length
     public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
+    
+    // this is a random comment
 
     var scrollView: NSScrollView!
     var textView: TextView!
