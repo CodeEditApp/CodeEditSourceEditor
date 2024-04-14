@@ -18,10 +18,47 @@ import TextFormation
 /// tree-sitter for syntax highlighting, and TextFormation for live editing completions.
 /// 
 public class TextViewController: NSViewController {
+    
+    @IBOutlet var textField: NSTextField!
+
+    override public func viewDidLoad() {
+        super.viewDidLoad()
+        NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) {
+            self.flagsChanged(with: $0)
+            return $0
+        }
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
+            self.keyDown(with: $0)
+            return $0
+        }
+    }
+    
+    override public func keyDown(with event: NSEvent) {
+        switch event.modifierFlags.intersection(.deviceIndependentFlagsMask) {
+        case [.command] where event.characters == "l",
+             [.command, .shift] where event.characters == "l":
+            print("command-l or command-shift-l")
+        default:
+            break
+        }
+        textField.stringValue = "key = " + (event.charactersIgnoringModifiers
+            ?? "")
+        textField.stringValue += "\ncharacter = " + (event.characters ?? "")
+    }
+
+    override public func flagsChanged(with event: NSEvent) {
+        switch event.modifierFlags.intersection(.deviceIndependentFlagsMask) {
+        case [.shift]:
+            print("shift key is pressed")
+        case [.control]:
+            print("control key is pressed")
+        default:
+            print("no modifier keys are pressed")
+        }
+    }
+    
     // swiftlint:disable:next line_length
     public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
-    
-    // this is a random comment
 
     var scrollView: NSScrollView!
     var textView: TextView!
