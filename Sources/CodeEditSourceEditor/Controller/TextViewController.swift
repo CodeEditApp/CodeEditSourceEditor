@@ -21,17 +21,17 @@ public class TextViewController: NSViewController {
     
 //    @IBOutlet var textField: NSTextField!
 //
-//    override public func viewDidLoad() {
-//        super.viewDidLoad()
+    override public func viewDidLoad() {
+        super.viewDidLoad()
 //        NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) {
 //            self.flagsChanged(with: $0)
 //            return $0
 //        }
-//        NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
-//            self.keyDown(with: $0)
-//            return $0
-//        }
-//    }
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
+            self.keyDown(with: $0)
+            return $0
+        }
+    }
 //    
 //    override public func keyDown(with event: NSEvent) {
 //        switch event.modifierFlags.intersection(.deviceIndependentFlagsMask) {
@@ -56,11 +56,6 @@ public class TextViewController: NSViewController {
 //            print("no modifier keys are pressed")
 //        }
 //    }
-    
-    override public func viewDidLoad() {
-        super.viewDidLoad()
-        // Any additional setup after your view loads
-    }
     
     override public func keyDown(with event: NSEvent) {
         print("key pressed");
