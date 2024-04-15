@@ -20,19 +20,15 @@ import TextFormation
 public class TextViewController: NSViewController {
     
 //    @IBOutlet var textField: NSTextField!
-//
+
     override public func viewDidLoad() {
         super.viewDidLoad()
-//        NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) {
-//            self.flagsChanged(with: $0)
-//            return $0
-//        }
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
             self.keyDown(with: $0)
             return $0
         }
     }
-//    
+   
 //    override public func keyDown(with event: NSEvent) {
 //        switch event.modifierFlags.intersection(.deviceIndependentFlagsMask) {
 //        case [.command] where event.characters == "l",
@@ -59,6 +55,7 @@ public class TextViewController: NSViewController {
     
     override public func keyDown(with event: NSEvent) {
         print("key pressed");
+        let charactersIgnoringModifiers = event.charactersIgnoringModifiers;
         let commandShiftKey = NSEvent.ModifierFlags.command.rawValue | NSEvent.ModifierFlags.shift.rawValue
         let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
 
