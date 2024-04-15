@@ -61,6 +61,11 @@ public class TextViewController: NSViewController {
         print("Shortcut used!")
     }
     
+    override public func viewDidLoad() {
+        super.viewDidLoad()
+        // Any additional setup after your view loads
+    }
+    
     override public func keyDown(with event: NSEvent) {
         super.keyDown(with: event)
         
