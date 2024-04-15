@@ -42,6 +42,7 @@ public class TextViewController: NSViewController {
         print("Command-/ has been pressed!")
         // Implement what this function should do
         print(cursorPositions)
+        print(textView.string)
     }
 
     // swiftlint:disable:next line_length
