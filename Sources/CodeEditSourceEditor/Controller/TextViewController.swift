@@ -68,7 +68,7 @@ public class TextViewController: NSViewController {
     }
 
     func customFunction() {
-        print("Command-Shift-L has been pressed!")
+        print("Command-/ has been pressed!")
         // Implement what this function should do
     }
 
