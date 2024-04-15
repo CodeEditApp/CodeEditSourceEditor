@@ -56,10 +56,10 @@ public class TextViewController: NSViewController {
     override public func keyDown(with event: NSEvent) {
         print("key pressed");
         let charactersIgnoringModifiers = event.charactersIgnoringModifiers;
-        let commandShiftKey = NSEvent.ModifierFlags.command.rawValue | NSEvent.ModifierFlags.shift.rawValue
+        let commandKey = NSEvent.ModifierFlags.command.rawValue
         let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
 
-        if modifierFlags == commandShiftKey && event.charactersIgnoringModifiers == "l" {
+        if modifierFlags == commandKey && event.charactersIgnoringModifiers == "/" {
             // Call your custom function here
             customFunction()
         } else {
