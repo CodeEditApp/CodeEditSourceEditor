@@ -57,30 +57,29 @@ public class TextViewController: NSViewController {
 //        }
 //    }
     
-    func myCustomFunction() {
-        print("Shortcut used!")
-    }
-    
     override public func viewDidLoad() {
         super.viewDidLoad()
         // Any additional setup after your view loads
     }
     
     override public func keyDown(with event: NSEvent) {
-        super.keyDown(with: event)
-        
-        let commandKey = NSEvent.ModifierFlags.command.rawValue
-        let shiftKey = NSEvent.ModifierFlags.shift.rawValue
-        let desiredKey = 0x01 // Using 's' key as an example, you can find other key codes
+        print("key pressed");
+        let commandShiftKey = NSEvent.ModifierFlags.command.rawValue | NSEvent.ModifierFlags.shift.rawValue
+        let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
 
-        if event.modifierFlags.rawValue & commandKey != 0 &&
-           event.modifierFlags.rawValue & shiftKey != 0 &&
-           event.keyCode == desiredKey {
-            myCustomFunction()
+        if modifierFlags == commandShiftKey && event.charactersIgnoringModifiers == "l" {
+            // Call your custom function here
+            customFunction()
+        } else {
+            super.keyDown(with: event)  // It's important to call super for unhandled events
         }
     }
 
-    
+    func customFunction() {
+        print("Command-Shift-L has been pressed!")
+        // Implement what this function should do
+    }
+
     // swiftlint:disable:next line_length
     public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
 
