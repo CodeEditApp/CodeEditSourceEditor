@@ -18,9 +18,6 @@ import TextFormation
 /// tree-sitter for syntax highlighting, and TextFormation for live editing completions.
 /// 
 public class TextViewController: NSViewController {
-    
-//    @IBOutlet var textField: NSTextField!
-
     override public func viewDidLoad() {
         super.viewDidLoad()
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
@@ -28,48 +25,23 @@ public class TextViewController: NSViewController {
             return $0
         }
     }
-   
-//    override public func keyDown(with event: NSEvent) {
-//        switch event.modifierFlags.intersection(.deviceIndependentFlagsMask) {
-//        case [.command] where event.characters == "l",
-//             [.command, .shift] where event.characters == "l":
-//            print("command-l or command-shift-l")
-//        default:
-//            break
-//        }
-//        textField.stringValue = "key = " + (event.charactersIgnoringModifiers
-//            ?? "")
-//        textField.stringValue += "\ncharacter = " + (event.characters ?? "")
-//    }
-//
-//    override public func flagsChanged(with event: NSEvent) {
-//        switch event.modifierFlags.intersection(.deviceIndependentFlagsMask) {
-//        case [.shift]:
-//            print("shift key is pressed")
-//        case [.control]:
-//            print("control key is pressed")
-//        default:
-//            print("no modifier keys are pressed")
-//        }
-//    }
     
     override public func keyDown(with event: NSEvent) {
         print("key pressed");
         let charactersIgnoringModifiers = event.charactersIgnoringModifiers;
         let commandKey = NSEvent.ModifierFlags.command.rawValue
         let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
-
         if modifierFlags == commandKey && event.charactersIgnoringModifiers == "/" {
-            // Call your custom function here
-            customFunction()
+            commandSlashCalled()
         } else {
-            super.keyDown(with: event)  // It's important to call super for unhandled events
+            super.keyDown(with: event)
         }
     }
 
-    func customFunction() {
+    func commandSlashCalled() {
         print("Command-/ has been pressed!")
         // Implement what this function should do
+        print(cursorPositions)
     }
 
     // swiftlint:disable:next line_length
