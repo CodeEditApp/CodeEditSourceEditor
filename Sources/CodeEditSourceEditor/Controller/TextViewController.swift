@@ -27,7 +27,6 @@ public class TextViewController: NSViewController {
     }
     
     override public func keyDown(with event: NSEvent) {
-        print("key pressed");
         let charactersIgnoringModifiers = event.charactersIgnoringModifiers;
         let commandKey = NSEvent.ModifierFlags.command.rawValue
         let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
@@ -40,11 +39,13 @@ public class TextViewController: NSViewController {
 
     func commandSlashCalled() {
         print("Command-/ has been pressed!")
-        // Implement what this function should do
         print(cursorPositions)
         // print(textView.string)
-        let stringContents = "hi"
-        textView.insertText(stringContents, replacementRange: NSRange(location: NSNotFound, length: 0))
+        let stringContents = "//"
+        if let cursorPosition = cursorPositions.first {
+            let lineNumber = cursorPosition.line
+            textView.insertText(stringContents, replacementRange: NSRange(location: lineNumber, length: 0))
+        }
     }
 
     // swiftlint:disable:next line_length
