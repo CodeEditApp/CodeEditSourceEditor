@@ -45,6 +45,7 @@ public class TextViewController: NSViewController {
         if let cursorPosition = cursorPositions.first {
             print(textView.layoutManager.textLineForIndex(cursorPosition.line - 1) ?? 0)
             if let lineInfo = textView.layoutManager.textLineForIndex(cursorPosition.line - 1) {
+                print("reached inner if")
                 let lineFirstCharIndex = lineInfo.range.location
                 textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: "//")
             }
