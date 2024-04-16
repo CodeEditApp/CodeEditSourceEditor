@@ -25,9 +25,9 @@ public class TextViewController: NSViewController {
             return $0
         }
     }
-    
+
     override public func keyDown(with event: NSEvent) {
-        let charactersIgnoringModifiers = event.charactersIgnoringModifiers;
+        let charactersIgnoringModifiers = event.charactersIgnoringModifiers
         let commandKey = NSEvent.ModifierFlags.command.rawValue
         let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
         if modifierFlags == commandKey && event.charactersIgnoringModifiers == "/" {
@@ -43,8 +43,9 @@ public class TextViewController: NSViewController {
         // print(textView.string)
         let stringContents = "//"
         if let cursorPosition = cursorPositions.first {
-            let lineNumber = cursorPosition.line
-            textView.insertText(stringContents, replacementRange: NSRange(location: lineNumber, length: 0))
+            print(textView.layoutManager.textLineForIndex(cursorPosition.line) ?? 0)
+//            let lineNumber = cursorPosition.line
+//            textView.insertText(stringContents, replacementRange: NSRange(location: lineNumber, length: 0))
         }
     }
 
