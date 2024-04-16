@@ -44,8 +44,10 @@ public class TextViewController: NSViewController {
         let stringContents = "//"
         if let cursorPosition = cursorPositions.first {
             print(textView.layoutManager.textLineForIndex(cursorPosition.line - 1) ?? 0)
-//            let lineNumber = cursorPosition.line
-//            textView.insertText(stringContents, replacementRange: NSRange(location: lineNumber, length: 0))
+            if let lineInfo = textView.layoutManager.textLineForIndex(cursorPosition.line - 1) {
+                let lineFirstCharIndex = lineInfo.range.location
+                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: "//")
+            }
         }
     }
 
