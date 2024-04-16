@@ -43,7 +43,7 @@ public class TextViewController: NSViewController {
         // print(textView.string)
         let stringContents = "//"
         if let cursorPosition = cursorPositions.first {
-            print(textView.layoutManager.textLineForIndex(cursorPosition.line) ?? 0)
+            print(textView.layoutManager.textLineForIndex(cursorPosition.line + 1) ?? 0)
 //            let lineNumber = cursorPosition.line
 //            textView.insertText(stringContents, replacementRange: NSRange(location: lineNumber, length: 0))
         }
