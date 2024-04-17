@@ -26,6 +26,7 @@ public class TextViewController: NSViewController {
         }
     }
 
+    // key Down event recognizer, currently only set up to recognize CMD + /
     override public func keyDown(with event: NSEvent) {
         let charactersIgnoringModifiers = event.charactersIgnoringModifiers
         let commandKey = NSEvent.ModifierFlags.command.rawValue
@@ -37,6 +38,7 @@ public class TextViewController: NSViewController {
         }
     }
 
+    // Method called when CMD + / key sequence recognized, comments cursor's current line of code
     func commandSlashCalled() {
         print("Command-/ has been pressed!")
         print(cursorPositions)
@@ -45,9 +47,10 @@ public class TextViewController: NSViewController {
         if let cursorPosition = cursorPositions.first {
             print(textView.layoutManager.textLineForIndex(cursorPosition.line - 1) ?? 0)
             if let lineInfo = textView.layoutManager.textLineForIndex(cursorPosition.line - 1) {
-                print("reached inner if")
                 let lineFirstCharIndex = lineInfo.range.location
-                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: "//")
+                let languageCommentStr = language.lineCommentString
+//                let lengthOfCommentStr = languageCommentStr.count
+                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: languageCommentStr)
             }
         }
     }
