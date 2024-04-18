@@ -43,14 +43,14 @@ public class TextViewController: NSViewController {
         print("Command-/ has been pressed!")
         print(cursorPositions)
         // print(textView.string)
-        let stringContents = "//"
         if let cursorPosition = cursorPositions.first {
             print(textView.layoutManager.textLineForIndex(cursorPosition.line - 1) ?? 0)
             if let lineInfo = textView.layoutManager.textLineForIndex(cursorPosition.line - 1) {
                 let lineFirstCharIndex = lineInfo.range.location
+                // let currentLinePosition = textView.layoutManager.lineStorage.getLine(atIndex: lineFirstCharIndex)
                 let languageCommentStr = language.lineCommentString
-//                let lengthOfCommentStr = languageCommentStr.count
-                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: languageCommentStr)
+                // let lengthOfCommentStr = languageCommentStr.count
+                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: languageCommentStr + " ")
             }
         }
     }
