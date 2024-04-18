@@ -46,6 +46,7 @@ public class TextViewController: NSViewController {
         if let cursorPosition = cursorPositions.first {
             print(textView.layoutManager.textLineForIndex(cursorPosition.line - 1) ?? 0)
             if let lineInfo = textView.layoutManager.textLineForIndex(cursorPosition.line - 1) {
+                print(lineInfo.data)
                 let lineFirstCharIndex = lineInfo.range.location
                 // let currentLinePosition = textView.layoutManager.lineStorage.getLine(atIndex: lineFirstCharIndex)
                 let languageCommentStr = language.lineCommentString
