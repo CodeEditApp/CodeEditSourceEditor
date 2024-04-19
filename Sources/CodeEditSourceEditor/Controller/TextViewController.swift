@@ -41,16 +41,17 @@ public class TextViewController: NSViewController {
     // Method called when CMD + / key sequence recognized, comments cursor's current line of code
     func commandSlashCalled() {
         print("Command-/ has been pressed!")
-        print(cursorPositions)
+        // print(cursorPositions)
         // print(textView.string)
         if let cursorPosition = cursorPositions.first {
             print(textView.layoutManager.textLineForIndex(cursorPosition.line - 1) ?? 0)
             if let lineInfo = textView.layoutManager.textLineForIndex(cursorPosition.line - 1) {
                 let lineFirstCharIndex = lineInfo.range.location
-                print(textView.layoutManager.textLineForOffset(lineFirstCharIndex))
-                // let currentLinePosition = textView.layoutManager.lineStorage.getLine(atIndex: lineFirstCharIndex)
                 let languageCommentStr = language.lineCommentString
-                // let lengthOfCommentStr = languageCommentStr.count
+                let lengthOfCommentStr = languageCommentStr.count
+                let range = NSRange(location: lineFirstCharIndex, length: lengthOfCommentStr)
+                print(textView.textStorage.substring(from: range))
+                // let currentLinePosition = textView.layoutManager.lineStorage.getLine(atIndex: lineFirstCharIndex)
                 textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: languageCommentStr + " ")
             }
         }
