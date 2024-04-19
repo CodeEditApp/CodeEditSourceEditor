@@ -26,7 +26,7 @@ public class TextViewController: NSViewController {
         }
     }
 
-    // key Down event recognizer, currently only set up to recognize CMD + /
+    /// key Down event recognizer, currently only set up to recognize CMD + /
     override public func keyDown(with event: NSEvent) {
         let charactersIgnoringModifiers = event.charactersIgnoringModifiers
         let commandKey = NSEvent.ModifierFlags.command.rawValue
@@ -38,27 +38,52 @@ public class TextViewController: NSViewController {
         }
     }
 
-    // Method called when CMD + / key sequence recognized, comments cursor's current line of code
+    /// Method called when CMD + / key sequence recognized, comments cursor's current line of code
     func commandSlashCalled() {
-        print("Command-/ has been pressed!")
-        // print(cursorPositions)
-        // print(textView.string)
-        if let cursorPosition = cursorPositions.first {
-            print(textView.layoutManager.textLineForIndex(cursorPosition.line - 1) ?? 0)
-            if let lineInfo = textView.layoutManager.textLineForIndex(cursorPosition.line - 1) {
-                let lineFirstCharIndex = lineInfo.range.location
-                let languageCommentStr = language.lineCommentString
-                let lengthOfCommentStr = languageCommentStr.count
-                let range = NSRange(location: lineFirstCharIndex, length: lengthOfCommentStr)
-                // equal to length of language's comment string
-                let firstCharsInLine = textView.textStorage.substring(from: range)
-                print(textView.textStorage.substring(from: range))
-                // toggle comments depending on if comment already there
-                if firstCharsInLine == languageCommentStr {
-                    textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: lengthOfCommentStr), with: "")
-                } else {
-                    textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: languageCommentStr + " ")
-                }
+        print(cursorPositions)
+        guard let cursorPosition = cursorPositions.first else {
+            print("There is no cursor \(#function)")
+            return
+        }
+        guard let lineInfo = textView.layoutManager.textLineForIndex(cursorPosition.line - 1) else {
+            print("There are no characters/lineInfo \(#function)")
+            return
+        }
+        let lineFirstCharIndex = lineInfo.range.location
+        // lineComment only required at front of line
+        if !language.lineCommentString.isEmpty {
+            let languageCommentStr = language.lineCommentString
+            let lengthOfCommentStr = languageCommentStr.count
+            let commentRange = NSRange(location: lineFirstCharIndex, length: lengthOfCommentStr)
+            // equal to length of language's comment string
+            let firstCharsInLine = textView.textStorage.substring(from: commentRange)
+            // toggle comment off
+            if firstCharsInLine == languageCommentStr {
+                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: lengthOfCommentStr), with: "")
+            } 
+            // toggle comment on
+            else {
+                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: languageCommentStr)
+            }
+        }
+        // commenting line requires one-line rangeComment
+        else {
+            let (openComment,closeComment) = language.rangeCommentStrings
+            let lineLastCharIndex = lineFirstCharIndex + lineInfo.range.length - 1
+            let openCommentLength = openComment.count
+            let openCommentRange = NSRange(location: lineFirstCharIndex, length: openCommentLength)
+            let closeCommentLength = closeComment.count
+            let closeCommentRange = NSRange(location: lineLastCharIndex - closeCommentLength + 1, length: closeCommentLength)
+            let firstCharsInLine = textView.textStorage.substring(from: openCommentRange)
+            // toggle comment off
+            if firstCharsInLine == openComment {
+                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: openCommentLength), with: "")
+                textView.replaceCharacters(in:NSRange(location: lineLastCharIndex - closeCommentLength - openCommentLength, length: closeCommentLength), with: "")
+            }
+            // toggle comment on
+            else {
+                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: openComment)
+                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex + lineInfo.range.length + openCommentLength - 1, length: 0), with: closeComment)
             }
         }
     }
