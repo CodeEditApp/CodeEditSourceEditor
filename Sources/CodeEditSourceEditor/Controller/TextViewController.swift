@@ -50,9 +50,15 @@ public class TextViewController: NSViewController {
                 let languageCommentStr = language.lineCommentString
                 let lengthOfCommentStr = languageCommentStr.count
                 let range = NSRange(location: lineFirstCharIndex, length: lengthOfCommentStr)
+                // equal to length of language's comment string
+                let firstCharsInLine = textView.textStorage.substring(from: range)
                 print(textView.textStorage.substring(from: range))
-                // let currentLinePosition = textView.layoutManager.lineStorage.getLine(atIndex: lineFirstCharIndex)
-                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: languageCommentStr + " ")
+                // toggle comments depending on if comment already there
+                if firstCharsInLine == languageCommentStr {
+                    textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: lengthOfCommentStr), with: "")
+                } else {
+                    textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: languageCommentStr + " ")
+                }
             }
         }
     }
