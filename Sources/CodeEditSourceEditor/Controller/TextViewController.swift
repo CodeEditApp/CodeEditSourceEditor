@@ -18,78 +18,6 @@ import TextFormation
 /// tree-sitter for syntax highlighting, and TextFormation for live editing completions.
 /// 
 public class TextViewController: NSViewController {
-    override public func viewDidLoad() {
-        super.viewDidLoad()
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) {
-            self.keyDown(with: $0)
-            return $0
-        }
-    }
-
-    /// key Down event recognizer, currently only set up to recognize CMD + /
-    override public func keyDown(with event: NSEvent) {
-        let charactersIgnoringModifiers = event.charactersIgnoringModifiers
-        let commandKey = NSEvent.ModifierFlags.command.rawValue
-        let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
-        if modifierFlags == commandKey && event.charactersIgnoringModifiers == "/" {
-            commandSlashCalled()
-        } else {
-            super.keyDown(with: event)
-        }
-    }
-    
-    /// Method called when CMD + / key sequence recognized, comments cursor's current line of code
-    func commandSlashCalled() {
-        guard let cursorPosition = cursorPositions.first else {
-            print("There is no cursor \(#function)")
-            return
-        }
-        guard let lineInfo = textView.layoutManager.textLineForIndex(cursorPosition.line - 1) else {
-            print("There are no characters/lineInfo \(#function)")
-            return
-        }
-        let lineFirstCharIndex = lineInfo.range.location
-        // Many languages require a character sequence at the beginning of the line to comment the line.
-        // (ex. python #, C++ //)
-        // If such a sequence exists, we will insert that sequence at the beginning of the line
-        if !language.lineCommentString.isEmpty {
-            let languageCommentStr = language.lineCommentString
-            let lengthOfCommentStr = languageCommentStr.count
-            let commentRange = NSRange(location: lineFirstCharIndex, length: lengthOfCommentStr)
-            // equal to length of language's comment string
-            let firstCharsInLine = textView.textStorage.substring(from: commentRange)
-            // toggle comment off
-            if firstCharsInLine == languageCommentStr {
-                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: lengthOfCommentStr), with: "")
-            } 
-            // toggle comment on
-            else {
-                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: languageCommentStr)
-            }
-        }
-        // In other cases, there are languages that require a character sequence at both the beginning and end of a line, aka a range comment
-        // (Ex. HTML <!--line here -->)
-        // We can treat the line as a one-line range to comment it out using the language's rangeCommentStrings on both sides of the line
-        else {
-            let (openComment,closeComment) = language.rangeCommentStrings
-            let lineLastCharIndex = lineFirstCharIndex + lineInfo.range.length - 1
-            let openCommentLength = openComment.count
-            let openCommentRange = NSRange(location: lineFirstCharIndex, length: openCommentLength)
-            let closeCommentLength = closeComment.count
-            let closeCommentRange = NSRange(location: lineLastCharIndex - closeCommentLength + 1, length: closeCommentLength)
-            let firstCharsInLine = textView.textStorage.substring(from: openCommentRange)
-            // toggle comment off
-            if firstCharsInLine == openComment {
-                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: openCommentLength), with: "")
-                textView.replaceCharacters(in:NSRange(location: lineLastCharIndex - closeCommentLength - openCommentLength, length: closeCommentLength), with: "")
-            }
-            // toggle comment on
-            else {
-                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: openComment)
-                textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex + lineInfo.range.length + openCommentLength - 1, length: 0), with: closeComment)
-            }
-        }
-    }
 
     // swiftlint:disable:next line_length
     public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
@@ -308,6 +236,94 @@ public class TextViewController: NSViewController {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+    
+    // MARK: Keyboard Shortcuts
+    
+    override public func viewDidLoad() {
+        super.viewDidLoad()
+        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+            guard self.view.window?.firstResponder == self.textView else { return event }
+            let charactersIgnoringModifiers = event.charactersIgnoringModifiers
+            let commandKey = NSEvent.ModifierFlags.command.rawValue
+            let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
+            if modifierFlags == commandKey && event.charactersIgnoringModifiers == "/" {
+                self.commandSlashCalled()
+                return nil
+            } else {
+                super.keyDown(with: event)
+                return event
+            }
+        }
+    }
+    
+    /// Method called when CMD + / key sequence recognized, comments cursor's current line of code
+    func commandSlashCalled() {
+        guard let cursorPosition = cursorPositions.first else {
+            print("There is no cursor \(#function)")
+            return
+        }
+        // Many languages require a character sequence at the beginning of the line to comment the line.
+        // (ex. python #, C++ //)
+        // If such a sequence exists, we will insert that sequence at the beginning of the line
+        if !language.lineCommentString.isEmpty {
+            toggleCharsAtBeginningOfLine(chars: language.lineCommentString, lineNumber: cursorPosition.line)
+        }
+        // In other cases, there are languages that require a character sequence at both the beginning and end of a line, aka a range comment
+        // (Ex. HTML <!--line here -->)
+        // We can treat the line as a one-line range to comment it out using the language's rangeCommentStrings on both sides of the line
+        else {
+            let (openComment,closeComment) = language.rangeCommentStrings
+            toggleCharsAtEndOfLine(chars: closeComment, lineNumber: cursorPosition.line)
+            toggleCharsAtBeginningOfLine(chars: openComment, lineNumber: cursorPosition.line)
+        }
+    }
+    
+    ///  Toggles a specific string of characters at the beginning of a specified line in the textView's text storage. (lineNumber is 1-indexed)
+    private func toggleCharsAtBeginningOfLine(chars: String, lineNumber: Int){
+        guard let lineInfo = textView.layoutManager.textLineForIndex(lineNumber - 1) else {
+            print("There are no characters/lineInfo \(#function)")
+            return
+        }
+        guard let lineString = textView.textStorage.substring(from: lineInfo.range) else {
+            print("There are no characters/lineString \(#function)")
+            return
+        }
+        let firstNonWhiteSpaceCharIndex = lineString.firstIndex(where: {!$0.isWhitespace}) ?? lineString.startIndex
+        let numWhitespaceChars = lineString.distance(from: lineString.startIndex, to: firstNonWhiteSpaceCharIndex)
+        let firstCharsInLine = lineString.suffix(from: firstNonWhiteSpaceCharIndex).prefix(chars.count)
+        // toggle comment off
+        if firstCharsInLine == chars {
+            textView.replaceCharacters(in:NSRange(location: lineInfo.range.location + numWhitespaceChars, length: chars.count), with: "")
+        }
+        // toggle comment on
+        else {
+            textView.replaceCharacters(in:NSRange(location: lineInfo.range.location + numWhitespaceChars, length: 0), with: chars)
+        }
+    }
+    
+    ///  Toggles a specific string of characters at the end of a specified line in the textView's text storage. (lineNumber is 1-indexed)
+    private func toggleCharsAtEndOfLine(chars: String, lineNumber: Int){
+        guard let lineInfo = textView.layoutManager.textLineForIndex(lineNumber - 1) else {
+            print("There are no characters/lineInfo \(#function)")
+            return
+        }
+        guard let lineString = textView.textStorage.substring(from: lineInfo.range) else {
+            print("There are no characters/lineString \(#function)")
+            return
+        }
+        let lineLastCharIndex = lineInfo.range.location + lineInfo.range.length - 1
+        let closeCommentLength = chars.count
+        let closeCommentRange = NSRange(location: lineLastCharIndex - closeCommentLength, length: closeCommentLength)
+        let lastCharsInLine = textView.textStorage.substring(from: closeCommentRange)
+        // toggle comment off
+        if lastCharsInLine == chars {
+            textView.replaceCharacters(in:NSRange(location: lineLastCharIndex - closeCommentLength, length: closeCommentLength), with: "")
+        }
+        // toggle comment on
+        else {
+            textView.replaceCharacters(in:NSRange(location: lineLastCharIndex, length: 0), with: chars)
+        }
     }
 
     /// Set the contents of the editor.
