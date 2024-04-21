@@ -37,10 +37,9 @@ public class TextViewController: NSViewController {
             super.keyDown(with: event)
         }
     }
-
+    
     /// Method called when CMD + / key sequence recognized, comments cursor's current line of code
     func commandSlashCalled() {
-        print(cursorPositions)
         guard let cursorPosition = cursorPositions.first else {
             print("There is no cursor \(#function)")
             return
@@ -50,7 +49,9 @@ public class TextViewController: NSViewController {
             return
         }
         let lineFirstCharIndex = lineInfo.range.location
-        // lineComment only required at front of line
+        // Many languages require a character sequence at the beginning of the line to comment the line.
+        // (ex. python #, C++ //)
+        // If such a sequence exists, we will insert that sequence at the beginning of the line
         if !language.lineCommentString.isEmpty {
             let languageCommentStr = language.lineCommentString
             let lengthOfCommentStr = languageCommentStr.count
@@ -66,7 +67,9 @@ public class TextViewController: NSViewController {
                 textView.replaceCharacters(in:NSRange(location: lineFirstCharIndex, length: 0), with: languageCommentStr)
             }
         }
-        // commenting line requires one-line rangeComment
+        // In other cases, there are languages that require a character sequence at both the beginning and end of a line, aka a range comment
+        // (Ex. HTML <!--line here -->)
+        // We can treat the line as a one-line range to comment it out using the language's rangeCommentStrings on both sides of the line
         else {
             let (openComment,closeComment) = language.rangeCommentStrings
             let lineLastCharIndex = lineFirstCharIndex + lineInfo.range.length - 1
