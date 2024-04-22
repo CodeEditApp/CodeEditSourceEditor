@@ -110,7 +110,6 @@ extension TextViewController {
             }
             .store(in: &cancellables)
 
-
         NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             guard self.view.window?.firstResponder == self.textView else { return event }
             let charactersIgnoringModifiers = event.charactersIgnoringModifiers
