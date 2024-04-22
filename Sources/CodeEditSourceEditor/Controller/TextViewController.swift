@@ -16,7 +16,7 @@ import TextFormation
 ///
 /// A view controller class for managing a source editor. Uses ``CodeEditTextView/TextView`` for input and rendering,
 /// tree-sitter for syntax highlighting, and TextFormation for live editing completions.
-/// 
+/// // swiftlint:disable file_length
 public class TextViewController: NSViewController {
     // swiftlint:disable:next line_length
     public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
@@ -306,9 +306,9 @@ public class TextViewController: NSViewController {
             ), with: chars)
         }
     }
-    
+
     ///  Toggles a specific string of characters at the end of a specified line. (lineNumber is 1-indexed)
-    private func toggleCharsAtEndOfLine(chars: String, lineNumber: Int){
+    private func toggleCharsAtEndOfLine(chars: String, lineNumber: Int) {
         guard let lineInfo = textView.layoutManager.textLineForIndex(lineNumber - 1) else {
             print("There are no characters/lineInfo \(#function)")
             return
@@ -326,7 +326,10 @@ public class TextViewController: NSViewController {
         let lastCharsInLine = textView.textStorage.substring(from: closeCommentRange)
         // toggle comment off
         if lastCharsInLine == chars {
-            textView.replaceCharacters(in: NSRange(location: lineLastCharIndex - closeCommentLength, length:  closeCommentLength), with: "")
+            textView.replaceCharacters(in: NSRange(
+                location: lineLastCharIndex - closeCommentLength,
+                length: closeCommentLength
+            ), with: "")
         }
         // toggle comment on
         else {
@@ -438,3 +441,5 @@ extension TextViewController: GutterViewDelegate {
         textView?.edgeInsets = HorizontalEdgeInsets(left: newWidth, right: 0)
     }
 }
+
+// swiftlint:enable file_length
