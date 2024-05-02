@@ -83,11 +83,14 @@ public struct EditorTheme {
         }
     }
 
+    /// Gets the `strokeWidth` for the specified capture name.
+    /// - Parameter capture: The capture name
+    /// - Returns: a float representing `strokeWidth`
     func widthFor(_ capture: CaptureName?) -> Float {
         switch capture {
         case .include, .constructor, .keyword, .boolean, .variableBuiltin,
                 .keywordReturn, .keywordFunction, .repeat, .conditional, .tag, .type:
-            return -4.0
+            return -3.0
         default: return 0.0
         }
     }
