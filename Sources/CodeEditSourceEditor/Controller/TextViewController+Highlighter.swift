@@ -48,7 +48,8 @@ extension TextViewController: ThemeAttributesProviding {
         [
             .font: font,
             .foregroundColor: theme.colorFor(capture),
-            .kern: textView.kern
+            .kern: textView.kern,
+            .strokeWidth: theme.widthFor(capture),
         ]
     }
 }

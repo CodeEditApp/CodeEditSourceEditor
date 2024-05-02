@@ -82,6 +82,15 @@ public struct EditorTheme {
         default: return text
         }
     }
+
+    func widthFor(_ capture: CaptureName?) -> Float {
+        switch capture {
+        case .include, .constructor, .keyword, .boolean, .variableBuiltin,
+                .keywordReturn, .keywordFunction, .repeat, .conditional, .tag, .type:
+            return -4.0
+        default: return 0.0
+        }
+    }
 }
 
 extension EditorTheme: Equatable {
