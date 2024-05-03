@@ -89,8 +89,8 @@ public struct EditorTheme {
     func widthFor(_ capture: CaptureName?) -> Float {
         switch capture {
         case .include, .constructor, .keyword, .boolean, .variableBuiltin,
-                .keywordReturn, .keywordFunction, .repeat, .conditional, .tag, .type:
-            return -3.0
+                .keywordReturn, .keywordFunction, .repeat, .conditional, .tag:
+            return -5.0
         default: return 0.0
         }
     }
