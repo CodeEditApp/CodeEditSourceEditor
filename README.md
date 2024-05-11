@@ -89,7 +89,7 @@ Licensed under the [MIT license](https://github.com/CodeEditApp/CodeEdit/blob/ma
       </a>
     </td>
     <td align="center">
-      <a href="https://github.com/CodeEditApp/CodeEditSourceEditor">
+      <a href="https://github.com/CodeEditApp/CodeEditTextView">
         <img src="https://github.com/CodeEditApp/CodeEditTextView/blob/main/.github/CodeEditTextView-Icon-128@2x.png?raw=true" width="128" height="128">
         <p>CodeEditTextView</p>
       </a>
