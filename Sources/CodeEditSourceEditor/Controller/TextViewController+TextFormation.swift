@@ -92,7 +92,16 @@ extension TextViewController {
     }
 
     private func setUpTagFiler() {
-        textFilters.append(TagFilter())
+        let filter = TagFilter(language: self.language.tsName)
+        textFilters.append(filter)
+    }
+
+    func updateTagFilter() {
+        // Remove existing TagFilter if present
+        textFilters.removeAll { $0 is TagFilter }
+
+        // Add new TagFilter with the updated language
+        textFilters.append(TagFilter(language: self.language.tsName))
     }
 
     /// Determines whether or not a text mutation should be applied.

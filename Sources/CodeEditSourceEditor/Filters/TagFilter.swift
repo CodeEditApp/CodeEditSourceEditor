@@ -10,11 +10,17 @@ import TextFormation
 import TextStory
 
 struct TagFilter: Filter {
+    var language: String
+
     func processMutation(
         _ mutation: TextMutation,
         in interface: TextInterface,
         with whitespaceProvider: WhitespaceProviders
     ) -> FilterAction {
+        guard isRelevantLanguage() else {
+            print(language)
+            return .none
+        }
         guard let range = Range(mutation.range, in: interface.string) else { return .none }
         let insertedText = mutation.string
         print(insertedText)
@@ -39,6 +45,10 @@ struct TagFilter: Filter {
         }
 
         return .none
+    }
+    private func isRelevantLanguage() -> Bool {
+        let relevantLanguages = ["html", "javascript", "typescript", "jsx", "tsx"]
+        return relevantLanguages.contains(language)
     }
 }
 private extension String {
