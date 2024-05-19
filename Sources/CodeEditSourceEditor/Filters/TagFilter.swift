@@ -53,7 +53,7 @@ struct TagFilter: Filter {
 private extension String {
     var lastTag: (name: String, isSelfClosing: Bool)? {
         // Regex to find the last tag
-        let regex = try? NSRegularExpression(pattern: "<([a-zA-Z]+)([^>]*)>", options: .caseInsensitive)
+        let regex = try? NSRegularExpression(pattern: "<([a-zA-Z0-9]+)([^>]*)>", options: .caseInsensitive)
         let nsString = self as NSString
         let results = regex?.matches(in: self, options: [], range: NSRange(location: 0, length: nsString.length))
 
