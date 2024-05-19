@@ -19,12 +19,10 @@ struct TagFilter: Filter {
         with whitespaceProvider: WhitespaceProviders
     ) -> FilterAction {
         guard isRelevantLanguage() else {
-            print(language)
             return .none
         }
         guard let range = Range(mutation.range, in: interface.string) else { return .none }
         let insertedText = mutation.string
-        print(insertedText)
         let fullText = interface.string
 
         // Check if the inserted text is a closing bracket '>'
