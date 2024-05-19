@@ -25,10 +25,10 @@ struct TagFilter: Filter {
         let insertedText = mutation.string
         let fullText = interface.string
 
-        // Check if the inserted text is a closing bracket '>'
+        // Check if the inserted text is a closing bracket (>)
         if insertedText == ">" {
             let textBeforeCursor = "\(String(fullText[..<range.lowerBound]))\(insertedText)"
-            if let lastOpenTag = textBeforeCursor.lastTag {
+            if let lastOpenTag = textBeforeCursor.nearestTag {
                 // Check if the tag is not self-closing and there isn't already a closing tag
                 if !lastOpenTag.isSelfClosing && !textBeforeCursor.contains("</\(lastOpenTag.name)>") {
                     let closingTag = "</\(lastOpenTag.name)>"
@@ -51,13 +51,13 @@ struct TagFilter: Filter {
     }
 }
 private extension String {
-    var lastTag: (name: String, isSelfClosing: Bool)? {
-        // Regex to find the last tag
+    var nearestTag: (name: String, isSelfClosing: Bool)? {
         let regex = try? NSRegularExpression(pattern: "<([a-zA-Z0-9]+)([^>]*)>", options: .caseInsensitive)
         let nsString = self as NSString
         let results = regex?.matches(in: self, options: [], range: NSRange(location: 0, length: nsString.length))
 
-        guard let lastMatch = results?.last else { return nil }
+        // Find the nearest tag before the cursor
+        guard let lastMatch = results?.last(where: { $0.range.location < nsString.length }) else { return nil }
         let tagNameRange = lastMatch.range(at: 1)
         let attributesRange = lastMatch.range(at: 2)
         let tagName = nsString.substring(with: tagNameRange)
