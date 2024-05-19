@@ -40,6 +40,7 @@ extension TextViewController {
         setUpNewlineTabFilters(indentOption: indentOption)
         setUpDeletePairFilters(pairs: BracketPairs.allValues)
         setUpDeleteWhitespaceFilter(indentOption: indentOption)
+        setUpTagFiler()
     }
 
     /// Returns a `TextualIndenter` based on available language configuration.
@@ -88,6 +89,10 @@ extension TextViewController {
     private func setUpDeleteWhitespaceFilter(indentOption: IndentOption) {
         let filter = DeleteWhitespaceFilter(indentOption: indentOption)
         textFilters.append(filter)
+    }
+
+    private func setUpTagFiler() {
+        textFilters.append(TagFilter())
     }
 
     /// Determines whether or not a text mutation should be applied.
