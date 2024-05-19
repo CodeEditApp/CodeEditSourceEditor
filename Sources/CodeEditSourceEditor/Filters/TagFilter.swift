@@ -11,6 +11,7 @@ import TextStory
 
 struct TagFilter: Filter {
     var language: String
+    private let newlineFilter = NewlineProcessingFilter()
 
     func processMutation(
         _ mutation: TextMutation,

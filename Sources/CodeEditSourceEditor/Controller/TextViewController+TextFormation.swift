@@ -97,10 +97,9 @@ extension TextViewController {
     }
 
     func updateTagFilter() {
-        // Remove existing TagFilter if present
         textFilters.removeAll { $0 is TagFilter }
 
-        // Add new TagFilter with the updated language
+        // Add new tagfilter with the updated language
         textFilters.append(TagFilter(language: self.language.tsName))
     }
 
@@ -124,15 +123,30 @@ extension TextViewController {
         )
 
         for filter in textFilters {
-            let action = filter.processMutation(mutation, in: textView, with: whitespaceProvider)
-
-            switch action {
-            case .none:
-                break
-            case .stop:
-                return true
-            case .discard:
-                return false
+            if let newlineFilter = filter as? NewlineProcessingFilter {
+                let action = mutation.applyWithTagProcessing(
+                    in: textView,
+                    using: newlineFilter,
+                    with: whitespaceProvider, indentOption: indentOption
+                )
+                switch action {
+                case .none:
+                    continue
+                case .stop:
+                    return true
+                case .discard:
+                    return false
+                }
+            } else {
+                let action = filter.processMutation(mutation, in: textView, with: whitespaceProvider)
+                switch action {
+                case .none:
+                    continue
+                case .stop:
+                    return true
+                case .discard:
+                    return false
+                }
             }
         }
 
