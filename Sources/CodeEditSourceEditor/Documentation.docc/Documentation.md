@@ -4,7 +4,11 @@ A code editor with syntax highlighting powered by tree-sitter.
 
 ## Overview
 
+![logo](codeeditsourceeditor-logo)
+
 An Xcode-inspired code editor view written in Swift powered by tree-sitter for [CodeEdit](https://github.com/CodeEditApp/CodeEdit). Features include syntax highlighting (based on the provided theme), code completion, find and replace, text diff, validation, current line highlighting, minimap, inline messages (warnings and errors), bracket matching, and more.
+
+![banner](preview)
 
 This package includes both `AppKit` and `SwiftUI` components. It also relies on the [`CodeEditLanguages`](https://github.com/CodeEditApp/CodeEditLanguages) for optional syntax highlighting using tree-sitter. 
 
