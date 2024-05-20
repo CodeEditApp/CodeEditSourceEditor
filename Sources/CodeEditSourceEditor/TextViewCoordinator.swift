@@ -22,7 +22,7 @@ public protocol TextViewCoordinator: AnyObject {
 
     /// Called when the text view's text changed.
     /// - Parameter controller: The text controller.
-    func textViewDidChangeText(controller: TextViewController)
+    func textViewDidChangeText(controller: TextViewController, editedRanges: [NSRange])
 
     /// Called after the text view updated it's cursor positions.
     /// - Parameter newPositions: The new positions of the cursors.
@@ -34,7 +34,7 @@ public protocol TextViewCoordinator: AnyObject {
 
 /// Default implementations
 public extension TextViewCoordinator {
-    func textViewDidChangeText(controller: TextViewController) { }
+    func textViewDidChangeText(controller: TextViewController, editedRanges: [NSRange]) { }
     func textViewDidChangeSelection(controller: TextViewController, newPositions: [CursorPosition]) { }
     func destroy() { }
 }

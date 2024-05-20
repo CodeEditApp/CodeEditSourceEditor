@@ -5,11 +5,16 @@
 //  Created by Lukas Pistrol on 24.05.22.
 //
 
+import AppKit
 import SwiftUI
 import CodeEditTextView
 import CodeEditLanguages
 
 public struct CodeEditSourceEditor: NSViewControllerRepresentable {
+    private enum TextAPI {
+        case binding(Binding<String>)
+        case storage(NSTextStorage)
+    }
 
     /// Initializes a Text Editor
     /// - Parameters:
@@ -22,7 +27,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///   - lineHeight: The line height multiplier (e.g. `1.2`)
     ///   - wrapLines: Whether lines wrap to the width of the editor
     ///   - editorOverscroll: The distance to overscroll the editor by.
-    ///   - cursorPosition: The cursor's position in the editor, measured in `(lineNum, columnNum)`
+    ///   - cursorPositions: The cursor's position in the editor, measured in `(lineNum, columnNum)`
     ///   - useThemeBackground: Determines whether the editor uses the theme's background color, or a transparent
     ///                         background color
     ///   - highlightProvider: A class you provide to perform syntax highlighting. Leave this as `nil` to use the
@@ -37,6 +42,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///   - bracketPairHighlight: The type of highlight to use to highlight bracket pairs.
     ///                           See `BracketPairHighlight` for more information. Defaults to `nil`
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
+    ///   - coordinators: Any text coordinators for the textview to use. See ``TextViewCoordinator`` for more information.
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
@@ -58,7 +64,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = []
     ) {
-        self._text = text
+        self.text = .binding(text)
         self.language = language
         self.theme = theme
         self.useThemeBackground = useThemeBackground
@@ -79,7 +85,76 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.coordinators = coordinators
     }
 
-    @Binding private var text: String
+    /// Initializes a Text Editor
+    /// - Parameters:
+    ///   - text: The text content
+    ///   - language: The language for syntax highlighting
+    ///   - theme: The theme for syntax highlighting
+    ///   - font: The default font
+    ///   - tabWidth: The visual tab width in number of spaces
+    ///   - indentOption: The behavior to use when the tab key is pressed. Defaults to 4 spaces.
+    ///   - lineHeight: The line height multiplier (e.g. `1.2`)
+    ///   - wrapLines: Whether lines wrap to the width of the editor
+    ///   - editorOverscroll: The distance to overscroll the editor by.
+    ///   - cursorPositions: The cursor's position in the editor, measured in `(lineNum, columnNum)`
+    ///   - useThemeBackground: Determines whether the editor uses the theme's background color, or a transparent
+    ///                         background color
+    ///   - highlightProvider: A class you provide to perform syntax highlighting. Leave this as `nil` to use the
+    ///                        built-in `TreeSitterClient` highlighter.
+    ///   - contentInsets: Insets to use to offset the content in the enclosing scroll view. Leave as `nil` to let the
+    ///                    scroll view automatically adjust content insets.
+    ///   - isEditable: A Boolean value that controls whether the text view allows the user to edit text.
+    ///   - isSelectable: A Boolean value that controls whether the text view allows the user to select text. If this
+    ///                   value is true, and `isEditable` is false, the editor is selectable but not editable.
+    ///   - letterSpacing: The amount of space to use between letters, as a percent. Eg: `1.0` = no space, `1.5` = 1/2 a
+    ///                    character's width between characters, etc. Defaults to `1.0`
+    ///   - bracketPairHighlight: The type of highlight to use to highlight bracket pairs.
+    ///                           See `BracketPairHighlight` for more information. Defaults to `nil`
+    ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
+    ///   - coordinators: Any text coordinators for the textview to use. See ``TextViewCoordinator`` for more information.
+    public init(
+        _ text: NSTextStorage,
+        language: CodeLanguage,
+        theme: EditorTheme,
+        font: NSFont,
+        tabWidth: Int,
+        indentOption: IndentOption = .spaces(count: 4),
+        lineHeight: Double,
+        wrapLines: Bool,
+        editorOverscroll: CGFloat = 0,
+        cursorPositions: Binding<[CursorPosition]>,
+        useThemeBackground: Bool = true,
+        highlightProvider: HighlightProviding? = nil,
+        contentInsets: NSEdgeInsets? = nil,
+        isEditable: Bool = true,
+        isSelectable: Bool = true,
+        letterSpacing: Double = 1.0,
+        bracketPairHighlight: BracketPairHighlight? = nil,
+        undoManager: CEUndoManager? = nil,
+        coordinators: [any TextViewCoordinator] = []
+    ) {
+        self.text = .storage(text)
+        self.language = language
+        self.theme = theme
+        self.useThemeBackground = useThemeBackground
+        self.font = font
+        self.tabWidth = tabWidth
+        self.indentOption = indentOption
+        self.lineHeight = lineHeight
+        self.wrapLines = wrapLines
+        self.editorOverscroll = editorOverscroll
+        self._cursorPositions = cursorPositions
+        self.highlightProvider = highlightProvider
+        self.contentInsets = contentInsets
+        self.isEditable = isEditable
+        self.isSelectable = isSelectable
+        self.letterSpacing = letterSpacing
+        self.bracketPairHighlight = bracketPairHighlight
+        self.undoManager = undoManager
+        self.coordinators = coordinators
+    }
+
+    private var text: TextAPI
     private var language: CodeLanguage
     private var theme: EditorTheme
     private var font: NSFont
@@ -102,26 +177,51 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     public typealias NSViewControllerType = TextViewController
 
     public func makeNSViewController(context: Context) -> TextViewController {
-        let controller = TextViewController(
-            string: text,
-            language: language,
-            font: font,
-            theme: theme,
-            tabWidth: tabWidth,
-            indentOption: indentOption,
-            lineHeight: lineHeight,
-            wrapLines: wrapLines,
-            cursorPositions: cursorPositions,
-            editorOverscroll: editorOverscroll,
-            useThemeBackground: useThemeBackground,
-            highlightProvider: highlightProvider,
-            contentInsets: contentInsets,
-            isEditable: isEditable,
-            isSelectable: isSelectable,
-            letterSpacing: letterSpacing,
-            bracketPairHighlight: bracketPairHighlight,
-            undoManager: undoManager
-        )
+        let controller: TextViewController
+        switch text {
+        case .binding(let binding):
+            controller = TextViewController(
+                string: binding.wrappedValue,
+                language: language,
+                font: font,
+                theme: theme,
+                tabWidth: tabWidth,
+                indentOption: indentOption,
+                lineHeight: lineHeight,
+                wrapLines: wrapLines,
+                cursorPositions: cursorPositions,
+                editorOverscroll: editorOverscroll,
+                useThemeBackground: useThemeBackground,
+                highlightProvider: highlightProvider,
+                contentInsets: contentInsets,
+                isEditable: isEditable,
+                isSelectable: isSelectable,
+                letterSpacing: letterSpacing,
+                bracketPairHighlight: bracketPairHighlight,
+                undoManager: undoManager
+            )
+        case .storage(let textStorage):
+            controller = TextViewController(
+                storage: textStorage,
+                language: language,
+                font: font,
+                theme: theme,
+                tabWidth: tabWidth,
+                indentOption: indentOption,
+                lineHeight: lineHeight,
+                wrapLines: wrapLines,
+                cursorPositions: cursorPositions,
+                editorOverscroll: editorOverscroll,
+                useThemeBackground: useThemeBackground,
+                highlightProvider: highlightProvider,
+                contentInsets: contentInsets,
+                isEditable: isEditable,
+                isSelectable: isSelectable,
+                letterSpacing: letterSpacing,
+                bracketPairHighlight: bracketPairHighlight,
+                undoManager: undoManager
+            )
+        }
         if controller.textView == nil {
             controller.loadView()
         }
@@ -245,13 +345,16 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
 
         @objc func textViewDidChangeText(_ notification: Notification) {
             guard let textView = notification.object as? TextView,
+                  let ranges = notification.userInfo?[TextView.textDidChangeRangeKey] as? [NSRange],
                   let controller,
                   controller.textView === textView else {
                 return
             }
-            parent.text = textView.string
+            if case .binding(let binding) = parent.text {
+                binding.wrappedValue = textView.string
+            }
             parent.coordinators.forEach {
-                $0.textViewDidChangeText(controller: controller)
+                $0.textViewDidChangeText(controller: controller, editedRanges: ranges)
             }
         }
 
