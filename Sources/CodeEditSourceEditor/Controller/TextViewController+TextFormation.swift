@@ -40,7 +40,7 @@ extension TextViewController {
         setUpNewlineTabFilters(indentOption: indentOption)
         setUpDeletePairFilters(pairs: BracketPairs.allValues)
         setUpDeleteWhitespaceFilter(indentOption: indentOption)
-        setUpTagFiler()
+        setUpTagFilter()
     }
 
     /// Returns a `TextualIndenter` based on available language configuration.
@@ -91,7 +91,7 @@ extension TextViewController {
         textFilters.append(filter)
     }
 
-    private func setUpTagFiler() {
+    private func setUpTagFilter() {
         let filter = TagFilter(language: self.language.tsName)
         textFilters.append(filter)
     }
