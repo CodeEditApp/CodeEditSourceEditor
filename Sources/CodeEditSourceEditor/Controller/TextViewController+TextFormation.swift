@@ -40,6 +40,7 @@ extension TextViewController {
         setUpNewlineTabFilters(indentOption: indentOption)
         setUpDeletePairFilters(pairs: BracketPairs.allValues)
         setUpDeleteWhitespaceFilter(indentOption: indentOption)
+        setUpTagFilter()
     }
 
     /// Returns a `TextualIndenter` based on available language configuration.
@@ -90,6 +91,18 @@ extension TextViewController {
         textFilters.append(filter)
     }
 
+    private func setUpTagFilter() {
+        let filter = TagFilter(language: self.language.tsName)
+        textFilters.append(filter)
+    }
+
+    func updateTagFilter() {
+        textFilters.removeAll { $0 is TagFilter }
+
+        // Add new tagfilter with the updated language
+        textFilters.append(TagFilter(language: self.language.tsName))
+    }
+
     /// Determines whether or not a text mutation should be applied.
     /// - Parameters:
     ///   - mutation: The text mutation.
@@ -110,15 +123,30 @@ extension TextViewController {
         )
 
         for filter in textFilters {
-            let action = filter.processMutation(mutation, in: textView, with: whitespaceProvider)
-
-            switch action {
-            case .none:
-                break
-            case .stop:
-                return true
-            case .discard:
-                return false
+            if let newlineFilter = filter as? NewlineProcessingFilter {
+                let action = mutation.applyWithTagProcessing(
+                    in: textView,
+                    using: newlineFilter,
+                    with: whitespaceProvider, indentOption: indentOption
+                )
+                switch action {
+                case .none:
+                    continue
+                case .stop:
+                    return true
+                case .discard:
+                    return false
+                }
+            } else {
+                let action = filter.processMutation(mutation, in: textView, with: whitespaceProvider)
+                switch action {
+                case .none:
+                    continue
+                case .stop:
+                    return true
+                case .discard:
+                    return false
+                }
             }
         }
 

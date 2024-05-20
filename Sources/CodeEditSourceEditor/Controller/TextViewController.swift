@@ -39,6 +39,7 @@ public class TextViewController: NSViewController {
     public var language: CodeLanguage {
         didSet {
             highlighter?.setLanguage(language: language)
+            updateTagFilter()
         }
     }
 
