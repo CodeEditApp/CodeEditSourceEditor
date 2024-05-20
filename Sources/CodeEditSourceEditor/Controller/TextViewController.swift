@@ -233,60 +233,6 @@ public class TextViewController: NSViewController {
         )
     }
 
-    init(
-        storage: NSTextStorage,
-        language: CodeLanguage,
-        font: NSFont,
-        theme: EditorTheme,
-        tabWidth: Int,
-        indentOption: IndentOption,
-        lineHeight: CGFloat,
-        wrapLines: Bool,
-        cursorPositions: [CursorPosition],
-        editorOverscroll: CGFloat,
-        useThemeBackground: Bool,
-        highlightProvider: HighlightProviding?,
-        contentInsets: NSEdgeInsets?,
-        isEditable: Bool,
-        isSelectable: Bool,
-        letterSpacing: Double,
-        bracketPairHighlight: BracketPairHighlight?,
-        undoManager: CEUndoManager? = nil
-    ) {
-        self.language = language
-        self.font = font
-        self.theme = theme
-        self.tabWidth = tabWidth
-        self.indentOption = indentOption
-        self.lineHeightMultiple = lineHeight
-        self.wrapLines = wrapLines
-        self.cursorPositions = cursorPositions
-        self.editorOverscroll = editorOverscroll
-        self.useThemeBackground = useThemeBackground
-        self.highlightProvider = highlightProvider
-        self.contentInsets = contentInsets
-        self.isEditable = isEditable
-        self.isSelectable = isSelectable
-        self.letterSpacing = letterSpacing
-        self.bracketPairHighlight = bracketPairHighlight
-        self._undoManager = undoManager
-
-        super.init(nibName: nil, bundle: nil)
-
-        self.textView = TextView(
-            string: "",
-            font: font,
-            textColor: theme.text,
-            lineHeightMultiplier: lineHeightMultiple,
-            wrapLines: wrapLines,
-            isEditable: isEditable,
-            isSelectable: isSelectable,
-            letterSpacing: letterSpacing,
-            delegate: self
-        )
-        self.textView.setTextStorage(storage)
-    }
-
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }

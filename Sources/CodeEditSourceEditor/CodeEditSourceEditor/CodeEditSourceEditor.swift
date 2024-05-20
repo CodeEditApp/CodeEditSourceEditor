@@ -10,8 +10,9 @@ import SwiftUI
 import CodeEditTextView
 import CodeEditLanguages
 
+/// A SwiftUI View that provides source editing functionality.
 public struct CodeEditSourceEditor: NSViewControllerRepresentable {
-    private enum TextAPI {
+    package enum TextAPI {
         case binding(Binding<String>)
         case storage(NSTextStorage)
     }
@@ -42,7 +43,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///   - bracketPairHighlight: The type of highlight to use to highlight bracket pairs.
     ///                           See `BracketPairHighlight` for more information. Defaults to `nil`
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
-    ///   - coordinators: Any text coordinators for the textview to use. See ``TextViewCoordinator`` for more information.
+    ///   - coordinators: Any text coordinators for the view to use. See ``TextViewCoordinator`` for more information.
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
@@ -74,7 +75,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.lineHeight = lineHeight
         self.wrapLines = wrapLines
         self.editorOverscroll = editorOverscroll
-        self._cursorPositions = cursorPositions
+        self.cursorPositions = cursorPositions
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
         self.isEditable = isEditable
@@ -111,7 +112,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///   - bracketPairHighlight: The type of highlight to use to highlight bracket pairs.
     ///                           See `BracketPairHighlight` for more information. Defaults to `nil`
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
-    ///   - coordinators: Any text coordinators for the textview to use. See ``TextViewCoordinator`` for more information.
+    ///   - coordinators: Any text coordinators for the view to use. See ``TextViewCoordinator`` for more information.
     public init(
         _ text: NSTextStorage,
         language: CodeLanguage,
@@ -143,7 +144,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.lineHeight = lineHeight
         self.wrapLines = wrapLines
         self.editorOverscroll = editorOverscroll
-        self._cursorPositions = cursorPositions
+        self.cursorPositions = cursorPositions
         self.highlightProvider = highlightProvider
         self.contentInsets = contentInsets
         self.isEditable = isEditable
@@ -154,7 +155,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.coordinators = coordinators
     }
 
-    private var text: TextAPI
+    package var text: TextAPI
     private var language: CodeLanguage
     private var theme: EditorTheme
     private var font: NSFont
@@ -163,7 +164,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     private var lineHeight: Double
     private var wrapLines: Bool
     private var editorOverscroll: CGFloat
-    @Binding private var cursorPositions: [CursorPosition]
+    package var cursorPositions: Binding<[CursorPosition]>
     private var useThemeBackground: Bool
     private var highlightProvider: HighlightProviding?
     private var contentInsets: NSEdgeInsets?
@@ -172,61 +173,42 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     private var letterSpacing: Double
     private var bracketPairHighlight: BracketPairHighlight?
     private var undoManager: CEUndoManager?
-    private var coordinators: [any TextViewCoordinator]
+    package var coordinators: [any TextViewCoordinator]
 
     public typealias NSViewControllerType = TextViewController
 
     public func makeNSViewController(context: Context) -> TextViewController {
-        let controller: TextViewController
+        let controller = TextViewController(
+            string: "",
+            language: language,
+            font: font,
+            theme: theme,
+            tabWidth: tabWidth,
+            indentOption: indentOption,
+            lineHeight: lineHeight,
+            wrapLines: wrapLines,
+            cursorPositions: cursorPositions.wrappedValue,
+            editorOverscroll: editorOverscroll,
+            useThemeBackground: useThemeBackground,
+            highlightProvider: highlightProvider,
+            contentInsets: contentInsets,
+            isEditable: isEditable,
+            isSelectable: isSelectable,
+            letterSpacing: letterSpacing,
+            bracketPairHighlight: bracketPairHighlight,
+            undoManager: undoManager
+        )
         switch text {
         case .binding(let binding):
-            controller = TextViewController(
-                string: binding.wrappedValue,
-                language: language,
-                font: font,
-                theme: theme,
-                tabWidth: tabWidth,
-                indentOption: indentOption,
-                lineHeight: lineHeight,
-                wrapLines: wrapLines,
-                cursorPositions: cursorPositions,
-                editorOverscroll: editorOverscroll,
-                useThemeBackground: useThemeBackground,
-                highlightProvider: highlightProvider,
-                contentInsets: contentInsets,
-                isEditable: isEditable,
-                isSelectable: isSelectable,
-                letterSpacing: letterSpacing,
-                bracketPairHighlight: bracketPairHighlight,
-                undoManager: undoManager
-            )
+            controller.textView.setText(binding.wrappedValue)
         case .storage(let textStorage):
-            controller = TextViewController(
-                storage: textStorage,
-                language: language,
-                font: font,
-                theme: theme,
-                tabWidth: tabWidth,
-                indentOption: indentOption,
-                lineHeight: lineHeight,
-                wrapLines: wrapLines,
-                cursorPositions: cursorPositions,
-                editorOverscroll: editorOverscroll,
-                useThemeBackground: useThemeBackground,
-                highlightProvider: highlightProvider,
-                contentInsets: contentInsets,
-                isEditable: isEditable,
-                isSelectable: isSelectable,
-                letterSpacing: letterSpacing,
-                bracketPairHighlight: bracketPairHighlight,
-                undoManager: undoManager
-            )
+            controller.textView.setTextStorage(textStorage)
         }
         if controller.textView == nil {
             controller.loadView()
         }
         if !cursorPositions.isEmpty {
-            controller.setCursorPositions(cursorPositions)
+            controller.setCursorPositions(cursorPositions.wrappedValue)
         }
 
         context.coordinator.controller = controller
@@ -244,7 +226,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         if !context.coordinator.isUpdateFromTextView {
             // Prevent infinite loop of update notifications
             context.coordinator.isUpdatingFromRepresentable = true
-            controller.setCursorPositions(cursorPositions)
+            controller.setCursorPositions(cursorPositions.wrappedValue)
             context.coordinator.isUpdatingFromRepresentable = false
         } else {
             context.coordinator.isUpdateFromTextView = false
@@ -315,70 +297,6 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.tabWidth == tabWidth &&
         controller.letterSpacing == letterSpacing &&
         controller.bracketPairHighlight == bracketPairHighlight
-    }
-
-    @MainActor
-    public class Coordinator: NSObject {
-        var parent: CodeEditSourceEditor
-        weak var controller: TextViewController?
-        var isUpdatingFromRepresentable: Bool = false
-        var isUpdateFromTextView: Bool = false
-
-        init(parent: CodeEditSourceEditor) {
-            self.parent = parent
-            super.init()
-
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(textViewDidChangeText(_:)),
-                name: TextView.textDidChangeNotification,
-                object: nil
-            )
-
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(textControllerCursorsDidUpdate(_:)),
-                name: TextViewController.cursorPositionUpdatedNotification,
-                object: nil
-            )
-        }
-
-        @objc func textViewDidChangeText(_ notification: Notification) {
-            guard let textView = notification.object as? TextView,
-                  let ranges = notification.userInfo?[TextView.textDidChangeRangeKey] as? [NSRange],
-                  let controller,
-                  controller.textView === textView else {
-                return
-            }
-            if case .binding(let binding) = parent.text {
-                binding.wrappedValue = textView.string
-            }
-            parent.coordinators.forEach {
-                $0.textViewDidChangeText(controller: controller, editedRanges: ranges)
-            }
-        }
-
-        @objc func textControllerCursorsDidUpdate(_ notification: Notification) {
-            guard !isUpdatingFromRepresentable else { return }
-            self.isUpdateFromTextView = true
-            self.parent._cursorPositions.wrappedValue = self.controller?.cursorPositions ?? []
-            if self.controller != nil {
-                self.parent.coordinators.forEach {
-                    $0.textViewDidChangeSelection(
-                        controller: self.controller!,
-                        newPositions: self.controller!.cursorPositions
-                    )
-                }
-            }
-        }
-
-        deinit {
-            parent.coordinators.forEach {
-                $0.destroy()
-            }
-            parent.coordinators.removeAll()
-            NotificationCenter.default.removeObserver(self)
-        }
     }
 }
 
