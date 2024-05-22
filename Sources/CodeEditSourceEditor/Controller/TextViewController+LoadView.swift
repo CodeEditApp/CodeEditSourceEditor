@@ -18,7 +18,7 @@ extension TextViewController {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.contentView.postsFrameChangedNotifications = true
         scrollView.hasVerticalScroller = true
-        scrollView.hasHorizontalScroller = true
+        scrollView.hasHorizontalScroller = !wrapLines
         scrollView.documentView = textView
         scrollView.contentView.postsBoundsChangedNotifications = true
 

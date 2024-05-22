@@ -91,6 +91,7 @@ public class TextViewController: NSViewController {
     public var wrapLines: Bool {
         didSet {
             textView.layoutManager.wrapLines = wrapLines
+            scrollView.hasHorizontalScroller = !wrapLines
         }
     }
 
