@@ -29,23 +29,31 @@ struct TagFilter: Filter {
         in interface: TextInterface,
         with whitespaceProvider: WhitespaceProviders
     ) -> FilterAction {
+        guard mutation.delta > 0 && mutation.range.location > 0 else { return .none }
+
         let prevCharRange = NSRange(location: mutation.range.location - 1, length: 1)
-        if mutation.delta > 0 && mutation.range.location > 0 && interface.substring(from: prevCharRange) == ">" {
-            handleInsertionAfterTag(mutation, in: interface, with: whitespaceProvider)
+        guard interface.substring(from: prevCharRange) == ">" else {
+            return .none
         }
 
-        // If this is a newline, we do some extra processing!
+        // Returns `false` if it didn't find a valid start/end tag to complete.
+        guard handleInsertionAfterTag(mutation, in: interface, with: whitespaceProvider) else {
+            return .none
+        }
 
-        
-
-        return .none
+        // Do some extra processing if it's a newline.
+        if mutation.string == lineEnding.rawValue {
+            return handleNewlineInsertion(mutation, in: interface, with: whitespaceProvider)
+        } else {
+            return .none
+        }
     }
 
     private func handleInsertionAfterTag(
         _ mutation: TextMutation,
         in interface: TextInterface,
         with whitespaceProvider: WhitespaceProviders
-    ) {
+    ) -> Bool {
         let prevCharRange = NSRange(location: mutation.range.location - 1, length: 1)
         var foundStartTag: String?
         var foundEndNode: Bool = false
@@ -67,14 +75,16 @@ struct TagFilter: Filter {
 
                     // After the start node, in the same tree level we'll either find a `element` tag or a `end_tag`
                     // tag.
-                    // If we find the end_tag, we're over.
-                    if foundStartTag != nil && (Self.closingElementTags.contains(node.nodeType ?? "")) {
+                    if foundStartTag != nil,
+                       Self.closingElementTags.contains(node.nodeType ?? ""), // Found end tag
+                       let tagNameNode = node.namedChild(at: 0), // Check that it's a matching tag
+                       interface.substring(from: tagNameNode.range) == foundStartTag {
                         foundEndNode = true
                     }
                 }
             }
 
-            guard let startTag = foundStartTag, !foundEndNode else { return }
+            guard let startTag = foundStartTag, !foundEndNode else { return false }
 
             let closingTag = TextMutation(
                 string: "</\(startTag)>",
@@ -83,8 +93,28 @@ struct TagFilter: Filter {
             )
             interface.applyMutation(closingTag)
             interface.selectedRange = NSRange(location: mutation.range.max, length: 0)
+            return true
         } catch {
-            return
+            return false
         }
+    }
+
+    private func handleNewlineInsertion(
+        _ mutation: TextMutation,
+        in interface: TextInterface,
+        with whitespaceProvider: WhitespaceProviders
+    ) -> FilterAction {
+        let whitespace = whitespaceProvider.leadingWhitespace(mutation.range, interface)
+
+        // Should end up with (where | is the cursor and div was the tag being completed):
+        // <div>
+        //     |
+        // </div>
+        let string = lineEnding.rawValue + whitespace + indentOption.stringValue + lineEnding.rawValue + whitespace
+        interface.insertString(string, at: mutation.range.max)
+        let offsetFromMutation = lineEnding.length + whitespace.utf16.count + indentOption.stringValue.utf16.count
+        interface.selectedRange = NSRange(location: mutation.range.max + offsetFromMutation, length: 0)
+
+        return .discard
     }
 }
