@@ -20,7 +20,10 @@ struct CodeEditSourceEditorExampleDocument: FileDocument {
             .sourceCode,
             .plainText,
             .delimitedText,
-            .script
+            .script,
+            .html,
+            .data,
+            .content
         ]
     }
 

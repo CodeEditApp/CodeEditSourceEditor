@@ -81,7 +81,9 @@ public final class TreeSitterClient: HighlightProviding {
         static let maxSyncQueryLength: Int = 4096
     }
 
+    /// The error enum for ``TreeSitterClient``
     public enum Error: Swift.Error {
+        /// Thrown when an operation was not able to be performed asynchronously.
         case syncUnavailable
     }
 
@@ -133,7 +135,7 @@ public final class TreeSitterClient: HighlightProviding {
     ///
     /// - Note: While in debug mode, this method will throw an assertion failure if not called from the Main thread.
     /// - Parameter operation: The operation to perform
-    private func performAsync(_ operation: @escaping () -> Void) {
+    package func performAsync(_ operation: @escaping () -> Void) {
         assertMain()
         runningOperationCount += 1
         let setUpCountCopy = setUpCount
@@ -155,7 +157,7 @@ public final class TreeSitterClient: HighlightProviding {
     /// - Parameter operation: The operation to perform synchronously.
     /// - Throws: Can throw an ``TreeSitterClient/Error/syncUnavailable`` error if it's determined that an async
     ///           operation is unsafe.
-    private func performSync(_ operation: @escaping () -> Void) throws {
+    package func performSync<T>(_ operation: @escaping () -> T) throws -> T {
         assertMain()
 
         guard runningOperationCount == 0 else {
@@ -164,11 +166,13 @@ public final class TreeSitterClient: HighlightProviding {
 
         runningOperationCount += 1
 
-        operationQueue.sync {
+        let returnValue = operationQueue.sync {
             operation()
         }
 
         self.runningOperationCount -= 1
+
+        return returnValue
     }
 
     /// Assert that the caller is calling from the main thread.
@@ -178,6 +182,20 @@ public final class TreeSitterClient: HighlightProviding {
             assertionFailure("TreeSitterClient used from non-main queue. This will cause race conditions.")
         }
 #endif
+    }
+
+    /// Executes a task on the main thread.
+    /// If the caller is on the main thread already, executes it immediately. If not, it is queued
+    /// asynchronously for the main queue.
+    /// - Parameter task: The operation to execute.
+    package func dispatchMain(_ operation: @escaping () -> Void){
+        if Thread.isMainThread {
+            operation()
+        } else {
+            DispatchQueue.main.async {
+                operation()
+            }
+        }
     }
 
     // MARK: - HighlightProviding
@@ -210,7 +228,9 @@ public final class TreeSitterClient: HighlightProviding {
 
         let operation = { [weak self] in
             let invalidatedRanges = self?.applyEdit(edit: edit) ?? IndexSet()
-            completion(invalidatedRanges)
+            self?.dispatchMain {
+                completion(invalidatedRanges)
+            }
         }
 
         do {
@@ -242,7 +262,7 @@ public final class TreeSitterClient: HighlightProviding {
     ) {
         let operation = { [weak self] in
             let highlights = self?.queryHighlightsForRange(range: range)
-            DispatchQueue.main.async {
+            self?.dispatchMain {
                 completion(highlights ?? [])
             }
         }

@@ -53,7 +53,7 @@ extension Tree {
             }
 
             if visible {
-                print(")", terminator: "")
+                print(")", terminator: depth == 1 ? "\n": "")
             }
         }
 
@@ -114,7 +114,7 @@ extension MutableTree {
             }
 
             if visible {
-                print(")", terminator: "")
+                print(")", terminator: depth == 1 ? "\n": "")
             }
         }
 

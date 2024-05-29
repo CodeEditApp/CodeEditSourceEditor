@@ -1,6 +1,6 @@
 //
 //  TagFilter.swift
-//
+//  CodeEditSourceEditor
 //
 //  Created by Roscoe Rubin-Rottenberg on 5/18/24.
 //
@@ -8,62 +8,83 @@
 import Foundation
 import TextFormation
 import TextStory
+import CodeEditTextView
+import CodeEditLanguages
+import SwiftTreeSitter
 
 struct TagFilter: Filter {
-    var language: String
-    private let newlineFilter = NewlineProcessingFilter()
+    var language: CodeLanguage
+    var indentOption: IndentOption
+    var lineEnding: LineEnding
+    var treeSitterClient: TreeSitterClient
+
+    // HTML, JSX, TSX
+    private static let openingElementTags = ["start_tag", "jsx_opening_element", "tsx_opening_element"]
+    private static let closingElementTags = ["end_tag", "jsx_closing_element", "tsx_closing_element"]
+    // HTML & JSX, TSX
+    private static let tagContents = ["tag_name", "identifier"]
 
     func processMutation(
         _ mutation: TextMutation,
         in interface: TextInterface,
         with whitespaceProvider: WhitespaceProviders
     ) -> FilterAction {
-        guard isRelevantLanguage() else {
-            return .none
+        let prevCharRange = NSRange(location: mutation.range.location - 1, length: 1)
+        if mutation.delta > 0 && mutation.range.location > 0 && interface.substring(from: prevCharRange) == ">" {
+            handleInsertionAfterTag(mutation, in: interface, with: whitespaceProvider)
         }
-        guard let range = Range(mutation.range, in: interface.string) else { return .none }
-        let insertedText = mutation.string
-        let fullText = interface.string
 
-        // Check if the inserted text is a closing bracket (>)
-        if insertedText == ">" {
-            let textBeforeCursor = "\(String(fullText[..<range.lowerBound]))\(insertedText)"
-            if let lastOpenTag = textBeforeCursor.nearestTag {
-                // Check if the tag is not self-closing and there isn't already a closing tag
-                if !lastOpenTag.isSelfClosing && !textBeforeCursor.contains("</\(lastOpenTag.name)>") {
-                    let closingTag = "</\(lastOpenTag.name)>"
-                    let newRange = NSRange(location: mutation.range.location + 1, length: 0)
-                    DispatchQueue.main.async {
-                        let newMutation = TextMutation(string: closingTag, range: newRange, limit: 50)
-                        interface.applyMutation(newMutation)
-                        let cursorPosition = NSRange(location: newRange.location, length: 0)
-                        interface.selectedRange = cursorPosition
-                    }
-                }
-            }
-        }
+        // If this is a newline, we do some extra processing!
+
+        
 
         return .none
     }
-    private func isRelevantLanguage() -> Bool {
-        let relevantLanguages = ["html", "javascript", "typescript", "jsx", "tsx"]
-        return relevantLanguages.contains(language)
-    }
-}
-private extension String {
-    var nearestTag: (name: String, isSelfClosing: Bool)? {
-        let regex = try? NSRegularExpression(pattern: "<([a-zA-Z0-9]+)([^>]*)>", options: .caseInsensitive)
-        let nsString = self as NSString
-        let results = regex?.matches(in: self, options: [], range: NSRange(location: 0, length: nsString.length))
 
-        // Find the nearest tag before the cursor
-        guard let lastMatch = results?.last(where: { $0.range.location < nsString.length }) else { return nil }
-        let tagNameRange = lastMatch.range(at: 1)
-        let attributesRange = lastMatch.range(at: 2)
-        let tagName = nsString.substring(with: tagNameRange)
-        let attributes = nsString.substring(with: attributesRange)
-        let isSelfClosing = attributes.contains("/")
+    private func handleInsertionAfterTag(
+        _ mutation: TextMutation,
+        in interface: TextInterface,
+        with whitespaceProvider: WhitespaceProviders
+    ) {
+        let prevCharRange = NSRange(location: mutation.range.location - 1, length: 1)
+        var foundStartTag: String?
+        var foundEndNode: Bool = false
 
-        return (name: tagName, isSelfClosing: isSelfClosing)
+        do {
+            let pairs = try treeSitterClient.nodesAt(location: mutation.range.location)
+
+            for (_, node) in pairs {
+                node.enumerateChildren { node in
+                    guard node.isNamed else { return }
+
+                    if node.byteRange.upperBound == UInt32(prevCharRange.max * 2),
+                       Self.openingElementTags.contains(node.nodeType ?? ""),
+                       let tagNameNode = node.namedChild(at: 0),
+                       Self.tagContents.contains(tagNameNode.nodeType ?? "") {
+                        // Got the tag name for the opening tag
+                        foundStartTag = interface.substring(from: tagNameNode.range)
+                    }
+
+                    // After the start node, in the same tree level we'll either find a `element` tag or a `end_tag`
+                    // tag.
+                    // If we find the end_tag, we're over.
+                    if foundStartTag != nil && (Self.closingElementTags.contains(node.nodeType ?? "")) {
+                        foundEndNode = true
+                    }
+                }
+            }
+
+            guard let startTag = foundStartTag, !foundEndNode else { return }
+
+            let closingTag = TextMutation(
+                string: "</\(startTag)>",
+                range: NSRange(location: mutation.range.max, length: 0),
+                limit: interface.length
+            )
+            interface.applyMutation(closingTag)
+            interface.selectedRange = NSRange(location: mutation.range.max, length: 0)
+        } catch {
+            return
+        }
     }
 }

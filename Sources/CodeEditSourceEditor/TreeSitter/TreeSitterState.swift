@@ -46,6 +46,7 @@ public class TreeSitterState {
         layers = [
             LanguageLayer(
                 id: codeLanguage.id,
+                tsLanguage: codeLanguage.language,
                 parser: Parser(),
                 supportsInjections: codeLanguage.additionalHighlights?.contains("injections") ?? false,
                 tree: nil,
@@ -117,6 +118,7 @@ public class TreeSitterState {
 
         let newLayer = LanguageLayer(
             id: layerId,
+            tsLanguage: language.language,
             parser: Parser(),
             supportsInjections: language.additionalHighlights?.contains("injections") ?? false,
             tree: nil,
@@ -226,6 +228,7 @@ public class TreeSitterState {
                 // Temp layer object
                 let layer = LanguageLayer(
                     id: treeSitterLanguage,
+                    tsLanguage: nil,
                     parser: Parser(),
                     supportsInjections: false,
                     ranges: [range.range]
