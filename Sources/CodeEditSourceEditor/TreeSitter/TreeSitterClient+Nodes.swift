@@ -30,9 +30,8 @@ extension TreeSitterClient {
         return try performSync { [weak self] in
             var nodes: [(Language, Node)] = []
             for layer in self?.state?.layers ?? [] {
-                layer.tree?.prettyPrint()
-                print(layer.tree, layer.tree?.rootNode?.descendant(in: range.tsRange.bytes))
-                if let language = layer.tsLanguage, let node = layer.tree?.rootNode?.descendant(in: range.tsRange.bytes) {
+                if let language = layer.tsLanguage,
+                   let node = layer.tree?.rootNode?.descendant(in: range.tsRange.bytes) {
                     nodes.append((language, node))
                 }
             }

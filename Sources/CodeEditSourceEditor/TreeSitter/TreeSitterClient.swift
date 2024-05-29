@@ -188,7 +188,7 @@ public final class TreeSitterClient: HighlightProviding {
     /// If the caller is on the main thread already, executes it immediately. If not, it is queued
     /// asynchronously for the main queue.
     /// - Parameter task: The operation to execute.
-    package func dispatchMain(_ operation: @escaping () -> Void){
+    package func dispatchMain(_ operation: @escaping () -> Void) {
         if Thread.isMainThread {
             operation()
         } else {
