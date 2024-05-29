@@ -56,7 +56,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         letterSpacing: Double = 1.0,
         bracketPairHighlight: BracketPairHighlight? = nil,
         undoManager: CEUndoManager? = nil,
-        coordinators: [any TextViewCoordinator] = []
+        coordinators: [any TextViewCoordinator] = [],
+        renderWhitespace: Bool
     ) {
         self._text = text
         self.language = language
@@ -77,6 +78,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.bracketPairHighlight = bracketPairHighlight
         self.undoManager = undoManager
         self.coordinators = coordinators
+        self.renderWhitespace = renderWhitespace
     }
 
     @Binding private var text: String
@@ -98,6 +100,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     private var bracketPairHighlight: BracketPairHighlight?
     private var undoManager: CEUndoManager?
     private var coordinators: [any TextViewCoordinator]
+    private var renderWhitespace: Bool
 
     public typealias NSViewControllerType = TextViewController
 
