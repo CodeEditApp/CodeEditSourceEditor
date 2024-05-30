@@ -92,7 +92,7 @@ extension TextViewController {
     }
 
     private func setUpTagFilter() {
-        guard let treeSitterClient else { return }
+        guard let treeSitterClient, language.id.shouldProcessTags() else { return }
         textFilters.append(TagFilter(
             language: self.language,
             indentOption: indentOption,
