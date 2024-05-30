@@ -34,7 +34,7 @@ package class TreeSitterClientExecutor {
         label: "CodeEditSourceEditor.TreeSitter.EditQueue",
         qos: .userInteractive
     )
-    
+
     /// Initialize an executor.
     /// - Parameter forceSync: Set to true to force all async operations to be performed synchronously. This will block
     ///                        the main thread until every operation has completed.

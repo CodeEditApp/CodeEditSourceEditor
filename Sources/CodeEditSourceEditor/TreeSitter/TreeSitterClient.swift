@@ -20,8 +20,9 @@ import OSLog
 /// The APIs this object provides can perform either asynchronously or synchronously. All calls to this object must
 /// first be dispatched from the main queue to ensure serial access to internal properties. Any synchronous methods
 /// can throw an ``TreeSitterClientExecutor/Error/syncUnavailable`` error if an asynchronous or synchronous call is
-/// already being made on the object. In those cases it is up to the caller to decide whether or not to retry asynchronously.
-///
+/// already being made on the object. In those cases it is up to the caller to decide whether or not to retry
+/// asynchronously.
+/// 
 /// The only exception to the above rule is the ``HighlightProviding`` conformance methods. The methods for that
 /// implementation may return synchronously or asynchronously depending on a variety of factors such as document
 /// length, edit length, highlight length and if the object is available for a synchronous call.
@@ -70,7 +71,7 @@ public final class TreeSitterClient: HighlightProviding {
     }
 
     // MARK: - Init
-    
+
     /// Initialize the tree sitter client.
     /// - Parameter executor: The object to use when performing async/sync operations.
     init(executor: TreeSitterClientExecutor = .init()) {
