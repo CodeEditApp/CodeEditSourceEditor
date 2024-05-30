@@ -13,6 +13,7 @@ public class LanguageLayer: Hashable {
     /// Initialize a language layer
     /// - Parameters:
     ///   - id: The ID of the layer.
+    ///   - tsLanguage: The tree sitter language reference.
     ///   - parser: A parser to use for the layer.
     ///   - supportsInjections: Set to true when the langauge supports the `injections` query.
     ///   - tree: The tree-sitter tree generated while editing/parsing a document.
@@ -20,6 +21,7 @@ public class LanguageLayer: Hashable {
     ///   - ranges: All ranges this layer acts on. Must be kept in order and w/o overlap.
     init(
         id: TreeSitterLanguage,
+        tsLanguage: Language?,
         parser: Parser,
         supportsInjections: Bool,
         tree: MutableTree? = nil,
@@ -27,6 +29,7 @@ public class LanguageLayer: Hashable {
         ranges: [NSRange]
     ) {
         self.id = id
+        self.tsLanguage = tsLanguage
         self.parser = parser
         self.supportsInjections = supportsInjections
         self.tree = tree
@@ -37,6 +40,7 @@ public class LanguageLayer: Hashable {
     }
 
     let id: TreeSitterLanguage
+    let tsLanguage: Language?
     let parser: Parser
     let supportsInjections: Bool
     var tree: MutableTree?
@@ -46,6 +50,7 @@ public class LanguageLayer: Hashable {
     func copy() -> LanguageLayer {
         return LanguageLayer(
             id: id,
+            tsLanguage: tsLanguage,
             parser: parser,
             supportsInjections: supportsInjections,
             tree: tree?.mutableCopy(),

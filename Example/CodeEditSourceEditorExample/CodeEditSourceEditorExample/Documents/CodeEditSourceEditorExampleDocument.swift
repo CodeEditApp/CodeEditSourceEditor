@@ -17,10 +17,7 @@ struct CodeEditSourceEditorExampleDocument: FileDocument {
 
     static var readableContentTypes: [UTType] {
         [
-            .sourceCode,
-            .plainText,
-            .delimitedText,
-            .script
+            .item
         ]
     }
 

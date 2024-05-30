@@ -19,28 +19,15 @@ import OSLog
 ///
 /// The APIs this object provides can perform either asynchronously or synchronously. All calls to this object must
 /// first be dispatched from the main queue to ensure serial access to internal properties. Any synchronous methods
-/// can throw an ``TreeSitterClient/Error/syncUnavailable`` error if an asynchronous or synchronous call is already
-/// being made on the object. In those cases it is up to the caller to decide whether or not to retry asynchronously.
-///
+/// can throw an ``TreeSitterClientExecutor/Error/syncUnavailable`` error if an asynchronous or synchronous call is
+/// already being made on the object. In those cases it is up to the caller to decide whether or not to retry
+/// asynchronously.
+/// 
 /// The only exception to the above rule is the ``HighlightProviding`` conformance methods. The methods for that
 /// implementation may return synchronously or asynchronously depending on a variety of factors such as document
 /// length, edit length, highlight length and if the object is available for a synchronous call.
 public final class TreeSitterClient: HighlightProviding {
     static let logger: Logger = Logger(subsystem: "com.CodeEdit.CodeEditSourceEditor", category: "TreeSitterClient")
-
-    /// The number of operations running or enqueued to run on the dispatch queue. This variable **must** only be
-    /// changed from the main thread or race conditions are very likely.
-    private var runningOperationCount = 0
-
-    /// The number of times the object has been set up. Used to cancel async tasks if
-    /// ``TreeSitterClient/setUp(textView:codeLanguage:)`` is called.
-    private var setUpCount = 0
-
-    /// The concurrent queue to perform operations on.
-    private let operationQueue = DispatchQueue(
-        label: "CodeEditSourceEditor.TreeSitter.EditQueue",
-        qos: .userInteractive
-    )
 
     // MARK: - Properties
 
@@ -52,6 +39,8 @@ public final class TreeSitterClient: HighlightProviding {
 
     /// The internal tree-sitter layer tree object.
     var state: TreeSitterState?
+
+    package var executor: TreeSitterClientExecutor
 
     /// The end point of the previous edit.
     private var oldEndPoint: Point?
@@ -81,8 +70,12 @@ public final class TreeSitterClient: HighlightProviding {
         static let maxSyncQueryLength: Int = 4096
     }
 
-    public enum Error: Swift.Error {
-        case syncUnavailable
+    // MARK: - Init
+
+    /// Initialize the tree sitter client.
+    /// - Parameter executor: The object to use when performing async/sync operations.
+    init(executor: TreeSitterClientExecutor = .init()) {
+        self.executor = executor
     }
 
     // MARK: - HighlightProviding
@@ -115,69 +108,10 @@ public final class TreeSitterClient: HighlightProviding {
         readCallback: @escaping SwiftTreeSitter.Predicate.TextProvider,
         readBlock: @escaping Parser.ReadBlock
     ) {
-        setUpCount += 1
-        performAsync { [weak self] in
+        executor.incrementSetupCount()
+        executor.performAsync { [weak self] in
             self?.state = TreeSitterState(codeLanguage: language, readCallback: readCallback, readBlock: readBlock)
         }
-    }
-
-    // MARK: - Async Operations
-
-    /// Performs the given operation asynchronously.
-    ///
-    /// All completion handlers passed to this function will be enqueued on the `operationQueue` dispatch queue,
-    /// ensuring serial access to this class.
-    ///
-    /// This function will handle ensuring balanced increment/decrements are made to the `runningOperationCount` in
-    /// a safe manner.
-    ///
-    /// - Note: While in debug mode, this method will throw an assertion failure if not called from the Main thread.
-    /// - Parameter operation: The operation to perform
-    private func performAsync(_ operation: @escaping () -> Void) {
-        assertMain()
-        runningOperationCount += 1
-        let setUpCountCopy = setUpCount
-        operationQueue.async { [weak self] in
-            guard self != nil && self?.setUpCount == setUpCountCopy else { return }
-            operation()
-            DispatchQueue.main.async {
-                self?.runningOperationCount -= 1
-            }
-        }
-    }
-
-    /// Attempts to perform a synchronous operation on the client.
-    ///
-    /// The operation will be dispatched synchronously to the `operationQueue`, this function will return once the
-    /// operation is finished.
-    ///
-    /// - Note: While in debug mode, this method will throw an assertion failure if not called from the Main thread.
-    /// - Parameter operation: The operation to perform synchronously.
-    /// - Throws: Can throw an ``TreeSitterClient/Error/syncUnavailable`` error if it's determined that an async
-    ///           operation is unsafe.
-    private func performSync(_ operation: @escaping () -> Void) throws {
-        assertMain()
-
-        guard runningOperationCount == 0 else {
-            throw Error.syncUnavailable
-        }
-
-        runningOperationCount += 1
-
-        operationQueue.sync {
-            operation()
-        }
-
-        self.runningOperationCount -= 1
-    }
-
-    /// Assert that the caller is calling from the main thread.
-    private func assertMain() {
-#if DEBUG
-        if !Thread.isMainThread {
-            assertionFailure("TreeSitterClient used from non-main queue. This will cause race conditions.")
-        }
-#endif
     }
 
     // MARK: - HighlightProviding
@@ -210,7 +144,9 @@ public final class TreeSitterClient: HighlightProviding {
 
         let operation = { [weak self] in
             let invalidatedRanges = self?.applyEdit(edit: edit) ?? IndexSet()
-            completion(invalidatedRanges)
+            self?.executor.dispatchMain {
+                completion(invalidatedRanges)
+            }
         }
 
         do {
@@ -218,11 +154,11 @@ public final class TreeSitterClient: HighlightProviding {
             let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
 
             if longEdit || longDocument {
-                throw Error.syncUnavailable
+                throw TreeSitterClientExecutor.Error.syncUnavailable
             }
-            try performSync(operation)
+            try executor.performSync(operation)
         } catch {
-            performAsync(operation)
+            executor.performAsync(operation)
         }
     }
 
@@ -242,7 +178,7 @@ public final class TreeSitterClient: HighlightProviding {
     ) {
         let operation = { [weak self] in
             let highlights = self?.queryHighlightsForRange(range: range)
-            DispatchQueue.main.async {
+            self?.executor.dispatchMain {
                 completion(highlights ?? [])
             }
         }
@@ -252,11 +188,11 @@ public final class TreeSitterClient: HighlightProviding {
             let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
 
             if longQuery || longDocument {
-                throw Error.syncUnavailable
+                throw TreeSitterClientExecutor.Error.syncUnavailable
             }
-            try performSync(operation)
+            try executor.performSync(operation)
         } catch {
-            performAsync(operation)
+            executor.performAsync(operation)
         }
     }
 }

@@ -37,10 +37,10 @@ extension TextViewController {
         // Filters
 
         setUpOpenPairFilters(pairs: BracketPairs.allValues)
+        setUpTagFilter()
         setUpNewlineTabFilters(indentOption: indentOption)
         setUpDeletePairFilters(pairs: BracketPairs.allValues)
         setUpDeleteWhitespaceFilter(indentOption: indentOption)
-        setUpTagFilter()
     }
 
     /// Returns a `TextualIndenter` based on available language configuration.
@@ -92,15 +92,13 @@ extension TextViewController {
     }
 
     private func setUpTagFilter() {
-        let filter = TagFilter(language: self.language.tsName)
-        textFilters.append(filter)
-    }
-
-    func updateTagFilter() {
-        textFilters.removeAll { $0 is TagFilter }
-
-        // Add new tagfilter with the updated language
-        textFilters.append(TagFilter(language: self.language.tsName))
+        guard let treeSitterClient, language.id.shouldProcessTags() else { return }
+        textFilters.append(TagFilter(
+            language: self.language,
+            indentOption: indentOption,
+            lineEnding: textView.layoutManager.detectedLineEnding,
+            treeSitterClient: treeSitterClient
+        ))
     }
 
     /// Determines whether or not a text mutation should be applied.
@@ -123,30 +121,14 @@ extension TextViewController {
         )
 
         for filter in textFilters {
-            if let newlineFilter = filter as? NewlineProcessingFilter {
-                let action = mutation.applyWithTagProcessing(
-                    in: textView,
-                    using: newlineFilter,
-                    with: whitespaceProvider, indentOption: indentOption
-                )
-                switch action {
-                case .none:
-                    continue
-                case .stop:
-                    return true
-                case .discard:
-                    return false
-                }
-            } else {
-                let action = filter.processMutation(mutation, in: textView, with: whitespaceProvider)
-                switch action {
-                case .none:
-                    continue
-                case .stop:
-                    return true
-                case .discard:
-                    return false
-                }
+            let action = filter.processMutation(mutation, in: textView, with: whitespaceProvider)
+            switch action {
+            case .none:
+                continue
+            case .stop:
+                return true
+            case .discard:
+                return false
             }
         }
 
