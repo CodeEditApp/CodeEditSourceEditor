@@ -253,6 +253,15 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             return
         }
 
+        updateControllerParams(controller: controller)
+
+        controller.reloadUI()
+        return
+    }
+
+    /// Update the parameters of the controller.
+    /// - Parameter controller: The controller to update.
+    func updateControllerParams(controller: TextViewController) {
         if controller.font != font {
             controller.font = font
         }
@@ -296,11 +305,11 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         }
 
         controller.bracketPairHighlight = bracketPairHighlight
-
-        controller.reloadUI()
-        return
     }
 
+    /// Checks if the controller needs updating.
+    /// - Parameter controller: The controller to check.
+    /// - Returns: True, if the controller's parameters should be updated.
     func paramsAreEqual(controller: NSViewControllerType) -> Bool {
         controller.font == font &&
         controller.isEditable == isEditable &&
