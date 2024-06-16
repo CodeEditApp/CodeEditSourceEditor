@@ -47,6 +47,7 @@ final class TagEditingTests: XCTestCase {
             isEditable: true,
             isSelectable: true,
             letterSpacing: 1.0,
+            useSystemCursor: false,
             bracketPairHighlight: .flash
         )
         let tsClient = TreeSitterClient(executor: .init(forceSync: true))
