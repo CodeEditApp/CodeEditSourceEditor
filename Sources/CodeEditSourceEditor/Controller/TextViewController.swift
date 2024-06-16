@@ -153,6 +153,18 @@ public class TextViewController: NSViewController {
         }
     }
 
+    /// If true, uses the system cursor on macOS 14 or greater.
+    public var useSystemCursor: Bool {
+        get {
+            textView.useSystemCursor
+        }
+        set {
+            if #available(macOS 14, *) {
+                textView.useSystemCursor = newValue
+            }
+        }
+    }
+
     var highlighter: Highlighter?
 
     /// The tree sitter client managed by the source editor.
@@ -198,6 +210,7 @@ public class TextViewController: NSViewController {
         isEditable: Bool,
         isSelectable: Bool,
         letterSpacing: Double,
+        useSystemCursor: Bool,
         bracketPairHighlight: BracketPairHighlight?,
         undoManager: CEUndoManager? = nil
     ) {
@@ -221,6 +234,13 @@ public class TextViewController: NSViewController {
 
         super.init(nibName: nil, bundle: nil)
 
+        let platformGuardedSystemCursor: Bool
+        if #available(macOS 14, *) {
+            platformGuardedSystemCursor = useSystemCursor
+        } else {
+            platformGuardedSystemCursor = false
+        }
+
         self.textView = TextView(
             string: string,
             font: font,
@@ -230,6 +250,7 @@ public class TextViewController: NSViewController {
             isEditable: isEditable,
             isSelectable: isSelectable,
             letterSpacing: letterSpacing,
+            useSystemCursor: platformGuardedSystemCursor,
             delegate: self
         )
     }

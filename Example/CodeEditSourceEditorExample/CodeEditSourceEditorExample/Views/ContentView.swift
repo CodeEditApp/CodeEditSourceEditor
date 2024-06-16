@@ -19,6 +19,7 @@ struct ContentView: View {
     @State private var font: NSFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
     @AppStorage("wrapLines") private var wrapLines: Bool = true
     @State private var cursorPositions: [CursorPosition] = []
+    @AppStorage("systemCursor") private var useSystemCursor: Bool = false
 
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
         self._document = document
@@ -32,6 +33,13 @@ struct ContentView: View {
                 LanguagePicker(language: $language)
                     .frame(maxWidth: 100)
                 Toggle("Wrap Lines", isOn: $wrapLines)
+                if #available(macOS 14, *) {
+                    Toggle("Use System Cursor", isOn: $useSystemCursor)
+                } else {
+                    Toggle("Use System Cursor", isOn: $useSystemCursor)
+                        .disabled(true)
+                        .help("macOS 14 required")
+                }
                 Spacer()
                 Text(getLabel(cursorPositions))
             }
@@ -47,7 +55,8 @@ struct ContentView: View {
                 tabWidth: 4,
                 lineHeight: 1.2,
                 wrapLines: wrapLines,
-                cursorPositions: $cursorPositions
+                cursorPositions: $cursorPositions,
+                useSystemCursor: useSystemCursor
             )
         }
         .onAppear {
