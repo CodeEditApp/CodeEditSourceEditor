@@ -22,12 +22,10 @@ struct CodeEditSourceEditorExampleDocument: FileDocument {
     }
 
     init(configuration: ReadConfiguration) throws {
-        guard let data = configuration.file.regularFileContents,
-              let string = String(data: data, encoding: .utf8)
-        else {
+        guard let data = configuration.file.regularFileContents else {
             throw CocoaError(.fileReadCorruptFile)
         }
-        text = string
+        text = String(decoding: data, as: UTF8.self)
     }
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
