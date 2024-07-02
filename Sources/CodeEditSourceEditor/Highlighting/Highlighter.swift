@@ -45,7 +45,7 @@ class Highlighter: NSObject {
     private var theme: EditorTheme
 
     /// The object providing attributes for captures.
-    private weak var attributeProvider: ThemeAttributesProviding!
+    private weak var attributeProvider: ThemeAttributesProviding?
 
     /// The current language of the editor.
     private var language: CodeLanguage
@@ -113,7 +113,7 @@ class Highlighter: NSObject {
         // Remove all current highlights. Makes the language setting feel snappier and tells the user we're doing
         // something immediately.
         textView.textStorage.setAttributes(
-            attributeProvider.attributesFor(nil),
+            attributeProvider?.attributesFor(nil) ?? [:],
             range: NSRange(location: 0, length: textView.textStorage.length)
         )
         textView.layoutManager.invalidateLayoutForRect(textView.visibleRect)
@@ -133,6 +133,7 @@ class Highlighter: NSObject {
     }
 
     deinit {
+        NotificationCenter.default.removeObserver(self)
         self.attributeProvider = nil
         self.textView = nil
         self.highlightProvider = nil
@@ -234,10 +235,7 @@ private extension Highlighter {
         // they need to be changed back.
         for ignoredRange in ignoredIndexes.rangeView
         where textView?.documentRange.upperBound ?? 0 > ignoredRange.upperBound {
-            textView?.textStorage.setAttributes(
-                attributeProvider.attributesFor(nil),
-                range: NSRange(ignoredRange)
-            )
+            textView?.textStorage.setAttributes(attributeProvider.attributesFor(nil), range: NSRange(ignoredRange))
         }
 
         textView?.textStorage.endEditing()
@@ -262,7 +260,6 @@ private extension Highlighter {
             length: min(rangeChunkLimit, range.upperBound - range.lowerBound)
         )
     }
-
 }
 
 // MARK: - Visible Content Updates

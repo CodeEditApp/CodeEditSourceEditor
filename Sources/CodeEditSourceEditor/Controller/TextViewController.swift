@@ -28,6 +28,7 @@ public class TextViewController: NSViewController {
     internal var highlightLayers: [CALayer] = []
     internal var systemAppearance: NSAppearance.Name?
 
+    package var localEvenMonitor: Any?
     package var isPostingCursorNotification: Bool = false
 
     /// The string contents.
@@ -354,6 +355,10 @@ public class TextViewController: NSViewController {
         highlightProvider = nil
         NotificationCenter.default.removeObserver(self)
         cancellables.forEach { $0.cancel() }
+        if let localEvenMonitor {
+            NSEvent.removeMonitor(localEvenMonitor)
+        }
+        localEvenMonitor = nil
     }
 }
 

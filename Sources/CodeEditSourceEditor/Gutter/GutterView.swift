@@ -213,5 +213,7 @@ public class GutterView: NSView {
 
     deinit {
         NotificationCenter.default.removeObserver(self)
+        delegate = nil
+        textView = nil
     }
 }
