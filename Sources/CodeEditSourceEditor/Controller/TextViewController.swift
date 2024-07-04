@@ -173,7 +173,7 @@ public class TextViewController: NSViewController {
     /// This will be `nil` if another highlighter provider is passed to the source editor.
     internal(set) public var treeSitterClient: TreeSitterClient?
 
-    private var fontCharWidth: CGFloat { (" " as NSString).size(withAttributes: [.font: font]).width }
+    package var fontCharWidth: CGFloat { (" " as NSString).size(withAttributes: [.font: font]).width }
 
     /// Filters used when applying edits..
     internal var textFilters: [TextFormation.Filter] = []
@@ -181,7 +181,7 @@ public class TextViewController: NSViewController {
     internal var cancellables = Set<AnyCancellable>()
 
     /// ScrollView's bottom inset using as editor overscroll
-    private var bottomContentInsets: CGFloat {
+    package var bottomContentInsets: CGFloat {
         let height = view.frame.height
         var inset = editorOverscroll * height
 
@@ -272,14 +272,6 @@ public class TextViewController: NSViewController {
 
     /// A default `NSParagraphStyle` with a set `lineHeight`
     package lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
-
-    private func generateParagraphStyle() -> NSMutableParagraphStyle {
-        // swiftlint:disable:next force_cast
-        let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
-        paragraph.tabStops.removeAll()
-        paragraph.defaultTabInterval = CGFloat(tabWidth) * fontCharWidth
-        return paragraph
-    }
 
     // MARK: - Reload UI
 

@@ -8,6 +8,14 @@
 import AppKit
 
 extension TextViewController {
+    package func generateParagraphStyle() -> NSMutableParagraphStyle {
+        // swiftlint:disable:next force_cast
+        let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
+        paragraph.tabStops.removeAll()
+        paragraph.defaultTabInterval = CGFloat(tabWidth) * fontCharWidth
+        return paragraph
+    }
+
     /// Style the text view.
     package func styleTextView() {
         textView.selectionManager.selectionBackgroundColor = theme.selection
