@@ -110,13 +110,15 @@ extension TextViewController {
             }
             .store(in: &cancellables)
 
-        NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            guard self.view.window?.firstResponder == self.textView else { return event }
-//            let charactersIgnoringModifiers = event.charactersIgnoringModifiers
+        if let localEventMonitor = self.localEvenMonitor {
+            NSEvent.removeMonitor(localEventMonitor)
+        }
+        self.localEvenMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard self?.view.window?.firstResponder == self?.textView else { return event }
             let commandKey = NSEvent.ModifierFlags.command.rawValue
             let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
             if modifierFlags == commandKey && event.charactersIgnoringModifiers == "/" {
-                self.commandSlashCalled()
+                self?.commandSlashCalled()
                 return nil
             } else {
                 return event
