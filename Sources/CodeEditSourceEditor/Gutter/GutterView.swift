@@ -78,8 +78,8 @@ public class GutterView: NSView {
             forName: TextSelectionManager.selectionChangedNotification,
             object: nil,
             queue: .main
-        ) { _ in
-            self.needsDisplay = true
+        ) { [weak self] _ in
+            self?.needsDisplay = true
         }
     }
 
