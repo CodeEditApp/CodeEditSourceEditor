@@ -11,22 +11,42 @@ import AppKit
 extension TextViewController {
     /// Method called when CMD + / key sequence recognized, comments cursor's current line of code
     public func commandSlashCalled() {
-        guard let cursorPosition = cursorPositions.first else {
-            return
+        guard let cursorPosition  = cursorPositions.first else { return }
+        let lineNumbers = lineNumbersFromRange(for: cursorPosition.range, in: text)
+
+        for lineNumber in lineNumbers {
+            commentLine(line: lineNumber)
         }
+    }
+
+    // Calculate the start and end line numbers for a given range
+    func lineNumbersFromRange(for range: NSRange, in text: String) -> [Int] {
+        let startLine = lineNumber(at: range.location, in: text)
+        let endLine = lineNumber(at: NSMaxRange(range), in: text)
+        return Array(startLine...endLine)
+    }
+
+    // Calculate the line number at a specific position
+    func lineNumber(at position: Int, in text: String) -> Int {
+        let nsText = text as NSString
+        let substring = nsText.substring(to: position)
+        return substring.components(separatedBy: "\n").count
+    }
+
+    private func commentLine(line: Int) {
         // Many languages require a character sequence at the beginning of the line to comment the line.
         // (ex. python #, C++ //)
         // If such a sequence exists, we will insert that sequence at the beginning of the line
         if !language.lineCommentString.isEmpty {
-            toggleCharsAtBeginningOfLine(chars: language.lineCommentString, lineNumber: cursorPosition.line)
-        }
-        // In other cases, languages require a character sequence at beginning and end of a line, aka a range comment
-        // (Ex. HTML <!--line here -->)
-        // We treat the line as a one-line range to comment it out using rangeCommentStrings on both sides of the line
-        else {
+            toggleCharsAtBeginningOfLine(chars: language.lineCommentString, lineNumber: line)
+        } else {
+            // In other cases, languages require a character sequence 
+            // at beginning and end of a line, aka a range comment (Ex. HTML <!--line here -->)
+            // We treat the line as a one-line range to comment it
+            // out using rangeCommentStrings on both sides of the line
             let (openComment, closeComment) = language.rangeCommentStrings
-            toggleCharsAtEndOfLine(chars: closeComment, lineNumber: cursorPosition.line)
-            toggleCharsAtBeginningOfLine(chars: openComment, lineNumber: cursorPosition.line)
+            toggleCharsAtEndOfLine(chars: closeComment, lineNumber: line)
+            toggleCharsAtBeginningOfLine(chars: openComment, lineNumber: line)
         }
     }
 
@@ -48,7 +68,7 @@ extension TextViewController {
         } else {
             // toggle comment on
             textView.replaceCharacters(
-                in: NSRange(location: lineInfo.range.location + numWhitespaceChars, length: 0),
+                in: NSRange(location: lineInfo.range.location, length: 0),
                 with: chars
             )
         }
