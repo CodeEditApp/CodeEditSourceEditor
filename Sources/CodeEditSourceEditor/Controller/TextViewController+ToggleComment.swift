@@ -18,11 +18,11 @@ extension TextViewController {
         // Determine if we need to insert or remove comment chars.
         let insertChars = !linesHaveCommentChars(for: lineNumbers)
 
-        textView.undoManager?.beginUndoGrouping()
+        _undoManager?.beginGrouping()
         for lineNumber in lineNumbers {
             toggleComment(on: lineNumber, insertChars: insertChars)
         }
-        textView.undoManager?.endUndoGrouping()
+        _undoManager?.endGrouping()
     }
 
     /// Calculates the start and end line numbers for a given range.
