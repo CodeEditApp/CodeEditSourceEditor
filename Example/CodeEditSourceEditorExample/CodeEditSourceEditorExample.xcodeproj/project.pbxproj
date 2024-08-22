@@ -7,12 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		61621C612C74FB2200494A4A /* CodeEditSourceEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 61621C602C74FB2200494A4A /* CodeEditSourceEditor */; };
 		6C13652E2B8A7B94004A1D18 /* CodeEditSourceEditorExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C13652D2B8A7B94004A1D18 /* CodeEditSourceEditorExampleApp.swift */; };
 		6C1365302B8A7B94004A1D18 /* CodeEditSourceEditorExampleDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C13652F2B8A7B94004A1D18 /* CodeEditSourceEditorExampleDocument.swift */; };
 		6C1365322B8A7B94004A1D18 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1365312B8A7B94004A1D18 /* ContentView.swift */; };
 		6C1365342B8A7B95004A1D18 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6C1365332B8A7B95004A1D18 /* Assets.xcassets */; };
 		6C1365372B8A7B95004A1D18 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 6C1365362B8A7B95004A1D18 /* Preview Assets.xcassets */; };
-		6C1365412B8A7BC3004A1D18 /* CodeEditSourceEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 6C1365402B8A7BC3004A1D18 /* CodeEditSourceEditor */; };
 		6C1365442B8A7EED004A1D18 /* String+Lines.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1365432B8A7EED004A1D18 /* String+Lines.swift */; };
 		6C1365462B8A7F2D004A1D18 /* LanguagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1365452B8A7F2D004A1D18 /* LanguagePicker.swift */; };
 		6C1365482B8A7FBF004A1D18 /* EditorTheme+Default.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1365472B8A7FBF004A1D18 /* EditorTheme+Default.swift */; };
@@ -40,19 +40,27 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6C1365412B8A7BC3004A1D18 /* CodeEditSourceEditor in Frameworks */,
+				61621C612C74FB2200494A4A /* CodeEditSourceEditor in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		61621C5F2C74FB2200494A4A /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		6C1365212B8A7B94004A1D18 = {
 			isa = PBXGroup;
 			children = (
 				6C1365422B8A7BFE004A1D18 /* CodeEditSourceEditor */,
 				6C13652C2B8A7B94004A1D18 /* CodeEditSourceEditorExample */,
 				6C13652B2B8A7B94004A1D18 /* Products */,
+				61621C5F2C74FB2200494A4A /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -131,7 +139,7 @@
 			);
 			name = CodeEditSourceEditorExample;
 			packageProductDependencies = (
-				6C1365402B8A7BC3004A1D18 /* CodeEditSourceEditor */,
+				61621C602C74FB2200494A4A /* CodeEditSourceEditor */,
 			);
 			productName = CodeEditSourceEditorExample;
 			productReference = 6C13652A2B8A7B94004A1D18 /* CodeEditSourceEditorExample.app */;
@@ -400,7 +408,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		6C1365402B8A7BC3004A1D18 /* CodeEditSourceEditor */ = {
+		61621C602C74FB2200494A4A /* CodeEditSourceEditor */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = CodeEditSourceEditor;
 		};
