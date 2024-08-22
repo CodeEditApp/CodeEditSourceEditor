@@ -62,7 +62,12 @@ extension TextViewController {
     func lineNumbers(from range: NSRange, in text: String) -> [Int] {
         let startLine = lineNumber(at: range.location, in: text)
         let endLine = lineNumber(at: NSMaxRange(range), in: text)
-        return Array(startLine...endLine)
+
+        // Ensure startLine is not greater than endLine
+        let validStartLine = min(startLine, endLine)
+        let validEndLine = max(startLine, endLine)
+
+        return Array(validStartLine...validEndLine)
     }
 
     /// Calculates the line number at a specific position.
