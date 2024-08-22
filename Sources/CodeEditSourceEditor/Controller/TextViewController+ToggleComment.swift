@@ -11,7 +11,7 @@ import AppKit
 extension TextViewController {
     /// Method called when CMD + / key sequence is recognized.
     /// Comments or uncomments the cursor's current line(s) of code.
-    public func commandSlashCalled() {
+    public func handleCommandSlash() {
         guard let cursorPosition = cursorPositions.first else { return }
         let lineNumbers = lineNumbers(from: cursorPosition.range, in: text)
 
@@ -48,10 +48,8 @@ extension TextViewController {
             return false
         }
 
-        let firstNonWhitespaceIndex = lineString.firstIndex(where: { !$0.isWhitespace }) ?? lineString.startIndex
-        let firstCharsInLine = lineString.suffix(from: firstNonWhitespaceIndex).prefix(chars.count)
-
-        return firstCharsInLine == chars
+        // Trims leading and trailing whitespace, then checks if the line starts with the specified characters.
+        return lineString.trimmingCharacters(in: .whitespacesAndNewlines).starts(with: chars)
     }
 
     /// Calculates the start and end line numbers for a given range.
@@ -106,12 +104,17 @@ extension TextViewController {
             return
         }
 
+        // Execute the function before calculating the index of the first non-whitespace character
+        // and the number of leading whitespace characters.
+        if insertChars {
+            textView.replaceCharacters(in: NSRange(location: lineInfo.range.location, length: 0), with: chars)
+            return
+        }
+
         let firstNonWhitespaceIndex = lineString.firstIndex(where: { !$0.isWhitespace }) ?? lineString.startIndex
         let numWhitespaceChars = lineString.distance(from: lineString.startIndex, to: firstNonWhitespaceIndex)
 
-        if insertChars {
-            textView.replaceCharacters(in: NSRange(location: lineInfo.range.location, length: 0), with: chars)
-        } else {
+        if !insertChars {
             textView.replaceCharacters(
                 in: NSRange(location: lineInfo.range.location + numWhitespaceChars, length: chars.count),
                 with: ""
