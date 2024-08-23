@@ -10,7 +10,7 @@ import CodeEditTextView
 extension TextViewController {
     /// A cache used to store and manage comment-related information for lines in a text view.
     /// This class helps in efficiently inserting or removing comment characters at specific line positions.
-    class CommentCache {
+    struct CommentCache: ~Copyable {
         /// Holds necessary information like the lines range
         var lineInfos: [TextLineStorage<TextLine>.TextLinePosition?] = []
         /// Caches the content of lines by their indices. Populated only if comment characters need to be inserted.

@@ -13,8 +13,8 @@ extension TextViewController {
     /// Comments or uncomments the cursor's current line(s) of code.
     public func handleCommandSlash() {
         guard let cursorPosition = cursorPositions.first else { return }
-        let cache = CommentCache()
-        populateCommentCache(for: cursorPosition.range, using: cache)
+        var cache = CommentCache()
+        populateCommentCache(for: cursorPosition.range, using: &cache)
 
         // Begin an undo grouping to allow for a single undo operation for the entire comment toggle.
         textView.undoManager?.beginUndoGrouping()
@@ -34,7 +34,7 @@ extension TextViewController {
     ///   - range: The range of text to process.
     ///   - commentCache: A cache object to store comment-related data, such as line information,
     ///                   shift factors, and content.
-    func populateCommentCache(for range: NSRange, using commentCache: CommentCache) {
+    func populateCommentCache(for range: NSRange, using commentCache: inout CommentCache) {
         // Determine the appropriate comment characters based on the language settings.
         if language.lineCommentString.isEmpty {
             commentCache.startCommentChars = language.rangeCommentStrings.0
@@ -124,7 +124,7 @@ extension TextViewController {
     /// - Parameters:
     ///   - lineInfo: Contains information about the specific line, including its position and range.
     ///   - cache: A cache holding comment-related data such as the comment characters and line content.
-    private func toggleComment(lineInfo: TextLineStorage<TextLine>.TextLinePosition, cache: CommentCache) {
+    private func toggleComment(lineInfo: TextLineStorage<TextLine>.TextLinePosition, cache: borrowing CommentCache) {
         if cache.endCommentChars != nil {
             toggleCommentAtEndOfLine(lineInfo: lineInfo, cache: cache)
             toggleCommentAtBeginningOfLine(lineInfo: lineInfo, cache: cache)
@@ -139,7 +139,7 @@ extension TextViewController {
     ///   - cache: A cache holding comment-related data such as the comment characters and line content.
     private func toggleCommentAtBeginningOfLine(
         lineInfo: TextLineStorage<TextLine>.TextLinePosition,
-        cache: CommentCache
+        cache: borrowing CommentCache
     ) {
         // Ensure there are comment characters to toggle.
         guard let startCommentChars = cache.startCommentChars else { return }
@@ -181,7 +181,7 @@ extension TextViewController {
     ///   - cache: A cache holding comment-related data such as the comment characters and line content.
     private func toggleCommentAtEndOfLine(
         lineInfo: TextLineStorage<TextLine>.TextLinePosition,
-        cache: CommentCache
+        cache: borrowing CommentCache
     ) {
         // Ensure there are comment characters to toggle and the line is not empty.
         guard let endingCommentChars = cache.endCommentChars else { return }
