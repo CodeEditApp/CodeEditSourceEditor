@@ -13,6 +13,9 @@ extension TextViewController {
     /// Comments or uncomments the cursor's current line(s) of code.
     public func handleCommandSlash() {
         guard let cursorPosition = cursorPositions.first else { return }
+        // Set up a cache to avoid redundant computations.
+        // The cache stores line information (e.g., ranges), line contents,
+        // and other relevant data to improve efficiency.
         var cache = CommentCache()
         populateCommentCache(for: cursorPosition.range, using: &cache)
 
@@ -28,6 +31,7 @@ extension TextViewController {
         textView.undoManager?.endUndoGrouping()
     }
 
+    // swiftlint:disable cyclomatic_complexity
     /// Populates the comment cache with information about the lines within a specified range,
     /// determining whether comment characters should be inserted or removed.
     /// - Parameters:
@@ -58,18 +62,18 @@ extension TextViewController {
         commentCache.shouldInsertCommentChars = !startLineContent
             .trimmingCharacters(in: .whitespacesAndNewlines).starts(with: startCommentChars)
 
-        // Fetch the ending line's information.
+        // Retrieve information for the ending line. Proceed only if the ending line
+        // is different from the starting line, indicating that the user has selected more than one line.
         guard let endLineInfo = textView.layoutManager.textLineForOffset(range.upperBound),
-              endLineInfo.index != startLineInfo.index else {
-            return
-        }
+              endLineInfo.index != startLineInfo.index else { return }
 
         // Check if comment characters need to be inserted for the ending line.
-        if !commentCache.shouldInsertCommentChars || language.lineCommentString.isEmpty,
-           let endLineContent = textView.textStorage.substring(from: endLineInfo.range) {
-            commentCache.shouldInsertCommentChars = !endLineContent
-                .trimmingCharacters(in: .whitespacesAndNewlines).starts(with: startCommentChars)
-
+        if let endLineContent = textView.textStorage.substring(from: endLineInfo.range) {
+            // If comment characters need to be inserted, they should be added to every line within the range.
+            if !commentCache.shouldInsertCommentChars {
+                commentCache.shouldInsertCommentChars = !endLineContent
+                    .trimmingCharacters(in: .whitespacesAndNewlines).starts(with: startCommentChars)
+            }
             commentCache.lineStrings[endLineInfo.index] = endLineContent
         }
 
@@ -77,12 +81,17 @@ extension TextViewController {
         let intermediateLines = (startLineInfo.index + 1)..<endLineInfo.index
         for (offset, lineIndex) in intermediateLines.enumerated() {
             guard let lineInfo = textView.layoutManager.textLineForIndex(lineIndex) else { break }
-
             // Cache the line content here since we'll need to access it anyway
             // to append a comment at the end of the line.
-            if !commentCache.shouldInsertCommentChars || language.lineCommentString.isEmpty {
-                if  let lineContent = textView.textStorage.substring(from: lineInfo.range) {
+            if  let lineContent = textView.textStorage.substring(from: lineInfo.range) {
+                // Line content is accessed only when:
+                // - A line's comment is toggled off, or
+                // - Comment characters need to be appended to the end of the line.
+                if language.lineCommentString.isEmpty || !commentCache.shouldInsertCommentChars {
                     commentCache.lineStrings[lineIndex] = lineContent
+                }
+
+                if !commentCache.shouldInsertCommentChars {
                     commentCache.shouldInsertCommentChars = !lineContent
                         .trimmingCharacters(in: .whitespacesAndNewlines)
                         .starts(with: startCommentChars)
@@ -106,6 +115,7 @@ extension TextViewController {
             lineCount: intermediateLines.count
         )
     }
+    // swiftlint:enable cyclomatic_complexity
 
     /// Calculates the shift range factor based on the counts of start and
     /// end comment characters and the number of intermediate lines.
@@ -189,6 +199,8 @@ extension TextViewController {
 
         // Calculate the range shift based on cached factors, defaulting to 0 if unavailable.
         let rangeShift = cache.shiftRangeFactors[lineInfo.index] ?? 0
+
+        // Shift the line range by `rangeShift` if inserting comment characters, or by `-rangeShift` if removing them.
         guard let adjustedRange = lineInfo.range.shifted(by: cache.shouldInsertCommentChars ? rangeShift : -rangeShift)
         else { return }
 
@@ -196,7 +208,7 @@ extension TextViewController {
         guard let lineContent =
                 cache.lineStrings[lineInfo.index] ?? textView.textStorage.substring(from: adjustedRange) else { return }
 
-        var endIndex = adjustedRange.location + adjustedRange.length
+        var endIndex = adjustedRange.upperBound
 
         // If the last character is a newline, adjust the insertion point to before the newline.
         if lineContent.last?.isNewline ?? false {
