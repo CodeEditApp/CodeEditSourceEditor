@@ -13,141 +13,205 @@ extension TextViewController {
     /// Comments or uncomments the cursor's current line(s) of code.
     public func handleCommandSlash() {
         guard let cursorPosition = cursorPositions.first else { return }
-        let lineNumbers = lineNumbers(from: cursorPosition.range, in: text)
+        let cache = CommentCache()
+        populateCommentCache(for: cursorPosition.range, using: cache)
 
-        // Determine if we need to insert or remove comment chars.
-        let insertChars = !linesHaveCommentChars(for: lineNumbers)
-
-        _undoManager?.beginGrouping()
-        for lineNumber in lineNumbers {
-            toggleComment(on: lineNumber, insertChars: insertChars)
-        }
-        _undoManager?.endGrouping()
-    }
-
-    /// Calculates the start and end line numbers for a given range.
-    /// - Parameters:
-    ///   - range: The text range.
-    ///   - text: The full text string.
-    /// - Returns: An array of line numbers.
-    func lineNumbers(from range: NSRange, in text: String) -> [Int] {
-        let startLine = lineNumber(at: range.location, in: text)
-        let endLine = lineNumber(at: NSMaxRange(range), in: text)
-
-        // Ensure startLine is not greater than endLine
-        let validStartLine = min(startLine, endLine)
-        let validEndLine = max(startLine, endLine)
-
-        return Array(validStartLine...validEndLine)
-    }
-
-    /// Calculates the line number at a specific position.
-    /// - Parameters:
-    ///   - position: The character position in the text.
-    ///   - text: The full text string.
-    /// - Returns: The line number (1-indexed).
-    func lineNumber(at position: Int, in text: String) -> Int {
-        let nsText = text as NSString
-        let substring = nsText.substring(to: position)
-        return substring.components(separatedBy: "\n").count
-    }
-
-    /// Checks if all lines have comment characters at the beginning.
-    /// - Parameter lines: An array of line numbers to check.
-    /// - Returns: `false` if any line does not have comment chars, otherwise `true`.
-    func linesHaveCommentChars(for lines: [Int]) -> Bool {
-        let commentChars = language.lineCommentString.isEmpty
-        ? language.rangeCommentStrings.0
-        : language.lineCommentString
-
-        for line in lines where !checkCharsAtBeginningOfLine(chars: commentChars, for: line) {
-            return false
-        }
-        return true
-    }
-
-    /// Checks if the specified characters exist at the beginning of a line.
-    /// - Parameters:
-    ///   - chars: The characters to check for.
-    ///   - line: The line number (1-indexed).
-    /// - Returns: `true` if the characters are found, otherwise `false`.
-    func checkCharsAtBeginningOfLine(chars: String, for line: Int) -> Bool {
-        guard let lineInfo = textView.layoutManager.textLineForIndex(line - 1),
-              let lineString = textView.textStorage.substring(from: lineInfo.range) else {
-            return false
+        // Begin an undo grouping to allow for a single undo operation for the entire comment toggle.
+        textView.undoManager?.beginUndoGrouping()
+        for lineInfo in cache.lineInfos {
+            if let lineInfo {
+                toggleComment(lineInfo: lineInfo, cache: cache)
+            }
         }
 
-        // Trims leading and trailing whitespace, then checks if the line starts with the specified characters.
-        return lineString.trimmingCharacters(in: .whitespacesAndNewlines).starts(with: chars)
+        // End the undo grouping to complete the undo operation for the comment toggle.
+        textView.undoManager?.endUndoGrouping()
     }
 
-    /// Toggles the comment on or off for a given line.
+    /// Populates the comment cache with information about the lines within a specified range,
+    /// determining whether comment characters should be inserted or removed.
     /// - Parameters:
-    ///   - line: The line number (1-indexed).
-    ///   - insertChars: `true` to insert the comment chars, `false` to remove them.
-    private func toggleComment(on line: Int, insertChars: Bool) {
-        if !language.lineCommentString.isEmpty {
-            toggleCharsAtBeginningOfLine(chars: language.lineCommentString, for: line, insertChars: insertChars)
+    ///   - range: The range of text to process.
+    ///   - commentCache: A cache object to store comment-related data, such as line information,
+    ///                   shift factors, and content.
+    func populateCommentCache(for range: NSRange, using commentCache: CommentCache) {
+        // Determine the appropriate comment characters based on the language settings.
+        if language.lineCommentString.isEmpty {
+            commentCache.startCommentChars = language.rangeCommentStrings.0
+            commentCache.endCommentChars = language.rangeCommentStrings.1
         } else {
-            let (openComment, closeComment) = language.rangeCommentStrings
-            toggleCharsAtEndOfLine(chars: closeComment, for: line, insertChars: insertChars)
-            toggleCharsAtBeginningOfLine(chars: openComment, for: line, insertChars: insertChars)
+            commentCache.startCommentChars = language.lineCommentString
         }
-    }
 
-    /// Toggles the specified string of characters at the beginning of a line.
-    /// - Parameters:
-    ///   - chars: The characters to toggle.
-    ///   - lineNumber: The line number (1-indexed).
-    ///   - insertChars: `true` to insert the chars, `false` to remove them.
-    private func toggleCharsAtBeginningOfLine(chars: String, for lineNumber: Int, insertChars: Bool) {
-        guard let lineInfo = textView.layoutManager.textLineForIndex(lineNumber - 1),
-              let lineString = textView.textStorage.substring(from: lineInfo.range) else {
+        // Return early if no comment characters are available.
+        guard let startCommentChars = commentCache.startCommentChars else { return }
+
+        // Fetch the starting line's information and content.
+        guard let startLineInfo = textView.layoutManager.textLineForOffset(range.location),
+              let startLineContent = textView.textStorage.substring(from: startLineInfo.range) else {
             return
         }
 
-        // Execute the function before calculating the index of the first non-whitespace character
-        // and the number of leading whitespace characters.
-        if insertChars {
-            textView.replaceCharacters(in: NSRange(location: lineInfo.range.location, length: 0), with: chars)
+        // Initialize cache with the first line's information.
+        commentCache.lineInfos = [startLineInfo]
+        commentCache.lineStrings[startLineInfo.index] = startLineContent
+        commentCache.shouldInsertCommentChars = !startLineContent
+            .trimmingCharacters(in: .whitespacesAndNewlines).starts(with: startCommentChars)
+
+        // Fetch the ending line's information.
+        guard let endLineInfo = textView.layoutManager.textLineForOffset(range.upperBound),
+              endLineInfo.index != startLineInfo.index else {
             return
         }
 
-        let firstNonWhitespaceIndex = lineString.firstIndex(where: { !$0.isWhitespace }) ?? lineString.startIndex
-        let numWhitespaceChars = lineString.distance(from: lineString.startIndex, to: firstNonWhitespaceIndex)
+        // Check if comment characters need to be inserted for the ending line.
+        if !commentCache.shouldInsertCommentChars || language.lineCommentString.isEmpty,
+           let endLineContent = textView.textStorage.substring(from: endLineInfo.range) {
+            commentCache.shouldInsertCommentChars = !endLineContent
+                .trimmingCharacters(in: .whitespacesAndNewlines).starts(with: startCommentChars)
 
-        if !insertChars {
-            textView.replaceCharacters(
-                in: NSRange(location: lineInfo.range.location + numWhitespaceChars, length: chars.count),
-                with: ""
+            commentCache.lineStrings[endLineInfo.index] = endLineContent
+        }
+
+        // Process all lines between the start and end lines.
+        let intermediateLines = (startLineInfo.index + 1)..<endLineInfo.index
+        for (offset, lineIndex) in intermediateLines.enumerated() {
+            guard let lineInfo = textView.layoutManager.textLineForIndex(lineIndex) else { break }
+
+            // Cache the line content here since we'll need to access it anyway
+            // to append a comment at the end of the line.
+            if !commentCache.shouldInsertCommentChars || language.lineCommentString.isEmpty {
+                if  let lineContent = textView.textStorage.substring(from: lineInfo.range) {
+                    commentCache.lineStrings[lineIndex] = lineContent
+                    commentCache.shouldInsertCommentChars = !lineContent
+                        .trimmingCharacters(in: .whitespacesAndNewlines)
+                        .starts(with: startCommentChars)
+                }
+            }
+
+            // Cache line information and calculate the shift range factor.
+            commentCache.lineInfos.append(lineInfo)
+            commentCache.shiftRangeFactors[lineIndex] = calculateShiftRangeFactor(
+                startCount: startCommentChars.count,
+                endCount: commentCache.endCommentChars?.count,
+                lineCount: offset
             )
         }
+
+        // Cache the ending line's information and calculate its shift range factor.
+        commentCache.lineInfos.append(endLineInfo)
+        commentCache.shiftRangeFactors[endLineInfo.index] = calculateShiftRangeFactor(
+            startCount: startCommentChars.count,
+            endCount: commentCache.endCommentChars?.count,
+            lineCount: intermediateLines.count
+        )
     }
 
-    /// Toggles the specified string of characters at the end of a line.
+    /// Calculates the shift range factor based on the counts of start and
+    /// end comment characters and the number of intermediate lines.
+    ///
     /// - Parameters:
-    ///   - chars: The characters to toggle.
-    ///   - lineNumber: The line number (1-indexed).
-    ///   - insertChars: `true` to insert the chars, `false` to remove them.
-    private func toggleCharsAtEndOfLine(chars: String, for lineNumber: Int, insertChars: Bool) {
-        guard let lineInfo = textView.layoutManager.textLineForIndex(lineNumber - 1), !lineInfo.range.isEmpty,
-              let lineString = textView.textStorage.substring(from: lineInfo.range) else {
+    ///   - startCount: The number of characters in the start comment.
+    ///   - endCount: An optional number of characters in the end comment. If `nil`, it is treated as 0.
+    ///   - lineCount: The number of intermediate lines between the start and end comments.
+    ///
+    /// - Returns: The computed shift range factor as an `Int`.
+    func calculateShiftRangeFactor(startCount: Int, endCount: Int?, lineCount: Int) -> Int {
+        let effectiveEndCount = endCount ?? 0
+        return (startCount + effectiveEndCount) * (lineCount + 1)
+    }
+    /// Toggles the presence of comment characters at the beginning and/or end
+    /// - Parameters:
+    ///   - lineInfo: Contains information about the specific line, including its position and range.
+    ///   - cache: A cache holding comment-related data such as the comment characters and line content.
+    private func toggleComment(lineInfo: TextLineStorage<TextLine>.TextLinePosition, cache: CommentCache) {
+        if cache.endCommentChars != nil {
+            toggleCommentAtEndOfLine(lineInfo: lineInfo, cache: cache)
+            toggleCommentAtBeginningOfLine(lineInfo: lineInfo, cache: cache)
+        } else {
+            toggleCommentAtBeginningOfLine(lineInfo: lineInfo, cache: cache)
+        }
+    }
+
+    /// Toggles the presence of comment characters at the beginning of a line in the text view.
+    /// - Parameters:
+    ///   - lineInfo: Contains information about the specific line, including its position and range.
+    ///   - cache: A cache holding comment-related data such as the comment characters and line content.
+    private func toggleCommentAtBeginningOfLine(
+        lineInfo: TextLineStorage<TextLine>.TextLinePosition,
+        cache: CommentCache
+    ) {
+        // Ensure there are comment characters to toggle.
+        guard let startCommentChars = cache.startCommentChars else { return }
+
+        // Calculate the range shift based on cached factors, defaulting to 0 if unavailable.
+        let rangeShift = cache.shiftRangeFactors[lineInfo.index] ?? 0
+
+        // If we need to insert comment characters at the beginning of the line.
+        if cache.shouldInsertCommentChars {
+            guard let adjustedRange = lineInfo.range.shifted(by: rangeShift) else { return }
+            textView.replaceCharacters(
+                in: NSRange(location: adjustedRange.location, length: 0),
+                with: startCommentChars
+            )
             return
         }
 
-        var lineLastCharIndex = (lineInfo.range.location + lineInfo.range.length)
+        // If we need to remove comment characters from the beginning of the line.
+        guard let adjustedRange = lineInfo.range.shifted(by: -rangeShift) else { return }
 
-        // If the last character is a newline, we need to insert the comment characters before it.
-        // This requires adjusting the insertion point one position to the left (-1).
-        if lineString.last?.isNewline ?? false {
-            lineLastCharIndex -= 1
+        // Retrieve the current line's string content from the cache or the text view's storage.
+        guard let lineContent =
+                cache.lineStrings[lineInfo.index] ?? textView.textStorage.substring(from: adjustedRange) else { return }
+
+        // Find the index of the first non-whitespace character.
+        let firstNonWhitespaceIndex = lineContent.firstIndex(where: { !$0.isWhitespace }) ?? lineContent.startIndex
+        let leadingWhitespaceCount = lineContent.distance(from: lineContent.startIndex, to: firstNonWhitespaceIndex)
+
+        // Remove the comment characters from the beginning of the line.
+        textView.replaceCharacters(
+            in: NSRange(location: adjustedRange.location + leadingWhitespaceCount, length: startCommentChars.count),
+            with: ""
+        )
+    }
+
+    /// Toggles the presence of comment characters at the end of a line in the text view.
+    /// - Parameters:
+    ///   - lineInfo: Contains information about the specific line, including its position and range.
+    ///   - cache: A cache holding comment-related data such as the comment characters and line content.
+    private func toggleCommentAtEndOfLine(
+        lineInfo: TextLineStorage<TextLine>.TextLinePosition,
+        cache: CommentCache
+    ) {
+        // Ensure there are comment characters to toggle and the line is not empty.
+        guard let endingCommentChars = cache.endCommentChars else { return }
+        guard !lineInfo.range.isEmpty else { return }
+
+        // Calculate the range shift based on cached factors, defaulting to 0 if unavailable.
+        let rangeShift = cache.shiftRangeFactors[lineInfo.index] ?? 0
+        guard let adjustedRange = lineInfo.range.shifted(by: rangeShift) else { return }
+
+        // Retrieve the current line's string content from the cache or the text view's storage.
+        guard let lineContent =
+                cache.lineStrings[lineInfo.index] ?? textView.textStorage.substring(from: adjustedRange) else { return }
+
+        var endIndex = adjustedRange.location + adjustedRange.length
+
+        // If the last character is a newline, adjust the insertion point to before the newline.
+        if lineContent.last?.isNewline ?? false {
+            endIndex -= 1
         }
 
-        if insertChars {
-            textView.replaceCharacters(in: NSRange(location: lineLastCharIndex, length: 0), with: chars)
+        if cache.shouldInsertCommentChars {
+            // Insert the comment characters at the calculated position.
+            textView.replaceCharacters(in: NSRange(location: endIndex, length: 0), with: endingCommentChars)
         } else {
-            let closeCommentRange = NSRange(location: lineLastCharIndex - chars.count, length: chars.count)
-            textView.replaceCharacters(in: closeCommentRange, with: "")
+            // Remove the comment characters if they exist at the end of the line.
+            let commentRange = NSRange(
+                location: endIndex - endingCommentChars.count,
+                length: endingCommentChars.count
+            )
+            textView.replaceCharacters(in: commentRange, with: "")
         }
     }
 }
