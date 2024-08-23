@@ -118,7 +118,7 @@ extension TextViewController {
             let commandKey = NSEvent.ModifierFlags.command.rawValue
             let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
             if modifierFlags == commandKey && event.charactersIgnoringModifiers == "/" {
-                self?.commandSlashCalled()
+                self?.handleCommandSlash()
                 return nil
             } else {
                 return event
