@@ -189,7 +189,8 @@ extension TextViewController {
 
         // Calculate the range shift based on cached factors, defaulting to 0 if unavailable.
         let rangeShift = cache.shiftRangeFactors[lineInfo.index] ?? 0
-        guard let adjustedRange = lineInfo.range.shifted(by: rangeShift) else { return }
+        guard let adjustedRange = lineInfo.range.shifted(by: cache.shouldInsertCommentChars ? rangeShift : -rangeShift)
+        else { return }
 
         // Retrieve the current line's string content from the cache or the text view's storage.
         guard let lineContent =
