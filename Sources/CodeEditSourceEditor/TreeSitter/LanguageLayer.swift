@@ -158,9 +158,7 @@ public class LanguageLayer: Hashable {
                 }
                 wasLongParse = true
             }
-            DispatchQueue.syncMainIfNot {
-                newTree = parser.parse(tree: tree, readBlock: readBlock)
-            }
+            newTree = DispatchQueue.syncMainIfNot { parser.parse(tree: tree, readBlock: readBlock) }
         }
 
         if wasLongParse {

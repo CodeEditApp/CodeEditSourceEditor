@@ -47,38 +47,45 @@ struct ContentView: View {
             .padding(4)
             .zIndex(2)
             .background(Color(NSColor.windowBackgroundColor))
-            if isInLongParse {
-                HStack {
-                    Text("Parsing document...")
-                }
-                .padding(4)
-                .zIndex(2)
-                .background(Color(NSColor.windowBackgroundColor))
-                .transition(.asymmetric(insertion: .move(edge: .bottom), removal: .move(edge: .top)))
-            }
             Divider()
-            CodeEditSourceEditor(
-                $document.text,
-                language: language,
-                theme: theme,
-                font: font,
-                tabWidth: 4,
-                lineHeight: 1.2,
-                wrapLines: wrapLines,
-                cursorPositions: $cursorPositions,
-                useSystemCursor: useSystemCursor
-            )
+            ZStack {
+                if isInLongParse {
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Text("Parsing document...")
+                            Spacer()
+                        }
+                        .padding(4)
+                        .background(Color(NSColor.windowBackgroundColor))
+                        Spacer()
+                    }
+                    .zIndex(2)
+                    .transition(.opacity)
+                }
+                CodeEditSourceEditor(
+                    $document.text,
+                    language: language,
+                    theme: theme,
+                    font: font,
+                    tabWidth: 4,
+                    lineHeight: 1.2,
+                    wrapLines: wrapLines,
+                    cursorPositions: $cursorPositions,
+                    useSystemCursor: useSystemCursor
+                )
+            }
         }
         .onAppear {
             self.language = detectLanguage(fileURL: fileURL) ?? .default
         }
         .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParse)) { _ in
-            withAnimation {
+            withAnimation(.easeIn(duration: 0.1)) {
                 isInLongParse = true
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParseFinished)) { _ in
-            withAnimation {
+            withAnimation(.easeIn(duration: 0.1)) {
                 isInLongParse = false
             }
         }

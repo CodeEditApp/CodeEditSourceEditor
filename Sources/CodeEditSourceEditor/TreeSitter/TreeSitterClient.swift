@@ -55,16 +55,17 @@ public final class TreeSitterClient: HighlightProviding {
 
     public enum Constants {
         /// The maximum amount of limits a cursor can match during a query.
+        ///
         /// Used to ensure performance in large files, even though we generally limit the query to the visible range.
         /// Neovim encountered this issue and uses 64 for their limit. Helix uses 256 due to issues with some
         /// languages when using 64.
-        /// See: https://github.com/neovim/neovim/issues/14897
-        /// And: https://github.com/helix-editor/helix/pull/4830
+        /// See: [github.com/neovim](https://github.com/neovim/neovim/issues/14897)
+        /// And: [github.com/helix-editor](https://github.com/helix-editor/helix/pull/4830)
         public static var matchLimit = 256
 
         /// The timeout for parsers to re-check if a task is canceled. This constant represents the period between
-        /// checks.
-        public static var parserTimeout: TimeInterval = 0.1
+        /// checks and is directly related to editor responsiveness.
+        public static var parserTimeout: TimeInterval = 0.05
 
         /// The maximum length of an edit before it must be processed asynchronously
         public static var maxSyncEditLength: Int = 1024
@@ -76,10 +77,12 @@ public final class TreeSitterClient: HighlightProviding {
         public static var maxSyncQueryLength: Int = 4096
 
         /// The number of characters to read in a read block.
+        ///
+        /// This has diminishing returns on the number of times the read block is called as this number gets large.
         public static var charsToReadInBlock: Int = 4096
 
         /// The duration before a long parse notification is sent.
-        public static var longParseTimeout: Duration = .seconds(1.0)
+        public static var longParseTimeout: Duration = .seconds(0.5)
 
         /// The notification name sent when a long parse is detected.
         public static var longParse: Notification.Name = .init("CodeEditSourceEditor.longParseNotification")
