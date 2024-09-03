@@ -10,10 +10,9 @@ import SwiftTreeSitter
 import CodeEditLanguages
 
 /// TreeSitterState contains the tree of language layers that make up the tree-sitter document.
-public class TreeSitterState {
+public final class TreeSitterState {
     private(set) var primaryLayer: CodeLanguage
     private(set) var layers: [LanguageLayer] = []
-    let editCounter: AtomicCounter = AtomicCounter(value: 0)
 
     // MARK: - Init
 
@@ -36,6 +35,16 @@ public class TreeSitterState {
     private init(codeLanguage: CodeLanguage, layers: [LanguageLayer]) {
         self.primaryLayer = codeLanguage
         self.layers = layers
+    }
+
+    /// Creates a copy of the current state.
+    ///
+    /// This should be a fairly cheap operation. Copying tree-sitter trees never actually copies the contents, just
+    /// increments a global ref counter.
+    ///
+    /// - Returns: A new, disconnected copy of the tree sitter state.
+    public func copy() -> TreeSitterState {
+        TreeSitterState(codeLanguage: primaryLayer, layers: layers.map { $0.copy() })
     }
 
     /// Sets the language for the state. Removing all existing layers.

@@ -49,6 +49,8 @@ public final class TreeSitterClient: HighlightProviding {
     /// The end point of the previous edit.
     private var oldEndPoint: Point?
 
+    @Atomic package var pendingEdits: [InputEdit] = []
+
     // MARK: - Constants
 
     enum Constants {
@@ -124,9 +126,8 @@ public final class TreeSitterClient: HighlightProviding {
             return
         }
 
-        let currentCount = state?.editCounter.increment() ?? -1
         let operation = { [weak self] in
-            let invalidatedRanges = self?.applyEdit(edit: edit, editCounter: currentCount) ?? IndexSet()
+            let invalidatedRanges = self?.applyEdit(edit: edit) ?? IndexSet()
             DispatchQueue.dispatchMainIfNot { completion(.success(invalidatedRanges)) }
         }
 
@@ -134,11 +135,12 @@ public final class TreeSitterClient: HighlightProviding {
         let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
 
         if longEdit || longDocument || !executor.execSync(operation).isSuccess {
-            executor.cancelAll(below: .edit) {
+            executor.cancelAll(below: .reset) { // Cancel all edits, add it to the pending edit queue
                 executor.execAsync(
                     priority: .edit,
                     operation: operation,
-                    onCancel: {
+                    onCancel: { [weak self] in
+                        self?.pendingEdits.append(edit)
                         DispatchQueue.dispatchMainIfNot {
                             completion(.failure(HighlightProvidingError.operationCancelled))
                         }

@@ -8,6 +8,18 @@
 import Foundation
 import CodeEditLanguages
 import SwiftTreeSitter
+import tree_sitter
+
+extension Parser {
+    func reset() {
+        let mirror = Mirror(reflecting: self)
+        for case let (label?, value) in mirror.children {
+            if label == "internalParser", let value = value as? OpaquePointer {
+                ts_parser_reset(value)
+            }
+        }
+    }
+}
 
 public class LanguageLayer: Hashable {
     /// Initialize a language layer
@@ -73,25 +85,31 @@ public class LanguageLayer: Hashable {
     ///   - edit: The edit to act on.
     ///   - timeout: The maximum time interval the parser can run before halting.
     ///   - readBlock: A callback for fetching blocks of text.
-    ///   - skipParse: Set to true to skip any parsing steps and only apply the edit to the tree.
     /// - Returns: An array of distinct `NSRanges` that need to be re-highlighted.
     func findChangedByteRanges(
-        edit: InputEdit,
+        edits: [InputEdit],
         timeout: TimeInterval?,
-        readBlock: @escaping Parser.ReadBlock,
-        skipParse: Bool
+        readBlock: @escaping Parser.ReadBlock
     ) -> [NSRange] {
         parser.timeout = timeout ?? 0
 
+        var info = mach_timebase_info()
+        guard mach_timebase_info(&info) == KERN_SUCCESS else { return [] }
+        let start = mach_absolute_time()
+
         let (newTree, didCancel) = calculateNewState(
-            tree: self.tree,
+            tree: self.tree?.mutableCopy(),
             parser: self.parser,
-            edit: edit,
-            readBlock: readBlock,
-            skipParse: skipParse
+            edits: edits,
+            readBlock: readBlock
         )
 
-        if didCancel || skipParse {
+        let end = mach_absolute_time()
+        let elapsed = end - start
+        let nanos = elapsed * UInt64(info.numer) / UInt64(info.denom)
+        print("Apply Edits To TS Tree: ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC), "ms")
+
+        if didCancel {
             return []
         }
 
@@ -120,25 +138,29 @@ public class LanguageLayer: Hashable {
     internal func calculateNewState(
         tree: MutableTree?,
         parser: Parser,
-        edit: InputEdit,
-        readBlock: @escaping Parser.ReadBlock,
-        skipParse: Bool
+        edits: [InputEdit],
+        readBlock: @escaping Parser.ReadBlock
     ) -> (tree: MutableTree?, didCancel: Bool) {
         guard let tree else {
             return (nil, false)
         }
 
-        // Apply the edit to the old tree
-        tree.edit(edit)
+        // Apply the edits to the old tree
+        for edit in edits {
+            tree.edit(edit)
+        }
 
         // Check every timeout to see if the task is canceled to avoid parsing after the editor has been closed.
         // We can continue a parse after a timeout causes it to cancel by calling parse on the same tree.
         var newTree: MutableTree?
         while newTree == nil {
-            if Task.isCancelled || skipParse {
+            if Task.isCancelled {
+                parser.reset()
                 return (nil, true)
             }
-            newTree = parser.parse(tree: tree, readBlock: readBlock)
+            DispatchQueue.syncMainIfNot {
+                newTree = parser.parse(tree: tree, readBlock: readBlock)
+            }
         }
 
         return (newTree, false)

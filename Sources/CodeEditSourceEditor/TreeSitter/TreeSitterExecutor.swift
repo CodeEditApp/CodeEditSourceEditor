@@ -8,7 +8,7 @@
 import Foundation
 
 /// A class for managing
-package class TreeSitterExecutor {
+final package class TreeSitterExecutor {
     enum Priority: Comparable {
         case access
         case edit
@@ -33,9 +33,7 @@ package class TreeSitterExecutor {
         guard let queueItemID = addSyncTask() else {
             return .failure(Error.syncUnavailable)
         }
-        print("Execing sync \(queueItemID)")
         let returnVal = operation() // Execute outside critical area.
-        print("Finished sync \(queueItemID)")
         // Critical area, modifying the queue.
         lock.withLock {
             queuedTasks.removeAll(where: { $0.id == queueItemID })
@@ -59,8 +57,7 @@ package class TreeSitterExecutor {
         lock.lock()
         defer { lock.unlock() }
         let id = UUID()
-        print("queuing task \(id)")
-        let task = Task {
+        let task = Task(priority: .userInitiated) { // This executes outside the lock's control.
             while self.lock.withLock({ !canTaskExec(id: id, priority: priority) }) {
                 await Task.yield()
                 guard !Task.isCancelled else {
@@ -76,9 +73,11 @@ package class TreeSitterExecutor {
                 return
             }
 
-            print("Execing task \(id)")
             operation()
-            print("Finished task \(id)")
+
+            if Task.isCancelled {
+                onCancel()
+            }
 
             removeTask(id)
         }
@@ -88,9 +87,6 @@ package class TreeSitterExecutor {
     private func removeTask(_ id: UUID) {
         self.lock.withLock {
             self.queuedTasks.removeAll(where: { $0.id == id })
-            if self.queuedTasks.isEmpty {
-                print("==== Queue Empty ====")
-            }
         }
     }
 
@@ -113,10 +109,8 @@ package class TreeSitterExecutor {
 
     func cancelAll(below priority: Priority, _ completion: () -> Void) {
         lock.withLock {
-            print("Cancelling all below: \(priority)")
             queuedTasks.forEach { item in
                 if item.priority < priority && !(item.task?.isCancelled ?? true) {
-                    print("Cancelling: \(item.id)")
                     item.task?.cancel()
                 }
             }

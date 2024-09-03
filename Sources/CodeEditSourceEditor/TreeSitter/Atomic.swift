@@ -7,23 +7,22 @@
 
 import Foundation
 
-/// A simple atomic counter using `NSLock`.
-final package class AtomicCounter {
+/// A simple atomic value using `NSLock`.
+@propertyWrapper
+final package class Atomic<T> {
     private let lock: NSLock = .init()
-    private var _value: Int = 0
+    private var _wrappedValue: T
 
-    init(value: Int) {
-        self._value = value
-    }
-
-    func increment() -> Int {
-        lock.withLock {
-            _value += 1
-            return _value
+    package var wrappedValue: T {
+        get {
+            return lock.withLock { _wrappedValue }
+        }
+        set {
+            lock.withLock { _wrappedValue = newValue }
         }
     }
 
-    func value() -> Int {
-        lock.withLock { _value }
+    package init(wrappedValue: T) {
+        self._wrappedValue = wrappedValue
     }
 }
