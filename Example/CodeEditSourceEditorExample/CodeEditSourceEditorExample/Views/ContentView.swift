@@ -20,6 +20,7 @@ struct ContentView: View {
     @AppStorage("wrapLines") private var wrapLines: Bool = true
     @State private var cursorPositions: [CursorPosition] = []
     @AppStorage("systemCursor") private var useSystemCursor: Bool = false
+    @State private var isInLongParse = false
 
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
         self._document = document
@@ -46,6 +47,15 @@ struct ContentView: View {
             .padding(4)
             .zIndex(2)
             .background(Color(NSColor.windowBackgroundColor))
+            if isInLongParse {
+                HStack {
+                    Text("Parsing document...")
+                }
+                .padding(4)
+                .zIndex(2)
+                .background(Color(NSColor.windowBackgroundColor))
+                .transition(.asymmetric(insertion: .move(edge: .bottom), removal: .move(edge: .top)))
+            }
             Divider()
             CodeEditSourceEditor(
                 $document.text,
@@ -61,6 +71,16 @@ struct ContentView: View {
         }
         .onAppear {
             self.language = detectLanguage(fileURL: fileURL) ?? .default
+        }
+        .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParse)) { _ in
+            withAnimation {
+                isInLongParse = true
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParseFinished)) { _ in
+            withAnimation {
+                isInLongParse = false
+            }
         }
     }
 
@@ -87,7 +107,7 @@ struct ContentView: View {
         }
 
         // When there's a single cursor, display the line and column.
-        return "Line: \(cursorPositions[0].line)  Col: \(cursorPositions[0].column)"
+        return "Line: \(cursorPositions[0].line)  Col: \(cursorPositions[0].column) Range: \(cursorPositions[0].range)"
     }
 }
 

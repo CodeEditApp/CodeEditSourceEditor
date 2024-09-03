@@ -53,30 +53,41 @@ public final class TreeSitterClient: HighlightProviding {
 
     // MARK: - Constants
 
-    enum Constants {
+    public enum Constants {
         /// The maximum amount of limits a cursor can match during a query.
         /// Used to ensure performance in large files, even though we generally limit the query to the visible range.
         /// Neovim encountered this issue and uses 64 for their limit. Helix uses 256 due to issues with some
         /// languages when using 64.
         /// See: https://github.com/neovim/neovim/issues/14897
         /// And: https://github.com/helix-editor/helix/pull/4830
-        static let matchLimit = 256
+        public static var matchLimit = 256
 
         /// The timeout for parsers to re-check if a task is canceled. This constant represents the period between
         /// checks.
-        static let parserTimeout: TimeInterval = 0.2
+        public static var parserTimeout: TimeInterval = 0.1
 
         /// The maximum length of an edit before it must be processed asynchronously
-        static let maxSyncEditLength: Int = 1024
+        public static var maxSyncEditLength: Int = 1024
 
         /// The maximum length a document can be before all queries and edits must be processed asynchronously.
-        static let maxSyncContentLength: Int = 1_000_000
+        public static var maxSyncContentLength: Int = 1_000_000
 
         /// The maximum length a query can be before it must be performed asynchronously.
-        static let maxSyncQueryLength: Int = 4096
+        public static var maxSyncQueryLength: Int = 4096
 
         /// The number of characters to read in a read block.
-        static let charsToReadInBlock: Int = 4096
+        public static var charsToReadInBlock: Int = 4096
+
+        /// The duration before a long parse notification is sent.
+        public static var longParseTimeout: Duration = .seconds(1.0)
+
+        /// The notification name sent when a long parse is detected.
+        public static var longParse: Notification.Name = .init("CodeEditSourceEditor.longParseNotification")
+
+        /// The notification name sent when a long parse is finished.
+        public static var longParseFinished: Notification.Name = .init(
+            "CodeEditSourceEditor.longParseFinishedNotification"
+        )
     }
 
     // MARK: - HighlightProviding
@@ -180,7 +191,7 @@ public final class TreeSitterClient: HighlightProviding {
             executor.execAsync(
                 priority: .access,
                 operation: operation,
-                onCancel: { 
+                onCancel: {
                     DispatchQueue.dispatchMainIfNot {
                         completion(.failure(HighlightProvidingError.operationCancelled))
                     }

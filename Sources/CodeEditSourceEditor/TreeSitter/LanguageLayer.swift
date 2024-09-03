@@ -93,21 +93,12 @@ public class LanguageLayer: Hashable {
     ) -> [NSRange] {
         parser.timeout = timeout ?? 0
 
-        var info = mach_timebase_info()
-        guard mach_timebase_info(&info) == KERN_SUCCESS else { return [] }
-        let start = mach_absolute_time()
-
         let (newTree, didCancel) = calculateNewState(
             tree: self.tree?.mutableCopy(),
             parser: self.parser,
             edits: edits,
             readBlock: readBlock
         )
-
-        let end = mach_absolute_time()
-        let elapsed = end - start
-        let nanos = elapsed * UInt64(info.numer) / UInt64(info.denom)
-        print("Apply Edits To TS Tree: ", TimeInterval(nanos) / TimeInterval(NSEC_PER_MSEC), "ms")
 
         if didCancel {
             return []
@@ -150,6 +141,9 @@ public class LanguageLayer: Hashable {
             tree.edit(edit)
         }
 
+        let start = ContinuousClock.now
+        var wasLongParse = false
+
         // Check every timeout to see if the task is canceled to avoid parsing after the editor has been closed.
         // We can continue a parse after a timeout causes it to cancel by calling parse on the same tree.
         var newTree: MutableTree?
@@ -158,8 +152,20 @@ public class LanguageLayer: Hashable {
                 parser.reset()
                 return (nil, true)
             }
+            if start.duration(to: .now) > TreeSitterClient.Constants.longParseTimeout {
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: TreeSitterClient.Constants.longParse, object: nil)
+                }
+                wasLongParse = true
+            }
             DispatchQueue.syncMainIfNot {
                 newTree = parser.parse(tree: tree, readBlock: readBlock)
+            }
+        }
+
+        if wasLongParse {
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: TreeSitterClient.Constants.longParseFinished, object: nil)
             }
         }
 

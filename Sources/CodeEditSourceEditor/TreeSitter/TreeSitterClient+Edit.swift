@@ -63,8 +63,6 @@ extension TreeSitterClient {
         self.state = state // Apply the copied state
         self.pendingEdits = [] // Clear the queue
 
-        print("Applied \(pendingEdits.count + 1) edits.")
-
         return invalidatedRanges
     }
 

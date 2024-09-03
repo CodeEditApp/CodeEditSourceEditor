@@ -185,6 +185,7 @@ private extension Highlighter {
                         textView: textView,
                         range: range
                     ) { [weak self] highlights in
+                        assert(Thread.isMainThread, "Highlighted ranges called on non-main thread.")
                         self?.applyHighlightResult(highlights, rangeToHighlight: range)
                     }
                 }
@@ -192,6 +193,7 @@ private extension Highlighter {
         } else {
             for range in rangesToHighlight {
                 highlightProvider?.queryHighlightsFor(textView: textView, range: range) { [weak self] highlights in
+                    assert(Thread.isMainThread, "Highlighted ranges called on non-main thread.")
                     self?.applyHighlightResult(highlights, rangeToHighlight: range)
                 }
             }
@@ -203,6 +205,8 @@ private extension Highlighter {
     ///   - results: The result of a highlight query.
     ///   - rangeToHighlight: The range to apply the highlight to.
     private func applyHighlightResult(_ results: Result<[HighlightRange], Error>, rangeToHighlight: NSRange) {
+        pendingSet.remove(integersIn: rangeToHighlight)
+
         switch results {
         case let .failure(error):
             if case HighlightProvidingError.operationCancelled = error {
@@ -211,12 +215,8 @@ private extension Highlighter {
                 Self.logger.error("Failed to query highlight range: \(error)")
             }
         case let .success(results):
-            guard let attributeProvider = self.attributeProvider else {
-                return
-            }
-
-            pendingSet.remove(integersIn: rangeToHighlight)
-            guard visibleSet.intersects(integersIn: rangeToHighlight) else {
+            guard let attributeProvider = self.attributeProvider,
+                  visibleSet.intersects(integersIn: rangeToHighlight) else {
                 return
             }
             validSet.formUnion(IndexSet(integersIn: rangeToHighlight))
@@ -329,6 +329,7 @@ extension Highlighter {
                 }
             case let .failure(error):
                 if case HighlightProvidingError.operationCancelled = error {
+                    self?.invalidate(range: range)
                     return
                 } else {
                     Self.logger.error("Failed to apply edit. Query returned with error: \(error)")
