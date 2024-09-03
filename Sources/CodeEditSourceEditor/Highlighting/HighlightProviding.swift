@@ -10,18 +10,25 @@ import CodeEditTextView
 import CodeEditLanguages
 import AppKit
 
+/// A single-case error that should be thrown when an operation should be retried.
+public enum HighlightProvidingError: Error {
+    case operationCancelled
+}
+
 /// The protocol a class must conform to to be used for highlighting.
 public protocol HighlightProviding: AnyObject {
     /// Called once to set up the highlight provider with a data source and language.
     /// - Parameters:
     ///   - textView: The text view to use as a text source.
     ///   - codeLanguage: The language that should be used by the highlighter.
+    @MainActor
     func setUp(textView: TextView, codeLanguage: CodeLanguage)
 
     /// Notifies the highlighter that an edit is going to happen in the given range.
     /// - Parameters:
     ///   - textView: The text view to use.
     ///   - range: The range of the incoming edit.
+    @MainActor
     func willApplyEdit(textView: TextView, range: NSRange)
 
     /// Notifies the highlighter of an edit and in exchange gets a set of indices that need to be re-highlighted.
@@ -30,8 +37,14 @@ public protocol HighlightProviding: AnyObject {
     ///   - textView: The text view to use.
     ///   - range: The range of the edit.
     ///   - delta: The length of the edit, can be negative for deletions.
-    /// - Returns: an `IndexSet` containing all Indices to invalidate.
-    func applyEdit(textView: TextView, range: NSRange, delta: Int, completion: @escaping (IndexSet) -> Void)
+    /// - Returns: An `IndexSet` containing all Indices to invalidate. b
+    @MainActor
+    func applyEdit(
+        textView: TextView,
+        range: NSRange,
+        delta: Int,
+        completion: @escaping (Result<IndexSet, Error>) -> Void
+    )
 
     /// Queries the highlight provider for any ranges to apply highlights to. The highlight provider should return an
     /// array containing all ranges to highlight, and the capture type for the range. Any ranges or indexes
@@ -40,7 +53,12 @@ public protocol HighlightProviding: AnyObject {
     ///   - textView: The text view to use.
     ///   - range: The range to query.
     /// - Returns: All highlight ranges for the queried ranges.
-    func queryHighlightsFor(textView: TextView, range: NSRange, completion: @escaping ([HighlightRange]) -> Void)
+    @MainActor
+    func queryHighlightsFor(
+        textView: TextView,
+        range: NSRange,
+        completion: @escaping (Result<[HighlightRange], Error>) -> Void
+    )
 }
 
 extension HighlightProviding {

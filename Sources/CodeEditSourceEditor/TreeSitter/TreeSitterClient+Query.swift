@@ -38,7 +38,7 @@ extension TreeSitterClient {
     /// - Returns: All pairs of `Language, Node` where Node is the nearest node in the tree in the given range.
     /// - Throws: A ``TreeSitterClient.Error`` error.
     public func nodesAt(range: NSRange) throws -> [NodeResult] {
-        return try executor.performSync {
+        try executor.execSync({
             var nodes: [NodeResult] = []
             for layer in self.state?.layers ?? [] {
                 if let language = layer.tsLanguage,
@@ -47,7 +47,8 @@ extension TreeSitterClient {
                 }
             }
             return nodes
-        }
+        })
+        .throwOrReturn()
     }
 
     /// Perform a query on the tree sitter layer tree.
@@ -56,7 +57,7 @@ extension TreeSitterClient {
     ///   - matchingLanguages: A set of languages to limit the query to. Leave empty to not filter out any layers.
     /// - Returns: Any matching nodes from the query.
     public func query(_ query: Query, matchingLanguages: Set<TreeSitterLanguage> = []) throws -> [QueryResult] {
-        return try executor.performSync {
+        try executor.execSync({
             guard let readCallback = self.readCallback else { return [] }
             var result: [QueryResult] = []
             for layer in self.state?.layers ?? [] {
@@ -67,6 +68,7 @@ extension TreeSitterClient {
                 result.append(QueryResult(id: layer.id, cursor: resolvingCursor))
             }
             return result
-        }
+        })
+        .throwOrReturn()
     }
 }

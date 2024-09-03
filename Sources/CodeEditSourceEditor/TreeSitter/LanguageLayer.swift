@@ -73,28 +73,32 @@ public class LanguageLayer: Hashable {
     ///   - edit: The edit to act on.
     ///   - timeout: The maximum time interval the parser can run before halting.
     ///   - readBlock: A callback for fetching blocks of text.
+    ///   - skipParse: Set to true to skip any parsing steps and only apply the edit to the tree.
     /// - Returns: An array of distinct `NSRanges` that need to be re-highlighted.
     func findChangedByteRanges(
         edit: InputEdit,
         timeout: TimeInterval?,
-        readBlock: @escaping Parser.ReadBlock
-    ) throws -> [NSRange] {
+        readBlock: @escaping Parser.ReadBlock,
+        skipParse: Bool
+    ) -> [NSRange] {
         parser.timeout = timeout ?? 0
 
-        let newTree = calculateNewState(
-            tree: self.tree?.mutableCopy(),
+        let (newTree, didCancel) = calculateNewState(
+            tree: self.tree,
             parser: self.parser,
             edit: edit,
-            readBlock: readBlock
+            readBlock: readBlock,
+            skipParse: skipParse
         )
+
+        if didCancel || skipParse {
+            return []
+        }
 
         if self.tree == nil && newTree == nil {
             // There was no existing tree, make a new one and return all indexes.
             self.tree = parser.parse(tree: nil as Tree?, readBlock: readBlock)
             return [self.tree?.rootNode?.range ?? .zero]
-        } else if self.tree != nil && newTree == nil {
-            // The parser timed out,
-            throw Error.parserTimeout
         }
 
         let ranges = changedByteRanges(self.tree, newTree).map { $0.range }
@@ -111,15 +115,17 @@ public class LanguageLayer: Hashable {
     ///   - parser: The parser used to parse the new tree.
     ///   - edit: The edit to apply.
     ///   - readBlock: The block to use to read text.
-    /// - Returns: (The old state, the new state).
+    ///   - skipParse: Set to true to skip any parsing steps and only apply the edit to the tree.
+    /// - Returns: The new tree, if it was parsed, and a boolean indicating if parsing was skipped or cancelled.
     internal func calculateNewState(
         tree: MutableTree?,
         parser: Parser,
         edit: InputEdit,
-        readBlock: @escaping Parser.ReadBlock
-    ) -> MutableTree? {
+        readBlock: @escaping Parser.ReadBlock,
+        skipParse: Bool
+    ) -> (tree: MutableTree?, didCancel: Bool) {
         guard let tree else {
-            return nil
+            return (nil, false)
         }
 
         // Apply the edit to the old tree
@@ -128,11 +134,14 @@ public class LanguageLayer: Hashable {
         // Check every timeout to see if the task is canceled to avoid parsing after the editor has been closed.
         // We can continue a parse after a timeout causes it to cancel by calling parse on the same tree.
         var newTree: MutableTree?
-        while newTree == nil && !Task.isCancelled {
+        while newTree == nil {
+            if Task.isCancelled || skipParse {
+                return (nil, true)
+            }
             newTree = parser.parse(tree: tree, readBlock: readBlock)
         }
 
-        return newTree
+        return (newTree, false)
     }
 
     /// Calculates the changed byte ranges between two trees.

@@ -13,6 +13,7 @@ import CodeEditLanguages
 public class TreeSitterState {
     private(set) var primaryLayer: CodeLanguage
     private(set) var layers: [LanguageLayer] = []
+    let editCounter: AtomicCounter = AtomicCounter(value: 0)
 
     // MARK: - Init
 
@@ -207,7 +208,7 @@ public class TreeSitterState {
             return IndexSet()
         }
 
-        cursor.matchLimit = TreeSitterClient.Constants.treeSitterMatchLimit
+        cursor.matchLimit = TreeSitterClient.Constants.matchLimit
 
         let languageRanges = self.injectedLanguagesFrom(cursor: cursor) { range, point in
             return readCallback(range, point)

@@ -13,8 +13,10 @@ extension TreeSitterClient {
     /// Applies the given edit to the current state and calls the editState's completion handler.
     /// - Parameter edit: The edit to apply to the internal tree sitter state.
     /// - Returns: The set of ranges invalidated by the edit operation.
-    func applyEdit(edit: InputEdit) -> IndexSet {
+    func applyEdit(edit: InputEdit, editCounter: Int) -> IndexSet {
         guard let state, let readBlock, let readCallback else { return IndexSet() }
+        let currentEditCounter = state.editCounter.value()
+        let exitFast = currentEditCounter > editCounter
 
         var invalidatedRanges = IndexSet()
         var touchedLayers = Set<LanguageLayer>()
@@ -39,24 +41,23 @@ extension TreeSitterClient {
             }
 
             layer.parser.includedRanges = layer.ranges.map { $0.tsRange }
-            do {
-                invalidatedRanges.insert(
-                    ranges: try layer.findChangedByteRanges(
-                        edit: edit,
-                        timeout: Constants.parserTimeout,
-                        readBlock: readBlock
-                    )
-                )
-            } catch {
-                Self.logger.error("Error applying edit to state: \(error.localizedDescription, privacy: .public)")
-                return IndexSet()
-            }
+            let ranges = layer.findChangedByteRanges(
+                edit: edit,
+                timeout: Constants.parserTimeout,
+                readBlock: readBlock,
+                skipParse: exitFast
+            )
+            invalidatedRanges.insert(ranges: ranges)
         }
 
         // Update the state object for any new injections that may have been caused by this edit.
-        invalidatedRanges.formUnion(
-            state.updateInjectedLayers(readCallback: readCallback, readBlock: readBlock, touchedLayers: touchedLayers)
-        )
+        if !exitFast {
+            invalidatedRanges.formUnion(state.updateInjectedLayers(
+                readCallback: readCallback,
+                readBlock: readBlock,
+                touchedLayers: touchedLayers
+            ))
+        }
 
         return invalidatedRanges
     }

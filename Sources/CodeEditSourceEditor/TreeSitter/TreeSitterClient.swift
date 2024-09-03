@@ -27,7 +27,11 @@ import OSLog
 /// implementation may return synchronously or asynchronously depending on a variety of factors such as document
 /// length, edit length, highlight length and if the object is available for a synchronous call.
 public final class TreeSitterClient: HighlightProviding {
-    static let logger: Logger = Logger(subsystem: "com.CodeEdit.CodeEditSourceEditor", category: "TreeSitterClient")
+    static let logger: Logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "TreeSitterClient")
+
+    enum TreeSitterClientError: Error {
+        case invalidEdit
+    }
 
     // MARK: - Properties
 
@@ -40,7 +44,7 @@ public final class TreeSitterClient: HighlightProviding {
     /// The internal tree-sitter layer tree object.
     var state: TreeSitterState?
 
-    package var executor: TreeSitterClientExecutor
+    package var executor: TreeSitterExecutor = .init()
 
     /// The end point of the previous edit.
     private var oldEndPoint: Point?
@@ -54,11 +58,11 @@ public final class TreeSitterClient: HighlightProviding {
         /// languages when using 64.
         /// See: https://github.com/neovim/neovim/issues/14897
         /// And: https://github.com/helix-editor/helix/pull/4830
-        static let treeSitterMatchLimit = 256
+        static let matchLimit = 256
 
         /// The timeout for parsers to re-check if a task is canceled. This constant represents the period between
         /// checks.
-        static let parserTimeout: TimeInterval = 0.1
+        static let parserTimeout: TimeInterval = 0.2
 
         /// The maximum length of an edit before it must be processed asynchronously
         static let maxSyncEditLength: Int = 1024
@@ -68,14 +72,9 @@ public final class TreeSitterClient: HighlightProviding {
 
         /// The maximum length a query can be before it must be performed asynchronously.
         static let maxSyncQueryLength: Int = 4096
-    }
 
-    // MARK: - Init
-
-    /// Initialize the tree sitter client.
-    /// - Parameter executor: The object to use when performing async/sync operations.
-    init(executor: TreeSitterClientExecutor = .init()) {
-        self.executor = executor
+        /// The number of characters to read in a read block.
+        static let charsToReadInBlock: Int = 4096
     }
 
     // MARK: - HighlightProviding
@@ -88,29 +87,19 @@ public final class TreeSitterClient: HighlightProviding {
     public func setUp(textView: TextView, codeLanguage: CodeLanguage) {
         Self.logger.debug("TreeSitterClient setting up with language: \(codeLanguage.id.rawValue, privacy: .public)")
 
-        self.readBlock = textView.createReadBlock()
-        self.readCallback = textView.createReadCallback()
+        let readBlock = textView.createReadBlock()
+        let readCallback = textView.createReadCallback()
+        self.readBlock = readBlock
+        self.readCallback = readCallback
 
-        self.setState(
-            language: codeLanguage,
-            readCallback: self.readCallback!,
-            readBlock: self.readBlock!
-        )
-    }
-
-    /// Sets the client's new state.
-    /// - Parameters:
-    ///   - language: The language to use.
-    ///   - readCallback: The callback to use to read text from the document.
-    ///   - readBlock: The callback to use to read blocks of text from the document.
-    private func setState(
-        language: CodeLanguage,
-        readCallback: @escaping SwiftTreeSitter.Predicate.TextProvider,
-        readBlock: @escaping Parser.ReadBlock
-    ) {
-        executor.incrementSetupCount()
-        executor.performAsync { [weak self] in
-            self?.state = TreeSitterState(codeLanguage: language, readCallback: readCallback, readBlock: readBlock)
+        executor.cancelAll(below: .all) {
+            executor.execAsync(priority: .reset) {
+                self.state = TreeSitterState(
+                    codeLanguage: codeLanguage,
+                    readCallback: readCallback,
+                    readBlock: readBlock
+                )
+            } onCancel: { }
         }
     }
 
@@ -123,45 +112,47 @@ public final class TreeSitterClient: HighlightProviding {
     ///   - range: The range of the edit.
     ///   - delta: The length of the edit, can be negative for deletions.
     ///   - completion: The function to call with an `IndexSet` containing all Indices to invalidate.
-    public func applyEdit(textView: TextView, range: NSRange, delta: Int, completion: @escaping (IndexSet) -> Void) {
-        let oldEndPoint: Point
-
-        if self.oldEndPoint != nil {
-            oldEndPoint = self.oldEndPoint!
-        } else {
-            oldEndPoint = textView.pointForLocation(range.max) ?? .zero
-        }
-
-        guard let edit = InputEdit(
-            range: range,
-            delta: delta,
-            oldEndPoint: oldEndPoint,
-            textView: textView
-        ) else {
-            completion(IndexSet())
+    public func applyEdit(
+        textView: TextView,
+        range: NSRange,
+        delta: Int,
+        completion: @escaping (Result<IndexSet, Error>) -> Void
+    ) {
+        let oldEndPoint: Point = self.oldEndPoint ?? textView.pointForLocation(range.max) ?? .zero
+        guard let edit = InputEdit(range: range, delta: delta, oldEndPoint: oldEndPoint, textView: textView) else {
+            completion(.failure(TreeSitterClientError.invalidEdit))
             return
         }
 
+        let currentCount = state?.editCounter.increment() ?? -1
         let operation = { [weak self] in
-            let invalidatedRanges = self?.applyEdit(edit: edit) ?? IndexSet()
-            self?.executor.dispatchMain {
-                completion(invalidatedRanges)
-            }
+            let invalidatedRanges = self?.applyEdit(edit: edit, editCounter: currentCount) ?? IndexSet()
+            DispatchQueue.dispatchMainIfNot { completion(.success(invalidatedRanges)) }
         }
 
-        do {
-            let longEdit = range.length > Constants.maxSyncEditLength
-            let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
+        let longEdit = range.length > Constants.maxSyncEditLength
+        let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
 
-            if longEdit || longDocument {
-                throw TreeSitterClientExecutor.Error.syncUnavailable
+        if longEdit || longDocument || !executor.execSync(operation).isSuccess {
+            executor.cancelAll(below: .edit) {
+                executor.execAsync(
+                    priority: .edit,
+                    operation: operation,
+                    onCancel: {
+                        DispatchQueue.dispatchMainIfNot {
+                            completion(.failure(HighlightProvidingError.operationCancelled))
+                        }
+                    }
+                )
             }
-            try executor.performSync(operation)
-        } catch {
-            executor.performAsync(operation)
         }
     }
 
+    /// Called before an edit is sent. We use this to set the ``oldEndPoint`` variable so tree-sitter knows where
+    /// the document used to end.
+    /// - Parameters:
+    ///   - textView: The text view used.
+    ///   - range: The range that will be edited.
     public func willApplyEdit(textView: TextView, range: NSRange) {
         oldEndPoint = textView.pointForLocation(range.max)
     }
@@ -174,25 +165,25 @@ public final class TreeSitterClient: HighlightProviding {
     public func queryHighlightsFor(
         textView: TextView,
         range: NSRange,
-        completion: @escaping ([HighlightRange]) -> Void
+        completion: @escaping (Result<[HighlightRange], Error>) -> Void
     ) {
         let operation = { [weak self] in
             let highlights = self?.queryHighlightsForRange(range: range)
-            self?.executor.dispatchMain {
-                completion(highlights ?? [])
-            }
+            DispatchQueue.dispatchMainIfNot { completion(.success(highlights ?? [])) }
         }
 
-        do {
-            let longQuery = range.length > Constants.maxSyncQueryLength
-            let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
-
-            if longQuery || longDocument {
-                throw TreeSitterClientExecutor.Error.syncUnavailable
-            }
-            try executor.performSync(operation)
-        } catch {
-            executor.performAsync(operation)
+        let longQuery = range.length > Constants.maxSyncQueryLength
+        let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
+        if longQuery || longDocument || !executor.execSync(operation).isSuccess {
+            executor.execAsync(
+                priority: .access,
+                operation: operation,
+                onCancel: { 
+                    DispatchQueue.dispatchMainIfNot {
+                        completion(.failure(HighlightProvidingError.operationCancelled))
+                    }
+                }
+            )
         }
     }
 }
