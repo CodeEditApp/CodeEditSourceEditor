@@ -49,7 +49,7 @@ public final class TreeSitterClient: HighlightProviding {
     /// The end point of the previous edit.
     private var oldEndPoint: Point?
 
-    @Atomic package var pendingEdits: [InputEdit] = []
+    package var pendingEdits: Atomic<[InputEdit]> = Atomic([])
 
     /// Optional flag to force every operation to be done on the caller's thread.
     var forceSyncOperation: Bool = false
@@ -168,7 +168,9 @@ public final class TreeSitterClient: HighlightProviding {
                 priority: .edit,
                 operation: operation,
                 onCancel: { [weak self] in
-                    self?.pendingEdits.append(edit)
+                    self?.pendingEdits.mutate { edits in
+                        edits.append(edit)
+                    }
                     DispatchQueue.dispatchMainIfNot {
                         completion(.failure(HighlightProvidingError.operationCancelled))
                     }

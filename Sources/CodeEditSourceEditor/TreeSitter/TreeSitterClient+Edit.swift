@@ -19,7 +19,7 @@ extension TreeSitterClient {
     /// - Returns: The set of ranges invalidated by the edit operation.
     func applyEdit(edit: InputEdit) -> IndexSet {
         guard let state = state?.copy(), let readBlock, let readCallback else { return IndexSet() }
-        let pendingEdits = pendingEdits // Grab pending edits.
+        let pendingEdits = pendingEdits.value() // Grab pending edits.
         let edits = pendingEdits + [edit]
 
         var invalidatedRanges = IndexSet()
@@ -61,7 +61,9 @@ extension TreeSitterClient {
         if Task.isCancelled { return IndexSet() }
 
         self.state = state // Apply the copied state
-        self.pendingEdits = [] // Clear the queue
+        self.pendingEdits.mutate { edits in // Clear the queue
+            edits = []
+        }
 
         return invalidatedRanges
     }

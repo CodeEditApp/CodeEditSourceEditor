@@ -8,21 +8,21 @@
 import Foundation
 
 /// A simple atomic value using `NSLock`.
-@propertyWrapper
 final package class Atomic<T> {
     private let lock: NSLock = .init()
-    private var _wrappedValue: T
+    private var wrappedValue: T
 
-    package var wrappedValue: T {
-        get {
-            return lock.withLock { _wrappedValue }
-        }
-        set {
-            lock.withLock { _wrappedValue = newValue }
+    init(_ wrappedValue: T) {
+        self.wrappedValue = wrappedValue
+    }
+
+    func mutate(_ handler: (inout T) -> Void) {
+        lock.withLock {
+            handler(&wrappedValue)
         }
     }
 
-    package init(wrappedValue: T) {
-        self._wrappedValue = wrappedValue
+    func value() -> T {
+        lock.withLock { wrappedValue }
     }
 }
