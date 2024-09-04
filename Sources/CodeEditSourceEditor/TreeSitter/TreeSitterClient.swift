@@ -51,6 +51,9 @@ public final class TreeSitterClient: HighlightProviding {
 
     @Atomic package var pendingEdits: [InputEdit] = []
 
+    /// Optional flag to force every operation to be done on the caller's thread.
+    var forceSyncOperation: Bool = false
+
     // MARK: - Constants
 
     public enum Constants {
@@ -108,15 +111,15 @@ public final class TreeSitterClient: HighlightProviding {
         self.readBlock = readBlock
         self.readCallback = readCallback
 
-        executor.cancelAll(below: .all) {
-            executor.execAsync(priority: .reset) {
-                self.state = TreeSitterState(
-                    codeLanguage: codeLanguage,
-                    readCallback: readCallback,
-                    readBlock: readBlock
-                )
-            } onCancel: { }
-        }
+        executor.cancelAll(below: .all)
+        executor.execAsync(priority: .reset) {
+            let state = TreeSitterState(
+                codeLanguage: codeLanguage,
+                readCallback: readCallback,
+                readBlock: readBlock
+            )
+            self.state = state
+        } onCancel: { }
     }
 
     // MARK: - HighlightProviding
@@ -132,7 +135,7 @@ public final class TreeSitterClient: HighlightProviding {
         textView: TextView,
         range: NSRange,
         delta: Int,
-        completion: @escaping (Result<IndexSet, Error>) -> Void
+        completion: @escaping @MainActor (Result<IndexSet, Error>) -> Void
     ) {
         let oldEndPoint: Point = self.oldEndPoint ?? textView.pointForLocation(range.max) ?? .zero
         guard let edit = InputEdit(range: range, delta: delta, oldEndPoint: oldEndPoint, textView: textView) else {
@@ -148,19 +151,18 @@ public final class TreeSitterClient: HighlightProviding {
         let longEdit = range.length > Constants.maxSyncEditLength
         let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
 
-        if longEdit || longDocument || !executor.execSync(operation).isSuccess {
-            executor.cancelAll(below: .reset) { // Cancel all edits, add it to the pending edit queue
-                executor.execAsync(
-                    priority: .edit,
-                    operation: operation,
-                    onCancel: { [weak self] in
-                        self?.pendingEdits.append(edit)
-                        DispatchQueue.dispatchMainIfNot {
-                            completion(.failure(HighlightProvidingError.operationCancelled))
-                        }
+        if (forceSyncOperation || longEdit || longDocument) || !executor.execSync(operation).isSuccess {
+            executor.cancelAll(below: .reset) // Cancel all edits, add it to the pending edit queue
+            executor.execAsync(
+                priority: .edit,
+                operation: operation,
+                onCancel: { [weak self] in
+                    self?.pendingEdits.append(edit)
+                    DispatchQueue.dispatchMainIfNot {
+                        completion(.failure(HighlightProvidingError.operationCancelled))
                     }
-                )
-            }
+                }
+            )
         }
     }
 
@@ -181,7 +183,7 @@ public final class TreeSitterClient: HighlightProviding {
     public func queryHighlightsFor(
         textView: TextView,
         range: NSRange,
-        completion: @escaping (Result<[HighlightRange], Error>) -> Void
+        completion: @escaping @MainActor (Result<[HighlightRange], Error>) -> Void
     ) {
         let operation = { [weak self] in
             let highlights = self?.queryHighlightsForRange(range: range)
@@ -190,7 +192,7 @@ public final class TreeSitterClient: HighlightProviding {
 
         let longQuery = range.length > Constants.maxSyncQueryLength
         let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
-        if longQuery || longDocument || !executor.execSync(operation).isSuccess {
+        if (forceSyncOperation || longQuery || longDocument) || !executor.execSync(operation).isSuccess {
             executor.execAsync(
                 priority: .access,
                 operation: operation,

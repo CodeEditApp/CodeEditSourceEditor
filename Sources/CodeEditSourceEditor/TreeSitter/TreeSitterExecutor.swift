@@ -103,11 +103,11 @@ final package class TreeSitterExecutor {
                 return task.id == id
             }
         }
-        assertionFailure("Task asking if it can exec but it's not in the queue. Cancelling the task")
+        assertionFailure("Task asking if it can exec but it's not in the queue.")
         return false
     }
 
-    func cancelAll(below priority: Priority, _ completion: () -> Void) {
+    func cancelAll(below priority: Priority) {
         lock.withLock {
             queuedTasks.forEach { item in
                 if item.priority < priority && !(item.task?.isCancelled ?? true) {
@@ -115,7 +115,6 @@ final package class TreeSitterExecutor {
                 }
             }
         }
-        completion()
     }
 
     deinit {

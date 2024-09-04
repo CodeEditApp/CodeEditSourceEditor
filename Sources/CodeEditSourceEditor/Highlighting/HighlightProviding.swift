@@ -43,7 +43,7 @@ public protocol HighlightProviding: AnyObject {
         textView: TextView,
         range: NSRange,
         delta: Int,
-        completion: @escaping (Result<IndexSet, Error>) -> Void
+        completion: @escaping @MainActor (Result<IndexSet, Error>) -> Void
     )
 
     /// Queries the highlight provider for any ranges to apply highlights to. The highlight provider should return an
@@ -57,7 +57,7 @@ public protocol HighlightProviding: AnyObject {
     func queryHighlightsFor(
         textView: TextView,
         range: NSRange,
-        completion: @escaping (Result<[HighlightRange], Error>) -> Void
+        completion: @escaping @MainActor (Result<[HighlightRange], Error>) -> Void
     )
 }
 

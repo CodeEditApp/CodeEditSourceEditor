@@ -50,7 +50,8 @@ final class TagEditingTests: XCTestCase {
             useSystemCursor: false,
             bracketPairHighlight: .flash
         )
-        let tsClient = TreeSitterClient(executor: .init(forceSync: true))
+        let tsClient = TreeSitterClient()
+        tsClient.forceSyncOperation = true
         controller.treeSitterClient = tsClient
         controller.highlightProvider = tsClient
         window = NSWindow()
