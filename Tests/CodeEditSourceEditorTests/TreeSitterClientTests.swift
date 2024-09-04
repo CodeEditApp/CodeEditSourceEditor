@@ -6,27 +6,15 @@ import CodeEditTextView
 
 final class TreeSitterClientTests: XCTestCase {
 
-    class Delegate: TextViewDelegate { }
+    private var maxSyncContentLength: Int = 0
 
-    func makeTestClasses() -> (TreeSitterClient, TextView) {
-        (
-            TreeSitterClient(),
-            TextView(
-                string: "func testSwiftFunc() -> Int {\n\tprint(\"\")\n}",
-                font: .monospacedSystemFont(ofSize: 12, weight: .regular),
-                textColor: .labelColor,
-                lineHeightMultiplier: 1.0,
-                wrapLines: true,
-                isEditable: true,
-                isSelectable: true,
-                letterSpacing: 1.0,
-                delegate: Delegate()
-            )
-        )
+    override func setUp() {
+        maxSyncContentLength = TreeSitterClient.Constants.maxSyncContentLength
+        TreeSitterClient.Constants.maxSyncContentLength = 0
     }
 
-    func forceAsync() {
-        TreeSitterClient.Constants.maxSyncContentLength = 0
+    override func tearDown() {
+        TreeSitterClient.Constants.maxSyncContentLength = maxSyncContentLength
     }
 
     @MainActor
@@ -44,7 +32,8 @@ final class TreeSitterClientTests: XCTestCase {
 
     @MainActor 
     func test_clientSetup() async {
-        let (client, textView) = makeTestClasses()
+        let client = Mock.treeSitterClient()
+        let textView = Mock.textView()
         client.setUp(textView: textView, codeLanguage: .swift)
 
         let expectation = XCTestExpectation(description: "Setup occurs")
@@ -75,8 +64,8 @@ final class TreeSitterClientTests: XCTestCase {
 
     @MainActor
     func test_editsDuringSetup() {
-        let (client, textView) = makeTestClasses()
-        forceAsync()
+        let client = Mock.treeSitterClient()
+        let textView = Mock.textView()
 
         client.setUp(textView: textView, codeLanguage: .swift)
 
@@ -111,13 +100,13 @@ final class TreeSitterClientTests: XCTestCase {
             }
         }
 
-        wait(for: [cancelledQuery, cancelledEdit, successEdit], enforceOrder: true)
+        wait(for: [cancelledQuery, cancelledEdit, successEdit])
     }
 
     @MainActor
     func test_multipleSetupsCancelAllOperations() async {
-        let (client, textView) = makeTestClasses()
-        forceAsync()
+        let client = Mock.treeSitterClient()
+        let textView = Mock.textView()
 
         // First setup, wrong language
         client.setUp(textView: textView, codeLanguage: .c)
@@ -154,7 +143,7 @@ final class TreeSitterClientTests: XCTestCase {
             finalSetupExpectation.fulfill()
         }
 
-        await fulfillment(of: [cancelledQuery, cancelledEdit, finalSetupExpectation], timeout: 5.0, enforceOrder: true)
+        await fulfillment(of: [cancelledQuery, cancelledEdit, finalSetupExpectation], timeout: 5.0)
 
         // Ensure only the final setup's language is active
         let primaryLanguage = client.state?.primaryLayer.id
@@ -165,9 +154,9 @@ final class TreeSitterClientTests: XCTestCase {
 
     @MainActor
     func test_cancelAllEditsUntilFinalOne() {
-        let (client, textView) = makeTestClasses()
+        let client = Mock.treeSitterClient()
+        let textView = Mock.textView()
         textView.setText("asadajkfijio;amfjamc;aoijaoajkvarpfjo;sdjlkj")
-        forceAsync()
 
         client.setUp(textView: textView, codeLanguage: .swift)
 
@@ -192,8 +181,6 @@ final class TreeSitterClientTests: XCTestCase {
             return expectation
         }
 
-        print(textView.string)
-
         // Final edit that should succeed
         let finalEditExpectation = XCTestExpectation(description: "Final edit should succeed.")
         performEdit(textView: textView, client: client, string: "", range: textView.documentRange) { result in
@@ -204,7 +191,7 @@ final class TreeSitterClientTests: XCTestCase {
             }
         }
 
-        wait(for: editExpectations + [finalEditExpectation], enforceOrder: true)
+        wait(for: editExpectations + [finalEditExpectation])
     }
 }
 // swiftlint:enable all

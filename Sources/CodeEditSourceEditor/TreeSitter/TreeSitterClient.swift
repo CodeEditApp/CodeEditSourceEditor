@@ -111,15 +111,21 @@ public final class TreeSitterClient: HighlightProviding {
         self.readBlock = readBlock
         self.readCallback = readCallback
 
-        executor.cancelAll(below: .all)
-        executor.execAsync(priority: .reset) {
+        let operation = { [weak self] in
             let state = TreeSitterState(
                 codeLanguage: codeLanguage,
                 readCallback: readCallback,
                 readBlock: readBlock
             )
-            self.state = state
-        } onCancel: { }
+            self?.state = state
+        }
+
+        executor.cancelAll(below: .all)
+        if forceSyncOperation {
+            executor.execSync(operation)
+        } else {
+            executor.execAsync(priority: .reset, operation: operation, onCancel: {})
+        }
     }
 
     // MARK: - HighlightProviding
@@ -151,7 +157,12 @@ public final class TreeSitterClient: HighlightProviding {
         let longEdit = range.length > Constants.maxSyncEditLength
         let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
 
-        if (forceSyncOperation || longEdit || longDocument) || !executor.execSync(operation).isSuccess {
+        if forceSyncOperation {
+            executor.execSync(operation)
+            return
+        }
+
+        if longEdit || longDocument || !executor.execSync(operation).isSuccess {
             executor.cancelAll(below: .reset) // Cancel all edits, add it to the pending edit queue
             executor.execAsync(
                 priority: .edit,
@@ -192,7 +203,13 @@ public final class TreeSitterClient: HighlightProviding {
 
         let longQuery = range.length > Constants.maxSyncQueryLength
         let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
-        if (forceSyncOperation || longQuery || longDocument) || !executor.execSync(operation).isSuccess {
+
+        if forceSyncOperation {
+            executor.execSync(operation)
+            return
+        }
+
+        if longQuery || longDocument || !executor.execSync(operation).isSuccess {
             executor.execAsync(
                 priority: .access,
                 operation: operation,

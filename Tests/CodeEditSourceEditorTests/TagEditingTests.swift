@@ -12,46 +12,9 @@ final class TagEditingTests: XCTestCase {
     var window: NSWindow!
 
     override func setUpWithError() throws {
-        theme = EditorTheme(
-            text: .textColor,
-            insertionPoint: .textColor,
-            invisibles: .gray,
-            background: .textBackgroundColor,
-            lineHighlight: .highlightColor,
-            selection: .selectedTextColor,
-            keywords: .systemPink,
-            commands: .systemBlue,
-            types: .systemMint,
-            attributes: .systemTeal,
-            variables: .systemCyan,
-            values: .systemOrange,
-            numbers: .systemYellow,
-            strings: .systemRed,
-            characters: .systemRed,
-            comments: .systemGreen
-        )
-        controller = TextViewController(
-            string: "",
-            language: .html,
-            font: .monospacedSystemFont(ofSize: 11, weight: .medium),
-            theme: theme,
-            tabWidth: 4,
-            indentOption: .spaces(count: 4),
-            lineHeight: 1.0,
-            wrapLines: true,
-            cursorPositions: [],
-            editorOverscroll: 0.5,
-            useThemeBackground: true,
-            highlightProvider: nil,
-            contentInsets: NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0),
-            isEditable: true,
-            isSelectable: true,
-            letterSpacing: 1.0,
-            useSystemCursor: false,
-            bracketPairHighlight: .flash
-        )
-        let tsClient = TreeSitterClient()
-        tsClient.forceSyncOperation = true
+        theme = Mock.theme()
+        controller = Mock.textViewController(theme: theme)
+        let tsClient = Mock.treeSitterClient(forceSync: true)
         controller.treeSitterClient = tsClient
         controller.highlightProvider = tsClient
         window = NSWindow()

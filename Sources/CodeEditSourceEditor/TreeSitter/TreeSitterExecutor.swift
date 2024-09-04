@@ -29,6 +29,7 @@ final package class TreeSitterExecutor {
         case syncUnavailable
     }
 
+    @discardableResult
     func execSync<T>(_ operation: () -> T) -> Result<T, Error> {
         guard let queueItemID = addSyncTask() else {
             return .failure(Error.syncUnavailable)
@@ -59,7 +60,10 @@ final package class TreeSitterExecutor {
         let id = UUID()
         let task = Task(priority: .userInitiated) { // This executes outside the lock's control.
             while self.lock.withLock({ !canTaskExec(id: id, priority: priority) }) {
-                await Task.yield()
+                // Instead of yielding, sleeping frees up the CPU due to time off the CPU and less lock contention
+                // lower than 1ms starts causing lock contention, much higher reduces responsiveness with diminishing
+                // returns on CPU efficiency.
+                try? await Task.sleep(for: .milliseconds(1))
                 guard !Task.isCancelled else {
                     removeTask(id)
                     onCancel()
