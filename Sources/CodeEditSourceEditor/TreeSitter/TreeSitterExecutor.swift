@@ -61,9 +61,7 @@ final package class TreeSitterExecutor {
         let task = Task(priority: .userInitiated) { // This executes outside the lock's control.
             while self.lock.withLock({ !canTaskExec(id: id, priority: priority) }) {
                 // Instead of yielding, sleeping frees up the CPU due to time off the CPU and less lock contention
-                // lower than 1ms starts causing lock contention, much higher reduces responsiveness with diminishing
-                // returns on CPU efficiency.
-                try? await Task.sleep(for: .milliseconds(1))
+                try? await Task.sleep(for: TreeSitterClient.Constants.taskSleepDuration)
                 guard !Task.isCancelled else {
                     removeTask(id)
                     onCancel()

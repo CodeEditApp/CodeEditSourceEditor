@@ -82,18 +82,24 @@ public final class TreeSitterClient: HighlightProviding {
         /// The number of characters to read in a read block.
         ///
         /// This has diminishing returns on the number of times the read block is called as this number gets large.
-        public static var charsToReadInBlock: Int = 4096
+        public static let charsToReadInBlock: Int = 4096
 
         /// The duration before a long parse notification is sent.
         public static var longParseTimeout: Duration = .seconds(0.5)
 
         /// The notification name sent when a long parse is detected.
-        public static var longParse: Notification.Name = .init("CodeEditSourceEditor.longParseNotification")
+        public static let longParse: Notification.Name = .init("CodeEditSourceEditor.longParseNotification")
 
         /// The notification name sent when a long parse is finished.
-        public static var longParseFinished: Notification.Name = .init(
+        public static let longParseFinished: Notification.Name = .init(
             "CodeEditSourceEditor.longParseFinishedNotification"
         )
+
+        /// The duration tasks sleep before checking if they're runnable.
+        ///
+        /// Lower than 1ms starts causing bad lock contention, much higher reduces responsiveness with diminishing
+        /// returns on CPU efficiency.
+        public static let taskSleepDuration: Duration = .milliseconds(10)
     }
 
     // MARK: - HighlightProviding
