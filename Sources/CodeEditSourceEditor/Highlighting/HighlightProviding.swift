@@ -37,7 +37,7 @@ public protocol HighlightProviding: AnyObject {
     ///   - textView: The text view to use.
     ///   - range: The range of the edit.
     ///   - delta: The length of the edit, can be negative for deletions.
-    /// - Returns: An `IndexSet` containing all Indices to invalidate. b
+    /// - Returns: An `IndexSet` containing all Indices to invalidate.
     @MainActor
     func applyEdit(
         textView: TextView,
