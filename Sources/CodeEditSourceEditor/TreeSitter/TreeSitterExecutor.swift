@@ -35,7 +35,8 @@ import Foundation
 /// running, the operation is executed. Finally, the lock is acquired again and the task is removed from the queue.
 ///
 final package class TreeSitterExecutor {
-    /// The priority of an operation. These are used to conditionally cancel operations. See ``TreeSitterExecutor/cancelAll(below:)``
+    /// The priority of an operation. These are used to conditionally cancel operations.
+    /// See ``TreeSitterExecutor/cancelAll(below:)``
     enum Priority: Comparable {
         case access
         case edit
