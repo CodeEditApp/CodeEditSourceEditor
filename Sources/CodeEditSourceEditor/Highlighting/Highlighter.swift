@@ -10,6 +10,7 @@ import AppKit
 import CodeEditTextView
 import SwiftTreeSitter
 import CodeEditLanguages
+import OSLog
 
 /// The `Highlighter` class handles efficiently highlighting the `TextView` it's provided with.
 /// It will listen for text and visibility changes, and highlight syntax as needed.
@@ -20,6 +21,7 @@ import CodeEditLanguages
 /// method to update the highlighter with a new language if needed.
 @MainActor
 class Highlighter: NSObject {
+    static private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "Highlighter")
 
     // MARK: - Index Sets
 
@@ -183,6 +185,7 @@ private extension Highlighter {
                         textView: textView,
                         range: range
                     ) { [weak self] highlights in
+                        assert(Thread.isMainThread, "Highlighted ranges called on non-main thread.")
                         self?.applyHighlightResult(highlights, rangeToHighlight: range)
                     }
                 }
@@ -190,6 +193,7 @@ private extension Highlighter {
         } else {
             for range in rangesToHighlight {
                 highlightProvider?.queryHighlightsFor(textView: textView, range: range) { [weak self] highlights in
+                    assert(Thread.isMainThread, "Highlighted ranges called on non-main thread.")
                     self?.applyHighlightResult(highlights, rangeToHighlight: range)
                 }
             }
@@ -200,46 +204,53 @@ private extension Highlighter {
     /// - Parameters:
     ///   - results: The result of a highlight query.
     ///   - rangeToHighlight: The range to apply the highlight to.
-    private func applyHighlightResult(_ results: [HighlightRange], rangeToHighlight: NSRange) {
-        guard let attributeProvider = self.attributeProvider else {
-            return
-        }
-
+    private func applyHighlightResult(_ results: Result<[HighlightRange], Error>, rangeToHighlight: NSRange) {
         pendingSet.remove(integersIn: rangeToHighlight)
-        guard visibleSet.intersects(integersIn: rangeToHighlight) else {
-            return
+
+        switch results {
+        case let .failure(error):
+            if case HighlightProvidingError.operationCancelled = error {
+                invalidate(range: rangeToHighlight)
+            } else {
+                Self.logger.error("Failed to query highlight range: \(error)")
+            }
+        case let .success(results):
+            guard let attributeProvider = self.attributeProvider,
+                  visibleSet.intersects(integersIn: rangeToHighlight) else {
+                return
+            }
+            validSet.formUnion(IndexSet(integersIn: rangeToHighlight))
+
+            // Loop through each highlight and modify the textStorage accordingly.
+            textView?.layoutManager.beginTransaction()
+            textView?.textStorage.beginEditing()
+
+            // Create a set of indexes that were not highlighted.
+            var ignoredIndexes = IndexSet(integersIn: rangeToHighlight)
+
+            // Apply all highlights that need color
+            for highlight in results
+            where textView?.documentRange.upperBound ?? 0 > highlight.range.upperBound {
+                textView?.textStorage.setAttributes(
+                    attributeProvider.attributesFor(highlight.capture),
+                    range: highlight.range
+                )
+
+                // Remove highlighted indexes from the "ignored" indexes.
+                ignoredIndexes.remove(integersIn: highlight.range)
+            }
+
+            // For any indices left over, we need to apply normal attributes to them
+            // This fixes the case where characters are changed to have a non-text color, and then are skipped when
+            // they need to be changed back.
+            for ignoredRange in ignoredIndexes.rangeView
+            where textView?.documentRange.upperBound ?? 0 > ignoredRange.upperBound {
+                textView?.textStorage.setAttributes(attributeProvider.attributesFor(nil), range: NSRange(ignoredRange))
+            }
+
+            textView?.textStorage.endEditing()
+            textView?.layoutManager.endTransaction()
         }
-        validSet.formUnion(IndexSet(integersIn: rangeToHighlight))
-
-        // Loop through each highlight and modify the textStorage accordingly.
-        textView?.layoutManager.beginTransaction()
-        textView?.textStorage.beginEditing()
-
-        // Create a set of indexes that were not highlighted.
-        var ignoredIndexes = IndexSet(integersIn: rangeToHighlight)
-
-        // Apply all highlights that need color
-        for highlight in results
-        where textView?.documentRange.upperBound ?? 0 > highlight.range.upperBound {
-            textView?.textStorage.setAttributes(
-                attributeProvider.attributesFor(highlight.capture),
-                range: highlight.range
-            )
-
-            // Remove highlighted indexes from the "ignored" indexes.
-            ignoredIndexes.remove(integersIn: highlight.range)
-        }
-
-        // For any indices left over, we need to apply normal attributes to them
-        // This fixes the case where characters are changed to have a non-text color, and then are skipped when
-        // they need to be changed back.
-        for ignoredRange in ignoredIndexes.rangeView
-        where textView?.documentRange.upperBound ?? 0 > ignoredRange.upperBound {
-            textView?.textStorage.setAttributes(attributeProvider.attributesFor(nil), range: NSRange(ignoredRange))
-        }
-
-        textView?.textStorage.endEditing()
-        textView?.layoutManager.endTransaction()
     }
 
     /// Gets the next `NSRange` to highlight based on the invalid set, visible set, and pending set.
@@ -308,12 +319,21 @@ extension Highlighter {
 
         updateVisibleSet(textView: textView)
 
-        highlightProvider?.applyEdit(textView: textView, range: range, delta: delta) { [weak self] invalidIndexSet in
-            let indexSet = invalidIndexSet
-                .union(IndexSet(integersIn: editedRange))
+        highlightProvider?.applyEdit(textView: textView, range: range, delta: delta) { [weak self] result in
+            switch result {
+            case let .success(invalidIndexSet):
+                let indexSet = invalidIndexSet.union(IndexSet(integersIn: editedRange))
 
-            for range in indexSet.rangeView {
-                self?.invalidate(range: NSRange(range))
+                for range in indexSet.rangeView {
+                    self?.invalidate(range: NSRange(range))
+                }
+            case let .failure(error):
+                if case HighlightProvidingError.operationCancelled = error {
+                    self?.invalidate(range: range)
+                    return
+                } else {
+                    Self.logger.error("Failed to apply edit. Query returned with error: \(error)")
+                }
             }
         }
     }

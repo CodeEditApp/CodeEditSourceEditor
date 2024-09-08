@@ -63,7 +63,7 @@ extension TreeSitterClient {
             return []
         }
         queryCursor.setRange(range)
-        queryCursor.matchLimit =  Constants.treeSitterMatchLimit
+        queryCursor.matchLimit =  Constants.matchLimit
 
         var highlights: [HighlightRange] = []
 

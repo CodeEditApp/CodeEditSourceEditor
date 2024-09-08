@@ -8,6 +8,18 @@
 import Foundation
 import CodeEditLanguages
 import SwiftTreeSitter
+import tree_sitter
+
+extension Parser {
+    func reset() {
+        let mirror = Mirror(reflecting: self)
+        for case let (label?, value) in mirror.children {
+            if label == "internalParser", let value = value as? OpaquePointer {
+                ts_parser_reset(value)
+            }
+        }
+    }
+}
 
 public class LanguageLayer: Hashable {
     /// Initialize a language layer
@@ -75,26 +87,27 @@ public class LanguageLayer: Hashable {
     ///   - readBlock: A callback for fetching blocks of text.
     /// - Returns: An array of distinct `NSRanges` that need to be re-highlighted.
     func findChangedByteRanges(
-        edit: InputEdit,
+        edits: [InputEdit],
         timeout: TimeInterval?,
         readBlock: @escaping Parser.ReadBlock
-    ) throws -> [NSRange] {
+    ) -> [NSRange] {
         parser.timeout = timeout ?? 0
 
-        let newTree = calculateNewState(
+        let (newTree, didCancel) = calculateNewState(
             tree: self.tree?.mutableCopy(),
             parser: self.parser,
-            edit: edit,
+            edits: edits,
             readBlock: readBlock
         )
+
+        if didCancel {
+            return []
+        }
 
         if self.tree == nil && newTree == nil {
             // There was no existing tree, make a new one and return all indexes.
             self.tree = parser.parse(tree: nil as Tree?, readBlock: readBlock)
             return [self.tree?.rootNode?.range ?? .zero]
-        } else if self.tree != nil && newTree == nil {
-            // The parser timed out,
-            throw Error.parserTimeout
         }
 
         let ranges = changedByteRanges(self.tree, newTree).map { $0.range }
@@ -111,28 +124,50 @@ public class LanguageLayer: Hashable {
     ///   - parser: The parser used to parse the new tree.
     ///   - edit: The edit to apply.
     ///   - readBlock: The block to use to read text.
-    /// - Returns: (The old state, the new state).
+    ///   - skipParse: Set to true to skip any parsing steps and only apply the edit to the tree.
+    /// - Returns: The new tree, if it was parsed, and a boolean indicating if parsing was skipped or cancelled.
     internal func calculateNewState(
         tree: MutableTree?,
         parser: Parser,
-        edit: InputEdit,
+        edits: [InputEdit],
         readBlock: @escaping Parser.ReadBlock
-    ) -> MutableTree? {
+    ) -> (tree: MutableTree?, didCancel: Bool) {
         guard let tree else {
-            return nil
+            return (nil, false)
         }
 
-        // Apply the edit to the old tree
-        tree.edit(edit)
+        // Apply the edits to the old tree
+        for edit in edits {
+            tree.edit(edit)
+        }
+
+        let start = ContinuousClock.now
+        var wasLongParse = false
 
         // Check every timeout to see if the task is canceled to avoid parsing after the editor has been closed.
         // We can continue a parse after a timeout causes it to cancel by calling parse on the same tree.
         var newTree: MutableTree?
-        while newTree == nil && !Task.isCancelled {
-            newTree = parser.parse(tree: tree, readBlock: readBlock)
+        while newTree == nil {
+            if Task.isCancelled {
+                parser.reset()
+                return (nil, true)
+            }
+            if start.duration(to: .now) > TreeSitterClient.Constants.longParseTimeout {
+                DispatchQueue.main.async {
+                    NotificationCenter.default.post(name: TreeSitterClient.Constants.longParse, object: nil)
+                }
+                wasLongParse = true
+            }
+            newTree = DispatchQueue.syncMainIfNot { parser.parse(tree: tree, readBlock: readBlock) }
         }
 
-        return newTree
+        if wasLongParse {
+            DispatchQueue.main.async {
+                NotificationCenter.default.post(name: TreeSitterClient.Constants.longParseFinished, object: nil)
+            }
+        }
+
+        return (newTree, false)
     }
 
     /// Calculates the changed byte ranges between two trees.
