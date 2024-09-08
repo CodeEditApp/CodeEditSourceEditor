@@ -45,7 +45,7 @@ final class TreeSitterClientTests: XCTestCase {
             expectation.fulfill()
         }
 
-        await fulfillment(of: [expectation])
+        await fulfillment(of: [expectation], timeout: 5.0)
 
         let primaryLanguage = client.state?.primaryLayer.id
         let layerCount = client.state?.layers.count
@@ -100,7 +100,7 @@ final class TreeSitterClientTests: XCTestCase {
             }
         }
 
-        wait(for: [cancelledQuery, cancelledEdit, successEdit])
+        wait(for: [cancelledQuery, cancelledEdit, successEdit], timeout: 5.0)
     }
 
     @MainActor
@@ -165,7 +165,7 @@ final class TreeSitterClientTests: XCTestCase {
             let expectation = XCTestExpectation(description: "Edit \(index) should be cancelled.")
             let isDeletion = Int.random(in: 0..<10) < 4
             let editText = isDeletion ? "" : "\(index)"
-            let editLocation = Int.random(in: 0...textView.string.count)
+            let editLocation = Int.random(in: 0..<textView.string.count)
             let editRange = if isDeletion {
                 NSRange(location: editLocation, length: 1)
             } else {
@@ -191,7 +191,7 @@ final class TreeSitterClientTests: XCTestCase {
             }
         }
 
-        wait(for: editExpectations + [finalEditExpectation])
+        wait(for: editExpectations + [finalEditExpectation], timeout: 5.0)
     }
 }
 // swiftlint:enable all
