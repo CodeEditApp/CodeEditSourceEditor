@@ -211,7 +211,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             letterSpacing: letterSpacing,
             useSystemCursor: useSystemCursor,
             bracketPairHighlight: bracketPairHighlight,
-            undoManager: undoManager
+            undoManager: undoManager,
+            coordinators: coordinators
         )
         switch text {
         case .binding(let binding):
@@ -227,14 +228,11 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         }
 
         context.coordinator.controller = controller
-        coordinators.forEach {
-            $0.prepareCoordinator(controller: controller)
-        }
         return controller
     }
 
     public func makeCoordinator() -> Coordinator {
-        Coordinator(parent: self)
+        Coordinator(text: text, cursorPositions: cursorPositions)
     }
 
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
@@ -246,6 +244,9 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         } else {
             context.coordinator.isUpdateFromTextView = false
         }
+
+        // Set this no matter what to avoid having to compare object pointers.
+        controller.textCoordinators = coordinators.map { WeakCoordinator($0) }
 
         // Do manual diffing to reduce the amount of reloads.
         // This helps a lot in view performance, as it otherwise gets triggered on each environment change.

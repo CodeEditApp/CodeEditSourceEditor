@@ -40,6 +40,8 @@ extension TextView: TextInterface {
     public func applyMutation(_ mutation: TextMutation) {
         guard !mutation.isEmpty else { return }
 
+        delegate?.textView(self, willReplaceContentsIn: mutation.range, with: mutation.string)
+
         layoutManager.beginTransaction()
         textStorage.beginEditing()
 
@@ -53,5 +55,7 @@ extension TextView: TextInterface {
 
         textStorage.endEditing()
         layoutManager.endTransaction()
+
+        delegate?.textView(self, didReplaceContentsIn: mutation.range, with: mutation.string)
     }
 }

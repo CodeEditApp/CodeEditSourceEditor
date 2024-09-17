@@ -7,11 +7,17 @@
 
 import AppKit
 
-/// # TextViewCoordinator
+/// A protocol that can be used to receive extra state change messages from ``CodeEditSourceEditor``.
 ///
-/// A protocol that can be used to provide extra functionality to ``CodeEditSourceEditor/CodeEditSourceEditor`` while
-/// avoiding some of the inefficiencies of SwiftUI.
+/// These are used as a way to push messages up from underlying components into SwiftUI land without requiring passing
+/// callbacks for each message to the ``CodeEditSourceEditor`` initializer.
 ///
+/// They're very useful for updating UI that is directly related to the state of the editor, such as the current
+/// cursor position. For an example, see the ``CombineCoordinator`` class, which implements combine publishers for the
+/// messages this protocol provides.
+///
+/// Conforming objects can also be used to get more detailed text editing notifications by conforming to the
+/// `TextViewDelegate` (from CodeEditTextView) protocol. In that case they'll receive most text change notifications.
 public protocol TextViewCoordinator: AnyObject {
     /// Called when an instance of ``TextViewController`` is available. Use this method to install any delegates,
     /// perform any modifications on the text view or controller, or capture the text view for later use in your app.

@@ -4,7 +4,11 @@ Add advanced functionality to CodeEditSourceEditor.
 
 ## Overview
 
-CodeEditSourceEditor provides an API to add more advanced functionality to the editor than SwiftUI allows. For instance, a 
+CodeEditSourceEditor provides this API as a way to push messages up from underlying components into SwiftUI land without requiring passing callbacks for each message to the ``CodeEditSourceEditor`` initializer.
+
+They're very useful for updating UI that is directly related to the state of the editor, such as the current cursor position. For an example of how this can be useful, see the ``CombineCoordinator`` class, which implements combine publishers for the messages this protocol provides.
+
+They can also be used to get more detailed text editing notifications by conforming to the `TextViewDelegate` (from CodeEditTextView) protocol. In that case they'll receive most text change notifications.
 
 ### Make a Coordinator
 
@@ -60,6 +64,21 @@ The lifecycle looks like this:
 - CodeEditSourceEditor is being closed.
   - ``TextViewCoordinator/destroy()-9nzfl`` is called.
   - CodeEditSourceEditor stops referencing the coordinator.
+
+### TextViewDelegate Conformance
+
+If a coordinator conforms to the `TextViewDelegate` protocol from the `CodeEditTextView` package, it will receive forwarded delegate messages for the editor's text view.
+
+The messages it will receive:
+```swift
+func textView(_ textView: TextView, willReplaceContentsIn range: NSRange, with string: String)
+func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with string: String)
+```
+
+It will _not_ receive the following:
+```swift
+func textView(_ textView: TextView, shouldReplaceContentsIn range: NSRange, with string: String) -> Bool
+```
 
 ### Example
 
