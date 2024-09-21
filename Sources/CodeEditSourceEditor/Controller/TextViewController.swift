@@ -166,6 +166,8 @@ public class TextViewController: NSViewController {
         }
     }
 
+    var textCoordinators: [WeakCoordinator] = []
+
     var highlighter: Highlighter?
 
     /// The tree sitter client managed by the source editor.
@@ -213,7 +215,8 @@ public class TextViewController: NSViewController {
         letterSpacing: Double,
         useSystemCursor: Bool,
         bracketPairHighlight: BracketPairHighlight?,
-        undoManager: CEUndoManager? = nil
+        undoManager: CEUndoManager? = nil,
+        coordinators: [TextViewCoordinator] = []
     ) {
         self.language = language
         self.font = font
@@ -254,6 +257,10 @@ public class TextViewController: NSViewController {
             useSystemCursor: platformGuardedSystemCursor,
             delegate: self
         )
+
+        coordinators.forEach {
+            $0.prepareCoordinator(controller: self)
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -292,6 +299,10 @@ public class TextViewController: NSViewController {
         }
         highlighter = nil
         highlightProvider = nil
+        textCoordinators.values().forEach {
+            $0.destroy()
+        }
+        textCoordinators.removeAll()
         NotificationCenter.default.removeObserver(self)
         cancellables.forEach { $0.cancel() }
         if let localEvenMonitor {

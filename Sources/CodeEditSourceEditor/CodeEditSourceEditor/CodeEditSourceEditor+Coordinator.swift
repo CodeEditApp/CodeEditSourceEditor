@@ -6,18 +6,21 @@
 //
 
 import Foundation
+import SwiftUI
 import CodeEditTextView
 
 extension CodeEditSourceEditor {
     @MainActor
     public class Coordinator: NSObject {
-        var parent: CodeEditSourceEditor
         weak var controller: TextViewController?
         var isUpdatingFromRepresentable: Bool = false
         var isUpdateFromTextView: Bool = false
+        var text: TextAPI
+        @Binding var cursorPositions: [CursorPosition]
 
-        init(parent: CodeEditSourceEditor) {
-            self.parent = parent
+        init(text: TextAPI, cursorPositions: Binding<[CursorPosition]>) {
+            self.text = text
+            self._cursorPositions = cursorPositions
             super.init()
 
             NotificationCenter.default.addObserver(
@@ -41,33 +44,22 @@ extension CodeEditSourceEditor {
                   controller.textView === textView else {
                 return
             }
-            if case .binding(let binding) = parent.text {
+            if case .binding(let binding) = text {
                 binding.wrappedValue = textView.string
-            }
-            parent.coordinators.forEach {
-                $0.textViewDidChangeText(controller: controller)
             }
         }
 
         @objc func textControllerCursorsDidUpdate(_ notification: Notification) {
+            guard let notificationController = notification.object as? TextViewController,
+                  notificationController === controller else {
+                return
+            }
             guard !isUpdatingFromRepresentable else { return }
             self.isUpdateFromTextView = true
-            self.parent.cursorPositions.wrappedValue = self.controller?.cursorPositions ?? []
-            if self.controller != nil {
-                self.parent.coordinators.forEach {
-                    $0.textViewDidChangeSelection(
-                        controller: self.controller!,
-                        newPositions: self.controller!.cursorPositions
-                    )
-                }
-            }
+            cursorPositions = notificationController.cursorPositions
         }
 
         deinit {
-            parent.coordinators.forEach {
-                $0.destroy()
-            }
-            parent.coordinators.removeAll()
             NotificationCenter.default.removeObserver(self)
         }
     }

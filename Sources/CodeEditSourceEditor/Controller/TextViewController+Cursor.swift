@@ -49,7 +49,10 @@ extension TextViewController {
 
         isPostingCursorNotification = true
         cursorPositions = positions.sorted(by: { $0.range.location < $1.range.location })
-        NotificationCenter.default.post(name: Self.cursorPositionUpdatedNotification, object: nil)
+        NotificationCenter.default.post(name: Self.cursorPositionUpdatedNotification, object: self)
+        for coordinator in self.textCoordinators.values() {
+            coordinator.textViewDidChangeSelection(controller: self, newPositions: cursorPositions)
+        }
         isPostingCursorNotification = false
     }
 }

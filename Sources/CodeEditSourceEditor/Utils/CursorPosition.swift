@@ -16,7 +16,7 @@ import Foundation
 /// When initialized by users, certain values may be set to `NSNotFound` or `-1` until they can be filled in by the text
 /// controller.
 /// 
-public struct CursorPosition: Sendable, Codable, Equatable {
+public struct CursorPosition: Sendable, Codable, Equatable, Hashable {
     /// Initialize a cursor position.
     ///
     /// When this initializer is used, ``CursorPosition/range`` will be initialized to `NSNotFound`.
