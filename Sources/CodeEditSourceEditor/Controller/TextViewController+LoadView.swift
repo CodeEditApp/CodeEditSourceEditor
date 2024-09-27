@@ -117,10 +117,18 @@ extension TextViewController {
             guard self?.view.window?.firstResponder == self?.textView else { return event }
             let commandKey = NSEvent.ModifierFlags.command.rawValue
             let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
-            if modifierFlags == commandKey && event.charactersIgnoringModifiers == "/" {
+
+            switch (modifierFlags, event.charactersIgnoringModifiers) {
+            case (commandKey, "/"):
                 self?.handleCommandSlash()
                 return nil
-            } else {
+            case (commandKey, "["):
+                self?.handleIndent(inwards: true)
+                return nil
+            case (commandKey, "]"):
+                self?.handleIndent()
+                return nil
+            default:
                 return event
             }
         }
