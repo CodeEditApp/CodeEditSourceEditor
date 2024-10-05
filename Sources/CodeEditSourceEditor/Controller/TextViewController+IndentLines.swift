@@ -10,24 +10,24 @@ import AppKit
 
 extension TextViewController {
     public func handleIndent(inwards: Bool = false) {
-        // Loop over cursor positions; if more than 1 don't check if multiple lines are selected
-        guard let cursorPosition = cursorPositions.first else { return }
+        for cursorPosition in self.cursorPositions {
+            // get lineindex, i.e line-numbers+1
+            guard let lineIndexes = getHeighlightedLines(for: cursorPosition.range) else { return }
 
-        guard let lineIndexes = getHeighlightedLines(for: cursorPosition.range) else {
-            return
-        }
-        
-        // TODO: Get indentation chars form settings
+            // TODO: Get indentation chars and count form settings
+            let spaceCount = 2
+            let indentationChars = String(repeating: " ", count: spaceCount)
 
-        textView.undoManager?.beginUndoGrouping()
-        for lineIndex in lineIndexes {
-            if inwards {
-                indentInward(lineIndex: lineIndex)
-            } else {
-                indent(lineIndex: lineIndex)
+            textView.undoManager?.beginUndoGrouping()
+            for lineIndex in lineIndexes {
+                if inwards {
+                    indentInward(lineIndex: lineIndex, spacesCount: indentationChars.count)
+                } else {
+                    indent(lineIndex: lineIndex, indentationCharacters: indentationChars)
+                }
             }
+            textView.undoManager?.endUndoGrouping()
         }
-        textView.undoManager?.endUndoGrouping()
     }
 
     private func getHeighlightedLines(for range: NSRange) -> [Int]? {
@@ -48,29 +48,27 @@ extension TextViewController {
         return Array(startLineInfo.index...endLineInfo.index)
     }
 
-    private func indent(lineIndex: Int) {
+    private func indent(lineIndex: Int, indentationCharacters: String) {
         guard let lineInfo = textView.layoutManager.textLineForIndex(lineIndex) else {
             return
         }
 
         textView.replaceCharacters(
                 in: NSRange(location: lineInfo.range.lowerBound, length: 0),
-                with: "  "
+                with: indentationCharacters
             )
     }
 
-    private func indentInward(lineIndex: Int) {
+    private func indentInward(lineIndex: Int, spacesCount: Int) {
         guard let lineInfo = textView.layoutManager.textLineForIndex(lineIndex) else {
             return
         }
 
         guard let lineContent = textView.textStorage.substring(from: lineInfo.range) else { return }
 
-        // get first chars when spaces are enabled just the amount of spaces
-        // if there is text in front count til the text
-
-        // TODO: Remove hardcoded 4
-        let removeSpacesCount = countLeadingSpacesUpTo(line: lineContent, maxCount: 4)
+        // Count spaces until the required amount.
+        // E.g. if 4 are needed but only 3 are present, remove only those 3.
+        let removeSpacesCount = countLeadingSpacesUpTo(line: lineContent, maxCount: spacesCount)
         guard removeSpacesCount != 0 else { return }
 
         textView.replaceCharacters(
