@@ -10,24 +10,22 @@ import AppKit
 
 extension TextViewController {
     public func handleIndent(inwards: Bool = false) {
+        // TODO: Get indentation chars and count form settings
+        let spaceCount = 2
+        let indentationChars = String(repeating: " ", count: spaceCount)
+
+        guard !cursorPositions.isEmpty else { return }
+
+        textView.undoManager?.beginUndoGrouping()
         for cursorPosition in self.cursorPositions {
             // get lineindex, i.e line-numbers+1
-            guard let lineIndexes = getHeighlightedLines(for: cursorPosition.range) else { return }
+            guard let lineIndexes = getHeighlightedLines(for: cursorPosition.range) else { continue }
 
-            // TODO: Get indentation chars and count form settings
-            let spaceCount = 2
-            let indentationChars = String(repeating: " ", count: spaceCount)
-
-            textView.undoManager?.beginUndoGrouping()
-            for lineIndex in lineIndexes {
-                if inwards {
-                    indentInward(lineIndex: lineIndex, spacesCount: indentationChars.count)
-                } else {
-                    indent(lineIndex: lineIndex, indentationCharacters: indentationChars)
-                }
+           for lineIndex in lineIndexes {
+               adjustIndentation(lineIndex: lineIndex, indentationChars: indentationChars, inwards: inwards)
             }
-            textView.undoManager?.endUndoGrouping()
         }
+        textView.undoManager?.endUndoGrouping()
     }
 
     private func getHeighlightedLines(for range: NSRange) -> [Int]? {
@@ -47,29 +45,35 @@ extension TextViewController {
 
         return Array(startLineInfo.index...endLineInfo.index)
     }
+    private func adjustIndentation(lineIndex: Int, indentationChars: String, inwards: Bool) {
+        guard let lineInfo = textView.layoutManager.textLineForIndex(lineIndex) else { return }
 
-    private func indent(lineIndex: Int, indentationCharacters: String) {
-        guard let lineInfo = textView.layoutManager.textLineForIndex(lineIndex) else {
-            return
+        if inwards {
+            removeLeadingSpaces(lineInfo: lineInfo, spaceCount: indentationChars.count)
+        } else {
+            addIndentation(lineInfo: lineInfo, indentationChars: indentationChars)
         }
-
-        textView.replaceCharacters(
-                in: NSRange(location: lineInfo.range.lowerBound, length: 0),
-                with: indentationCharacters
-            )
     }
 
-    private func indentInward(lineIndex: Int, spacesCount: Int) {
-        guard let lineInfo = textView.layoutManager.textLineForIndex(lineIndex) else {
-            return
-        }
+    private func addIndentation(
+        lineInfo: TextLineStorage<TextLine>.TextLinePosition,
+        indentationChars: String
+    ) {
+        textView.replaceCharacters(
+            in: NSRange(location: lineInfo.range.lowerBound, length: 0),
+            with: indentationChars
+        )
+    }
 
+    private func removeLeadingSpaces(
+        lineInfo: TextLineStorage<TextLine>.TextLinePosition,
+        spaceCount: Int
+    ) {
         guard let lineContent = textView.textStorage.substring(from: lineInfo.range) else { return }
 
-        // Count spaces until the required amount.
-        // E.g. if 4 are needed but only 3 are present, remove only those 3.
-        let removeSpacesCount = countLeadingSpacesUpTo(line: lineContent, maxCount: spacesCount)
-        guard removeSpacesCount != 0 else { return }
+        let removeSpacesCount = countLeadingSpacesUpTo(line: lineContent, maxCount: spaceCount)
+
+        guard removeSpacesCount > 0 else { return }
 
         textView.replaceCharacters(
             in: NSRange(location: lineInfo.range.lowerBound, length: removeSpacesCount),
@@ -78,21 +82,7 @@ extension TextViewController {
     }
 
     func countLeadingSpacesUpTo(line: String, maxCount: Int) -> Int {
-        var count = 0
-
-        for char in line {
-            if char == " " {
-                count += 1
-            } else {
-                break  // Stop as soon as a non-space character is encountered
-            }
-
-            // Stop early if we've counted the max number of spaces
-            if count == maxCount {
-                break
-            }
-        }
-
-        return count
+        // Count leading spaces using prefix and `filter`
+        return line.prefix(maxCount).filter { $0 == " " }.count
     }
 }
