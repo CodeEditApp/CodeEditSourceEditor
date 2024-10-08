@@ -38,6 +38,21 @@ extension TextViewController {
         textView.undoManager?.endUndoGrouping()
     }
 
+    /// This method is used to handle tabs appropriately when multiple lines are selected,
+    /// allowing normal use of tabs.
+    ///
+    /// - Returns: A Boolean value indicating whether multiple lines are highlighted.
+    func multipleLinesHighlighted() -> Bool {
+        for cursorPosition in self.cursorPositions {
+            if let startLineInfo = textView.layoutManager.textLineForOffset(cursorPosition.range.lowerBound),
+               let endLineInfo = textView.layoutManager.textLineForOffset(cursorPosition.range.upperBound),
+               startLineInfo.index != endLineInfo.index {
+                return true
+            }
+        }
+        return false
+    }
+
     private func getHighlightedLines(for range: NSRange) -> [Int]? {
         guard let startLineInfo = textView.layoutManager.textLineForOffset(range.lowerBound) else {
             return nil
