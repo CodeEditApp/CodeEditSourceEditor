@@ -9,26 +9,36 @@ import CodeEditTextView
 import AppKit
 
 extension TextViewController {
+    /// Handels indentation and unindentation
+    ///
+    /// Handles the indentation of lines in the text view based on the current indentation option.
+    ///
+    /// This function assumes that the document is formatted according to the current selected indentation option.
+    /// It will not indent a tab character if spaces are selected, and vice versa. Ensure that the document is
+    /// properly formatted before invoking this function.
+    ///
+    /// - Parameter inwards: A Boolean flag indicating whether to outdent (default is `false`).
     public func handleIndent(inwards: Bool = false) {
-        // TODO: Get indentation chars and count form settings
-        let spaceCount = 2
-        let indentationChars = String(repeating: " ", count: spaceCount)
-
+        let indentationChars: String = indentOption.stringValue
         guard !cursorPositions.isEmpty else { return }
 
         textView.undoManager?.beginUndoGrouping()
         for cursorPosition in self.cursorPositions {
             // get lineindex, i.e line-numbers+1
-            guard let lineIndexes = getHeighlightedLines(for: cursorPosition.range) else { continue }
+            guard let lineIndexes = getHighlightedLines(for: cursorPosition.range) else { continue }
 
-           for lineIndex in lineIndexes {
-               adjustIndentation(lineIndex: lineIndex, indentationChars: indentationChars, inwards: inwards)
+            for lineIndex in lineIndexes {
+                adjustIndentation(
+                    lineIndex: lineIndex,
+                    indentationChars: indentationChars,
+                    inwards: inwards
+                )
             }
         }
         textView.undoManager?.endUndoGrouping()
     }
 
-    private func getHeighlightedLines(for range: NSRange) -> [Int]? {
+    private func getHighlightedLines(for range: NSRange) -> [Int]? {
         guard let startLineInfo = textView.layoutManager.textLineForOffset(range.lowerBound) else {
             return nil
         }
@@ -45,11 +55,16 @@ extension TextViewController {
 
         return Array(startLineInfo.index...endLineInfo.index)
     }
+
     private func adjustIndentation(lineIndex: Int, indentationChars: String, inwards: Bool) {
         guard let lineInfo = textView.layoutManager.textLineForIndex(lineIndex) else { return }
 
         if inwards {
-            removeLeadingSpaces(lineInfo: lineInfo, spaceCount: indentationChars.count)
+            if indentOption != .tab {
+                removeLeadingSpaces(lineInfo: lineInfo, spaceCount: indentationChars.count)
+            } else {
+                removeLeadingTab(lineInfo: lineInfo)
+            }
         } else {
             addIndentation(lineInfo: lineInfo, indentationChars: indentationChars)
         }
@@ -81,7 +96,20 @@ extension TextViewController {
         )
     }
 
-    func countLeadingSpacesUpTo(line: String, maxCount: Int) -> Int {
+    private func removeLeadingTab(lineInfo: TextLineStorage<TextLine>.TextLinePosition) {
+        guard let lineContent = textView.textStorage.substring(from: lineInfo.range) else {
+            return
+        }
+
+        if lineContent.first == "\t" {
+            textView.replaceCharacters(
+                in: NSRange(location: lineInfo.range.lowerBound, length: 1),
+                with: ""
+            )
+        }
+    }
+
+    private func countLeadingSpacesUpTo(line: String, maxCount: Int) -> Int {
         // Count leading spaces using prefix and `filter`
         return line.prefix(maxCount).filter { $0 == " " }.count
     }
