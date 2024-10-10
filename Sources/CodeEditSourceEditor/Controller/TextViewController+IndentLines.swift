@@ -9,7 +9,7 @@ import CodeEditTextView
 import AppKit
 
 extension TextViewController {
-/// Handles indentation and unindentation
+    /// Handles indentation and unindentation
     ///
     /// Handles the indentation of lines in the text view based on the current indentation option.
     ///
@@ -53,22 +53,17 @@ for cursorPosition in self.cursorPositions.reversed() {
         return false
     }
 
-    private func getHighlightedLines(for range: NSRange) -> [Int]? {
+    private func getHighlightedLines(for range: NSRange) -> ClosedRange<Int>? {
         guard let startLineInfo = textView.layoutManager.textLineForOffset(range.lowerBound) else {
             return nil
         }
-        var lines: [Int] = [startLineInfo.index]
 
         guard let endLineInfo = textView.layoutManager.textLineForOffset(range.upperBound),
               endLineInfo.index != startLineInfo.index else {
-            return lines
-        }
-        if endLineInfo.index == startLineInfo.index + 1 {
-            lines.append(endLineInfo.index)
-            return lines
+            return startLineInfo.index...startLineInfo.index
         }
 
-        return Array(startLineInfo.index...endLineInfo.index)
+        return startLineInfo.index...endLineInfo.index
     }
 
     private func adjustIndentation(lineIndex: Int, indentationChars: String, inwards: Bool) {
