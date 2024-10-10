@@ -115,14 +115,50 @@ extension TextViewController {
         }
         self.localEvenMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard self?.view.window?.firstResponder == self?.textView else { return event }
-            let commandKey = NSEvent.ModifierFlags.command.rawValue
+
+            let tabKey: UInt16 = 0x30
             let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
-            if modifierFlags == commandKey && event.charactersIgnoringModifiers == "/" {
-                self?.handleCommandSlash()
-                return nil
+
+            if event.keyCode == tabKey {
+                return self?.handleTab(event: event, modifierFalgs: modifierFlags)
             } else {
-                return event
+                return self?.handleCommand(event: event, modifierFlags: modifierFlags)
             }
         }
+    }
+    func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
+        let commandKey = NSEvent.ModifierFlags.command.rawValue
+
+        switch (modifierFlags, event.charactersIgnoringModifiers) {
+        case (commandKey, "/"):
+            handleCommandSlash()
+            return nil
+        case (commandKey, "["):
+            handleIndent(inwards: true)
+            return nil
+        case (commandKey, "]"):
+            handleIndent()
+            return nil
+        case (_, _):
+            return event
+        }
+    }
+
+    /// Handles the tab key event.
+    /// If the Shift key is pressed, it handles unindenting. If no modifier key is pressed, it checks if multiple lines
+    /// are highlighted and handles indenting accordingly.
+    ///
+    /// - Returns: The original event if it should be passed on, or `nil` to indicate handling within the method.
+    func handleTab(event: NSEvent, modifierFalgs: UInt) -> NSEvent? {
+        let shiftKey = NSEvent.ModifierFlags.shift.rawValue
+
+        if modifierFalgs == shiftKey {
+            handleIndent(inwards: true)
+        } else {
+            // Only allow tab to work if multiple lines are selected
+            guard multipleLinesHighlighted() else { return event }
+            handleIndent()
+        }
+        return nil
     }
 }

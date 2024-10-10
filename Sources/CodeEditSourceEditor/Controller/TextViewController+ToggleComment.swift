@@ -38,7 +38,7 @@ extension TextViewController {
     ///   - range: The range of text to process.
     ///   - commentCache: A cache object to store comment-related data, such as line information,
     ///                   shift factors, and content.
-    func populateCommentCache(for range: NSRange, using commentCache: inout CommentCache) {
+    private func populateCommentCache(for range: NSRange, using commentCache: inout CommentCache) {
         // Determine the appropriate comment characters based on the language settings.
         if language.lineCommentString.isEmpty {
             commentCache.startCommentChars = language.rangeCommentStrings.0
@@ -126,7 +126,7 @@ extension TextViewController {
     ///   - lineCount: The number of intermediate lines between the start and end comments.
     ///
     /// - Returns: The computed shift range factor as an `Int`.
-    func calculateShiftRangeFactor(startCount: Int, endCount: Int?, lineCount: Int) -> Int {
+    private func calculateShiftRangeFactor(startCount: Int, endCount: Int?, lineCount: Int) -> Int {
         let effectiveEndCount = endCount ?? 0
         return (startCount + effectiveEndCount) * (lineCount + 1)
     }
