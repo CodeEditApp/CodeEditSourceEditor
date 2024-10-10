@@ -124,8 +124,20 @@ extension TextViewController {
         }
     }
 
-    private func countLeadingSpacesUpTo(line: String, maxCount: Int) -> Int {
-        // Count leading spaces using prefix and `filter`
-        return line.prefix(maxCount).filter { $0 == " " }.count
+    func countLeadingSpacesUpTo(line: String, maxCount: Int) -> Int {
+        var count = 0
+        for char in line {
+            if char == " " {
+                count += 1
+            } else {
+                break  // Stop as soon as a non-space character is encountered
+            }
+            // Stop early if we've counted the max number of spaces
+            if count == maxCount {
+                break
+            }
+        }
+
+        return count
     }
 }
