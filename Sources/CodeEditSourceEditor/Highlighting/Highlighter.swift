@@ -178,21 +178,9 @@ private extension Highlighter {
     func queryHighlights(for rangesToHighlight: [NSRange]) {
         guard let textView else { return }
 
-        if !Thread.isMainThread {
-            DispatchQueue.main.async { [weak self] in
-                for range in rangesToHighlight {
-                    self?.highlightProvider?.queryHighlightsFor(
-                        textView: textView,
-                        range: range
-                    ) { [weak self] highlights in
-                        assert(Thread.isMainThread, "Highlighted ranges called on non-main thread.")
-                        self?.applyHighlightResult(highlights, rangeToHighlight: range)
-                    }
-                }
-            }
-        } else {
+        DispatchQueue.dispatchMainIfNot {
             for range in rangesToHighlight {
-                highlightProvider?.queryHighlightsFor(textView: textView, range: range) { [weak self] highlights in
+                self.highlightProvider?.queryHighlightsFor(textView: textView, range: range) { [weak self] highlights in
                     assert(Thread.isMainThread, "Highlighted ranges called on non-main thread.")
                     self?.applyHighlightResult(highlights, rangeToHighlight: range)
                 }
@@ -222,7 +210,6 @@ private extension Highlighter {
             validSet.formUnion(IndexSet(integersIn: rangeToHighlight))
 
             // Loop through each highlight and modify the textStorage accordingly.
-            textView?.layoutManager.beginTransaction()
             textView?.textStorage.beginEditing()
 
             // Create a set of indexes that were not highlighted.
@@ -249,7 +236,7 @@ private extension Highlighter {
             }
 
             textView?.textStorage.endEditing()
-            textView?.layoutManager.endTransaction()
+            textView?.layoutManager.invalidateLayoutForRange(rangeToHighlight)
         }
     }
 
