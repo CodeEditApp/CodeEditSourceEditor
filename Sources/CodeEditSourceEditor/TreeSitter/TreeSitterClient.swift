@@ -22,7 +22,7 @@ import OSLog
 /// can throw an ``TreeSitterClientExecutor/Error/syncUnavailable`` error if an asynchronous or synchronous call is
 /// already being made on the object. In those cases it is up to the caller to decide whether or not to retry
 /// asynchronously.
-/// 
+///
 /// The only exception to the above rule is the ``HighlightProviding`` conformance methods. The methods for that
 /// implementation may return synchronously or asynchronously depending on a variety of factors such as document
 /// length, edit length, highlight length and if the object is available for a synchronous call.
@@ -156,23 +156,26 @@ public final class TreeSitterClient: HighlightProviding {
         }
 
         let operation = { [weak self] in
-            let invalidatedRanges = self?.applyEdit(edit: edit) ?? IndexSet()
-            DispatchQueue.dispatchMainIfNot { completion(.success(invalidatedRanges)) }
+            return self?.applyEdit(edit: edit) ?? IndexSet()
         }
 
         let longEdit = range.length > Constants.maxSyncEditLength
         let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
+        let execAsync = longEdit || longDocument
 
-        if forceSyncOperation {
-            executor.execSync(operation)
-            return
+        if !execAsync || forceSyncOperation {
+            let result = executor.execSync(operation)
+            if case .success(let invalidatedRanges) = result {
+                DispatchQueue.dispatchMainIfNot { completion(.success(invalidatedRanges)) }
+                return
+            }
         }
 
-        if longEdit || longDocument || !executor.execSync(operation).isSuccess {
+        if !forceSyncOperation {
             executor.cancelAll(below: .reset) // Cancel all edits, add it to the pending edit queue
             executor.execAsync(
                 priority: .edit,
-                operation: operation,
+                operation: { completion(.success(operation())) },
                 onCancel: { [weak self] in
                     self?.pendingEdits.mutate { edits in
                         edits.append(edit)
@@ -205,22 +208,27 @@ public final class TreeSitterClient: HighlightProviding {
         completion: @escaping @MainActor (Result<[HighlightRange], Error>) -> Void
     ) {
         let operation = { [weak self] in
-            let highlights = self?.queryHighlightsForRange(range: range)
-            DispatchQueue.dispatchMainIfNot { completion(.success(highlights ?? [])) }
+            return self?.queryHighlightsForRange(range: range) ?? []
         }
 
         let longQuery = range.length > Constants.maxSyncQueryLength
         let longDocument = textView.documentRange.length > Constants.maxSyncContentLength
+        let execAsync = longQuery || longDocument
 
-        if forceSyncOperation {
-            executor.execSync(operation)
-            return
+        if !execAsync || forceSyncOperation {
+            let result = executor.execSync(operation)
+            if case .success(let highlights) = result {
+                DispatchQueue.dispatchMainIfNot { completion(.success(highlights)) }
+                return
+            }
         }
 
-        if longQuery || longDocument || !executor.execSync(operation).isSuccess {
+        if execAsync && !forceSyncOperation {
             executor.execAsync(
                 priority: .access,
-                operation: operation,
+                operation: {
+                    DispatchQueue.dispatchMainIfNot { completion(.success(operation())) }
+                },
                 onCancel: {
                     DispatchQueue.dispatchMainIfNot {
                         completion(.failure(HighlightProvidingError.operationCancelled))
