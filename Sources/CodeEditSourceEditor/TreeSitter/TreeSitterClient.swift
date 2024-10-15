@@ -223,7 +223,7 @@ public final class TreeSitterClient: HighlightProviding {
             }
         }
 
-        if execAsync && !forceSyncOperation {
+        if !forceSyncOperation {
             executor.execAsync(
                 priority: .access,
                 operation: {
