@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 import CodeEditTextView
 import CodeEditLanguages
 @testable import CodeEditSourceEditor
@@ -64,6 +65,17 @@ enum Mock {
         )
     }
 
+    static func scrollingTextView() -> (NSScrollView, TextView) {
+        let scrollView = NSScrollView(frame: .init(x: 0, y: 0, width: 250, height: 250))
+        scrollView.contentView.postsBoundsChangedNotifications = true
+        scrollView.postsFrameChangedNotifications = true
+        let textView = textView()
+        scrollView.documentView = textView
+        scrollView.layoutSubtreeIfNeeded()
+        textView.layout()
+        return (scrollView, textView)
+    }
+
     static func treeSitterClient(forceSync: Bool = false) -> TreeSitterClient {
         let client = TreeSitterClient()
         client.forceSyncOperation = forceSync
@@ -74,14 +86,12 @@ enum Mock {
     static func highlighter(
         textView: TextView,
         highlightProvider: HighlightProviding,
-        theme: EditorTheme,
         attributeProvider: ThemeAttributesProviding,
         language: CodeLanguage = .default
     ) -> Highlighter {
         Highlighter(
             textView: textView,
-            highlightProvider: highlightProvider,
-            theme: theme,
+            providers: [highlightProvider],
             attributeProvider: attributeProvider,
             language: language
         )

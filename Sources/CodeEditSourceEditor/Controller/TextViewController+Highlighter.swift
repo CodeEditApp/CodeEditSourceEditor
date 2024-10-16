@@ -11,18 +11,18 @@ import SwiftTreeSitter
 extension TextViewController {
     internal func setUpHighlighter() {
         if let highlighter {
-            textView.removeStorageDelegate(highlighter)
+//            textView.removeStorageDelegate(highlighter)
             self.highlighter = nil
         }
 
-        self.highlighter = Highlighter(
-            textView: textView,
-            highlightProvider: highlightProvider,
-            theme: theme,
-            attributeProvider: self,
-            language: language
-        )
-        textView.addStorageDelegate(highlighter!)
+//        self.highlighter = Highlighter(
+//            textView: textView,
+//            highlightProvider: highlightProvider,
+//            theme: theme,
+//            attributeProvider: self,
+//            language: language
+//        )
+//        textView.addStorageDelegate(highlighter!)
         setHighlightProvider(self.highlightProvider)
     }
 
@@ -38,7 +38,7 @@ extension TextViewController {
 
         if let provider = provider {
             self.highlightProvider = provider
-            highlighter?.setHighlightProvider(provider)
+//            highlighter?.setHighlightProvider(provider)
         }
     }
 }

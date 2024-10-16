@@ -12,10 +12,47 @@ import SwiftTreeSitter
 import CodeEditLanguages
 import OSLog
 
+/*
+ +---------------------------------+
+ |          Highlighter            |
+ |                                 |
+ |  - highlightProviders[]         |
+ |  - styledRangeContainer         |
+ |                                 |
+ |  + refreshHighlightsIn(range:)  |
+ +---------------------------------+
+ |
+ |
+ v
+ +-------------------------------+             +-----------------------------+
+ |    RangeCaptureContainer      |   ------>   |         RangeStore          |
+ |                               |             |                             |
+ |  - manages combined ranges    |             |  - stores raw ranges &      |
+ |  - layers highlight styles    |             |    captures                 |
+ |  + getAttributesForRange()    |             +-----------------------------+
+ +-------------------------------+
+ ^
+ |
+ |
+ +-------------------------------+
+ |   HighlightProviderState[]    |   (one for each provider)
+ |                               |
+ |  - keeps valid/invalid ranges |
+ |  - queries providers (async)  |
+ |  + updateStyledRanges()       |
+ +-------------------------------+
+ ^
+ |
+ |
+ +-------------------------------+
+ |   HighlightProviding Object   |  (tree-sitter, LSP, spellcheck)
+ +-------------------------------+
+ */
+
 /// The `Highlighter` class handles efficiently highlighting the `TextView` it's provided with.
 /// It will listen for text and visibility changes, and highlight syntax as needed.
 ///
-/// One should rarely have to direcly modify or call methods on this class. Just keep it alive in
+/// One should rarely have to directly modify or call methods on this class. Just keep it alive in
 /// memory and it will listen for bounds changes, text changes, etc. However, to completely invalidate all
 /// highlights use the ``invalidate()`` method to re-highlight all (visible) text, and the ``setLanguage``
 /// method to update the highlighter with a new language if needed.
@@ -23,95 +60,60 @@ import OSLog
 class Highlighter: NSObject {
     static private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "Highlighter")
 
-    // MARK: - Index Sets
-
-    /// Any indexes that highlights have been requested for, but haven't been applied.
-    /// Indexes/ranges are added to this when highlights are requested and removed
-    /// after they are applied
-    private var pendingSet: IndexSet = .init()
-
-    /// The set of valid indexes
-    private var validSet: IndexSet = .init()
-
-    /// The set of visible indexes in tht text view
-    lazy private var visibleSet: IndexSet = {
-        return IndexSet(integersIn: textView?.visibleTextRange ?? NSRange())
-    }()
-
-    // MARK: - UI
+    /// The current language of the editor.
+    private var language: CodeLanguage
 
     /// The text view to highlight
     private weak var textView: TextView?
 
-    /// The editor theme
-    private var theme: EditorTheme
-
     /// The object providing attributes for captures.
     private weak var attributeProvider: ThemeAttributesProviding?
 
-    /// The current language of the editor.
-    private var language: CodeLanguage
+    private var rangeContainer: StyledRangeContainer
 
-    /// Calculates invalidated ranges given an edit.
-    private(set) weak var highlightProvider: HighlightProviding?
+    private var providers: [HighlightProviderState] = []
 
-    /// The length to chunk ranges into when passing to the highlighter.
-    private let rangeChunkLimit = 1024
+    private var visibleRangeProvider: VisibleRangeProvider
 
     // MARK: - Init
 
-    /// Initializes the `Highlighter`
-    /// - Parameters:
-    ///   - textView: The text view to highlight.
-    ///   - treeSitterClient: The tree-sitter client to handle tree updates and highlight queries.
-    ///   - theme: The theme to use for highlights.
     init(
         textView: TextView,
-        highlightProvider: HighlightProviding?,
-        theme: EditorTheme,
+        providers: [HighlightProviding],
         attributeProvider: ThemeAttributesProviding,
         language: CodeLanguage
     ) {
-        self.textView = textView
-        self.highlightProvider = highlightProvider
-        self.theme = theme
-        self.attributeProvider = attributeProvider
         self.language = language
+        self.textView = textView
+        self.attributeProvider = attributeProvider
+        self.visibleRangeProvider = VisibleRangeProvider(textView: textView)
+        self.rangeContainer = StyledRangeContainer()
 
         super.init()
 
-        highlightProvider?.setUp(textView: textView, codeLanguage: language)
-
-        if let scrollView = textView.enclosingScrollView {
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(visibleTextChanged(_:)),
-                name: NSView.frameDidChangeNotification,
-                object: scrollView
-            )
-
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(visibleTextChanged(_:)),
-                name: NSView.boundsDidChangeNotification,
-                object: scrollView.contentView
+        self.providers = providers.map {
+            HighlightProviderState(
+                delegate: rangeContainer,
+                highlightProvider: $0,
+                textView: textView,
+                visibleRangeProvider: visibleRangeProvider,
+                language: language
             )
         }
     }
 
     // MARK: - Public
 
-    /// Invalidates all text in the textview. Useful for updating themes.
+    /// Invalidates all text in the editor. Useful for updating themes.
     public func invalidate() {
-        guard let textView else { return }
-        updateVisibleSet(textView: textView)
-        invalidate(range: textView.documentRange)
+        providers.forEach { $0.invalidate() }
     }
 
     /// Sets the language and causes a re-highlight of the entire text.
     /// - Parameter language: The language to update to.
     public func setLanguage(language: CodeLanguage) {
         guard let textView = self.textView else { return }
+
         // Remove all current highlights. Makes the language setting feel snappier and tells the user we're doing
         // something immediately.
         textView.textStorage.setAttributes(
@@ -119,57 +121,42 @@ class Highlighter: NSObject {
             range: NSRange(location: 0, length: textView.textStorage.length)
         )
         textView.layoutManager.invalidateLayoutForRect(textView.visibleRect)
-        validSet.removeAll()
-        pendingSet.removeAll()
-        highlightProvider?.setUp(textView: textView, codeLanguage: language)
-        invalidate()
-    }
 
-    /// Sets the highlight provider. Will cause a re-highlight of the entire text.
-    /// - Parameter provider: The provider to use for future syntax highlights.
-    public func setHighlightProvider(_ provider: HighlightProviding) {
-        self.highlightProvider = provider
-        guard let textView = self.textView else { return }
-        highlightProvider?.setUp(textView: textView, codeLanguage: self.language)
-        invalidate()
+        providers.forEach { $0.setLanguage(language: language) }
     }
 
     deinit {
-        NotificationCenter.default.removeObserver(self)
         self.attributeProvider = nil
         self.textView = nil
-        self.highlightProvider = nil
+        self.providers = []
     }
 }
 
-// MARK: - Highlighting
+extension Highlighter: NSTextStorageDelegate {
+    /// Processes an edited range in the text.
+    /// Will query tree-sitter for any updated indices and re-highlight only the ranges that need it.
+    func textStorage(
+        _ textStorage: NSTextStorage,
+        didProcessEditing editedMask: NSTextStorageEditActions,
+        range editedRange: NSRange,
+        changeInLength delta: Int
+    ) {
+        // This method is called whenever attributes are updated, so to avoid re-highlighting the entire document
+        // each time an attribute is applied, we check to make sure this is in response to an edit.
+        guard editedMask.contains(.editedCharacters) else { return }
 
-private extension Highlighter {
-
-    /// Invalidates a given range and adds it to the queue to be highlighted.
-    /// - Parameter range: The range to invalidate.
-    func invalidate(range: NSRange) {
-        let set = IndexSet(integersIn: range)
-
-        if set.isEmpty {
-            return
-        }
-
-        validSet.subtract(set)
-
-        highlightInvalidRanges()
+//        self.storageDidEdit(editedRange: editedRange, delta: delta)
     }
 
-    /// Begins highlighting any invalid ranges
-    func highlightInvalidRanges() {
-        // If there aren't any more ranges to highlight, don't do anything, otherwise continue highlighting
-        // any available ranges.
-        var rangesToQuery: [NSRange] = []
-        while let range = getNextRange() {
-            rangesToQuery.append(range)
-            pendingSet.insert(range: range)
-        }
+    func textStorage(
+        _ textStorage: NSTextStorage,
+        willProcessEditing editedMask: NSTextStorageEditActions,
+        range editedRange: NSRange,
+        changeInLength delta: Int
+    ) {
+        guard editedMask.contains(.editedCharacters) else { return }
 
+<<<<<<< Updated upstream
         queryHighlights(for: rangesToQuery)
     }
 
@@ -328,5 +315,8 @@ extension Highlighter {
     func storageWillEdit(editedRange: NSRange) {
         guard let textView else { return }
         highlightProvider?.willApplyEdit(textView: textView, range: editedRange)
+=======
+//        self.storageWillEdit(editedRange: editedRange)
+>>>>>>> Stashed changes
     }
 }

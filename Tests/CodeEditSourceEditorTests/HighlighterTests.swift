@@ -49,7 +49,6 @@ final class HighlighterTests: XCTestCase {
         let highlighter = Mock.highlighter(
             textView: textView,
             highlightProvider: highlightProvider,
-            theme: theme,
             attributeProvider: attributeProvider
         )
 

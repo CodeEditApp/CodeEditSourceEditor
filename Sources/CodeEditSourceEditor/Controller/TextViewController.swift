@@ -295,7 +295,7 @@ public class TextViewController: NSViewController {
 
     deinit {
         if let highlighter {
-            textView.removeStorageDelegate(highlighter)
+//            textView.removeStorageDelegate(highlighter)
         }
         highlighter = nil
         highlightProvider = nil
