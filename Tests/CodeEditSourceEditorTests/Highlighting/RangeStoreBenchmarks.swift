@@ -4,6 +4,7 @@ import XCTest
 class RangeStoreBenchmarkTests: XCTestCase {
     var rng = RandomNumberGeneratorWithSeed(seed: 942)
 
+    // to keep these stable
     struct RandomNumberGeneratorWithSeed: RandomNumberGenerator {
         init(seed: Int) { srand48(seed) }
         func next() -> UInt64 { return UInt64(drand48() * Double(UInt64.max)) } // swiftlint:disable:this legacy_random

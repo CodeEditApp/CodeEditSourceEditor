@@ -7,12 +7,12 @@
 
 extension RangeStore {
     final class Node {
-        let order: Int
-        var keys: [KeyValue]
-        var children: [Node]
-        var maxContainingEndpoint: UInt32
+        private let order: Int
+        private var keys: [KeyValue]
+        private var children: [Node]
+        private var maxContainingEndpoint: UInt32
 
-        var isLeaf: Bool { children.isEmpty }
+        private var isLeaf: Bool { children.isEmpty }
 
         init(order: Int) {
             self.order = order
@@ -24,7 +24,7 @@ extension RangeStore {
             self.children.reserveCapacity(order)
         }
 
-        func max() -> KeyValue? {
+        private func max() -> KeyValue? {
             var node = self
             while !node.isLeaf {
                 node = node.children[node.children.count - 1]
@@ -32,7 +32,7 @@ extension RangeStore {
             return node.keys.last
         }
 
-        func min() -> KeyValue? {
+        private func min() -> KeyValue? {
             var node = self
             while !node.isLeaf {
                 node = node.children[0]
