@@ -28,7 +28,7 @@ public class TextViewController: NSViewController {
     internal var highlightLayers: [CALayer] = []
     internal var systemAppearance: NSAppearance.Name?
 
-    package var localEvenMonitor: Any?
+    package var localEventMonitor: Any?
     package var isPostingCursorNotification: Bool = false
 
     /// The string contents.
@@ -254,7 +254,6 @@ public class TextViewController: NSViewController {
             isEditable: isEditable,
             isSelectable: isSelectable,
             letterSpacing: letterSpacing,
-            useSystemCursor: platformGuardedSystemCursor,
             delegate: self
         )
 
@@ -305,10 +304,10 @@ public class TextViewController: NSViewController {
         textCoordinators.removeAll()
         NotificationCenter.default.removeObserver(self)
         cancellables.forEach { $0.cancel() }
-        if let localEvenMonitor {
-            NSEvent.removeMonitor(localEvenMonitor)
+        if let localEventMonitor {
+            NSEvent.removeMonitor(localEventMonitor)
         }
-        localEvenMonitor = nil
+        localEventMonitor = nil
     }
 }
 
