@@ -8,11 +8,15 @@
 import Foundation
 
 class StyledRangeContainer {
-    // TODO: Styled Range Container
+    private var storage: [UUID: StyledRangeStore] = [:]
 }
 
 extension StyledRangeContainer: HighlightProviderStateDelegate {
     func applyHighlightResult(provider: UUID, highlights: [HighlightRange], rangeToHighlight: NSRange) {
-        // TODO: Apply Result
+        guard let storage = storage[provider] else {
+            assertionFailure("No storage found for the given provider: \(provider)")
+            return
+        }
+        
     }
 }
