@@ -59,12 +59,17 @@ final class StyledRangeStore {
     func set(capture: CaptureName, modifiers: Set<CaptureModifiers>, for range: Range<Int>) {
         assert(range.lowerBound >= 0, "Negative lowerBound")
         assert(range.upperBound <= _guts.count(in: OffsetMetric()), "upperBound outside valid range")
+        set(runs: [Run(length: range.length, capture: capture, modifiers: modifiers)], for: range)
+    }
 
-        let run = StyledRun(length: range.length, capture: capture, modifiers: modifiers)
-        _guts.replaceSubrange(range, in: OffsetMetric(), with: [run])
+    func set(runs: [Run], for range: Range<Int>) {
+        _guts.replaceSubrange(
+            range,
+            in: OffsetMetric(),
+            with: runs.map { StyledRun(length: $0.length, capture: $0.capture, modifiers: $0.modifiers) }
+        )
 
         coalesceNearby(range: range)
-
         cache = nil
     }
 }

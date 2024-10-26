@@ -26,7 +26,7 @@ extension StyledRangeStore {
     ///
     /// - Parameter range: The range of the item to coalesce around.
     func coalesceNearby(range: Range<Int>) {
-        var index = findIndex(at: range.endIndex).index
+        var index = findIndex(at: range.lastIndex).index
         if index < _guts.endIndex && _guts.index(after: index) != _guts.endIndex {
             coalesceRunAfter(index: &index)
         }

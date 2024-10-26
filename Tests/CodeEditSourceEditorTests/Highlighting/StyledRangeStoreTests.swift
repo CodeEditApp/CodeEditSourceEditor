@@ -176,21 +176,22 @@ final class StyledRangeStoreTests: XCTestCase {
     func test_setMultipleRunsAndStorageUpdate() {
         let store = StyledRangeStore(documentLength: 100)
 
-        store.set(capture: .comment, modifiers: [.builtin], for: 5..<15)
-        store.set(capture: .keyword, modifiers: [], for: 20..<30)
-        store.set(capture: .string, modifiers: [.builtin], for: 35..<40)
-        store.set(capture: .function, modifiers: [], for: 45..<50)
-        store.set(capture: .variable, modifiers: [], for: 60..<70)
+        var lengths = [5, 10, 5, 10, 5, 5, 5, 5, 10, 10, 30]
+        var captures: [CaptureName?] = [nil, .comment, nil, .keyword, nil, .string, nil, .function, nil, .variable, nil]
+        var modifiers: [Set<CaptureModifiers>] = [[], [.builtin], [], [], [], [.builtin], [], [], [], [], []]
+
+        store.set(
+            runs: zip(zip(lengths, captures), modifiers).map {
+                StyledRangeStore.Run(length: $0.0, capture: $0.1, modifiers: $1)
+            },
+            for: 0..<100
+        )
 
         XCTAssertEqual(store.length, 100)
 
         var runs = store.runs(in: 0..<100)
         XCTAssertEqual(runs.count, 11)
         XCTAssertEqual(runs.reduce(0, { $0 + $1.length }), 100)
-
-        var lengths = [5, 10, 5, 10, 5, 5, 5, 5, 10, 10, 30]
-        var captures: [CaptureName?] = [nil, .comment, nil, .keyword, nil, .string, nil, .function, nil, .variable, nil]
-        var modifiers: [Set<CaptureModifiers>] = [[], [.builtin], [], [], [], [.builtin], [], [], [], [], []]
 
         runs.enumerated().forEach {
             XCTAssertEqual(
