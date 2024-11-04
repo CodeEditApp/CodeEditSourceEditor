@@ -24,7 +24,7 @@ class HighlightProviderState {
     // MARK: - State
 
     /// A unique identifier for this provider. Used by the delegate to determine the source of results.
-    private let id: UUID = UUID()
+    let id: UUID
 
     /// Any indexes that highlights have been requested for, but haven't been applied.
     /// Indexes/ranges are added to this when highlights are requested and removed
@@ -58,18 +58,21 @@ class HighlightProviderState {
     /// Creates a new highlight provider state object.
     /// Sends the `setUp` message to the highlight provider object.
     /// - Parameters:
+    ///   - id: The ID of the provider
     ///   - delegate: The delegate for this provider. Is passed information about ranges to highlight.
     ///   - highlightProvider: The object to query for highlight information.
     ///   - textView: The text view to highlight, used by the highlight provider.
     ///   - visibleRangeProvider: A visible range provider for determining which ranges to query.
     ///   - language: The language to set up the provider with.
     init(
+        id: UUID = UUID(),
         delegate: HighlightProviderStateDelegate,
         highlightProvider: HighlightProviding,
         textView: TextView,
         visibleRangeProvider: VisibleRangeProvider,
         language: CodeLanguage
     ) {
+        self.id = id
         self.delegate = delegate
         self.highlightProvider = highlightProvider
         self.textView = textView

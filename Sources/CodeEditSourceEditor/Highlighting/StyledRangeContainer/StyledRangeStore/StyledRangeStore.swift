@@ -25,10 +25,14 @@ final class StyledRangeStore {
     }
 
     /// Consumer-facing value type for the stored values in this container.
-    struct Run {
+    struct Run: Equatable, Hashable, Sendable {
         let length: Int
         let capture: CaptureName?
         let modifiers: Set<CaptureModifiers>
+
+        static func empty(length: Int) -> Self {
+            Run(length: length, capture: nil, modifiers: [])
+        }
     }
 
     // MARK: - Core

@@ -87,14 +87,17 @@ class Highlighter: NSObject {
         self.textView = textView
         self.attributeProvider = attributeProvider
         self.visibleRangeProvider = VisibleRangeProvider(textView: textView)
-        self.rangeContainer = StyledRangeContainer()
+
+        let providerIds = providers.indices.map({ _ in UUID() })
+        self.rangeContainer = StyledRangeContainer(documentLength: textView.length, providers: providerIds)
 
         super.init()
 
-        self.providers = providers.map {
+        self.providers = providers.enumerated().map { (idx, provider) in
             HighlightProviderState(
+                id: providerIds[idx],
                 delegate: rangeContainer,
-                highlightProvider: $0,
+                highlightProvider: provider,
                 textView: textView,
                 visibleRangeProvider: visibleRangeProvider,
                 language: language
