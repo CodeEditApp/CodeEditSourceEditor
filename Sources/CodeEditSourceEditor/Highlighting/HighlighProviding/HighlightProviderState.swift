@@ -11,7 +11,8 @@ import CodeEditTextView
 import OSLog
 
 protocol HighlightProviderStateDelegate: AnyObject {
-    func applyHighlightResult(provider: UUID, highlights: [HighlightRange], rangeToHighlight: NSRange)
+    typealias ProviderID = Int
+    func applyHighlightResult(provider: ProviderID, highlights: [HighlightRange], rangeToHighlight: NSRange)
 }
 
 @MainActor
@@ -24,7 +25,7 @@ class HighlightProviderState {
     // MARK: - State
 
     /// A unique identifier for this provider. Used by the delegate to determine the source of results.
-    let id: UUID
+    let id: Int
 
     /// Any indexes that highlights have been requested for, but haven't been applied.
     /// Indexes/ranges are added to this when highlights are requested and removed
@@ -65,7 +66,7 @@ class HighlightProviderState {
     ///   - visibleRangeProvider: A visible range provider for determining which ranges to query.
     ///   - language: The language to set up the provider with.
     init(
-        id: UUID = UUID(),
+        id: Int,
         delegate: HighlightProviderStateDelegate,
         highlightProvider: HighlightProviding,
         textView: TextView,

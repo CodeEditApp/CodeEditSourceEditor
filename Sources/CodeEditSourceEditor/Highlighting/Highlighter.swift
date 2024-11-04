@@ -88,7 +88,7 @@ class Highlighter: NSObject {
         self.attributeProvider = attributeProvider
         self.visibleRangeProvider = VisibleRangeProvider(textView: textView)
 
-        let providerIds = providers.indices.map({ _ in UUID() })
+        let providerIds = providers.indices.map({ $0 })
         self.rangeContainer = StyledRangeContainer(documentLength: textView.length, providers: providerIds)
 
         super.init()

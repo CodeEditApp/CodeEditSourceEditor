@@ -2,19 +2,19 @@ import XCTest
 @testable import CodeEditSourceEditor
 
 final class StyledRangeContainerTests: XCTestCase {
-    typealias Run = StyledRangeContainer.Run
+    typealias Run = HighlightedRun
 
     func test_init() {
-        let providers = [UUID(), UUID()]
+        let providers = [0, 1]
         let store = StyledRangeContainer(documentLength: 100, providers: providers)
 
         // Have to do string conversion due to missing Comparable conformance pre-macOS 14
-        XCTAssertEqual(store._storage.keys.map(\.uuidString).sorted(), providers.map(\.uuidString).sorted())
+        XCTAssertEqual(store._storage.keys.sorted(), providers)
         XCTAssert(store._storage.values.allSatisfy({ $0.length == 100 }), "One or more providers have incorrect length")
     }
 
     func test_setHighlights() {
-        let providers = [UUID(), UUID()]
+        let providers = [0, 1]
         let store = StyledRangeContainer(documentLength: 100, providers: providers)
 
         store.applyHighlightResult(
@@ -37,5 +37,9 @@ final class StyledRangeContainerTests: XCTestCase {
                 Run(length: 50, capture: nil, modifiers: [])
             ]
         )
+    }
+
+    func test_overlappingRuns() {
+        
     }
 }

@@ -13,6 +13,7 @@ import _RopeModule
 /// Internally this class uses a `Rope` from the swift-collections package, allowing for efficient updates and
 /// retrievals.
 final class StyledRangeStore {
+    typealias Run = HighlightedRun
     typealias Index = Rope<StyledRun>.Index
     var _guts = Rope<StyledRun>()
 
@@ -22,17 +23,6 @@ final class StyledRangeStore {
 
     init(documentLength: Int) {
         self._guts = Rope([StyledRun(length: documentLength, capture: nil, modifiers: [])])
-    }
-
-    /// Consumer-facing value type for the stored values in this container.
-    struct Run: Equatable, Hashable, Sendable {
-        let length: Int
-        let capture: CaptureName?
-        let modifiers: Set<CaptureModifiers>
-
-        static func empty(length: Int) -> Self {
-            Run(length: length, capture: nil, modifiers: [])
-        }
     }
 
     // MARK: - Core
