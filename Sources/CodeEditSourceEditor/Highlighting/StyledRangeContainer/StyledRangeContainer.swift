@@ -28,9 +28,14 @@ class StyledRangeContainer {
             let minRunIdx = value.offset
             var minRun = value.element
 
-            for idx in 0..<allRuns.count where idx != minRunIdx {
+            for idx in (0..<allRuns.count).reversed() where idx != minRunIdx {
                 guard let last = allRuns[idx].last else { continue }
-                minRun.combineLowerPriority(last)
+                if idx < minRunIdx {
+                    minRun.combineHigherPriority(last)
+                } else {
+                    minRun.combineLowerPriority(last)
+                }
+
                 if last.length == minRun.length {
                     allRuns[idx].removeLast()
                 } else {
@@ -69,8 +74,13 @@ extension StyledRangeContainer: HighlightProviderStateDelegate {
             if highlight.range.lowerBound != lastIndex {
                 runs.append(.empty(length: highlight.range.lowerBound - lastIndex))
             }
-            // TODO: Modifiers
-            runs.append(HighlightedRun(length: highlight.range.length, capture: highlight.capture, modifiers: []))
+            runs.append(
+                HighlightedRun(
+                    length: highlight.range.length,
+                    capture: highlight.capture,
+                    modifiers: highlight.modifiers
+                )
+            )
             lastIndex = highlight.range.max
         }
 

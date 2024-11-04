@@ -50,7 +50,7 @@ final class StyledRangeStore {
         return runs
     }
 
-    func set(capture: CaptureName, modifiers: Set<CaptureModifiers>, for range: Range<Int>) {
+    func set(capture: CaptureName, modifiers: CaptureModifierSet, for range: Range<Int>) {
         assert(range.lowerBound >= 0, "Negative lowerBound")
         assert(range.upperBound <= _guts.count(in: OffsetMetric()), "upperBound outside valid range")
         set(runs: [Run(length: range.length, capture: capture, modifiers: modifiers)], for: range)

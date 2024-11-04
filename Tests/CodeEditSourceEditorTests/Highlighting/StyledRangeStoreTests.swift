@@ -110,7 +110,7 @@ final class StyledRangeStoreTests: XCTestCase {
 
     func test_setOneRun() {
         let store = StyledRangeStore(documentLength: 100)
-        store.set(capture: .comment, modifiers: [.builtin], for: 45..<50)
+        store.set(capture: .comment, modifiers: [.static], for: 45..<50)
         XCTAssertEqual(store.length, 100)
         XCTAssertEqual(store.count, 3)
 
@@ -125,13 +125,13 @@ final class StyledRangeStoreTests: XCTestCase {
         XCTAssertEqual(runs[2].capture, nil)
 
         XCTAssertEqual(runs[0].modifiers, [])
-        XCTAssertEqual(runs[1].modifiers, [.builtin])
+        XCTAssertEqual(runs[1].modifiers, [.static])
         XCTAssertEqual(runs[2].modifiers, [])
     }
 
     func test_queryOverlappingRun() {
         let store = StyledRangeStore(documentLength: 100)
-        store.set(capture: .comment, modifiers: [.builtin], for: 45..<50)
+        store.set(capture: .comment, modifiers: [.static], for: 45..<50)
         XCTAssertEqual(store.length, 100)
         XCTAssertEqual(store.count, 3)
 
@@ -143,16 +143,16 @@ final class StyledRangeStoreTests: XCTestCase {
         XCTAssertEqual(runs[0].capture, .comment)
         XCTAssertEqual(runs[1].capture, nil)
 
-        XCTAssertEqual(runs[0].modifiers, [.builtin])
+        XCTAssertEqual(runs[0].modifiers, [.static])
         XCTAssertEqual(runs[1].modifiers, [])
     }
 
     func test_setMultipleRuns() {
         let store = StyledRangeStore(documentLength: 100)
 
-        store.set(capture: .comment, modifiers: [.builtin], for: 5..<15)
+        store.set(capture: .comment, modifiers: [.static], for: 5..<15)
         store.set(capture: .keyword, modifiers: [], for: 20..<30)
-        store.set(capture: .string, modifiers: [.builtin], for: 35..<40)
+        store.set(capture: .string, modifiers: [.static], for: 35..<40)
         store.set(capture: .function, modifiers: [], for: 45..<50)
         store.set(capture: .variable, modifiers: [], for: 60..<70)
 
@@ -164,7 +164,7 @@ final class StyledRangeStoreTests: XCTestCase {
 
         let lengths = [5, 10, 5, 10, 5, 5, 5, 5, 10, 10, 30]
         let captures: [CaptureName?] = [nil, .comment, nil, .keyword, nil, .string, nil, .function, nil, .variable, nil]
-        let modifiers: [Set<CaptureModifiers>] = [[], [.builtin], [], [], [], [.builtin], [], [], [], [], []]
+        let modifiers: [CaptureModifierSet] = [[], [.static], [], [], [], [.static], [], [], [], [], []]
 
         runs.enumerated().forEach {
             XCTAssertEqual($0.element.length, lengths[$0.offset])
@@ -178,7 +178,7 @@ final class StyledRangeStoreTests: XCTestCase {
 
         var lengths = [5, 10, 5, 10, 5, 5, 5, 5, 10, 10, 30]
         var captures: [CaptureName?] = [nil, .comment, nil, .keyword, nil, .string, nil, .function, nil, .variable, nil]
-        var modifiers: [Set<CaptureModifiers>] = [[], [.builtin], [], [], [], [.builtin], [], [], [], [], []]
+        var modifiers: [CaptureModifierSet] = [[], [.static], [], [], [], [.static], [], [], [], [], []]
 
         store.set(
             runs: zip(zip(lengths, captures), modifiers).map {
@@ -218,7 +218,7 @@ final class StyledRangeStoreTests: XCTestCase {
 
         lengths = [5, 10, 5, 10, 10, 5, 10, 10, 30]
         captures = [nil, .comment, nil, .keyword, nil, .function, nil, .variable, nil]
-        modifiers = [[], [.builtin], [], [], [], [], [], [], []]
+        modifiers = [[], [.static], [], [], [], [], [], [], []]
 
         runs.enumerated().forEach {
             XCTAssertEqual($0.element.length, lengths[$0.offset])

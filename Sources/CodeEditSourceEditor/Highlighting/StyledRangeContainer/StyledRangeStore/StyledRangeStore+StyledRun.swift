@@ -10,9 +10,9 @@ extension StyledRangeStore {
     struct StyledRun {
         var length: Int
         let capture: CaptureName?
-        let modifiers: Set<CaptureModifiers>
+        let modifiers: CaptureModifierSet
 
-        init(length: Int, capture: CaptureName?, modifiers: Set<CaptureModifiers>) {
+        init(length: Int, capture: CaptureName?, modifiers: CaptureModifierSet) {
             self.length = length
             self.capture = capture
             self.modifiers = modifiers
