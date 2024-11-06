@@ -8,8 +8,15 @@
 import AppKit
 import CodeEditTextView
 
+@MainActor
+protocol VisibleRangeProviderDelegate: AnyObject {
+    func visibleSetDidUpdate(_ newIndices: IndexSet)
+}
+
+@MainActor
 class VisibleRangeProvider {
     private weak var textView: TextView?
+    weak var delegate: VisibleRangeProviderDelegate?
 
     var documentRange: NSRange {
         textView?.documentRange ?? .notFound
@@ -47,7 +54,7 @@ class VisibleRangeProvider {
         }
     }
 
-    private func updateVisibleSet(textView: TextView) {
+    func updateVisibleSet(textView: TextView) {
         if let newVisibleRange = textView.visibleTextRange {
             visibleSet = IndexSet(integersIn: newVisibleRange)
         }
@@ -69,6 +76,8 @@ class VisibleRangeProvider {
         }
 
         updateVisibleSet(textView: textView)
+
+        delegate?.visibleSetDidUpdate(visibleSet)
     }
 
     deinit {

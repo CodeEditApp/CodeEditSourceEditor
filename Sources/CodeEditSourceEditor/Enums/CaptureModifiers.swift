@@ -7,7 +7,7 @@
 
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokenModifiers
 
-enum CaptureModifiers: Int, CaseIterable, Sendable {
+public enum CaptureModifiers: Int8, CaseIterable, Sendable {
     case declaration
     case definition
     case readonly
@@ -21,7 +21,7 @@ enum CaptureModifiers: Int, CaseIterable, Sendable {
 }
 
 extension CaptureModifiers: CustomDebugStringConvertible {
-    var debugDescription: String {
+    public var debugDescription: String {
         switch self {
         case .declaration: return "declaration"
         case .definition: return "definition"
@@ -37,8 +37,12 @@ extension CaptureModifiers: CustomDebugStringConvertible {
     }
 }
 
-struct CaptureModifierSet: OptionSet, Equatable, Hashable {
-    let rawValue: UInt
+public struct CaptureModifierSet: OptionSet, Equatable, Hashable {
+    public let rawValue: UInt
+
+    public init(rawValue: UInt) {
+        self.rawValue = rawValue
+    }
 
     static let declaration = CaptureModifierSet(rawValue: 1 << CaptureModifiers.declaration.rawValue)
     static let definition = CaptureModifierSet(rawValue: 1 << CaptureModifiers.definition.rawValue)
@@ -53,9 +57,9 @@ struct CaptureModifierSet: OptionSet, Equatable, Hashable {
 
     var values: [CaptureModifiers] {
         var rawValue = self.rawValue
-        var values: [Int] = []
+        var values: [Int8] = []
         while rawValue > 0 {
-            values.append(rawValue.trailingZeroBitCount)
+            values.append(Int8(rawValue.trailingZeroBitCount))
             rawValue &= ~UInt(1 << rawValue.trailingZeroBitCount)
         }
         return values.compactMap({ CaptureModifiers(rawValue: $0) })

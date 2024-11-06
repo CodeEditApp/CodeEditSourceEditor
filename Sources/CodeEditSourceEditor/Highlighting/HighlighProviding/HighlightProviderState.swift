@@ -10,6 +10,7 @@ import CodeEditLanguages
 import CodeEditTextView
 import OSLog
 
+@MainActor
 protocol HighlightProviderStateDelegate: AnyObject {
     typealias ProviderID = Int
     func applyHighlightResult(provider: ProviderID, highlights: [HighlightRange], rangeToHighlight: NSRange)
@@ -94,14 +95,10 @@ class HighlightProviderState {
         pendingSet.removeAll()
         highlightInvalidRanges()
     }
-}
 
-private extension HighlightProviderState {
-    /// Invalidates a given range and adds it to the queue to be highlighted.
-    /// - Parameter range: The range to invalidate.
-    func invalidate(range: NSRange) {
-        let set = IndexSet(integersIn: range)
-
+    /// Invalidates a given index set and adds it to the queue to be highlighted.
+    /// - Parameter set: The index set to invalidate.
+    func invalidate(_ set: IndexSet) {
         if set.isEmpty {
             return
         }
@@ -110,12 +107,39 @@ private extension HighlightProviderState {
 
         highlightInvalidRanges()
     }
+}
 
+extension HighlightProviderState {
+    func storageWillUpdate(in range: NSRange) {
+        guard let textView else { return }
+        highlightProvider?.willApplyEdit(textView: textView, range: range)
+    }
+
+    func storageDidUpdate(range: NSRange, delta: Int) {
+        guard let textView else { return }
+        highlightProvider?.applyEdit(textView: textView, range: range, delta: delta) { [weak self] result in
+            switch result {
+            case .success(let invalidSet):
+                // Make sure we add in the edited range too
+                self?.invalidate(invalidSet.union(IndexSet(integersIn: range)))
+            case .failure(let error):
+                if case HighlightProvidingError.operationCancelled = error {
+                    self?.invalidate(IndexSet(integersIn: range))
+                } else {
+                    self?.logger.error("Failed to apply edit. Query returned with error: \(error)")
+                }
+            }
+        }
+    }
+}
+
+private extension HighlightProviderState {
     /// Accumulates all pending ranges and calls `queryHighlights`.
     func highlightInvalidRanges() {
         var ranges: [NSRange] = []
         while let nextRange = getNextRange() {
             ranges.append(nextRange)
+            pendingSet.insert(range: nextRange)
         }
         queryHighlights(for: ranges)
     }
@@ -147,6 +171,10 @@ private extension HighlightProviderState {
             highlightProvider?.queryHighlightsFor(textView: textView, range: range) { [weak self] result in
                 guard let providerId = self?.id else { return }
                 assert(Thread.isMainThread, "Highlighted ranges called on non-main thread.")
+
+                self?.pendingSet.remove(integersIn: range)
+                self?.validSet.insert(range: range)
+
                 switch result {
                 case .success(let highlights):
                     self?.delegate?.applyHighlightResult(
@@ -155,9 +183,8 @@ private extension HighlightProviderState {
                         rangeToHighlight: range
                     )
                 case .failure:
-                    self?.invalidate(range: range)
+                    self?.invalidate(IndexSet(integersIn: range))
                 }
-                self?.pendingSet.remove(integersIn: range)
             }
         }
     }

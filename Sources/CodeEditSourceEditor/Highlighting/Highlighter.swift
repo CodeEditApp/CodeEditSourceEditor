@@ -69,9 +69,9 @@ class Highlighter: NSObject {
     /// The object providing attributes for captures.
     private weak var attributeProvider: ThemeAttributesProviding?
 
-    private var rangeContainer: StyledRangeContainer
+    private var styleContainer: StyledRangeContainer
 
-    private var providers: [HighlightProviderState] = []
+    private var highlightProviders: [HighlightProviderState] = []
 
     private var visibleRangeProvider: VisibleRangeProvider
 
@@ -86,17 +86,20 @@ class Highlighter: NSObject {
         self.language = language
         self.textView = textView
         self.attributeProvider = attributeProvider
-        self.visibleRangeProvider = VisibleRangeProvider(textView: textView)
+
+        visibleRangeProvider = VisibleRangeProvider(textView: textView)
 
         let providerIds = providers.indices.map({ $0 })
-        self.rangeContainer = StyledRangeContainer(documentLength: textView.length, providers: providerIds)
+        styleContainer = StyledRangeContainer(documentLength: textView.length, providers: providerIds)
 
         super.init()
 
-        self.providers = providers.enumerated().map { (idx, provider) in
+        styleContainer.delegate = self
+        visibleRangeProvider.delegate = self
+        self.highlightProviders = providers.enumerated().map { (idx, provider) in
             HighlightProviderState(
                 id: providerIds[idx],
-                delegate: rangeContainer,
+                delegate: styleContainer,
                 highlightProvider: provider,
                 textView: textView,
                 visibleRangeProvider: visibleRangeProvider,
@@ -109,7 +112,7 @@ class Highlighter: NSObject {
 
     /// Invalidates all text in the editor. Useful for updating themes.
     public func invalidate() {
-        providers.forEach { $0.invalidate() }
+        highlightProviders.forEach { $0.invalidate() }
     }
 
     /// Sets the language and causes a re-highlight of the entire text.
@@ -125,19 +128,20 @@ class Highlighter: NSObject {
         )
         textView.layoutManager.invalidateLayoutForRect(textView.visibleRect)
 
-        providers.forEach { $0.setLanguage(language: language) }
+        highlightProviders.forEach { $0.setLanguage(language: language) }
     }
 
     deinit {
         self.attributeProvider = nil
         self.textView = nil
-        self.providers = []
+        self.highlightProviders = []
     }
 }
 
-extension Highlighter: NSTextStorageDelegate {
+// MARK: NSTextStorageDelegate
+
+extension Highlighter: @preconcurrency NSTextStorageDelegate {
     /// Processes an edited range in the text.
-    /// Will query tree-sitter for any updated indices and re-highlight only the ranges that need it.
     func textStorage(
         _ textStorage: NSTextStorage,
         didProcessEditing editedMask: NSTextStorageEditActions,
@@ -146,9 +150,31 @@ extension Highlighter: NSTextStorageDelegate {
     ) {
         // This method is called whenever attributes are updated, so to avoid re-highlighting the entire document
         // each time an attribute is applied, we check to make sure this is in response to an edit.
-        guard editedMask.contains(.editedCharacters) else { return }
+        guard editedMask.contains(.editedCharacters), let textView else { return }
+        if delta > 0 {
+            visibleRangeProvider.visibleSet.insert(range: editedRange)
+        }
 
-//        self.storageDidEdit(editedRange: editedRange, delta: delta)
+        visibleRangeProvider.updateVisibleSet(textView: textView)
+
+        let styleContainerRange: Range<Int>
+        let newLength: Int
+
+        if editedRange.length == 0 { // Deleting, editedRange is at beginning of the range that was deleted
+            styleContainerRange = editedRange.location..<(editedRange.location - delta)
+            newLength = 0
+        } else { // Replacing or inserting
+            styleContainerRange = editedRange.location..<(editedRange.location + editedRange.length - delta)
+            newLength = editedRange.length
+        }
+
+        styleContainer.storageUpdated(
+            replacedContentIn: styleContainerRange,
+            withCount: newLength
+        )
+
+        let providerRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
+        highlightProviders.forEach { $0.storageDidUpdate(range: providerRange, delta: delta) }
     }
 
     func textStorage(
@@ -158,6 +184,35 @@ extension Highlighter: NSTextStorageDelegate {
         changeInLength delta: Int
     ) {
         guard editedMask.contains(.editedCharacters) else { return }
-//        self.storageWillEdit(editedRange: editedRange)
+        highlightProviders.forEach { $0.storageWillUpdate(in: editedRange) }
+    }
+}
+
+// MARK: - StyledRangeContainerDelegate
+
+extension Highlighter: StyledRangeContainerDelegate {
+    func styleContainerDidUpdate(in range: NSRange) {
+        guard let textView, let attributeProvider else { return }
+        textView.textStorage.beginEditing()
+
+        let storage = textView.textStorage
+
+        var offset = range.location
+        for run in styleContainer.runsIn(range: range) {
+            let range = NSRange(location: offset, length: run.length)
+            storage?.setAttributes(attributeProvider.attributesFor(run.capture), range: range)
+            offset += run.length
+        }
+
+        textView.textStorage.endEditing()
+        textView.layoutManager.invalidateLayoutForRange(range)
+    }
+}
+
+// MARK: - VisibleRangeProviderDelegate
+
+extension Highlighter: VisibleRangeProviderDelegate {
+    func visibleSetDidUpdate(_ newIndices: IndexSet) {
+        highlightProviders.forEach { $0.invalidate(newIndices) }
     }
 }

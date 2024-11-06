@@ -109,7 +109,7 @@ public class TextViewController: NSViewController {
     public var useThemeBackground: Bool
 
     /// The provided highlight provider.
-    public var highlightProvider: HighlightProviding?
+    public var highlightProviders: [HighlightProviding]
 
     /// Optional insets to offset the text view in the scroll view by.
     public var contentInsets: NSEdgeInsets?
@@ -208,7 +208,7 @@ public class TextViewController: NSViewController {
         cursorPositions: [CursorPosition],
         editorOverscroll: CGFloat,
         useThemeBackground: Bool,
-        highlightProvider: HighlightProviding?,
+        highlightProviders: [HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets?,
         isEditable: Bool,
         isSelectable: Bool,
@@ -228,7 +228,7 @@ public class TextViewController: NSViewController {
         self.cursorPositions = cursorPositions
         self.editorOverscroll = editorOverscroll
         self.useThemeBackground = useThemeBackground
-        self.highlightProvider = highlightProvider
+        self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
@@ -295,10 +295,10 @@ public class TextViewController: NSViewController {
 
     deinit {
         if let highlighter {
-//            textView.removeStorageDelegate(highlighter)
+            textView.removeStorageDelegate(highlighter)
         }
         highlighter = nil
-        highlightProvider = nil
+        highlightProviders.removeAll()
         textCoordinators.values().forEach {
             $0.destroy()
         }

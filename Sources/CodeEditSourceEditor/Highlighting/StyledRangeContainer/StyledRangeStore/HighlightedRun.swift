@@ -41,7 +41,7 @@ extension HighlightedRun: CustomDebugStringConvertible {
         if isEmpty {
             "\(length) (empty)"
         } else {
-            "\(length) (\(capture?.rawValue ?? "none"), \(modifiers.values.debugDescription))"
+            "\(length) (\(capture.debugDescription), \(modifiers.values.debugDescription))"
         }
     }
 }

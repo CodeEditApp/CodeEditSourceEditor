@@ -54,6 +54,8 @@ public final class TreeSitterClient: HighlightProviding {
     /// Optional flag to force every operation to be done on the caller's thread.
     var forceSyncOperation: Bool = false
 
+    public init() { }
+
     // MARK: - Constants
 
     public enum Constants {

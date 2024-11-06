@@ -13,7 +13,7 @@ public struct HighlightRange: Sendable {
     let capture: CaptureName?
     let modifiers: CaptureModifierSet
 
-    init(range: NSRange, capture: CaptureName?, modifiers: CaptureModifierSet = []) {
+    public init(range: NSRange, capture: CaptureName?, modifiers: CaptureModifierSet = []) {
         self.range = range
         self.capture = capture
         self.modifiers = modifiers

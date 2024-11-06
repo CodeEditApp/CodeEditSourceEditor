@@ -10,7 +10,9 @@ import CodeEditTextView
 import TextStory
 import TextFormation
 
-extension TextView: TextInterface {
+extension TextView: @retroactive TextStoring {}
+
+extension TextView: @retroactive TextInterface {
     public var selectedRange: NSRange {
         get {
             return selectionManager

@@ -7,8 +7,15 @@
 
 import Foundation
 
+@MainActor
+protocol StyledRangeContainerDelegate: AnyObject {
+    func styleContainerDidUpdate(in range: NSRange)
+}
+
+@MainActor
 class StyledRangeContainer {
     var _storage: [ProviderID: StyledRangeStore] = [:]
+    weak var delegate: StyledRangeContainerDelegate?
 
     init(documentLength: Int, providers: [ProviderID]) {
         for provider in providers {
@@ -71,8 +78,10 @@ extension StyledRangeContainer: HighlightProviderStateDelegate {
         var lastIndex = rangeToHighlight.lowerBound
 
         for highlight in highlights {
-            if highlight.range.lowerBound != lastIndex {
+            if highlight.range.lowerBound > lastIndex {
                 runs.append(.empty(length: highlight.range.lowerBound - lastIndex))
+            } else if highlight.range.lowerBound < lastIndex {
+                continue // Skip! Overlapping
             }
             runs.append(
                 HighlightedRun(
@@ -89,5 +98,6 @@ extension StyledRangeContainer: HighlightProviderStateDelegate {
         }
 
         storage.set(runs: runs, for: rangeToHighlight.intRange)
+        delegate?.styleContainerDidUpdate(in: rangeToHighlight)
     }
 }
