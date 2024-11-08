@@ -26,7 +26,7 @@ final class StyledRangeStore {
     }
 
     // MARK: - Core
-    
+
     /// Find all runs in a range.
     /// - Parameter range: The range to query.
     /// - Returns: A continuous array of runs representing the queried range.
@@ -52,7 +52,7 @@ final class StyledRangeStore {
 
         return runs
     }
-    
+
     /// Sets a capture and modifiers for a range.
     /// - Parameters:
     ///   - capture: The capture to set.
@@ -63,7 +63,7 @@ final class StyledRangeStore {
         assert(range.upperBound <= _guts.count(in: OffsetMetric()), "upperBound outside valid range")
         set(runs: [Run(length: range.length, capture: capture, modifiers: modifiers)], for: range)
     }
-    
+
     /// Replaces a range in the document with an array of runs.
     /// - Parameters:
     ///   - runs: The runs to insert.

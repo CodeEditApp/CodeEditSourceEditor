@@ -20,7 +20,7 @@ protocol StyledRangeContainerDelegate: AnyObject {
 class StyledRangeContainer {
     var _storage: [ProviderID: StyledRangeStore] = [:]
     weak var delegate: StyledRangeContainerDelegate?
-    
+
     /// Initialize the container with a list of provider identifiers. Each provider is given an id, they should be
     /// passed on here so highlights can be associated with a provider for conflict resolution.
     /// - Parameters:
@@ -89,7 +89,8 @@ extension StyledRangeContainer: HighlightProviderStateDelegate {
     /// - Parameters:
     ///   - provider: The provider sending the highlights.
     ///   - highlights: The highlights provided. These cannot be outside the range to highlight, must be ordered by
-    ///                 position, but do not need to be continuous. Ranges not included in these highlights will be saved as empty.
+    ///                 position, but do not need to be continuous. Ranges not included in these highlights will be
+    ///                 saved as empty.
     ///   - rangeToHighlight: The range to apply the highlights to.
     func applyHighlightResult(provider: ProviderID, highlights: [HighlightRange], rangeToHighlight: NSRange) {
         assert(rangeToHighlight != .notFound, "NSNotFound is an invalid highlight range")

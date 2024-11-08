@@ -55,7 +55,7 @@ public struct CaptureModifierSet: OptionSet, Equatable, Hashable, Sendable {
     static let modification = CaptureModifierSet(rawValue: 1 << CaptureModifiers.modification.rawValue)
     static let documentation = CaptureModifierSet(rawValue: 1 << CaptureModifiers.documentation.rawValue)
     static let defaultLibrary = CaptureModifierSet(rawValue: 1 << CaptureModifiers.defaultLibrary.rawValue)
-    
+
     /// All values in the set.
     var values: [CaptureModifiers] {
         var rawValue = self.rawValue
