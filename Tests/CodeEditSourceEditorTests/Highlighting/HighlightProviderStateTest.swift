@@ -21,8 +21,8 @@ class EmptyHighlightProviderStateDelegate: HighlightProviderStateDelegate {
     ) { }
 }
 
-@MainActor
 final class HighlightProviderStateTest: XCTestCase {
+    @MainActor
     func test_setup() {
         let textView = Mock.textView()
         let rangeProvider = MockVisibleRangeProvider(textView: textView)
@@ -50,6 +50,7 @@ final class HighlightProviderStateTest: XCTestCase {
         wait(for: [setUpExpectation], timeout: 1.0)
     }
 
+    @MainActor
     func test_setLanguage() {
         let textView = Mock.textView()
         let rangeProvider = MockVisibleRangeProvider(textView: textView)
@@ -89,6 +90,7 @@ final class HighlightProviderStateTest: XCTestCase {
         wait(for: [secondSetUpExpectation], timeout: 1.0)
     }
 
+    @MainActor
     func test_storageUpdatedRangesPassedOn() {
         let textView = Mock.textView()
         let rangeProvider = MockVisibleRangeProvider(textView: textView)

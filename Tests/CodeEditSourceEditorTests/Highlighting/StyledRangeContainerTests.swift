@@ -1,10 +1,10 @@
 import XCTest
 @testable import CodeEditSourceEditor
 
-@MainActor
 final class StyledRangeContainerTests: XCTestCase {
     typealias Run = HighlightedRun
 
+    @MainActor
     func test_init() {
         let providers = [0, 1]
         let store = StyledRangeContainer(documentLength: 100, providers: providers)
@@ -14,6 +14,7 @@ final class StyledRangeContainerTests: XCTestCase {
         XCTAssert(store._storage.values.allSatisfy({ $0.length == 100 }), "One or more providers have incorrect length")
     }
 
+    @MainActor
     func test_setHighlights() {
         let providers = [0, 1]
         let store = StyledRangeContainer(documentLength: 100, providers: providers)
@@ -40,6 +41,7 @@ final class StyledRangeContainerTests: XCTestCase {
         )
     }
 
+    @MainActor
     func test_overlappingRuns() {
         let providers = [0, 1]
         let store = StyledRangeContainer(documentLength: 100, providers: providers)
@@ -69,6 +71,7 @@ final class StyledRangeContainerTests: XCTestCase {
         )
     }
 
+    @MainActor
     func test_overlappingRunsWithMoreProviders() {
         let providers = [0, 1, 2]
         let store = StyledRangeContainer(documentLength: 200, providers: providers)

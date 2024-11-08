@@ -42,7 +42,6 @@ final class HighlighterTests: XCTestCase {
     func test_canceledHighlightsAreInvalidated() {
         let highlightProvider = MockHighlightProvider()
         let attributeProvider = MockAttributeProvider()
-        let theme = Mock.theme()
         let textView = Mock.textView()
         textView.frame = NSRect(x: 0, y: 0, width: 1000, height: 1000)
         textView.setText("Hello World!")

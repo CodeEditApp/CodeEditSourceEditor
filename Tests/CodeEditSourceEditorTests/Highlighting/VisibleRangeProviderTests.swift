@@ -1,8 +1,8 @@
 import XCTest
 @testable import CodeEditSourceEditor
 
-@MainActor
 final class VisibleRangeProviderTests: XCTestCase {
+    @MainActor
     func test_updateOnScroll() {
         let (scrollView, textView) = Mock.scrollingTextView()
         textView.string = Array(repeating: "\n", count: 400).joined()
@@ -19,6 +19,7 @@ final class VisibleRangeProviderTests: XCTestCase {
         XCTAssertNotEqual(originalSet, rangeProvider.visibleSet)
     }
 
+    @MainActor
     func test_updateOnResize() {
         let (scrollView, textView) = Mock.scrollingTextView()
         textView.string = Array(repeating: "\n", count: 400).joined()
@@ -38,6 +39,7 @@ final class VisibleRangeProviderTests: XCTestCase {
     // Skipping due to a bug in the textview that returns all indices for the visible rect
     // when not in a scroll view
 
+    @MainActor
     func _test_updateOnResizeNoScrollView() {
         let textView = Mock.textView()
         textView.frame = NSRect(x: 0, y: 0, width: 100, height: 100)
