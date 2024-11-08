@@ -16,7 +16,7 @@ final class TagEditingTests: XCTestCase {
         controller = Mock.textViewController(theme: theme)
         let tsClient = Mock.treeSitterClient(forceSync: true)
         controller.treeSitterClient = tsClient
-        controller.highlightProvider = tsClient
+        controller.highlightProviders = [tsClient]
         window = NSWindow()
         window.contentViewController = controller
         controller.loadView()

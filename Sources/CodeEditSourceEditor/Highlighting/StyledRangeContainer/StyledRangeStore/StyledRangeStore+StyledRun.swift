@@ -12,12 +12,6 @@ extension StyledRangeStore {
         let capture: CaptureName?
         let modifiers: CaptureModifierSet
 
-        init(length: Int, capture: CaptureName?, modifiers: CaptureModifierSet) {
-            self.length = length
-            self.capture = capture
-            self.modifiers = modifiers
-        }
-
         static func empty(length: Int) -> Self {
             StyledRun(length: length, capture: nil, modifiers: [])
         }
@@ -65,10 +59,6 @@ extension StyledRangeStore.StyledRun: RopeElement {
 extension StyledRangeStore.StyledRun {
     struct Summary {
         var length: Int
-
-        init(length: Int) {
-            self.length = length
-        }
     }
 }
 

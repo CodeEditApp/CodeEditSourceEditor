@@ -6,6 +6,7 @@ extension StyledRangeStore {
     var count: Int { _guts.count }
 }
 
+@MainActor
 final class StyledRangeStoreTests: XCTestCase {
     override var continueAfterFailure: Bool {
         get { false }

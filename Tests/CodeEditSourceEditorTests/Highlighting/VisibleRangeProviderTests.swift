@@ -1,6 +1,7 @@
 import XCTest
 @testable import CodeEditSourceEditor
 
+@MainActor
 final class VisibleRangeProviderTests: XCTestCase {
     func test_updateOnScroll() {
         let (scrollView, textView) = Mock.scrollingTextView()

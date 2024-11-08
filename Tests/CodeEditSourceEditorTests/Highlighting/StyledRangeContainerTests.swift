@@ -1,6 +1,7 @@
 import XCTest
 @testable import CodeEditSourceEditor
 
+@MainActor
 final class StyledRangeContainerTests: XCTestCase {
     typealias Run = HighlightedRun
 
@@ -114,7 +115,5 @@ final class StyledRangeContainerTests: XCTestCase {
         XCTAssertEqual(runs[8], Run(length: 5, capture: .string, modifiers: [.static, .modification]))
         XCTAssertEqual(runs[9], Run(length: 5, capture: .string, modifiers: [.modification]))
         XCTAssertEqual(runs[10], Run(length: 90, capture: nil, modifiers: []))
-
     }
-
 }
