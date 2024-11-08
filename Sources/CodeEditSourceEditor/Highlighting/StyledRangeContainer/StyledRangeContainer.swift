@@ -34,8 +34,8 @@ class StyledRangeContainer {
 
     /// Coalesces all styled runs into a single continuous array of styled runs.
     ///
-    /// When there is an overlapping, conflicting style (eg: provider 1 gives `.comment` to the range `0..<2`, and
-    /// provider 2 gives `.string` to `1..<2`), the provider with a lower identifier will be prioritized. In the example
+    /// When there is an overlapping, conflicting style (eg: provider 2 gives `.comment` to the range `0..<2`, and
+    /// provider 1 gives `.string` to `1..<2`), the provider with a lower identifier will be prioritized. In the example
     /// case, the final value would be `0..<1=.comment` and `1..<2=.string`.
     ///
     /// - Parameter range: The range to query.
