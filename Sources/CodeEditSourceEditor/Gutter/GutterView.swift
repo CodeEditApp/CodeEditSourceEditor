@@ -242,7 +242,6 @@ public class GutterView: NSView {
         CATransaction.begin()
         superview?.clipsToBounds = false
         superview?.layer?.masksToBounds = false
-//        layer?.backgroundColor = backgroundColor?.cgColor
         updateWidthIfNeeded()
         drawBackground(context)
         drawSelectedLines(context)
