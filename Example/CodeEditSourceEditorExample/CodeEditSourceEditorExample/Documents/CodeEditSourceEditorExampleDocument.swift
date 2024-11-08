@@ -25,7 +25,7 @@ struct CodeEditSourceEditorExampleDocument: FileDocument {
         guard let data = configuration.file.regularFileContents else {
             throw CocoaError(.fileReadCorruptFile)
         }
-        text = String(data: data, encoding: .utf8)
+        text = String(decoding: data, as: UTF8.self)
     }
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {

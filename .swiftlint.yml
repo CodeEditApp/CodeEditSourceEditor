@@ -5,6 +5,7 @@ disabled_rules:
   - todo
   - trailing_comma
   - nesting
+  - optional_data_string_conversion
 
 type_name:
   excluded:
