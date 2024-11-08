@@ -197,7 +197,7 @@ public class TextViewController: NSViewController {
 
         return max(inset, .zero)
     }
-    
+
     /// The trailing inset for the editor. Grows when line wrapping is disabled.
     package var textViewTrailingInset: CGFloat {
         wrapLines ? 1 : 48
