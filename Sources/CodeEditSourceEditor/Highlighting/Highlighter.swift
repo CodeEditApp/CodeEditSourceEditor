@@ -12,50 +12,53 @@ import SwiftTreeSitter
 import CodeEditLanguages
 import OSLog
 
-/*
- +---------------------------------+
- |          Highlighter            |
- |                                 |
- |  - highlightProviders[]         |
- |  - styledRangeContainer         |
- |                                 |
- |  + refreshHighlightsIn(range:)  |
- +---------------------------------+
- |
- |
- v
- +-------------------------------+             +-----------------------------+
- |    RangeCaptureContainer      |   ------>   |         RangeStore          |
- |                               |             |                             |
- |  - manages combined ranges    |             |  - stores raw ranges &      |
- |  - layers highlight styles    |             |    captures                 |
- |  + getAttributesForRange()    |             +-----------------------------+
- +-------------------------------+
- ^
- |
- |
- +-------------------------------+
- |   HighlightProviderState[]    |   (one for each provider)
- |                               |
- |  - keeps valid/invalid ranges |
- |  - queries providers (async)  |
- |  + updateStyledRanges()       |
- +-------------------------------+
- ^
- |
- |
- +-------------------------------+
- |   HighlightProviding Object   |  (tree-sitter, LSP, spellcheck)
- +-------------------------------+
- */
-
-/// The `Highlighter` class handles efficiently highlighting the `TextView` it's provided with.
-/// It will listen for text and visibility changes, and highlight syntax as needed.
+/// This class manages fetching syntax highlights from providers, and applying those styles to the editor.
+/// Multiple highlight providers can be used to style the editor.
 ///
-/// One should rarely have to directly modify or call methods on this class. Just keep it alive in
-/// memory and it will listen for bounds changes, text changes, etc. However, to completely invalidate all
-/// highlights use the ``invalidate()`` method to re-highlight all (visible) text, and the ``setLanguage``
-/// method to update the highlighter with a new language if needed.
+/// This class manages multiple objects that help perform this task:
+/// - ``StyledRangeContainer``
+/// - ``StyledRangeStore``
+/// - ``VisibleRangeProvider``
+/// - ``HighlightProviderState``
+///
+/// A hierarchal overview of the highlighter system.
+/// ```
+/// +---------------------------------+
+/// |          Highlighter            |
+/// |                                 |
+/// |  - highlightProviders[]         |
+/// |  - styledRangeContainer         |
+/// |                                 |
+/// |  + refreshHighlightsIn(range:)  |
+/// +---------------------------------+
+/// |
+/// | Queries coalesced styles
+/// v
+/// +-------------------------------+             +-----------------------------+
+/// |    StyledRangeContainer       |   ------>   |      StyledRangeStore[]     |
+/// |                               |             |                             | Stores styles for one provider
+/// |  - manages combined ranges    |             |  - stores raw ranges &      |
+/// |  - layers highlight styles    |             |    captures                 |
+/// |  + getAttributesForRange()    |             +-----------------------------+
+/// +-------------------------------+
+/// ^
+/// | Sends highlighted runs
+/// |
+/// +-------------------------------+
+/// |   HighlightProviderState[]    |   (one for each provider)
+/// |                               |
+/// |  - keeps valid/invalid ranges |
+/// |  - queries providers (async)  |
+/// |  + updateStyledRanges()       |
+/// +-------------------------------+
+/// ^
+/// | Performs edits and sends highlight deltas, as well as calculates syntax captures for ranges
+/// |
+/// +-------------------------------+
+/// |   HighlightProviding Object   |  (tree-sitter, LSP, spellcheck)
+/// +-------------------------------+
+/// ```
+///
 @MainActor
 class Highlighter: NSObject {
     static private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "Highlighter")

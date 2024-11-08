@@ -12,17 +12,34 @@ protocol StyledRangeContainerDelegate: AnyObject {
     func styleContainerDidUpdate(in range: NSRange)
 }
 
+/// Stores styles for any number of style providers. Provides an API for providers to store their highlights, and for
+/// the overlapping highlights to be queried for a final highlight pass.
+///
+/// See ``runsIn(range:)`` for more details on how conflicting highlights are handled.
 @MainActor
 class StyledRangeContainer {
     var _storage: [ProviderID: StyledRangeStore] = [:]
     weak var delegate: StyledRangeContainerDelegate?
-
+    
+    /// Initialize the container with a list of provider identifiers. Each provider is given an id, they should be
+    /// passed on here so highlights can be associated with a provider for conflict resolution.
+    /// - Parameters:
+    ///   - documentLength: The length of the document.
+    ///   - providers: An array of identifiers given to providers.
     init(documentLength: Int, providers: [ProviderID]) {
         for provider in providers {
             _storage[provider] = StyledRangeStore(documentLength: documentLength)
         }
     }
 
+    /// Coalesces all styled runs into a single continuous array of styled runs.
+    ///
+    /// When there is an overlapping, conflicting style (eg: provider 1 gives `.comment` to the range `0..<2`, and
+    /// provider 2 gives `.string` to `1..<2`), the provider with a lower identifier will be prioritized. In the example
+    /// case, the final value would be `0..<1=.comment` and `1..<2=.string`.
+    ///
+    /// - Parameter range: The range to query.
+    /// - Returns: An array of continuous styled runs.
     func runsIn(range: NSRange) -> [HighlightedRun] {
         // Ordered by priority, lower = higher priority.
         var allRuns = _storage.sorted(by: { $0.key < $1.key }).map { $0.value.runs(in: range.intRange) }
@@ -68,6 +85,12 @@ class StyledRangeContainer {
 }
 
 extension StyledRangeContainer: HighlightProviderStateDelegate {
+    /// Applies a highlight result from a highlight provider to the storage container.
+    /// - Parameters:
+    ///   - provider: The provider sending the highlights.
+    ///   - highlights: The highlights provided. These cannot be outside the range to highlight, must be ordered by
+    ///                 position, but do not need to be continuous. Ranges not included in these highlights will be saved as empty.
+    ///   - rangeToHighlight: The range to apply the highlights to.
     func applyHighlightResult(provider: ProviderID, highlights: [HighlightRange], rangeToHighlight: NSRange) {
         assert(rangeToHighlight != .notFound, "NSNotFound is an invalid highlight range")
         guard let storage = _storage[provider] else {

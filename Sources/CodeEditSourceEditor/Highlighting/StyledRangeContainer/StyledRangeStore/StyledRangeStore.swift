@@ -26,7 +26,10 @@ final class StyledRangeStore {
     }
 
     // MARK: - Core
-
+    
+    /// Find all runs in a range.
+    /// - Parameter range: The range to query.
+    /// - Returns: A continuous array of runs representing the queried range.
     func runs(in range: Range<Int>) -> [Run] {
         assert(range.lowerBound >= 0, "Negative lowerBound")
         assert(range.upperBound <= _guts.count(in: OffsetMetric()), "upperBound outside valid range")
@@ -49,13 +52,22 @@ final class StyledRangeStore {
 
         return runs
     }
-
+    
+    /// Sets a capture and modifiers for a range.
+    /// - Parameters:
+    ///   - capture: The capture to set.
+    ///   - modifiers: The modifiers to set.
+    ///   - range: The range to write to.
     func set(capture: CaptureName, modifiers: CaptureModifierSet, for range: Range<Int>) {
         assert(range.lowerBound >= 0, "Negative lowerBound")
         assert(range.upperBound <= _guts.count(in: OffsetMetric()), "upperBound outside valid range")
         set(runs: [Run(length: range.length, capture: capture, modifiers: modifiers)], for: range)
     }
-
+    
+    /// Replaces a range in the document with an array of runs.
+    /// - Parameters:
+    ///   - runs: The runs to insert.
+    ///   - range: The range to replace.
     func set(runs: [Run], for range: Range<Int>) {
         _guts.replaceSubrange(
             range,
@@ -71,6 +83,7 @@ final class StyledRangeStore {
 // MARK: - Storage Sync
 
 extension StyledRangeStore {
+    /// Handles keeping the internal storage in sync with the document.
     func storageUpdated(replacedCharactersIn range: Range<Int>, withCount newLength: Int) {
         assert(range.lowerBound >= 0, "Negative lowerBound")
         assert(range.upperBound <= _guts.count(in: OffsetMetric()), "upperBound outside valid range")

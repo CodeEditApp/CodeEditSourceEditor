@@ -37,7 +37,8 @@ extension CaptureModifiers: CustomDebugStringConvertible {
     }
 }
 
-public struct CaptureModifierSet: OptionSet, Equatable, Hashable {
+/// A set of capture modifiers, efficiently represented by a single integer.
+public struct CaptureModifierSet: OptionSet, Equatable, Hashable, Sendable {
     public let rawValue: UInt
 
     public init(rawValue: UInt) {
@@ -54,7 +55,8 @@ public struct CaptureModifierSet: OptionSet, Equatable, Hashable {
     static let modification = CaptureModifierSet(rawValue: 1 << CaptureModifiers.modification.rawValue)
     static let documentation = CaptureModifierSet(rawValue: 1 << CaptureModifiers.documentation.rawValue)
     static let defaultLibrary = CaptureModifierSet(rawValue: 1 << CaptureModifiers.defaultLibrary.rawValue)
-
+    
+    /// All values in the set.
     var values: [CaptureModifiers] {
         var rawValue = self.rawValue
         var values: [Int8] = []

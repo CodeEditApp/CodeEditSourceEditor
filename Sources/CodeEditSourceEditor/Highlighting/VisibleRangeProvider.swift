@@ -13,6 +13,8 @@ protocol VisibleRangeProviderDelegate: AnyObject {
     func visibleSetDidUpdate(_ newIndices: IndexSet)
 }
 
+/// Provides information to ``HighlightProviderState``s about what text is visible in the editor. Keeps it's contents
+/// in sync with a text view and notifies listeners about changes so highlights can be applied to newly visible indices.
 @MainActor
 class VisibleRangeProvider {
     private weak var textView: TextView?

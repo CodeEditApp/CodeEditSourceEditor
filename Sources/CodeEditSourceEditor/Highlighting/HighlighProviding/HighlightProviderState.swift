@@ -16,6 +16,15 @@ protocol HighlightProviderStateDelegate: AnyObject {
     func applyHighlightResult(provider: ProviderID, highlights: [HighlightRange], rangeToHighlight: NSRange)
 }
 
+/// Keeps track of the valid and pending indices for a single highlight provider in the editor.
+///
+/// When ranges are invalidated, edits are made, or new text is made visible, this class is notified and queries its
+/// highlight provider for invalidated indices.
+///
+/// Once it knows which indices were invalidated by the edit, it queries the provider for highlights and passes the
+/// results to a ``StyledRangeContainer`` to eventually be applied to the editor.
+///
+/// This class will also chunk the invalid ranges to avoid performing a massive highlight query.
 @MainActor
 class HighlightProviderState {
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "HighlightProviderState")

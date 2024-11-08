@@ -19,19 +19,19 @@ struct HighlightedRun: Equatable, Hashable {
         capture == nil && modifiers.isEmpty
     }
 
-    mutating func combineLowerPriority(_ other: borrowing HighlightedRun) {
+    mutating package func combineLowerPriority(_ other: borrowing HighlightedRun) {
         if self.capture == nil {
             self.capture = other.capture
         }
         self.modifiers.formUnion(other.modifiers)
     }
 
-    mutating func combineHigherPriority(_ other: borrowing HighlightedRun) {
+    mutating package func combineHigherPriority(_ other: borrowing HighlightedRun) {
         self.capture = other.capture ?? self.capture
         self.modifiers.formUnion(other.modifiers)
     }
 
-    mutating func subtractLength(_ other: borrowing HighlightedRun) {
+    mutating package func subtractLength(_ other: borrowing HighlightedRun) {
         self.length -= other.length
     }
 }
