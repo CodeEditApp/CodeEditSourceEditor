@@ -46,7 +46,7 @@ public enum CaptureName: Int8, CaseIterable, Sendable {
     /// - Note: See ``CaptureName`` docs for why this enum isn't a raw representable.
     /// - Parameter string: A string to get the capture name from
     /// - Returns: A `CaptureNames` case
-    static func fromString(_ string: String?) -> CaptureName? { // swiftlint:disable:this cyclomatic_complexity
+    public static func fromString(_ string: String?) -> CaptureName? { // swiftlint:disable:this cyclomatic_complexity
         guard let string else { return nil }
         switch string {
         case "include":
