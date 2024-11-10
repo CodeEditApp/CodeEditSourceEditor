@@ -118,6 +118,10 @@ class Highlighter: NSObject {
         highlightProviders.forEach { $0.invalidate() }
     }
 
+    public func invalidate(_ set: IndexSet) {
+        highlightProviders.forEach { $0.invalidate(set) }
+    }
+
     /// Sets the language and causes a re-highlight of the entire text.
     /// - Parameter language: The language to update to.
     public func setLanguage(language: CodeLanguage) {
@@ -154,11 +158,6 @@ extension Highlighter: NSTextStorageDelegate {
         // This method is called whenever attributes are updated, so to avoid re-highlighting the entire document
         // each time an attribute is applied, we check to make sure this is in response to an edit.
         guard editedMask.contains(.editedCharacters), let textView else { return }
-        if delta > 0 {
-            visibleRangeProvider.visibleSet.insert(range: editedRange)
-        }
-
-        visibleRangeProvider.updateVisibleSet(textView: textView)
 
         let styleContainerRange: Range<Int>
         let newLength: Int
@@ -175,6 +174,12 @@ extension Highlighter: NSTextStorageDelegate {
             replacedContentIn: styleContainerRange,
             withCount: newLength
         )
+
+        if delta > 0 {
+            visibleRangeProvider.visibleSet.insert(range: editedRange)
+        }
+
+        visibleRangeProvider.updateVisibleSet(textView: textView)
 
         let providerRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
         highlightProviders.forEach { $0.storageDidUpdate(range: providerRange, delta: delta) }
@@ -196,19 +201,23 @@ extension Highlighter: NSTextStorageDelegate {
 extension Highlighter: StyledRangeContainerDelegate {
     func styleContainerDidUpdate(in range: NSRange) {
         guard let textView, let attributeProvider else { return }
+//        textView.layoutManager.beginTransaction()
         textView.textStorage.beginEditing()
 
         let storage = textView.textStorage
 
         var offset = range.location
         for run in styleContainer.runsIn(range: range) {
-            let range = NSRange(location: offset, length: run.length)
+            guard let range = NSRange(location: offset, length: run.length).intersection(range) else {
+                continue
+            }
             storage?.setAttributes(attributeProvider.attributesFor(run.capture), range: range)
-            offset += run.length
+            offset += range.length
         }
 
         textView.textStorage.endEditing()
-        textView.layoutManager.invalidateLayoutForRange(range)
+//        textView.layoutManager.endTransaction()
+//        textView.layoutManager.invalidateLayoutForRange(range)
     }
 }
 
@@ -216,6 +225,6 @@ extension Highlighter: StyledRangeContainerDelegate {
 
 extension Highlighter: VisibleRangeProviderDelegate {
     func visibleSetDidUpdate(_ newIndices: IndexSet) {
-        highlightProviders.forEach { $0.invalidate(newIndices) }
+        highlightProviders.forEach { $0.highlightInvalidRanges() }
     }
 }

@@ -116,6 +116,16 @@ class HighlightProviderState {
 
         highlightInvalidRanges()
     }
+
+    /// Accumulates all pending ranges and calls `queryHighlights`.
+    func highlightInvalidRanges() {
+        var ranges: [NSRange] = []
+        while let nextRange = getNextRange() {
+            ranges.append(nextRange)
+            pendingSet.insert(range: nextRange)
+        }
+        queryHighlights(for: ranges)
+    }
 }
 
 extension HighlightProviderState {
@@ -143,16 +153,6 @@ extension HighlightProviderState {
 }
 
 private extension HighlightProviderState {
-    /// Accumulates all pending ranges and calls `queryHighlights`.
-    func highlightInvalidRanges() {
-        var ranges: [NSRange] = []
-        while let nextRange = getNextRange() {
-            ranges.append(nextRange)
-            pendingSet.insert(range: nextRange)
-        }
-        queryHighlights(for: ranges)
-    }
-
     /// Gets the next `NSRange` to highlight based on the invalid set, visible set, and pending set.
     /// - Returns: An `NSRange` to highlight if it could be fetched.
     func getNextRange() -> NSRange? {
