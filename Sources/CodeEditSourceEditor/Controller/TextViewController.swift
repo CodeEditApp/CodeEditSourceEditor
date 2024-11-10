@@ -93,6 +93,10 @@ public class TextViewController: NSViewController {
         didSet {
             textView.layoutManager.wrapLines = wrapLines
             scrollView.hasHorizontalScroller = !wrapLines
+            textView.edgeInsets = HorizontalEdgeInsets(
+                left: textView.edgeInsets.left,
+                right: textViewTrailingInset // Refresh this value, see docs
+            )
         }
     }
 
@@ -192,6 +196,11 @@ public class TextViewController: NSViewController {
         }
 
         return max(inset, .zero)
+    }
+
+    /// The trailing inset for the editor. Grows when line wrapping is disabled.
+    package var textViewTrailingInset: CGFloat {
+        wrapLines ? 1 : 48
     }
 
     // MARK: Init
@@ -315,6 +324,6 @@ public class TextViewController: NSViewController {
 extension TextViewController: GutterViewDelegate {
     public func gutterViewWidthDidUpdate(newWidth: CGFloat) {
         gutterView?.frame.size.width = newWidth
-        textView?.edgeInsets = HorizontalEdgeInsets(left: newWidth, right: 0)
+        textView?.edgeInsets = HorizontalEdgeInsets(left: newWidth, right: textViewTrailingInset)
     }
 }
