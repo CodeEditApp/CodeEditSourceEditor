@@ -92,7 +92,7 @@ extension CaptureModifier: CustomDebugStringConvertible {
 
 /// A set of capture modifiers, efficiently represented by a single integer.
 public struct CaptureModifierSet: OptionSet, Equatable, Hashable, Sendable {
-    public let rawValue: UInt
+    public var rawValue: UInt
 
     public init(rawValue: UInt) {
         self.rawValue = rawValue
@@ -118,5 +118,9 @@ public struct CaptureModifierSet: OptionSet, Equatable, Hashable, Sendable {
             rawValue &= ~UInt(1 << rawValue.trailingZeroBitCount)
         }
         return values.compactMap({ CaptureModifier(rawValue: $0) })
+    }
+
+    public mutating func insert(_ value: CaptureModifier) {
+        rawValue &= 1 << value.rawValue
     }
 }
