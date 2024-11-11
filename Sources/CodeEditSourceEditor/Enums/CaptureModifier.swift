@@ -19,7 +19,7 @@ public enum CaptureModifier: Int8, CaseIterable, Sendable {
     case documentation
     case defaultLibrary
 
-    var stringValue: String {
+    public var stringValue: String {
         switch self {
         case .declaration:
             return "declaration"
@@ -44,7 +44,7 @@ public enum CaptureModifier: Int8, CaseIterable, Sendable {
         }
     }
 
-    static func fromString(_ string: String) -> CaptureModifier {
+    public static func fromString(_ string: String) -> CaptureModifier? {
         switch string {
         case "declaration":
             return .declaration
@@ -66,6 +66,8 @@ public enum CaptureModifier: Int8, CaseIterable, Sendable {
             return .documentation
         case "defaultLibrary":
             return .defaultLibrary
+        default:
+            return nil
         }
     }
 }
@@ -95,19 +97,19 @@ public struct CaptureModifierSet: OptionSet, Equatable, Hashable, Sendable {
         self.rawValue = rawValue
     }
 
-    static let declaration = CaptureModifierSet(rawValue: 1 << CaptureModifier.declaration.rawValue)
-    static let definition = CaptureModifierSet(rawValue: 1 << CaptureModifier.definition.rawValue)
-    static let readonly = CaptureModifierSet(rawValue: 1 << CaptureModifier.readonly.rawValue)
-    static let `static` = CaptureModifierSet(rawValue: 1 << CaptureModifier.static.rawValue)
-    static let deprecated = CaptureModifierSet(rawValue: 1 << CaptureModifier.deprecated.rawValue)
-    static let abstract = CaptureModifierSet(rawValue: 1 << CaptureModifier.abstract.rawValue)
-    static let async = CaptureModifierSet(rawValue: 1 << CaptureModifier.async.rawValue)
-    static let modification = CaptureModifierSet(rawValue: 1 << CaptureModifier.modification.rawValue)
-    static let documentation = CaptureModifierSet(rawValue: 1 << CaptureModifier.documentation.rawValue)
-    static let defaultLibrary = CaptureModifierSet(rawValue: 1 << CaptureModifier.defaultLibrary.rawValue)
+    public static let declaration = CaptureModifierSet(rawValue: 1 << CaptureModifier.declaration.rawValue)
+    public static let definition = CaptureModifierSet(rawValue: 1 << CaptureModifier.definition.rawValue)
+    public static let readonly = CaptureModifierSet(rawValue: 1 << CaptureModifier.readonly.rawValue)
+    public static let `static` = CaptureModifierSet(rawValue: 1 << CaptureModifier.static.rawValue)
+    public static let deprecated = CaptureModifierSet(rawValue: 1 << CaptureModifier.deprecated.rawValue)
+    public static let abstract = CaptureModifierSet(rawValue: 1 << CaptureModifier.abstract.rawValue)
+    public static let async = CaptureModifierSet(rawValue: 1 << CaptureModifier.async.rawValue)
+    public static let modification = CaptureModifierSet(rawValue: 1 << CaptureModifier.modification.rawValue)
+    public static let documentation = CaptureModifierSet(rawValue: 1 << CaptureModifier.documentation.rawValue)
+    public static let defaultLibrary = CaptureModifierSet(rawValue: 1 << CaptureModifier.defaultLibrary.rawValue)
 
     /// All values in the set.
-    var values: [CaptureModifier] {
+    public var values: [CaptureModifier] {
         var rawValue = self.rawValue
         var values: [Int8] = []
         while rawValue > 0 {
