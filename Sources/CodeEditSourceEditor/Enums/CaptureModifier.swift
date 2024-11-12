@@ -7,6 +7,20 @@
 
 // https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokenModifiers
 
+/// A collection of possible syntax capture modifiers. Represented by an integer for memory efficiency, and with the
+/// ability to convert to and from strings for ease of use with tools.
+///
+/// These are useful for helping differentiate between similar types of syntax. Eg two variables may be declared like
+/// ```swift
+/// var a = 1
+/// let b = 1
+/// ```
+/// ``CaptureName`` will represent both these later in code, but combined ``CaptureModifier`` themes can differentiate
+/// between constants (`b` in the example) and regular variables (`a` in the example).
+///
+/// This is `Int8` raw representable for memory considerations. In large documents there can be *lots* of these created
+/// and passed around, so representing them with a single integer is preferable to a string to save memory.
+///
 public enum CaptureModifier: Int8, CaseIterable, Sendable {
     case declaration
     case definition
@@ -74,20 +88,7 @@ public enum CaptureModifier: Int8, CaseIterable, Sendable {
 }
 
 extension CaptureModifier: CustomDebugStringConvertible {
-    public var debugDescription: String {
-        switch self {
-        case .declaration: return "declaration"
-        case .definition: return "definition"
-        case .readonly: return "readonly"
-        case .static: return "static"
-        case .deprecated: return "deprecated"
-        case .abstract: return "abstract"
-        case .async: return "async"
-        case .modification: return "modification"
-        case .documentation: return "documentation"
-        case .defaultLibrary: return "defaultLibrary"
-        }
-    }
+    public var debugDescription: String { stringValue }
 }
 
 /// A set of capture modifiers, efficiently represented by a single integer.
@@ -112,9 +113,15 @@ public struct CaptureModifierSet: OptionSet, Equatable, Hashable, Sendable {
     /// All values in the set.
     public var values: [CaptureModifier] {
         var rawValue = self.rawValue
+
+        // This set is represented by an integer, where each `1` in the binary number represents a value.
+        // We can treat the index of the `1` as the raw value of a ``CaptureModifier`` (the index in 0b0100 would be 2).
+        // This loops through each `1` in the `rawValue`, finds the represented modifier, and 0's out the `1` so we can
+        // get the next one using the binary & operator (0b0110 -> 0b0100 -> 0b0000 -> finish).
         var values: [Int8] = []
         while rawValue > 0 {
             values.append(Int8(rawValue.trailingZeroBitCount))
+            // Clears the bit at the desired index (0b011 & 0b110 = 0b010 if clearing index 0)
             rawValue &= ~UInt(1 << rawValue.trailingZeroBitCount)
         }
         return values.compactMap({ CaptureModifier(rawValue: $0) })

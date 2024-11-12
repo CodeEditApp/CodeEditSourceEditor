@@ -40,10 +40,10 @@ class HighlightProviderState {
     /// Any indexes that highlights have been requested for, but haven't been applied.
     /// Indexes/ranges are added to this when highlights are requested and removed
     /// after they are applied
-    private var pendingSet: IndexSet = .init()
+    private var pendingSet: IndexSet = IndexSet()
 
     /// The set of valid indexes
-    private var validSet: IndexSet = .init()
+    private var validSet: IndexSet = IndexSet()
 
     // MARK: - Providers
 

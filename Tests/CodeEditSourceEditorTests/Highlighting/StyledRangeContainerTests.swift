@@ -2,7 +2,7 @@ import XCTest
 @testable import CodeEditSourceEditor
 
 final class StyledRangeContainerTests: XCTestCase {
-    typealias Run = HighlightedRun
+    typealias Run = StyledRangeStoreRun
 
     @MainActor
     func test_init() {
@@ -27,9 +27,9 @@ final class StyledRangeContainerTests: XCTestCase {
 
         XCTAssertNotNil(store._storage[providers[0]])
         XCTAssertEqual(store._storage[providers[0]]!.count, 3)
-        XCTAssertEqual(store._storage[providers[0]]!.runs(in: 0..<100)[0].capture, nil)
+        XCTAssertNil(store._storage[providers[0]]!.runs(in: 0..<100)[0].capture)
         XCTAssertEqual(store._storage[providers[0]]!.runs(in: 0..<100)[1].capture, .comment)
-        XCTAssertEqual(store._storage[providers[0]]!.runs(in: 0..<100)[2].capture, nil)
+        XCTAssertNil(store._storage[providers[0]]!.runs(in: 0..<100)[2].capture)
 
         XCTAssertEqual(
             store.runsIn(range: NSRange(location: 0, length: 100)),

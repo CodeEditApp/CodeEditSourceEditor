@@ -13,7 +13,7 @@ import _RopeModule
 /// Internally this class uses a `Rope` from the swift-collections package, allowing for efficient updates and
 /// retrievals.
 final class StyledRangeStore {
-    typealias Run = HighlightedRun
+    typealias Run = StyledRangeStoreRun
     typealias Index = Rope<StyledRun>.Index
     var _guts = Rope<StyledRun>()
 

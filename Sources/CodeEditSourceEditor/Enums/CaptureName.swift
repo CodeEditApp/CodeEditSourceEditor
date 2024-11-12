@@ -5,7 +5,8 @@
 //  Created by Lukas Pistrol on 16.08.22.
 //
 
-/// A collection of possible capture names for `tree-sitter` with their respected raw values.
+/// A collection of possible syntax capture types. Represented by an integer for memory efficiency, and with the
+/// ability to convert to and from strings for ease of use with tools.
 ///
 /// This is `Int8` raw representable for memory considerations. In large documents there can be *lots* of these created
 /// and passed around, so representing them with a single integer is preferable to a string to save memory.

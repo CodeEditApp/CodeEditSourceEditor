@@ -120,9 +120,9 @@ final class StyledRangeStoreTests: XCTestCase {
         XCTAssertEqual(runs[1].length, 5)
         XCTAssertEqual(runs[2].length, 50)
 
-        XCTAssertEqual(runs[0].capture, nil)
+        XCTAssertNil(runs[0].capture)
         XCTAssertEqual(runs[1].capture, .comment)
-        XCTAssertEqual(runs[2].capture, nil)
+        XCTAssertNil(runs[2].capture)
 
         XCTAssertEqual(runs[0].modifiers, [])
         XCTAssertEqual(runs[1].modifiers, [.static])
@@ -141,7 +141,7 @@ final class StyledRangeStoreTests: XCTestCase {
         XCTAssertEqual(runs[1].length, 50)
 
         XCTAssertEqual(runs[0].capture, .comment)
-        XCTAssertEqual(runs[1].capture, nil)
+        XCTAssertNil(runs[1].capture)
 
         XCTAssertEqual(runs[0].modifiers, [.static])
         XCTAssertEqual(runs[1].modifiers, [])

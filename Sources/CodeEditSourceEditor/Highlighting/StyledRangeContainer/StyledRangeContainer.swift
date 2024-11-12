@@ -40,10 +40,10 @@ class StyledRangeContainer {
     ///
     /// - Parameter range: The range to query.
     /// - Returns: An array of continuous styled runs.
-    func runsIn(range: NSRange) -> [HighlightedRun] {
+    func runsIn(range: NSRange) -> [StyledRangeStoreRun] {
         // Ordered by priority, lower = higher priority.
         var allRuns = _storage.sorted(by: { $0.key < $1.key }).map { $0.value.runs(in: range.intRange) }
-        var runs: [HighlightedRun] = []
+        var runs: [StyledRangeStoreRun] = []
 
         var minValue = allRuns.compactMap { $0.last }.enumerated().min(by: { $0.1.length < $1.1.length })
 
@@ -98,7 +98,7 @@ extension StyledRangeContainer: HighlightProviderStateDelegate {
             assertionFailure("No storage found for the given provider: \(provider)")
             return
         }
-        var runs: [HighlightedRun] = []
+        var runs: [StyledRangeStoreRun] = []
         var lastIndex = rangeToHighlight.lowerBound
 
         for highlight in highlights {
@@ -108,7 +108,7 @@ extension StyledRangeContainer: HighlightProviderStateDelegate {
                 continue // Skip! Overlapping
             }
             runs.append(
-                HighlightedRun(
+                StyledRangeStoreRun(
                     length: highlight.range.length,
                     capture: highlight.capture,
                     modifiers: highlight.modifiers

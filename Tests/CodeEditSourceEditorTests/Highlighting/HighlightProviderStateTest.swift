@@ -22,12 +22,20 @@ class EmptyHighlightProviderStateDelegate: HighlightProviderStateDelegate {
 }
 
 final class HighlightProviderStateTest: XCTestCase {
+    var textView: TextView!
+    var rangeProvider: MockVisibleRangeProvider!
+    var delegate: EmptyHighlightProviderStateDelegate!
+
+    @MainActor
+    override func setUp() async throws {
+        try await super.setUp()
+        textView = Mock.textView()
+        rangeProvider = MockVisibleRangeProvider(textView: textView)
+        delegate = EmptyHighlightProviderStateDelegate()
+    }
+
     @MainActor
     func test_setup() {
-        let textView = Mock.textView()
-        let rangeProvider = MockVisibleRangeProvider(textView: textView)
-        let delegate = EmptyHighlightProviderStateDelegate()
-
         let setUpExpectation = XCTestExpectation(description: "Set up called.")
 
         let mockProvider = Mock.highlightProvider(
@@ -52,10 +60,6 @@ final class HighlightProviderStateTest: XCTestCase {
 
     @MainActor
     func test_setLanguage() {
-        let textView = Mock.textView()
-        let rangeProvider = MockVisibleRangeProvider(textView: textView)
-        let delegate = EmptyHighlightProviderStateDelegate()
-
         let firstSetUpExpectation = XCTestExpectation(description: "Set up called.")
         let secondSetUpExpectation = XCTestExpectation(description: "Set up called.")
 
@@ -92,10 +96,6 @@ final class HighlightProviderStateTest: XCTestCase {
 
     @MainActor
     func test_storageUpdatedRangesPassedOn() {
-        let textView = Mock.textView()
-        let rangeProvider = MockVisibleRangeProvider(textView: textView)
-        let delegate = EmptyHighlightProviderStateDelegate()
-
         var updatedRanges: [(NSRange, Int)] = []
 
         let mockProvider = Mock.highlightProvider(
