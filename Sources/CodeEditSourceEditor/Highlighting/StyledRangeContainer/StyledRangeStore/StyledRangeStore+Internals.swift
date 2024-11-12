@@ -19,7 +19,7 @@ extension StyledRangeStore {
 extension StyledRangeStore {
     /// Coalesce items before and after the given range.
     ///
-    /// Compares the next run with the run at the given range. I they're the same, removes the next run and grows the
+    /// Compares the next run with the run at the given range. If they're the same, removes the next run and grows the
     /// pointed-at run.
     /// Performs the same operation with the preceding run, with the difference that the pointed-at run is removed
     /// rather than the queried one.
