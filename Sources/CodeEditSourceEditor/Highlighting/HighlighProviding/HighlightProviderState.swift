@@ -191,8 +191,13 @@ private extension HighlightProviderState {
                         highlights: highlights,
                         rangeToHighlight: range
                     )
-                case .failure:
-                    self?.invalidate(IndexSet(integersIn: range))
+                case .failure(let error):
+                    // Only invalidate if it was cancelled.
+                    if let error = error as? HighlightProvidingError, error == .operationCancelled {
+                        self?.invalidate(IndexSet(integersIn: range))
+                    } else {
+                        self?.logger.debug("Highlighter Error: \(error.localizedDescription)")
+                    }
                 }
             }
         }
