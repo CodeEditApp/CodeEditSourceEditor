@@ -28,7 +28,7 @@ extension TextView {
                     return nil
                 }
                 let range = NSRange(location..<end)
-                return self?.stringForRange(range)?.data(using: String.nativeUTF16Encoding)
+                return self?.textStorage.substring(from: range)?.data(using: String.nativeUTF16Encoding)
             }
             return DispatchQueue.syncMainIfNot(workItem)
         }
@@ -43,7 +43,7 @@ extension TextView {
     func createReadCallback() -> SwiftTreeSitter.Predicate.TextProvider {
         return { [weak self] range, _ in
             let workItem: () -> String? = {
-                self?.stringForRange(range)
+                self?.textStorage.substring(from: range)
             }
             return DispatchQueue.syncMainIfNot(workItem)
         }
