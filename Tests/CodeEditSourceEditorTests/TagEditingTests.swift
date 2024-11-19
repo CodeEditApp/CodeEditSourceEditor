@@ -20,6 +20,7 @@ final class TagEditingTests: XCTestCase {
         window = NSWindow()
         window.contentViewController = controller
         controller.loadView()
+        window.setFrame(NSRect(x: 0, y: 0, width: 1000, height: 1000), display: false)
     }
 
     func test_tagClose() {
