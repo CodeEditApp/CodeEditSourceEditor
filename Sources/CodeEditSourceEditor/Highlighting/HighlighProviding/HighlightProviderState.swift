@@ -139,8 +139,9 @@ extension HighlightProviderState {
         highlightProvider?.applyEdit(textView: textView, range: range, delta: delta) { [weak self] result in
             switch result {
             case .success(let invalidSet):
+                let modifiedRange = NSRange(location: range.location, length: range.length + delta)
                 // Make sure we add in the edited range too
-                self?.invalidate(invalidSet.union(IndexSet(integersIn: range)))
+                self?.invalidate(invalidSet.union(IndexSet(integersIn: modifiedRange)))
             case .failure(let error):
                 if case HighlightProvidingError.operationCancelled = error {
                     self?.invalidate(IndexSet(integersIn: range))
