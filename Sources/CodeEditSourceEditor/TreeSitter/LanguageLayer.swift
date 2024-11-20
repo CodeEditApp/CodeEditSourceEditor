@@ -8,7 +8,7 @@
 import Foundation
 import CodeEditLanguages
 import SwiftTreeSitter
-import tree_sitter
+import TreeSitter
 
 extension Parser {
     func reset() {

@@ -22,7 +22,7 @@ let package = Package(
         // tree-sitter languages
         .package(
             url: "https://github.com/CodeEditApp/CodeEditLanguages.git",
-            exact: "0.1.19"
+            exact: "0.1.20"
         ),
         // SwiftLint
         .package(
