@@ -116,12 +116,13 @@ final class HighlightProviderStateTest: XCTestCase {
             language: .swift
         )
 
+        // These reflect values like `NSTextStorage` outputs, and differ from ranges used in other tests.
         let mockEdits: [(NSRange, Int)] = [
-            (NSRange(location: 0, length: 10), 10), // Inserted 10
-            (NSRange(location: 5, length: 0), -2), // Deleted 2 at 5
-            (NSRange(location: 0, length: 2), 3), // Replaced 0-2 with 3
+            (NSRange(location: 0, length: 0), 10), // Inserted 10
+            (NSRange(location: 3, length: 2), -2), // Deleted 2 at 5
+            (NSRange(location: 0, length: 2), 1),  // Replaced 0-2 with 3
             (NSRange(location: 9, length: 1), 1),
-            (NSRange(location: 0, length: 0), -10)
+            (NSRange(location: 0, length: 10), -10)
         ]
 
         for edit in mockEdits {
