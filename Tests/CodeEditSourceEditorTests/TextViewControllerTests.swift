@@ -418,5 +418,14 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.cursorPositions[1].line, 3)
         XCTAssertEqual(controller.cursorPositions[1].column, 1)
     }
+
+    // MARK: - TreeSitterClient
+
+    func test_treeSitterSetUp() {
+        // Set up with a user-initiated `TreeSitterClient` should still use that client for things like tag
+        // completion.
+        let controller = Mock.textViewController(theme: Mock.theme())
+        XCTAssertNotNil(controller.treeSitterClient)
+    }
 }
 // swiftlint:enable all

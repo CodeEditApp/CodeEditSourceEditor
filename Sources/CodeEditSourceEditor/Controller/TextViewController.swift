@@ -254,6 +254,11 @@ public class TextViewController: NSViewController {
             platformGuardedSystemCursor = false
         }
 
+        if let idx = highlightProviders.firstIndex(where: { $0 is TreeSitterClient }),
+           let client = highlightProviders[idx] as? TreeSitterClient {
+            self.treeSitterClient = client
+        }
+
         self.textView = TextView(
             string: string,
             font: font,
