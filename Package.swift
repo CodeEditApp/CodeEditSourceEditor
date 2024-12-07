@@ -17,13 +17,13 @@ let package = Package(
         // A fast, efficient, text view for code.
         .package(
 //            url: "https://github.com/CodeEditApp/CodeEditTextView.git",
-//            from: "0.7.6"
+//            from: "0.7.7"
             path: "../CodeEditTextView"
         ),
         // tree-sitter languages
         .package(
             url: "https://github.com/CodeEditApp/CodeEditLanguages.git",
-            exact: "0.1.19"
+            exact: "0.1.20"
         ),
         // SwiftLint
         .package(

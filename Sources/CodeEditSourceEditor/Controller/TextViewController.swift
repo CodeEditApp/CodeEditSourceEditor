@@ -93,6 +93,10 @@ public class TextViewController: NSViewController {
         didSet {
             textView.layoutManager.wrapLines = wrapLines
             scrollView.hasHorizontalScroller = !wrapLines
+            textView.edgeInsets = HorizontalEdgeInsets(
+                left: textView.edgeInsets.left,
+                right: textViewTrailingInset // Refresh this value, see docs
+            )
         }
     }
 
@@ -109,7 +113,7 @@ public class TextViewController: NSViewController {
     public var useThemeBackground: Bool
 
     /// The provided highlight provider.
-    public var highlightProvider: HighlightProviding?
+    public var highlightProviders: [HighlightProviding]
 
     /// Optional insets to offset the text view in the scroll view by.
     public var contentInsets: NSEdgeInsets?
@@ -194,6 +198,11 @@ public class TextViewController: NSViewController {
         return max(inset, .zero)
     }
 
+    /// The trailing inset for the editor. Grows when line wrapping is disabled.
+    package var textViewTrailingInset: CGFloat {
+        wrapLines ? 1 : 48
+    }
+
     // MARK: Init
 
     init(
@@ -208,7 +217,7 @@ public class TextViewController: NSViewController {
         cursorPositions: [CursorPosition],
         editorOverscroll: CGFloat,
         useThemeBackground: Bool,
-        highlightProvider: HighlightProviding?,
+        highlightProviders: [HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets?,
         isEditable: Bool,
         isSelectable: Bool,
@@ -228,7 +237,7 @@ public class TextViewController: NSViewController {
         self.cursorPositions = cursorPositions
         self.editorOverscroll = editorOverscroll
         self.useThemeBackground = useThemeBackground
-        self.highlightProvider = highlightProvider
+        self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
@@ -243,6 +252,11 @@ public class TextViewController: NSViewController {
             platformGuardedSystemCursor = useSystemCursor
         } else {
             platformGuardedSystemCursor = false
+        }
+
+        if let idx = highlightProviders.firstIndex(where: { $0 is TreeSitterClient }),
+           let client = highlightProviders[idx] as? TreeSitterClient {
+            self.treeSitterClient = client
         }
 
         self.textView = TextView(
@@ -297,7 +311,7 @@ public class TextViewController: NSViewController {
             textView.removeStorageDelegate(highlighter)
         }
         highlighter = nil
-        highlightProvider = nil
+        highlightProviders.removeAll()
         textCoordinators.values().forEach {
             $0.destroy()
         }
@@ -314,6 +328,6 @@ public class TextViewController: NSViewController {
 extension TextViewController: GutterViewDelegate {
     public func gutterViewWidthDidUpdate(newWidth: CGFloat) {
         gutterView?.frame.size.width = newWidth
-        textView?.edgeInsets = HorizontalEdgeInsets(left: newWidth, right: 0)
+        textView?.edgeInsets = HorizontalEdgeInsets(left: newWidth, right: textViewTrailingInset)
     }
 }

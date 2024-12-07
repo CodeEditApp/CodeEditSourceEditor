@@ -15,31 +15,14 @@ extension TextViewController {
             self.highlighter = nil
         }
 
-        self.highlighter = Highlighter(
+        let highlighter = Highlighter(
             textView: textView,
-            highlightProvider: highlightProvider,
-            theme: theme,
+            providers: highlightProviders,
             attributeProvider: self,
             language: language
         )
-        textView.addStorageDelegate(highlighter!)
-        setHighlightProvider(self.highlightProvider)
-    }
-
-    internal func setHighlightProvider(_ highlightProvider: HighlightProviding? = nil) {
-        var provider: HighlightProviding?
-
-        if let highlightProvider = highlightProvider {
-            provider = highlightProvider
-        } else {
-            self.treeSitterClient = TreeSitterClient()
-            provider = self.treeSitterClient!
-        }
-
-        if let provider = provider {
-            self.highlightProvider = provider
-            highlighter?.setHighlightProvider(provider)
-        }
+        textView.addStorageDelegate(highlighter)
+        self.highlighter = highlighter
     }
 }
 

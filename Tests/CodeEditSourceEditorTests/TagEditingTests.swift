@@ -16,10 +16,11 @@ final class TagEditingTests: XCTestCase {
         controller = Mock.textViewController(theme: theme)
         let tsClient = Mock.treeSitterClient(forceSync: true)
         controller.treeSitterClient = tsClient
-        controller.highlightProvider = tsClient
+        controller.highlightProviders = [tsClient]
         window = NSWindow()
         window.contentViewController = controller
         controller.loadView()
+        window.setFrame(NSRect(x: 0, y: 0, width: 1000, height: 1000), display: false)
     }
 
     func test_tagClose() {

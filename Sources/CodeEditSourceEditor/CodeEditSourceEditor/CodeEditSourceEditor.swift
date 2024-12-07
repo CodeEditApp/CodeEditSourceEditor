@@ -56,7 +56,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         editorOverscroll: CGFloat = 0,
         cursorPositions: Binding<[CursorPosition]>,
         useThemeBackground: Bool = true,
-        highlightProvider: HighlightProviding? = nil,
+        highlightProviders: [HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
         isSelectable: Bool = true,
@@ -77,7 +77,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.wrapLines = wrapLines
         self.editorOverscroll = editorOverscroll
         self.cursorPositions = cursorPositions
-        self.highlightProvider = highlightProvider
+        self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
@@ -131,7 +131,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         editorOverscroll: CGFloat = 0,
         cursorPositions: Binding<[CursorPosition]>,
         useThemeBackground: Bool = true,
-        highlightProvider: HighlightProviding? = nil,
+        highlightProviders: [HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
         isSelectable: Bool = true,
@@ -152,7 +152,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.wrapLines = wrapLines
         self.editorOverscroll = editorOverscroll
         self.cursorPositions = cursorPositions
-        self.highlightProvider = highlightProvider
+        self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
@@ -178,7 +178,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     private var editorOverscroll: CGFloat
     package var cursorPositions: Binding<[CursorPosition]>
     private var useThemeBackground: Bool
-    private var highlightProvider: HighlightProviding?
+    private var highlightProviders: [HighlightProviding]
     private var contentInsets: NSEdgeInsets?
     private var isEditable: Bool
     private var isSelectable: Bool
@@ -204,7 +204,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             cursorPositions: cursorPositions.wrappedValue,
             editorOverscroll: editorOverscroll,
             useThemeBackground: useThemeBackground,
-            highlightProvider: highlightProvider,
+            highlightProviders: highlightProviders,
             contentInsets: contentInsets,
             isEditable: isEditable,
             isSelectable: isSelectable,

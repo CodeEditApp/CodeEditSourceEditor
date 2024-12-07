@@ -52,7 +52,9 @@ public final class TreeSitterClient: HighlightProviding {
     package var pendingEdits: Atomic<[InputEdit]> = Atomic([])
 
     /// Optional flag to force every operation to be done on the caller's thread.
-    var forceSyncOperation: Bool = false
+    package var forceSyncOperation: Bool = false
+
+    public init() { }
 
     // MARK: - Constants
 
@@ -208,7 +210,7 @@ public final class TreeSitterClient: HighlightProviding {
         completion: @escaping @MainActor (Result<[HighlightRange], Error>) -> Void
     ) {
         let operation = { [weak self] in
-            return self?.queryHighlightsForRange(range: range) ?? []
+            return (self?.queryHighlightsForRange(range: range) ?? []).sorted { $0.range.location < $1.range.location }
         }
 
         let longQuery = range.length > Constants.maxSyncQueryLength

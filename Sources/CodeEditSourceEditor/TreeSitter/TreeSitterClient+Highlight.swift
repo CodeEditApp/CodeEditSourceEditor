@@ -87,17 +87,35 @@ extension TreeSitterClient {
         cursor: QueryCursor,
         includedRange: NSRange
     ) -> [HighlightRange] {
+        guard let readCallback else { return [] }
+        var ranges: [NSRange: Int] = [:]
         return cursor
+            .resolve(with: .init(textProvider: readCallback)) // Resolve our cursor against the query
             .flatMap { $0.captures }
-            .compactMap {
-                // Sometimes `cursor.setRange` just doesn't work :( so we have to do a redundant check for a valid range
-                // in the included range
-                let intersectionRange = $0.range.intersection(includedRange) ?? .zero
-                // Check that the capture name is one CESE can parse. If not, ignore it completely.
-                if intersectionRange.length > 0, let captureName = CaptureName.fromString($0.name) {
-                    return HighlightRange(range: intersectionRange, capture: captureName)
+            .reversed() // SwiftTreeSitter returns captures in the reverse order of what we need to filter with.
+            .compactMap { capture in
+                let range = capture.range
+                let index = capture.index
+
+                // Lower indexed captures are favored over higher, this is why we reverse it above
+                if let existingLevel = ranges[range], existingLevel <= index {
+                    return nil
                 }
-                return nil
+
+                guard let captureName = CaptureName.fromString(capture.name) else {
+                    return nil
+                }
+
+                // Update the filter level to the current index since it's lower and a 'valid' capture
+                ranges[range] = index
+
+                // Validate range and capture name
+                let intersectionRange = range.intersection(includedRange) ?? .zero
+                guard intersectionRange.length > 0 else {
+                    return nil
+                }
+
+                return HighlightRange(range: intersectionRange, capture: captureName)
             }
     }
 }
