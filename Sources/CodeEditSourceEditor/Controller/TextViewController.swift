@@ -329,6 +329,6 @@ public class TextViewController: NSViewController {
 extension TextViewController: GutterViewDelegate {
     public func gutterViewWidthDidUpdate(newWidth: CGFloat) {
         gutterView?.frame.size.width = newWidth
-        textView?.edgeInsets = HorizontalEdgeInsets(left: newWidth, right: 0.0)
+        textView?.edgeInsets = HorizontalEdgeInsets(left: newWidth, right: textViewTrailingInset)
     }
 }
