@@ -42,7 +42,6 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///                    character's width between characters, etc. Defaults to `1.0`
     ///   - bracketPairHighlight: The type of highlight to use to highlight bracket pairs.
     ///                           See `BracketPairHighlight` for more information. Defaults to `nil`
-    ///   - useSystemCursor: If true, uses the system cursor on `>=macOS 14`.
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
     ///   - coordinators: Any text coordinators for the view to use. See ``TextViewCoordinator`` for more information.
     public init(
@@ -191,6 +190,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
 
     public typealias NSViewControllerType = TextViewController
 
+    // TODO: SET COMPLETIONPROVIDER FOR TEXTVIEW
     public func makeNSViewController(context: Context) -> TextViewController {
         let controller = TextViewController(
             string: "",
@@ -235,6 +235,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         Coordinator(text: text, cursorPositions: cursorPositions)
     }
 
+    // TODO: SET COMPLETIONPROVIDER FOR TEXTVIEW
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
         if !context.coordinator.isUpdateFromTextView {
             // Prevent infinite loop of update notifications
@@ -301,10 +302,6 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             controller.letterSpacing = letterSpacing
         }
 
-        if controller.useSystemCursor != useSystemCursor {
-            controller.useSystemCursor = useSystemCursor
-        }
-
         controller.bracketPairHighlight = bracketPairHighlight
     }
 
@@ -325,8 +322,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.indentOption == indentOption &&
         controller.tabWidth == tabWidth &&
         controller.letterSpacing == letterSpacing &&
-        controller.bracketPairHighlight == bracketPairHighlight &&
-        controller.useSystemCursor == useSystemCursor
+        controller.bracketPairHighlight == bracketPairHighlight
     }
 }
 
