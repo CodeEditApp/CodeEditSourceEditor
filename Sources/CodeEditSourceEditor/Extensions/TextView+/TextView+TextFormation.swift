@@ -46,7 +46,7 @@ extension TextView: TextInterface {
         textStorage.beginEditing()
 
         layoutManager.willReplaceCharactersInRange(range: mutation.range, with: mutation.string)
-//        _undoManager?.registerMutation(mutation)
+        _undoManager?.registerMutation(mutation)
         textStorage.replaceCharacters(in: mutation.range, with: mutation.string)
         selectionManager.didReplaceCharacters(
             in: mutation.range,
