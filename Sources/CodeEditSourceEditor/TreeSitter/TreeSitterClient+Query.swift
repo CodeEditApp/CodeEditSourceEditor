@@ -12,7 +12,7 @@ import SwiftTreeSitter
 // Functions for querying and navigating the tree-sitter node tree. These functions should throw if not able to be
 // performed asynchronously as (currently) any editing tasks that would use these must be performed synchronously.
 
-public extension TreeSitterClient {
+extension TreeSitterClient {
     public struct NodeResult {
         let id: TreeSitterLanguage
         let language: Language
