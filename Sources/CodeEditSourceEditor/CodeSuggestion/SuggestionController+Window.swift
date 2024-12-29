@@ -9,7 +9,7 @@ import AppKit
 
 extension SuggestionController {
     /// Will constrain the window's frame to be within the visible screen
-    public func constrainWindowToScreenEdges(cursorRect: NSRect) {
+    public func constrainWindowToScreenEdges(cursorRect: NSRect, horizontalOffset: CGFloat) {
         guard let window = self.window,
               let screenFrame = window.screen?.visibleFrame else {
             return
@@ -17,9 +17,8 @@ extension SuggestionController {
 
         let windowSize = window.frame.size
         let padding: CGFloat = 22
-        // TODO: PASS IN OFFSET
         var newWindowOrigin = NSPoint(
-            x: cursorRect.origin.x - Self.WINDOW_PADDING - 13 - 16.5,
+            x: cursorRect.origin.x - Self.WINDOW_PADDING - horizontalOffset,
             y: cursorRect.origin.y
         )
 
@@ -237,7 +236,8 @@ extension SuggestionController: NSTableViewDataSource, NSTableViewDelegate {
     }
 
     public func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        (items[row] as? any CodeSuggestionEntry)?.view
+        guard row >= 0, row < items.count else { return nil }
+        return (items[row] as? any CodeSuggestionEntry)?.view
     }
 
     public func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
@@ -254,6 +254,7 @@ extension SuggestionController: NSTableViewDataSource, NSTableViewDelegate {
     }
 }
 
+/// Used to draw a custom selection highlight for the table row
 private class CodeSuggestionRowView: NSTableRowView {
     override func drawSelection(in dirtyRect: NSRect) {
         guard isSelected else { return }

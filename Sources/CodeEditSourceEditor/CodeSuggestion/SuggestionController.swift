@@ -252,11 +252,3 @@ public final class SuggestionController: NSWindowController {
         removeEventMonitors()
     }
 }
-
-public protocol SuggestionControllerDelegate: AnyObject {
-    func applyCompletionItem(item: CompletionItem)
-    func onClose()
-    func onCompletion()
-    func onCursorMove()
-    func onItemSelect(item: CompletionItem)
-}
