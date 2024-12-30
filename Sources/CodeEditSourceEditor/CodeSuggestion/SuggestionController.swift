@@ -6,7 +6,6 @@
 //
 
 import AppKit
-import LanguageServerProtocol
 
 /// Represents an item that can be displayed in the code suggestion view
 public protocol CodeSuggestionEntry {
@@ -25,7 +24,7 @@ public final class SuggestionController: NSWindowController {
     }
 
     /// The items to be displayed in the window
-    public var items: [CompletionItem] = [] {
+    public var items: [CodeSuggestionEntry] = [] {
         didSet { onItemsUpdated() }
     }
 
