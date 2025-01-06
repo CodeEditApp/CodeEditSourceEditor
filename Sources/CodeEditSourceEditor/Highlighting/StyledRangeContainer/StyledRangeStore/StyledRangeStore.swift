@@ -17,6 +17,10 @@ final class StyledRangeStore {
     typealias Index = Rope<StyledRun>.Index
     var _guts = Rope<StyledRun>()
 
+    var length: Int {
+        _guts.count(in: OffsetMetric())
+    }
+
     /// A small performance improvement for multiple identical queries, as often happens when used
     /// in ``StyledRangeContainer``
     private var cache: (range: Range<Int>, runs: [Run])?

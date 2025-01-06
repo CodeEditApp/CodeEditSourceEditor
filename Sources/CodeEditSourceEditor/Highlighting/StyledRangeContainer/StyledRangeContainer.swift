@@ -32,6 +32,21 @@ class StyledRangeContainer {
         }
     }
 
+    func addProvider(_ id: ProviderID, documentLength: Int) {
+        assert(!_storage.keys.contains(id), "Provider already exists")
+        _storage[id] = StyledRangeStore(documentLength: documentLength)
+    }
+
+    func removeProvider(_ id: ProviderID) {
+        guard let provider = _storage[id] else { return }
+        applyHighlightResult(
+            provider: id,
+            highlights: [],
+            rangeToHighlight: NSRange(location: 0, length: provider.length)
+        )
+        _storage.removeValue(forKey: id)
+    }
+
     /// Coalesces all styled runs into a single continuous array of styled runs.
     ///
     /// When there is an overlapping, conflicting style (eg: provider 2 gives `.comment` to the range `0..<2`, and
