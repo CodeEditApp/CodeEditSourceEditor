@@ -8,15 +8,6 @@
 import _RopeModule
 
 extension StyledRangeStore {
-    /// Finds a Rope index, given a string offset.
-    /// - Parameter offset: The offset to query for.
-    /// - Returns: The index of the containing element in the rope.
-    func findIndex(at offset: Int) -> (index: Index, remaining: Int) {
-        _guts.find(at: offset, in: OffsetMetric(), preferEnd: false)
-    }
-}
-
-extension StyledRangeStore {
     /// Coalesce items before and after the given range.
     ///
     /// Compares the next run with the run at the given range. If they're the same, removes the next run and grows the
@@ -32,7 +23,7 @@ extension StyledRangeStore {
         }
 
         index = findIndex(at: range.lowerBound).index
-        if index > _guts.startIndex && _guts.count > 1 {
+        if index > _guts.startIndex && index < _guts.endIndex && _guts.count > 1 {
             index = _guts.index(before: index)
             coalesceRunAfter(index: &index)
         }
