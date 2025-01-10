@@ -23,15 +23,6 @@ public struct EditorTheme: Equatable {
             self.bold = bold
             self.italic = italic
         }
-
-        var fontDescriptorTraits: NSFontDescriptor.SymbolicTraits {
-            switch (bold, italic) {
-            case (true, true): return [.bold, .italic]
-            case (true, false): return [.bold]
-            case (false, true): return [.italic]
-            case (false, false): return []
-            }
-        }
     }
 
     public var text: Attribute
@@ -125,7 +116,16 @@ public struct EditorTheme: Equatable {
             return font
         }
 
-        let descriptor = font.fontDescriptor.withSymbolicTraits(attributes.fontDescriptorTraits)
-        return NSFont(descriptor: descriptor, size: font.pointSize) ?? font
+        var font = font
+
+        if attributes.bold {
+            font = NSFontManager.shared.convert(font, toHaveTrait: .boldFontMask)
+        }
+
+        if attributes.italic {
+            font = NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask)
+        }
+
+        return font
     }
 }

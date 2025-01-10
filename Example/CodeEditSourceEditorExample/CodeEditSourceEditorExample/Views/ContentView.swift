@@ -16,7 +16,7 @@ struct ContentView: View {
 
     @State private var language: CodeLanguage = .default
     @State private var theme: EditorTheme = .standard
-    @State private var font: NSFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+    @State private var font: NSFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .medium)
     @AppStorage("wrapLines") private var wrapLines: Bool = true
     @State private var cursorPositions: [CursorPosition] = []
     @AppStorage("systemCursor") private var useSystemCursor: Bool = false
