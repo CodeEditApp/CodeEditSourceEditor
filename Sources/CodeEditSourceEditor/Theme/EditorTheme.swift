@@ -14,9 +14,9 @@ import SwiftUI
 public struct EditorTheme: Equatable {
     /// Represents attributes that can be applied to style text.
     public struct Attribute: Equatable, Hashable, Sendable {
-        let color: NSColor
-        let bold: Bool
-        let italic: Bool
+        public let color: NSColor
+        public let bold: Bool
+        public let italic: Bool
 
         public init(color: NSColor, bold: Bool = false, italic: Bool = false) {
             self.color = color
