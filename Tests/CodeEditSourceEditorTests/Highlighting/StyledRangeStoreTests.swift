@@ -36,6 +36,20 @@ final class StyledRangeStoreTests: XCTestCase {
         XCTAssertEqual(store.count, 1, "Failed to coalesce")
     }
 
+    func test_storageRemoveSingleCharacterFromEnd() {
+        let store = StyledRangeStore(documentLength: 10)
+        store.set( // Test that we can delete a character associated with a single syntax run too
+            runs: [
+                .empty(length: 8),
+                .init(length: 1, modifiers: [.abstract]),
+                .init(length: 1, modifiers: [.declaration])],
+            for: 0..<10
+        )
+        store.storageUpdated(replacedCharactersIn: 9..<10, withCount: 0)
+        XCTAssertEqual(store.length, 9, "Failed to remove correct range")
+        XCTAssertEqual(store.count, 2)
+    }
+
     func test_storageRemoveFromBeginning() {
         let store = StyledRangeStore(documentLength: 100)
         store.storageUpdated(replacedCharactersIn: 0..<15, withCount: 0)
