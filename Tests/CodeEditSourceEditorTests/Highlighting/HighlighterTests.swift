@@ -243,7 +243,7 @@ final class HighlighterTests: XCTestCase {
 
         let highlighter = Mock.highlighter(
             textView: textView,
-            highlightProvider: highlightProvider,
+            highlightProviders: [highlightProvider],
             attributeProvider: attributeProvider
         )
         textView.addStorageDelegate(highlighter)
