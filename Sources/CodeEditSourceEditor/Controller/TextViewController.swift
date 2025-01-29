@@ -262,7 +262,7 @@ public class TextViewController: NSViewController {
         self.textView = TextView(
             string: string,
             font: font,
-            textColor: theme.text,
+            textColor: theme.text.color,
             lineHeightMultiplier: lineHeightMultiple,
             wrapLines: wrapLines,
             isEditable: isEditable,

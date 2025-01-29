@@ -12,24 +12,7 @@ final class TextViewControllerTests: XCTestCase {
     var theme: EditorTheme!
 
     override func setUpWithError() throws {
-        theme = EditorTheme(
-            text: .textColor,
-            insertionPoint: .textColor,
-            invisibles: .gray,
-            background: .textBackgroundColor,
-            lineHighlight: .highlightColor,
-            selection: .selectedTextColor,
-            keywords: .systemPink,
-            commands: .systemBlue,
-            types: .systemMint,
-            attributes: .systemTeal,
-            variables: .systemCyan,
-            values: .systemOrange,
-            numbers: .systemYellow,
-            strings: .systemRed,
-            characters: .systemRed,
-            comments: .systemGreen
-        )
+        theme = Mock.theme()
         controller = TextViewController(
             string: "",
             language: .default,
