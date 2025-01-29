@@ -266,7 +266,7 @@ extension Highlighter: NSTextStorageDelegate {
 extension Highlighter: StyledRangeContainerDelegate {
     func styleContainerDidUpdate(in range: NSRange) {
         guard let textView, let attributeProvider else { return }
-//        textView.layoutManager.beginTransaction()
+        textView.layoutManager.beginTransaction()
         textView.textStorage.beginEditing()
 
         let storage = textView.textStorage
@@ -281,8 +281,8 @@ extension Highlighter: StyledRangeContainerDelegate {
         }
 
         textView.textStorage.endEditing()
-//        textView.layoutManager.endTransaction()
-//        textView.layoutManager.invalidateLayoutForRange(range)
+        textView.layoutManager.endTransaction()
+        textView.layoutManager.invalidateLayoutForRange(range)
     }
 }
 
