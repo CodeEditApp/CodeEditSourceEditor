@@ -57,7 +57,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         editorOverscroll: CGFloat = 0,
         cursorPositions: Binding<[CursorPosition]>,
         useThemeBackground: Bool = true,
-        highlightProviders: [HighlightProviding] = [TreeSitterClient()],
+        highlightProviders: [any HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
         isSelectable: Bool = true,
@@ -132,7 +132,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         editorOverscroll: CGFloat = 0,
         cursorPositions: Binding<[CursorPosition]>,
         useThemeBackground: Bool = true,
-        highlightProviders: [HighlightProviding] = [TreeSitterClient()],
+        highlightProviders: [any HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
         isSelectable: Bool = true,
@@ -179,7 +179,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     private var editorOverscroll: CGFloat
     package var cursorPositions: Binding<[CursorPosition]>
     private var useThemeBackground: Bool
-    private var highlightProviders: [HighlightProviding]
+    private var highlightProviders: [any HighlightProviding]
     private var contentInsets: NSEdgeInsets?
     private var isEditable: Bool
     private var isSelectable: Bool
@@ -305,6 +305,10 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             controller.useSystemCursor = useSystemCursor
         }
 
+        if !areHighlightProvidersEqual(controller: controller) {
+            controller.setHighlightProviders(highlightProviders)
+        }
+
         controller.bracketPairHighlight = bracketPairHighlight
     }
 
@@ -326,7 +330,12 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.tabWidth == tabWidth &&
         controller.letterSpacing == letterSpacing &&
         controller.bracketPairHighlight == bracketPairHighlight &&
-        controller.useSystemCursor == useSystemCursor
+        controller.useSystemCursor == useSystemCursor &&
+        areHighlightProvidersEqual(controller: controller)
+    }
+
+    private func areHighlightProvidersEqual(controller: TextViewController) -> Bool {
+        controller.highlightProviders.map { ObjectIdentifier($0) } == highlightProviders.map { ObjectIdentifier($0) }
     }
 }
 

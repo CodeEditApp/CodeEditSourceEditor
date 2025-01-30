@@ -122,13 +122,13 @@ enum Mock {
     @MainActor
     static func highlighter(
         textView: TextView,
-        highlightProvider: HighlightProviding,
+        highlightProviders: [HighlightProviding],
         attributeProvider: ThemeAttributesProviding,
         language: CodeLanguage = .default
     ) -> Highlighter {
         Highlighter(
             textView: textView,
-            providers: [highlightProvider],
+            providers: highlightProviders,
             attributeProvider: attributeProvider,
             language: language
         )

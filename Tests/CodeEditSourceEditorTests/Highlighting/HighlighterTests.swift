@@ -5,10 +5,18 @@ import CodeEditLanguages
 
 final class HighlighterTests: XCTestCase {
     class MockHighlightProvider: HighlightProviding {
-        var didQueryFirst = false
-        var didQueryAgain = false
+        var setUpCount = 0
+        var queryCount = 0
+        var queryResponse: @MainActor () -> (Result<[HighlightRange], Error>)
 
-        func setUp(textView: TextView, codeLanguage: CodeLanguage) { }
+        init(setUpCount: Int = 0, queryResponse: @escaping () -> Result<[HighlightRange], Error> = { .success([]) }) {
+            self.setUpCount = setUpCount
+            self.queryResponse = queryResponse
+        }
+
+        func setUp(textView: TextView, codeLanguage: CodeLanguage) {
+            setUpCount += 1
+        }
 
         func applyEdit(
             textView: TextView,
@@ -24,13 +32,8 @@ final class HighlighterTests: XCTestCase {
             range: NSRange,
             completion: @escaping @MainActor (Result<[HighlightRange], Error>) -> Void
         ) {
-            if !didQueryFirst {
-                didQueryFirst = true
-                completion(.failure(HighlightProvidingError.operationCancelled))
-            } else {
-                didQueryAgain = true
-                completion(.success([]))
-            }
+            queryCount += 1
+            completion(queryResponse())
         }
     }
 
@@ -61,19 +64,32 @@ final class HighlighterTests: XCTestCase {
 
     @MainActor
     func test_canceledHighlightsAreInvalidated() {
-        let highlightProvider = MockHighlightProvider()
+        var didQueryOnce = false
+        var didQueryAgain = false
+
+        let highlightProvider = MockHighlightProvider {
+            didQueryOnce = true
+            if didQueryOnce {
+                didQueryAgain = true
+                return .success([]) // succeed second
+            }
+            return .failure(HighlightProvidingError.operationCancelled) // fail first, causing an invalidation
+        }
+        let attributeProvider = MockAttributeProvider()
+        let textView = Mock.textView()
+        textView.frame = NSRect(x: 0, y: 0, width: 1000, height: 1000)
         textView.setText("Hello World!")
         let highlighter = Mock.highlighter(
             textView: textView,
-            highlightProvider: highlightProvider,
+            highlightProviders: [highlightProvider],
             attributeProvider: attributeProvider
         )
 
         highlighter.invalidate()
 
-        XCTAssertTrue(highlightProvider.didQueryFirst, "Highlighter did not invalidate text.")
+        XCTAssertTrue(didQueryOnce, "Highlighter did not invalidate text.")
         XCTAssertTrue(
-            highlightProvider.didQueryAgain,
+            didQueryAgain,
             "Highlighter did not query again after cancelling the first request"
         )
     }
@@ -86,7 +102,7 @@ final class HighlighterTests: XCTestCase {
 
         let highlighter = Mock.highlighter(
             textView: textView,
-            highlightProvider: highlightProvider,
+            highlightProviders: [highlightProvider],
             attributeProvider: attributeProvider
         )
 
@@ -101,6 +117,122 @@ final class HighlighterTests: XCTestCase {
         XCTAssertEqual(sentryStorage.editedIndices, invalidSet) // Should only cause highlights on the first line
     }
 
+    @MainActor
+    func test_insertedNewHighlightProvider() {
+        let highlightProvider1 = MockHighlightProvider(queryResponse: { .success([]) })
+        let attributeProvider = MockAttributeProvider()
+        let textView = Mock.textView()
+        textView.frame = NSRect(x: 0, y: 0, width: 1000, height: 1000)
+        textView.setText("Hello World!")
+        let highlighter = Mock.highlighter(
+            textView: textView,
+            highlightProviders: [highlightProvider1],
+            attributeProvider: attributeProvider
+        )
+
+        XCTAssertEqual(highlightProvider1.setUpCount, 1, "Highlighter 1 did not set up")
+
+        let newProvider = MockHighlightProvider(queryResponse: { .success([]) })
+        highlighter.setProviders([highlightProvider1, newProvider])
+
+        XCTAssertEqual(highlightProvider1.setUpCount, 1, "Highlighter 1 set up again")
+        XCTAssertEqual(newProvider.setUpCount, 1, "New highlighter did not set up")
+    }
+
+    @MainActor
+    func test_removedHighlightProvider() {
+        let highlightProvider1 = MockHighlightProvider()
+        let highlightProvider2 = MockHighlightProvider()
+
+        let attributeProvider = MockAttributeProvider()
+        let textView = Mock.textView()
+        textView.frame = NSRect(x: 0, y: 0, width: 1000, height: 1000)
+        textView.setText("Hello World!")
+
+        let highlighter = Mock.highlighter(
+            textView: textView,
+            highlightProviders: [highlightProvider1, highlightProvider2],
+            attributeProvider: attributeProvider
+        )
+
+        XCTAssertEqual(highlightProvider1.setUpCount, 1, "Highlighter 1 did not set up")
+        XCTAssertEqual(highlightProvider2.setUpCount, 1, "Highlighter 2 did not set up")
+
+        highlighter.setProviders([highlightProvider1])
+
+        highlighter.invalidate()
+
+        XCTAssertEqual(highlightProvider1.queryCount, 1, "Highlighter 1 was not queried")
+        XCTAssertEqual(highlightProvider2.queryCount, 0, "Removed highlighter was queried")
+    }
+
+    @MainActor
+    func test_movedHighlightProviderIsNotSetUpAgain() {
+        let highlightProvider1 = MockHighlightProvider()
+        let highlightProvider2 = MockHighlightProvider()
+
+        let attributeProvider = MockAttributeProvider()
+        let textView = Mock.textView()
+        textView.frame = NSRect(x: 0, y: 0, width: 1000, height: 1000)
+        textView.setText("Hello World!")
+
+        let highlighter = Mock.highlighter(
+            textView: textView,
+            highlightProviders: [highlightProvider1, highlightProvider2],
+            attributeProvider: attributeProvider
+        )
+
+        XCTAssertEqual(highlightProvider1.setUpCount, 1, "Highlighter 1 did not set up")
+        XCTAssertEqual(highlightProvider2.setUpCount, 1, "Highlighter 2 did not set up")
+
+        highlighter.setProviders([highlightProvider2, highlightProvider1])
+
+        highlighter.invalidate()
+
+        XCTAssertEqual(highlightProvider1.queryCount, 1, "Highlighter 1 was not queried")
+        XCTAssertEqual(highlightProvider2.queryCount, 1, "Highlighter 2 was not queried")
+    }
+
+    @MainActor
+    func test_randomHighlightProvidersChanging() {
+        for _ in 0..<25 {
+            let highlightProviders = (0..<Int.random(in: 10..<20)).map { _ in MockHighlightProvider() }
+
+            let firstSet = highlightProviders.shuffled().filter({ _ in Bool.random() })
+            let secondSet = highlightProviders.shuffled().filter({ _ in Bool.random() })
+            let thirdSet = highlightProviders.shuffled().filter({ _ in Bool.random() })
+
+            let attributeProvider = MockAttributeProvider()
+            let textView = Mock.textView()
+            textView.frame = NSRect(x: 0, y: 0, width: 1000, height: 1000)
+            textView.setText("Hello World!")
+
+            let highlighter = Mock.highlighter(
+                textView: textView,
+                highlightProviders: firstSet,
+                attributeProvider: attributeProvider
+            )
+
+            highlighter.invalidate()
+
+            XCTAssertTrue(firstSet.allSatisfy({ $0.setUpCount == 1 }), "Not all in first batch were set up")
+            XCTAssertTrue(firstSet.allSatisfy({ $0.queryCount == 1 }), "Not all in first batch were queried")
+
+            highlighter.setProviders(secondSet)
+            highlighter.invalidate()
+
+            XCTAssertTrue(secondSet.allSatisfy({ $0.setUpCount == 1 }), "All in second batch were not set up twice")
+            XCTAssertTrue(secondSet.allSatisfy({ $0.queryCount >= 1 }), "Not all in second batch were queried")
+
+            highlighter.setProviders(thirdSet)
+            highlighter.invalidate()
+
+            // Can't check for == 1 here because some might be removed in #2 and added back in in #3
+            XCTAssertTrue(thirdSet.allSatisfy({ $0.setUpCount >= 1 }), "Not all in third batch were set up")
+            XCTAssertTrue(thirdSet.allSatisfy({ $0.queryCount >= 1 }), "Not all in third batch were queried")
+        }
+    }
+
     // This test isn't testing much highlighter functionality. However, we've seen crashes and other errors after normal
     // editing that were caused by the highlighter and would only have been caught by an integration test like this.
     @MainActor
@@ -111,7 +243,7 @@ final class HighlighterTests: XCTestCase {
 
         let highlighter = Mock.highlighter(
             textView: textView,
-            highlightProvider: highlightProvider,
+            highlightProviders: [highlightProvider],
             attributeProvider: attributeProvider
         )
         textView.addStorageDelegate(highlighter)
