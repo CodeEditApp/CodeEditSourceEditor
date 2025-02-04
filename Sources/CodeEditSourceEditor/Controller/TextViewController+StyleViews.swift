@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import CodeEditTextView
 
 extension TextViewController {
     package func generateParagraphStyle() -> NSMutableParagraphStyle {
