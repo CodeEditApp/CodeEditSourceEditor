@@ -86,7 +86,8 @@ extension TextViewController {
     ) {
         textView.replaceCharacters(
             in: NSRange(location: lineInfo.range.lowerBound, length: 0),
-            with: indentationChars
+            with: indentationChars,
+            skipUpdateSelection: true
         )
     }
 
@@ -102,7 +103,8 @@ extension TextViewController {
 
         textView.replaceCharacters(
             in: NSRange(location: lineInfo.range.lowerBound, length: removeSpacesCount),
-            with: ""
+            with: "",
+            skipUpdateSelection: true
         )
     }
 
@@ -114,7 +116,8 @@ extension TextViewController {
         if lineContent.first == "\t" {
             textView.replaceCharacters(
                 in: NSRange(location: lineInfo.range.lowerBound, length: 1),
-                with: ""
+                with: "",
+                skipUpdateSelection: true
             )
         }
     }
