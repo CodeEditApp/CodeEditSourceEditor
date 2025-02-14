@@ -18,7 +18,7 @@ extension TextViewController: TextViewDelegate {
         }
     }
 
-    public func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with: String) {
+    public func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with string: String) {
         gutterView.needsDisplay = true
         for coordinator in self.textCoordinators.values() {
             if let coordinator = coordinator as? TextViewDelegate {
