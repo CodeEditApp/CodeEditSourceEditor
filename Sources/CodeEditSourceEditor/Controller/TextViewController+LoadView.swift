@@ -11,10 +11,15 @@ import AppKit
 extension TextViewController {
     // swiftlint:disable:next function_body_length
     override public func loadView() {
+        let stackView = NSStackView()
+        stackView.orientation = .vertical
+        stackView.spacing = 10
+        stackView.alignment = .leading
+        stackView.translatesAutoresizingMaskIntoConstraints = false
+
         scrollView = NSScrollView()
         textView.postsFrameChangedNotifications = true
         textView.translatesAutoresizingMaskIntoConstraints = false
-
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.contentView.postsFrameChangedNotifications = true
         scrollView.hasVerticalScroller = true
@@ -34,7 +39,46 @@ extension TextViewController {
             for: .horizontal
         )
 
-        self.view = scrollView
+        searchField = NSTextField()
+        searchField.placeholderString = "Search..."
+        searchField.controlSize = .regular // TODO: a
+        searchField.focusRingType = .none
+        searchField.bezelStyle = .roundedBezel
+        searchField.drawsBackground = true
+        searchField.translatesAutoresizingMaskIntoConstraints = false
+        searchField.action = #selector(onSubmit)
+        searchField.target = self
+        
+        prevButton = NSButton(title: "◀︎", target: self, action: #selector(prevButtonClicked))
+        prevButton.bezelStyle = .texturedRounded
+        prevButton.controlSize = .small
+        prevButton.translatesAutoresizingMaskIntoConstraints = false
+
+         nextButton = NSButton(title: "▶︎", target: self, action: #selector(nextButtonClicked))
+        nextButton.bezelStyle = .texturedRounded
+        nextButton.controlSize = .small
+        nextButton.translatesAutoresizingMaskIntoConstraints = false
+
+        stackview = NSStackView()
+        stackview.orientation = .horizontal
+        stackview.spacing = 8
+        stackview.edgeInsets = NSEdgeInsets(top: 5, left: 10, bottom: 5, right: 10)
+        stackview.translatesAutoresizingMaskIntoConstraints = false
+
+        stackview.addView(searchField, in: .leading)
+        stackview.addView(prevButton, in: .trailing)
+        stackview.addView(nextButton, in: .trailing)
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(searchFieldUpdated(_:)),
+            name: NSControl.textDidChangeNotification,
+            object: searchField
+        )
+
+        stackView.addArrangedSubview(stackview)
+        stackView.addArrangedSubview(scrollView)
+        self.view = stackView
         if let _undoManager {
             textView.setUndoManager(_undoManager)
         }
@@ -46,10 +90,15 @@ extension TextViewController {
         setUpTextFormation()
 
         NSLayoutConstraint.activate([
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            stackView.topAnchor.constraint(equalTo: view.topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+
+            //            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+//            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+//            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+//            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
         if !cursorPositions.isEmpty {
