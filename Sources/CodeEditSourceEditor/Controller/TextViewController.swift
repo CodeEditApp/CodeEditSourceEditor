@@ -21,9 +21,16 @@ public class TextViewController: NSViewController {
     public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
 
     var scrollView: NSScrollView!
-    private(set) public var textView: TextView!
+
+    // SEARCH
+    var stackview: NSStackView!
+    var searchField: NSTextField!
+    var prevButton: NSButton!
+    var nextButton: NSButton!
+
+    var textView: TextView!
     var gutterView: GutterView!
-    internal var _undoManager: CEUndoManager?
+    internal var _undoManager: CEUndoManager!
     /// Internal reference to any injected layers in the text view.
     internal var highlightLayers: [CALayer] = []
     internal var systemAppearance: NSAppearance.Name?
