@@ -40,10 +40,7 @@ final class SearchViewController: NSViewController {
         view.addSubview(searchBar)
         view.addSubview(childView)
 
-        searchBarVerticalConstraint = searchBar.topAnchor.constraint(
-            equalTo: view.topAnchor,
-            constant: isShowingSearchBar ? 0 : searchBar.frame.height
-        )
+        searchBarVerticalConstraint = searchBar.topAnchor.constraint(equalTo: view.topAnchor)
 
         NSLayoutConstraint.activate([
             // Constrain search bar
@@ -57,6 +54,15 @@ final class SearchViewController: NSViewController {
             childView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             childView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
+    }
+
+    override func viewWillAppear() {
+        super.viewWillAppear()
+        if isShowingSearchBar { // Update constraints for initial state
+            showSearchBar()
+        } else {
+            hideSearchBar()
+        }
     }
 }
 
@@ -89,7 +95,7 @@ extension SearchViewController {
         _ = searchBar?.searchField.resignFirstResponder()
         withAnimation {
             // Update the search bar's top anchor to be equal to it's negative height, hiding it above the view.
-            searchBarVerticalConstraint.constant = -searchBar.frame.height
+            searchBarVerticalConstraint.constant = -searchBar.fittingSize.height
             searchBarVerticalConstraint.isActive = true
         }
     }
