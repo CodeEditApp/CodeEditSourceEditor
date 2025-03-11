@@ -14,17 +14,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CodeEditApp/CodeEditTextView.git",
       "state" : {
-        "revision" : "2619cb945b4d6c2fc13f22ba873ba891f552b0f3",
-        "version" : "0.7.6"
-      }
-    },
-    {
-      "identity" : "mainoffender",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/mattmassicotte/MainOffender",
-      "state" : {
-        "revision" : "343cc3797618c29b48b037b4e2beea0664e75315",
-        "version" : "0.1.0"
+        "revision" : "1792167c751b6668b4743600d2cf73d2829dd18a",
+        "version" : "0.7.9"
       }
     },
     {
@@ -50,8 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/lukepistrol/SwiftLintPlugin",
       "state" : {
-        "revision" : "f69b412a765396d44dc9f4788a5b79919c1ca9e3",
-        "version" : "0.2.2"
+        "revision" : "3825ebf8d55bb877c91bc897e8e3d0c001f16fba",
+        "version" : "0.58.2"
       }
     },
     {
@@ -68,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/TextFormation",
       "state" : {
-        "revision" : "f6faed6abd768ae95b70d10113d4008a7cac57a7",
-        "version" : "0.8.2"
+        "revision" : "b1ce9a14bd86042bba4de62236028dc4ce9db6a1",
+        "version" : "0.9.0"
       }
     },
     {
@@ -77,8 +68,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/TextStory",
       "state" : {
-        "revision" : "8883fa739aa213e70e6cb109bfbf0a0b551e4cb5",
-        "version" : "0.8.0"
+        "revision" : "8dc9148b46fcf93b08ea9d4ef9bdb5e4f700e008",
+        "version" : "0.9.0"
       }
     }
   ],
