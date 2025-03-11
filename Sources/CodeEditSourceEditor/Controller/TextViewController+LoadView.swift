@@ -11,11 +11,7 @@ import AppKit
 extension TextViewController {
     // swiftlint:disable:next function_body_length
     override public func loadView() {
-        let stackView = NSStackView()
-        stackView.orientation = .vertical
-        stackView.spacing = 10
-        stackView.alignment = .leading
-        stackView.translatesAutoresizingMaskIntoConstraints = false
+        super.loadView()
 
         scrollView = NSScrollView()
         textView.postsFrameChangedNotifications = true
@@ -39,46 +35,12 @@ extension TextViewController {
             for: .horizontal
         )
 
-        searchField = NSTextField()
-        searchField.placeholderString = "Search..."
-        searchField.controlSize = .regular // TODO: a
-        searchField.focusRingType = .none
-        searchField.bezelStyle = .roundedBezel
-        searchField.drawsBackground = true
-        searchField.translatesAutoresizingMaskIntoConstraints = false
-        searchField.action = #selector(onSubmit)
-        searchField.target = self
-        
-        prevButton = NSButton(title: "◀︎", target: self, action: #selector(prevButtonClicked))
-        prevButton.bezelStyle = .texturedRounded
-        prevButton.controlSize = .small
-        prevButton.translatesAutoresizingMaskIntoConstraints = false
+        let searchController = SearchViewController(target: self, childView: scrollView)
+        addChild(searchController)
+        self.view.addSubview(searchController.view)
+        searchController.view.viewDidMoveToSuperview()
+        self.searchController = searchController
 
-         nextButton = NSButton(title: "▶︎", target: self, action: #selector(nextButtonClicked))
-        nextButton.bezelStyle = .texturedRounded
-        nextButton.controlSize = .small
-        nextButton.translatesAutoresizingMaskIntoConstraints = false
-
-        stackview = NSStackView()
-        stackview.orientation = .horizontal
-        stackview.spacing = 8
-        stackview.edgeInsets = NSEdgeInsets(top: 5, left: 10, bottom: 5, right: 10)
-        stackview.translatesAutoresizingMaskIntoConstraints = false
-
-        stackview.addView(searchField, in: .leading)
-        stackview.addView(prevButton, in: .trailing)
-        stackview.addView(nextButton, in: .trailing)
-
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(searchFieldUpdated(_:)),
-            name: NSControl.textDidChangeNotification,
-            object: searchField
-        )
-
-        stackView.addArrangedSubview(stackview)
-        stackView.addArrangedSubview(scrollView)
-        self.view = stackView
         if let _undoManager {
             textView.setUndoManager(_undoManager)
         }
@@ -90,15 +52,10 @@ extension TextViewController {
         setUpTextFormation()
 
         NSLayoutConstraint.activate([
-            stackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            stackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            stackView.topAnchor.constraint(equalTo: view.topAnchor),
-            stackView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-
-            //            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-//            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-//            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-//            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            searchController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            searchController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            searchController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            searchController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
         if !cursorPositions.isEmpty {
@@ -162,18 +119,64 @@ extension TextViewController {
         if let localEventMonitor = self.localEvenMonitor {
             NSEvent.removeMonitor(localEventMonitor)
         }
-        self.localEvenMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+        self.localEvenMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event -> NSEvent? in
             guard self?.view.window?.firstResponder == self?.textView else { return event }
+            let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
-            let tabKey: UInt16 = 0x30
-            let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
-
-            if event.keyCode == tabKey {
-                return self?.handleTab(event: event, modifierFalgs: modifierFlags)
-            } else {
-                return self?.handleCommand(event: event, modifierFlags: modifierFlags)
+            switch (modifierFlags, event.charactersIgnoringModifiers?.lowercased()) {
+            case (.command, "/"):
+                self?.handleCommandSlash()
+                return nil
+            case (.command, "f"):
+                _ = self?.textView.resignFirstResponder()
+                self?.searchController?.showSearchBar()
+                return nil
+            case ([], "\u{1b}"): // Escape key
+                self?.searchController?.hideSearchBar()
+                _ = self?.textView.becomeFirstResponder()
+                self?.textView.selectionManager.setSelectedRanges(
+                    self?.textView.selectionManager.textSelections.map { $0.range } ?? []
+                )
+                return nil
+            default:
+                return event
             }
         }
+    }
+    func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
+        let commandKey = NSEvent.ModifierFlags.command.rawValue
+
+        switch (modifierFlags, event.charactersIgnoringModifiers) {
+        case (commandKey, "/"):
+            handleCommandSlash()
+            return nil
+        case (commandKey, "["):
+            handleIndent(inwards: true)
+            return nil
+        case (commandKey, "]"):
+            handleIndent()
+            return nil
+        case (_, _):
+            return event
+        }
+    }
+
+    /// Handles the tab key event.
+    /// If the Shift key is pressed, it handles unindenting. If no modifier key is pressed, it checks if multiple lines
+    /// are highlighted and handles indenting accordingly.
+    ///
+    /// - Returns: The original event if it should be passed on, or `nil` to indicate handling within the method.
+    func handleTab(event: NSEvent, modifierFalgs: UInt) -> NSEvent? {
+        let shiftKey = NSEvent.ModifierFlags.shift.rawValue
+
+        if modifierFalgs == shiftKey {
+            handleIndent(inwards: true)
+        } else {
+            // Only allow tab to work if multiple lines are selected
+            guard multipleLinesHighlighted() else { return event }
+            handleIndent()
+        }
+        return nil
     }
     func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
         let commandKey = NSEvent.ModifierFlags.command.rawValue

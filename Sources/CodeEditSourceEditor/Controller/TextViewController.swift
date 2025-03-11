@@ -20,6 +20,8 @@ public class TextViewController: NSViewController {
     // swiftlint:disable:next line_length
     public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
 
+    weak var searchController: SearchViewController?
+
     var scrollView: NSScrollView!
 
     // SEARCH
