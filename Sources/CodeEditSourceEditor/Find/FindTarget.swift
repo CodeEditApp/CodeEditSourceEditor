@@ -1,5 +1,5 @@
 //
-//  SearchTarget.swift
+//  FindTarget.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 3/10/25.
@@ -9,10 +9,10 @@
 // to this one?
 import CodeEditTextView
 
-protocol SearchTarget: AnyObject {
+protocol FindTarget: AnyObject {
     var emphasizeAPI: EmphasizeAPI? { get }
     var text: String { get }
-    
+
     var cursorPositions: [CursorPosition] { get }
     func setCursorPositions(_ positions: [CursorPosition])
     func updateCursorPosition()

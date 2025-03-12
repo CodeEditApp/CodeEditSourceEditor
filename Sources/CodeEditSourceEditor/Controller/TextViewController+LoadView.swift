@@ -35,7 +35,7 @@ extension TextViewController {
             for: .horizontal
         )
 
-        let searchController = SearchViewController(target: self, childView: scrollView)
+        let searchController = FindViewController(target: self, childView: scrollView)
         addChild(searchController)
         self.view.addSubview(searchController.view)
         searchController.view.viewDidMoveToSuperview()
@@ -129,14 +129,10 @@ extension TextViewController {
                 return nil
             case (.command, "f"):
                 _ = self?.textView.resignFirstResponder()
-                self?.searchController?.showSearchBar()
+                self?.searchController?.showFindPanel()
                 return nil
             case ([], "\u{1b}"): // Escape key
-                self?.searchController?.hideSearchBar()
-                _ = self?.textView.becomeFirstResponder()
-                self?.textView.selectionManager.setSelectedRanges(
-                    self?.textView.selectionManager.textSelections.map { $0.range } ?? []
-                )
+                self?.searchController?.findPanel.cancel()
                 return nil
             default:
                 return event

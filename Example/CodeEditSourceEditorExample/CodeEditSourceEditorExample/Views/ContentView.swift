@@ -28,26 +28,7 @@ struct ContentView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("Language")
-                LanguagePicker(language: $language)
-                    .frame(maxWidth: 100)
-                Toggle("Wrap Lines", isOn: $wrapLines)
-                if #available(macOS 14, *) {
-                    Toggle("Use System Cursor", isOn: $useSystemCursor)
-                } else {
-                    Toggle("Use System Cursor", isOn: $useSystemCursor)
-                        .disabled(true)
-                        .help("macOS 14 required")
-                }
-                Spacer()
-                Text(getLabel(cursorPositions))
-            }
-            .padding(4)
-            .zIndex(2)
-            .background(Color(NSColor.windowBackgroundColor))
-            Divider()
+        VStack {
             ZStack {
                 if isInLongParse {
                     VStack {
@@ -74,10 +55,41 @@ struct ContentView: View {
                     cursorPositions: $cursorPositions,
                     useSystemCursor: useSystemCursor
                 )
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    VStack(spacing: 0) {
+                        Divider()
+                        HStack {
+                            Toggle("Wrap Lines", isOn: $wrapLines)
+                                .toggleStyle(.button)
+                                .buttonStyle(.accessoryBar)
+                            if #available(macOS 14, *) {
+                                Toggle("Use System Cursor", isOn: $useSystemCursor)
+                                    .toggleStyle(.button)
+                                    .buttonStyle(.accessoryBar)
+                            } else {
+                                Toggle("Use System Cursor", isOn: $useSystemCursor)
+                                    .disabled(true)
+                                    .help("macOS 14 required")
+                                    .toggleStyle(.button)
+                                    .buttonStyle(.accessoryBar)
+                            }
+                            Spacer()
+                            Text(getLabel(cursorPositions))
+                            Divider()
+                                .frame(height: 12)
+                            LanguagePicker(language: $language)
+                                .buttonStyle(.borderless)
+                        }
+                        .padding(.horizontal, 8)
+                        .frame(height: 28)
+                    }
+                    .background(.bar)
+                    .zIndex(2)
+                }
             }
-        }
-        .onAppear {
-            self.language = detectLanguage(fileURL: fileURL) ?? .default
+            .onAppear {
+                self.language = detectLanguage(fileURL: fileURL) ?? .default
+            }
         }
         .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParse)) { _ in
             withAnimation(.easeIn(duration: 0.1)) {
@@ -105,7 +117,7 @@ struct ContentView: View {
     /// - Returns: A string describing the user's location in a document.
     func getLabel(_ cursorPositions: [CursorPosition]) -> String {
         if cursorPositions.isEmpty {
-            return ""
+            return "No cursor"
         }
 
         // More than one selection, display the number of selections.
