@@ -66,20 +66,26 @@ struct ContentView: View {
                         }
 
                         Spacer()
-                        if isInLongParse {
-                            HStack(spacing: 5) {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("Parsing Document")
+                        Group {
+                            if isInLongParse {
+                                HStack(spacing: 5) {
+                                    ProgressView()
+                                        .controlSize(.small)
+                                    Text("Parsing Document")
+                                }
+                            } else {
+                                Text(getLabel(cursorPositions))
                             }
-                        } else {
-                            Text(getLabel(cursorPositions))
                         }
+                        .foregroundStyle(.secondary)
                         Divider()
                             .frame(height: 12)
                         LanguagePicker(language: $language)
                             .buttonStyle(.borderless)
                     }
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .controlSize(.small)
                     .padding(.horizontal, 8)
                     .frame(height: 28)
                 }
