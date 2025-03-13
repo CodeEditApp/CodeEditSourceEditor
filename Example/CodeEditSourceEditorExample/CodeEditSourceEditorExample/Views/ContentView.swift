@@ -11,16 +11,20 @@ import CodeEditLanguages
 import CodeEditTextView
 
 struct ContentView: View {
+    @Environment(\.colorScheme)
+    var colorScheme
+
     @Binding var document: CodeEditSourceEditorExampleDocument
     let fileURL: URL?
 
     @State private var language: CodeLanguage = .default
-    @State private var theme: EditorTheme = .standard
+    @State private var theme: EditorTheme = .light
     @State private var font: NSFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
     @AppStorage("wrapLines") private var wrapLines: Bool = true
     @State private var cursorPositions: [CursorPosition] = []
     @AppStorage("systemCursor") private var useSystemCursor: Bool = false
     @State private var isInLongParse = false
+    @State private var treeSitterClient = TreeSitterClient()
 
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
         self._document = document
@@ -29,68 +33,65 @@ struct ContentView: View {
 
     var body: some View {
         VStack {
-            ZStack {
-                if isInLongParse {
-                    VStack {
-                        HStack {
-                            Spacer()
-                            Text("Parsing document...")
-                            Spacer()
-                        }
-                        .padding(4)
-                        .background(Color(NSColor.windowBackgroundColor))
-                        Spacer()
-                    }
-                    .zIndex(2)
-                    .transition(.opacity)
-                }
-                CodeEditSourceEditor(
-                    $document.text,
-                    language: language,
-                    theme: theme,
-                    font: font,
-                    tabWidth: 4,
-                    lineHeight: 1.2,
-                    wrapLines: wrapLines,
-                    cursorPositions: $cursorPositions,
-                    useSystemCursor: useSystemCursor
-                )
-                .safeAreaInset(edge: .bottom, spacing: 0) {
-                    VStack(spacing: 0) {
-                        Divider()
-                        HStack {
-                            Toggle("Wrap Lines", isOn: $wrapLines)
+            CodeEditSourceEditor(
+                $document.text,
+                language: language,
+                theme: theme,
+                font: font,
+                tabWidth: 4,
+                lineHeight: 1.2,
+                wrapLines: wrapLines,
+                cursorPositions: $cursorPositions,
+                useThemeBackground: true,
+                highlightProviders: [treeSitterClient],
+                useSystemCursor: useSystemCursor
+            )
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 0) {
+                    Divider()
+                    HStack {
+                        Toggle("Wrap Lines", isOn: $wrapLines)
+                            .toggleStyle(.button)
+                            .buttonStyle(.accessoryBar)
+                        if #available(macOS 14, *) {
+                            Toggle("Use System Cursor", isOn: $useSystemCursor)
                                 .toggleStyle(.button)
                                 .buttonStyle(.accessoryBar)
-                            if #available(macOS 14, *) {
-                                Toggle("Use System Cursor", isOn: $useSystemCursor)
-                                    .toggleStyle(.button)
-                                    .buttonStyle(.accessoryBar)
-                            } else {
-                                Toggle("Use System Cursor", isOn: $useSystemCursor)
-                                    .disabled(true)
-                                    .help("macOS 14 required")
-                                    .toggleStyle(.button)
-                                    .buttonStyle(.accessoryBar)
-                            }
-                            Spacer()
-                            Text(getLabel(cursorPositions))
-                            Divider()
-                                .frame(height: 12)
-                            LanguagePicker(language: $language)
-                                .buttonStyle(.borderless)
+                        } else {
+                            Toggle("Use System Cursor", isOn: $useSystemCursor)
+                                .disabled(true)
+                                .help("macOS 14 required")
+                                .toggleStyle(.button)
+                                .buttonStyle(.accessoryBar)
                         }
-                        .padding(.horizontal, 8)
-                        .frame(height: 28)
+
+                        Spacer()
+                        if isInLongParse {
+                            HStack(spacing: 5) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Parsing Document")
+                            }
+                        } else {
+                            Text(getLabel(cursorPositions))
+                        }
+                        Divider()
+                            .frame(height: 12)
+                        LanguagePicker(language: $language)
+                            .buttonStyle(.borderless)
                     }
-                    .background(.bar)
-                    .zIndex(2)
+                    .padding(.horizontal, 8)
+                    .frame(height: 28)
                 }
+                .background(.bar)
+                .zIndex(2)
             }
             .onAppear {
                 self.language = detectLanguage(fileURL: fileURL) ?? .default
+                self.theme = colorScheme == .dark ? .dark : .light
             }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParse)) { _ in
             withAnimation(.easeIn(duration: 0.1)) {
                 isInLongParse = true
@@ -99,6 +100,13 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParseFinished)) { _ in
             withAnimation(.easeIn(duration: 0.1)) {
                 isInLongParse = false
+            }
+        }
+        .onChange(of: colorScheme) { _, newValue in
+            if newValue == .dark {
+                theme = .dark
+            } else {
+                theme = .light
             }
         }
     }

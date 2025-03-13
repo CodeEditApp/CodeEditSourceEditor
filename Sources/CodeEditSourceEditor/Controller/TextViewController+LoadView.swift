@@ -174,39 +174,4 @@ extension TextViewController {
         }
         return nil
     }
-    func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
-        let commandKey = NSEvent.ModifierFlags.command.rawValue
-
-        switch (modifierFlags, event.charactersIgnoringModifiers) {
-        case (commandKey, "/"):
-            handleCommandSlash()
-            return nil
-        case (commandKey, "["):
-            handleIndent(inwards: true)
-            return nil
-        case (commandKey, "]"):
-            handleIndent()
-            return nil
-        case (_, _):
-            return event
-        }
-    }
-
-    /// Handles the tab key event.
-    /// If the Shift key is pressed, it handles unindenting. If no modifier key is pressed, it checks if multiple lines
-    /// are highlighted and handles indenting accordingly.
-    ///
-    /// - Returns: The original event if it should be passed on, or `nil` to indicate handling within the method.
-    func handleTab(event: NSEvent, modifierFalgs: UInt) -> NSEvent? {
-        let shiftKey = NSEvent.ModifierFlags.shift.rawValue
-
-        if modifierFalgs == shiftKey {
-            handleIndent(inwards: true)
-        } else {
-            // Only allow tab to work if multiple lines are selected
-            guard multipleLinesHighlighted() else { return event }
-            handleIndent()
-        }
-        return nil
-    }
 }
