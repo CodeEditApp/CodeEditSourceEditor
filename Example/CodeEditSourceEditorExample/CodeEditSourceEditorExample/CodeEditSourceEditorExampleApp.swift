@@ -12,6 +12,12 @@ struct CodeEditSourceEditorExampleApp: App {
     var body: some Scene {
         DocumentGroup(newDocument: CodeEditSourceEditorExampleDocument()) { file in
             ContentView(document: file.$document, fileURL: file.fileURL)
+                .toolbar {
+                    Button("Toolbar Item") {
+                        print("Toolbar Item Pressed")
+                    }
+                }
         }
+        .windowToolbarStyle(.unifiedCompact)
     }
 }

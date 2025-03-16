@@ -26,23 +26,23 @@ struct FindPanelView: View {
                         .frame(width: 16, height: 20)
                 },
                 helperText: viewModel.searchText.isEmpty
-                    ? nil
-                    : "\(viewModel.matchCount) \(viewModel.matchCount == 1 ? "match" : "matches")",
+                ? nil
+                : "\(viewModel.matchCount) \(viewModel.matchCount == 1 ? "match" : "matches")",
                 clearable: true
             )
-                .focused($isFocused)
-                .onChange(of: viewModel.isFocused) { newValue in
-                    isFocused = newValue
-                    if !newValue {
-                        viewModel.removeEmphasis()
-                    }
+            .focused($isFocused)
+            .onChange(of: viewModel.isFocused) { newValue in
+                isFocused = newValue
+                if !newValue {
+                    viewModel.removeEmphasis()
                 }
-                .onChange(of: isFocused) { newValue in
-                    viewModel.setFocus(newValue)
-                }
-                .onSubmit {
-                    viewModel.onSubmit()
-                }
+            }
+            .onChange(of: isFocused) { newValue in
+                viewModel.setFocus(newValue)
+            }
+            .onSubmit {
+                viewModel.onSubmit()
+            }
             HStack(spacing: 4) {
                 ControlGroup {
                     Button(action: viewModel.prevButtonClicked) {
@@ -70,7 +70,7 @@ struct FindPanelView: View {
             }
         }
         .padding(.horizontal, 5)
-        .frame(minHeight: 28)
+        .frame(height: FindPanel.height)
         .background(.bar)
         .onAppear {
             NSEvent.addLocalMonitorForEvents(matching: .keyDown) { (event) -> NSEvent? in

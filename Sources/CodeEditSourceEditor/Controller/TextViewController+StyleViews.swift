@@ -19,6 +19,8 @@ extension TextViewController {
 
     /// Style the text view.
     package func styleTextView() {
+        textView.postsFrameChangedNotifications = true
+        textView.translatesAutoresizingMaskIntoConstraints = false
         textView.selectionManager.selectionBackgroundColor = theme.selection
         textView.selectionManager.selectedLineBackgroundColor = getThemeBackground()
         textView.selectionManager.highlightSelectedLine = isEditable
@@ -44,6 +46,7 @@ extension TextViewController {
 
     /// Style the gutter view.
     package func styleGutterView() {
+        // Note: If changing this value, also change in ``findPanelWillShow/Hide()``
         gutterView.frame.origin.y = -scrollView.contentInsets.top
         gutterView.selectedLineColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
         ? NSColor.quaternaryLabelColor
@@ -59,7 +62,12 @@ extension TextViewController {
 
     /// Style the scroll view.
     package func styleScrollView() {
-        guard let scrollView = view as? NSScrollView else { return }
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.contentView.postsFrameChangedNotifications = true
+        scrollView.hasVerticalScroller = true
+        scrollView.hasHorizontalScroller = !wrapLines
+
+        scrollView.contentView.postsBoundsChangedNotifications = true
         if let contentInsets {
             scrollView.automaticallyAdjustsContentInsets = false
             scrollView.contentInsets = contentInsets

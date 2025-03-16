@@ -11,6 +11,8 @@ import Combine
 
 // NSView wrapper for using SwiftUI view in AppKit
 final class FindPanel: NSView {
+    static let height: CGFloat = 28
+
     weak var searchDelegate: FindPanelDelegate?
     private var hostingView: NSHostingView<FindPanelView>!
     private var viewModel: FindPanelViewModel!

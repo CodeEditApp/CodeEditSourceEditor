@@ -14,14 +14,7 @@ extension TextViewController {
         super.loadView()
 
         scrollView = NSScrollView()
-        textView.postsFrameChangedNotifications = true
-        textView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.contentView.postsFrameChangedNotifications = true
-        scrollView.hasVerticalScroller = true
-        scrollView.hasHorizontalScroller = !wrapLines
         scrollView.documentView = textView
-        scrollView.contentView.postsBoundsChangedNotifications = true
 
         gutterView = GutterView(
             font: font.rulerFont,

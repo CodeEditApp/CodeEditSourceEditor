@@ -32,92 +32,96 @@ struct ContentView: View {
     }
 
     var body: some View {
-        CodeEditSourceEditor(
-            $document.text,
-            language: language,
-            theme: theme,
-            font: font,
-            tabWidth: 4,
-            lineHeight: 1.2,
-            wrapLines: wrapLines,
-            cursorPositions: $cursorPositions,
-            useThemeBackground: true,
-            highlightProviders: [treeSitterClient],
-            useSystemCursor: useSystemCursor
-        )
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            HStack {
-                Toggle("Wrap Lines", isOn: $wrapLines)
-                    .toggleStyle(.button)
-                    .buttonStyle(.accessoryBar)
-                if #available(macOS 14, *) {
-                    Toggle("Use System Cursor", isOn: $useSystemCursor)
+        GeometryReader { proxy in
+            CodeEditSourceEditor(
+                $document.text,
+                language: language,
+                theme: theme,
+                font: font,
+                tabWidth: 4,
+                lineHeight: 1.2,
+                wrapLines: wrapLines,
+                cursorPositions: $cursorPositions,
+                useThemeBackground: true,
+                highlightProviders: [treeSitterClient],
+                contentInsets: NSEdgeInsets(top: proxy.safeAreaInsets.top, left: 0, bottom: 0, right: 0),
+                useSystemCursor: useSystemCursor
+            )
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                HStack {
+                    Toggle("Wrap Lines", isOn: $wrapLines)
                         .toggleStyle(.button)
                         .buttonStyle(.accessoryBar)
-                } else {
-                    Toggle("Use System Cursor", isOn: $useSystemCursor)
-                        .disabled(true)
-                        .help("macOS 14 required")
-                        .toggleStyle(.button)
-                        .buttonStyle(.accessoryBar)
-                }
-
-                Spacer()
-                Group {
-                    if isInLongParse {
-                        HStack(spacing: 5) {
-                            ProgressView()
-                                .controlSize(.small)
-                            Text("Parsing Document")
-                        }
+                    if #available(macOS 14, *) {
+                        Toggle("Use System Cursor", isOn: $useSystemCursor)
+                            .toggleStyle(.button)
+                            .buttonStyle(.accessoryBar)
                     } else {
-                        Text(getLabel(cursorPositions))
+                        Toggle("Use System Cursor", isOn: $useSystemCursor)
+                            .disabled(true)
+                            .help("macOS 14 required")
+                            .toggleStyle(.button)
+                            .buttonStyle(.accessoryBar)
+                    }
+
+                    Spacer()
+                    Group {
+                        if isInLongParse {
+                            HStack(spacing: 5) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Parsing Document")
+                            }
+                        } else {
+                            Text(getLabel(cursorPositions))
+                        }
+                    }
+                    .foregroundStyle(.secondary)
+                    Divider()
+                        .frame(height: 12)
+                    LanguagePicker(language: $language)
+                        .buttonStyle(.borderless)
+                }
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .controlSize(.small)
+                .padding(.horizontal, 8)
+                .frame(height: 28)
+                .background(.bar)
+                .overlay(alignment: .top) {
+                    VStack {
+                        Divider()
+                            .overlay {
+                                if colorScheme == .dark {
+                                    Color.black
+                                }
+                            }
                     }
                 }
-                .foregroundStyle(.secondary)
-                Divider()
-                    .frame(height: 12)
-                LanguagePicker(language: $language)
-                    .buttonStyle(.borderless)
-            }
-            .font(.subheadline)
-            .fontWeight(.medium)
-            .controlSize(.small)
-            .padding(.horizontal, 8)
-            .frame(height: 28)
-            .background(.bar)
-            .overlay(alignment: .top) {
-                VStack {
-                    Divider()
-                        .overlay {
-                            if colorScheme == .dark {
-                                Color.black
-                            }
-                        }
+                .zIndex(2)
+                .onAppear {
+                    self.language = detectLanguage(fileURL: fileURL) ?? .default
+                    self.theme = colorScheme == .dark ? .dark : .light
                 }
             }
-            .zIndex(2)
-            .onAppear {
-                self.language = detectLanguage(fileURL: fileURL) ?? .default
-                self.theme = colorScheme == .dark ? .dark : .light
+            .ignoresSafeArea()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParse)) { _ in
+                withAnimation(.easeIn(duration: 0.1)) {
+                    isInLongParse = true
+                }
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParse)) { _ in
-            withAnimation(.easeIn(duration: 0.1)) {
-                isInLongParse = true
+            .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParseFinished)) { _ in
+                withAnimation(.easeIn(duration: 0.1)) {
+                    isInLongParse = false
+                }
             }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParseFinished)) { _ in
-            withAnimation(.easeIn(duration: 0.1)) {
-                isInLongParse = false
-            }
-        }
-        .onChange(of: colorScheme) { _, newValue in
-            if newValue == .dark {
-                theme = .dark
-            } else {
-                theme = .light
+            .onChange(of: colorScheme) { _, newValue in
+                if newValue == .dark {
+                    theme = .dark
+                } else {
+                    theme = .light
+                }
             }
         }
     }

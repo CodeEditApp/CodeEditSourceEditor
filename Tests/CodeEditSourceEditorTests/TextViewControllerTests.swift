@@ -66,11 +66,8 @@ final class TextViewControllerTests: XCTestCase {
     // MARK: Overscroll
 
     func test_editorOverScroll() throws {
-        let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
-        scrollView.frame = .init(x: .zero,
-                                 y: .zero,
-                                 width: 100,
-                                 height: 100)
+        let scrollView = try XCTUnwrap(controller.scrollView)
+        scrollView.frame = .init(x: .zero, y: .zero, width: 100, height: 100)
 
         controller.editorOverscroll = 0
         controller.contentInsets = nil

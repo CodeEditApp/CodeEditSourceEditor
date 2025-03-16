@@ -9,7 +9,7 @@ import AppKit
 
 /// Creates a container controller for displaying and hiding a search bar with a content view.
 final class FindViewController: NSViewController {
-    weak var target: FindTarget?
+    weak var target: FindPanelTarget?
     var childView: NSView
     var findPanel: FindPanel!
 
@@ -17,7 +17,7 @@ final class FindViewController: NSViewController {
 
     private(set) public var isShowingFindPanel: Bool = false
 
-    init(target: FindTarget, childView: NSView) {
+    init(target: FindPanelTarget, childView: NSView) {
         self.target = target
         self.childView = childView
         super.init(nibName: nil, bundle: nil)
@@ -37,6 +37,7 @@ final class FindViewController: NSViewController {
         // The search bar's top anchor when hidden, is equal to it's negated height hiding it above the view's contents.
         // When visible, it's set to 0.
 
+        view.clipsToBounds = false
         view.addSubview(findPanel)
         view.addSubview(childView)
 
@@ -53,7 +54,7 @@ final class FindViewController: NSViewController {
             findPanel.trailingAnchor.constraint(equalTo: view.trailingAnchor),
 
             // Constrain child view
-            childView.topAnchor.constraint(equalTo: findPanel.bottomAnchor),
+            childView.topAnchor.constraint(equalTo: view.topAnchor),
             childView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             childView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             childView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
@@ -63,10 +64,30 @@ final class FindViewController: NSViewController {
     override func viewWillAppear() {
         super.viewWillAppear()
         if isShowingFindPanel { // Update constraints for initial state
-            showFindPanel()
+            setFindPanelConstraintShow()
         } else {
-            hideFindPanel()
+            setFindPanelConstraintHide()
         }
+    }
+
+    /// Sets the find panel constraint to show the find panel.
+    /// Can be animated using implicit animation.
+    private func setFindPanelConstraintShow() {
+        // Update the search bar's top to be equal to the view's top.
+        findPanelVerticalConstraint.constant = view.safeAreaInsets.top
+        findPanelVerticalConstraint.isActive = true
+    }
+
+    /// Sets the find panel constraint to hide the find panel.
+    /// Can be animated using implicit animation.
+    private func setFindPanelConstraintHide() {
+        // Update the search bar's top anchor to be equal to it's negative height, hiding it above the view.
+
+        // SwiftUI hates us. It refuses to move views outside of the safe are if they don't have the `.ignoresSafeArea`
+        // modifier, but with that modifier on it refuses to allow it to be animated outside the safe area.
+        // The only way I found to fix it was to multiply the height by 3 here.
+        findPanelVerticalConstraint.constant = view.safeAreaInsets.top - (FindPanel.height * 3)
+        findPanelVerticalConstraint.isActive = true
     }
 }
 
@@ -83,26 +104,40 @@ extension FindViewController {
     }
 
     /// Show the search bar
-    func showFindPanel() {
-        if !isShowingFindPanel {
-            isShowingFindPanel = true
-            withAnimation {
-                // Update the search bar's top to be equal to the view's top.
-                findPanelVerticalConstraint.constant = 0
-                findPanelVerticalConstraint.isActive = true
-            }
+    func showFindPanel(animated: Bool = true) {
+        guard !isShowingFindPanel else { return }
+        isShowingFindPanel = true
+
+        let updates: () -> Void = { [self] in
+            // SwiftUI breaks things here, and refuses to return the correct `findPanel.fittingSize` so we
+            // are forced to use a constant number.
+            target?.findPanelWillShow(panelHeight: FindPanel.height)
+            setFindPanelConstraintShow()
         }
+
+        if animated {
+            withAnimation(updates)
+        } else {
+            updates()
+        }
+
         _ = findPanel?.becomeFirstResponder()
     }
 
     /// Hide the search bar
-    func hideFindPanel() {
+    func hideFindPanel(animated: Bool = true) {
         isShowingFindPanel = false
         _ = findPanel?.resignFirstResponder()
-        withAnimation {
-            // Update the search bar's top anchor to be equal to it's negative height, hiding it above the view.
-            findPanelVerticalConstraint.constant = -findPanel.fittingSize.height
-            findPanelVerticalConstraint.isActive = true
+
+        let updates: () -> Void = { [self] in
+            target?.findPanelWillHide(panelHeight: FindPanel.height)
+            setFindPanelConstraintHide()
+        }
+
+        if animated {
+            withAnimation(updates)
+        } else {
+            updates()
         }
     }
 
@@ -127,28 +162,28 @@ extension FindViewController {
 extension FindViewController: FindPanelDelegate {
     func findPanelOnSubmit() {
         target?.emphasizeAPI?.highlightNext()
-        if let textViewController = target as? TextViewController,
-           let emphasizeAPI = target?.emphasizeAPI,
-           !emphasizeAPI.emphasizedRanges.isEmpty {
-            let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
-            let range = emphasizeAPI.emphasizedRanges[activeIndex].range
-            textViewController.textView.scrollToRange(range)
-            textViewController.setCursorPositions([CursorPosition(range: range)])
-        }
+//        if let textViewController = target as? TextViewController,
+//           let emphasizeAPI = target?.emphasizeAPI,
+//           !emphasizeAPI.emphasizedRanges.isEmpty {
+//            let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
+//            let range = emphasizeAPI.emphasizedRanges[activeIndex].range
+//            textViewController.textView.scrollToRange(range)
+//            textViewController.setCursorPositions([CursorPosition(range: range)])
+//        }
     }
 
     func findPanelOnCancel() {
         // Return focus to the editor and restore cursor
         if let textViewController = target as? TextViewController {
             // Get the current highlight range before doing anything else
-            var rangeToSelect: NSRange?
-            if let emphasizeAPI = target?.emphasizeAPI {
-                if !emphasizeAPI.emphasizedRanges.isEmpty {
-                    // Get the active highlight range
-                    let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
-                    rangeToSelect = emphasizeAPI.emphasizedRanges[activeIndex].range
-                }
-            }
+//            var rangeToSelect: NSRange?
+//            if let emphasizeAPI = target?.emphasizeAPI {
+//                if !emphasizeAPI.emphasizedRanges.isEmpty {
+//                    // Get the active highlight range
+//                    let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
+//                    rangeToSelect = emphasizeAPI.emphasizedRanges[activeIndex].range
+//                }
+//            }
 
             // Now hide the panel
             if isShowingFindPanel {
@@ -162,23 +197,23 @@ extension FindViewController: FindPanelDelegate {
                 self.view.window?.makeFirstResponder(textViewController.textView)
 
                 // If we had an active highlight, select it
-                if let rangeToSelect = rangeToSelect {
-                    // Set the selection first
-                    textViewController.textView.selectionManager.setSelectedRanges([rangeToSelect])
-                    textViewController.setCursorPositions([CursorPosition(range: rangeToSelect)])
-                    textViewController.textView.scrollToRange(rangeToSelect)
-
-                    // Then clear highlights after a short delay to ensure selection is set
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        self.target?.emphasizeAPI?.removeEmphasizeLayers()
-                        textViewController.textView.needsDisplay = true
-                    }
-                } else if let currentPosition = textViewController.cursorPositions.first {
-                    // Otherwise ensure cursor is visible at last position
-                    textViewController.textView.scrollToRange(currentPosition.range)
-                    textViewController.textView.selectionManager.setSelectedRanges([currentPosition.range])
-                    self.target?.emphasizeAPI?.removeEmphasizeLayers()
-                }
+//                if let rangeToSelect = rangeToSelect {
+//                    // Set the selection first
+//                    textViewController.textView.selectionManager.setSelectedRanges([rangeToSelect])
+//                    textViewController.setCursorPositions([CursorPosition(range: rangeToSelect)])
+//                    textViewController.textView.scrollToRange(rangeToSelect)
+//
+//                    // Then clear highlights after a short delay to ensure selection is set
+//                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+//                        self.target?.emphasizeAPI?.removeEmphasizeLayers()
+//                        textViewController.textView.needsDisplay = true
+//                    }
+//                } else if let currentPosition = textViewController.cursorPositions.first {
+//                    // Otherwise ensure cursor is visible at last position
+//                    textViewController.textView.scrollToRange(currentPosition.range)
+//                    textViewController.textView.selectionManager.setSelectedRanges([currentPosition.range])
+//                    self.target?.emphasizeAPI?.removeEmphasizeLayers()
+//                }
             }
         }
     }
@@ -197,26 +232,26 @@ extension FindViewController: FindPanelDelegate {
 
     func findPanelPrevButtonClicked() {
         target?.emphasizeAPI?.highlightPrevious()
-        if let textViewController = target as? TextViewController,
-           let emphasizeAPI = target?.emphasizeAPI,
-           !emphasizeAPI.emphasizedRanges.isEmpty {
-            let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
-            let range = emphasizeAPI.emphasizedRanges[activeIndex].range
-            textViewController.textView.scrollToRange(range)
-            textViewController.setCursorPositions([CursorPosition(range: range)])
-        }
+//        if let textViewController = target as? TextViewController,
+//           let emphasizeAPI = target?.emphasizeAPI,
+//           !emphasizeAPI.emphasizedRanges.isEmpty {
+//            let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
+//            let range = emphasizeAPI.emphasizedRanges[activeIndex].range
+//            textViewController.textView.scrollToRange(range)
+//            textViewController.setCursorPositions([CursorPosition(range: range)])
+//        }
     }
 
     func findPanelNextButtonClicked() {
         target?.emphasizeAPI?.highlightNext()
-        if let textViewController = target as? TextViewController,
-           let emphasizeAPI = target?.emphasizeAPI,
-           !emphasizeAPI.emphasizedRanges.isEmpty {
-            let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
-            let range = emphasizeAPI.emphasizedRanges[activeIndex].range
-            textViewController.textView.scrollToRange(range)
-            textViewController.setCursorPositions([CursorPosition(range: range)])
-        }
+//        if let textViewController = target as? TextViewController,
+//           let emphasizeAPI = target?.emphasizeAPI,
+//           !emphasizeAPI.emphasizedRanges.isEmpty {
+//            let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
+//            let range = emphasizeAPI.emphasizedRanges[activeIndex].range
+//            textViewController.textView.scrollToRange(range)
+//            textViewController.setCursorPositions([CursorPosition(range: range)])
+//        }
     }
 
     func searchFile(query: String) {
@@ -255,17 +290,57 @@ extension FindViewController: FindPanelDelegate {
         findPanel.searchDelegate?.findPanelUpdateMatchCount(searchResults.count)
 
         // If we have an active highlight and the same number of matches, try to preserve the active index
-        let currentActiveIndex = target.emphasizeAPI?.emphasizedRangeIndex ?? 0
-        let activeIndex = (target.emphasizeAPI?.emphasizedRanges.count == searchResults.count) ? 
-                         currentActiveIndex : 0
+//        let currentActiveIndex = target.emphasizeAPI?.emphasizedRangeIndex ?? 0
+//        let activeIndex = (target.emphasizeAPI?.emphasizedRanges.count == searchResults.count) ? 
+//                         currentActiveIndex : 0
 
-        emphasizeAPI.emphasizeRanges(ranges: searchResults, activeIndex: activeIndex)
+//        emphasizeAPI.emphasizeRanges(ranges: searchResults, activeIndex: activeIndex)
         
         // Only set cursor position if we're actively searching (not when clearing)
         if !query.isEmpty {
             // Always select the active highlight
-            target.setCursorPositions([CursorPosition(range: searchResults[activeIndex])])
+//            target.setCursorPositions([CursorPosition(range: searchResults[activeIndex])])
         }
+    }
+
+    private func getNearestHighlightIndex(matchRanges: [NSRange]) -> Int? {
+        // order the array as follows
+        // Found: 1 -> 2 -> 3 -> 4
+        // Cursor:       |
+        // Result: 3 -> 4 -> 1 -> 2
+        guard let cursorPosition = target?.cursorPositions.first else { return nil }
+        let start = cursorPosition.range.location
+
+        var left = 0
+        var right = matchRanges.count - 1
+        var bestIndex = -1
+        var bestDiff = Int.max  // Stores the closest difference
+
+        while left <= right {
+            let mid = left + (right - left) / 2
+            let midStart = matchRanges[mid].location
+            let diff = abs(midStart - start)
+
+            // If it's an exact match, return immediately
+            if diff == 0 {
+                return mid
+            }
+
+            // If this is the closest so far, update the best index
+            if diff < bestDiff {
+                bestDiff = diff
+                bestIndex = mid
+            }
+
+            // Move left or right based on the cursor position
+            if midStart < start {
+                left = mid + 1
+            } else {
+                right = mid - 1
+            }
+        }
+
+        return bestIndex >= 0 ? bestIndex : nil
     }
 
     // Only re-serach the part of the file that changed upwards
