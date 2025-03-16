@@ -10,106 +10,128 @@ import AppKit
 import CodeEditTextView
 import SwiftTreeSitter
 import CodeEditLanguages
+import OSLog
 
-/// The `Highlighter` class handles efficiently highlighting the `TextView` it's provided with.
-/// It will listen for text and visibility changes, and highlight syntax as needed.
+/// This class manages fetching syntax highlights from providers, and applying those styles to the editor.
+/// Multiple highlight providers can be used to style the editor.
 ///
-/// One should rarely have to direcly modify or call methods on this class. Just keep it alive in
-/// memory and it will listen for bounds changes, text changes, etc. However, to completely invalidate all
-/// highlights use the ``invalidate()`` method to re-highlight all (visible) text, and the ``setLanguage``
-/// method to update the highlighter with a new language if needed.
+/// This class manages multiple objects that help perform this task:
+/// - ``StyledRangeContainer``
+/// - ``StyledRangeStore``
+/// - ``VisibleRangeProvider``
+/// - ``HighlightProviderState``
+///
+/// A hierarchal overview of the highlighter system.
+/// ```
+/// +---------------------------------+
+/// |          Highlighter            |
+/// |                                 |
+/// |  - highlightProviders[]         |
+/// |  - styledRangeContainer         |
+/// |                                 |
+/// |  + refreshHighlightsIn(range:)  |
+/// +---------------------------------+
+/// |
+/// | Queries coalesced styles
+/// v
+/// +-------------------------------+             +-----------------------------+
+/// |    StyledRangeContainer       |   ------>   |      StyledRangeStore[]     |
+/// |                               |             |                             | Stores styles for one provider
+/// |  - manages combined ranges    |             |  - stores raw ranges &      |
+/// |  - layers highlight styles    |             |    captures                 |
+/// |  + getAttributesForRange()    |             +-----------------------------+
+/// +-------------------------------+
+/// ^
+/// | Sends highlighted runs
+/// |
+/// +-------------------------------+
+/// |   HighlightProviderState[]    |   (one for each provider)
+/// |                               |
+/// |  - keeps valid/invalid ranges |
+/// |  - queries providers (async)  |
+/// |  + updateStyledRanges()       |
+/// +-------------------------------+
+/// ^
+/// | Performs edits and sends highlight deltas, as well as calculates syntax captures for ranges
+/// |
+/// +-------------------------------+
+/// |   HighlightProviding Object   |  (tree-sitter, LSP, spellcheck)
+/// +-------------------------------+
+/// ```
+///
 @MainActor
 class Highlighter: NSObject {
-
-    // MARK: - Index Sets
-
-    /// Any indexes that highlights have been requested for, but haven't been applied.
-    /// Indexes/ranges are added to this when highlights are requested and removed
-    /// after they are applied
-    private var pendingSet: IndexSet = .init()
-
-    /// The set of valid indexes
-    private var validSet: IndexSet = .init()
-
-    /// The set of visible indexes in tht text view
-    lazy private var visibleSet: IndexSet = {
-        return IndexSet(integersIn: textView?.visibleTextRange ?? NSRange())
-    }()
-
-    // MARK: - UI
-
-    /// The text view to highlight
-    private weak var textView: TextView?
-
-    /// The editor theme
-    private var theme: EditorTheme
-
-    /// The object providing attributes for captures.
-    private weak var attributeProvider: ThemeAttributesProviding?
+    static private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "", category: "Highlighter")
 
     /// The current language of the editor.
     private var language: CodeLanguage
 
-    /// Calculates invalidated ranges given an edit.
-    private(set) weak var highlightProvider: HighlightProviding?
+    /// The text view to highlight
+    private weak var textView: TextView?
 
-    /// The length to chunk ranges into when passing to the highlighter.
-    private let rangeChunkLimit = 1024
+    /// The object providing attributes for captures.
+    private weak var attributeProvider: ThemeAttributesProviding?
+
+    private var styleContainer: StyledRangeContainer
+
+    private var highlightProviders: [HighlightProviderState] = []
+
+    private var visibleRangeProvider: VisibleRangeProvider
+
+    /// Counts upwards to provide unique IDs for new highlight providers.
+    private var providerIdCounter: Int
 
     // MARK: - Init
 
-    /// Initializes the `Highlighter`
-    /// - Parameters:
-    ///   - textView: The text view to highlight.
-    ///   - treeSitterClient: The tree-sitter client to handle tree updates and highlight queries.
-    ///   - theme: The theme to use for highlights.
     init(
         textView: TextView,
-        highlightProvider: HighlightProviding?,
-        theme: EditorTheme,
+        providers: [HighlightProviding],
         attributeProvider: ThemeAttributesProviding,
         language: CodeLanguage
     ) {
-        self.textView = textView
-        self.highlightProvider = highlightProvider
-        self.theme = theme
-        self.attributeProvider = attributeProvider
         self.language = language
+        self.textView = textView
+        self.attributeProvider = attributeProvider
+
+        self.visibleRangeProvider = VisibleRangeProvider(textView: textView)
+
+        let providerIds = providers.indices.map({ $0 })
+        self.styleContainer = StyledRangeContainer(documentLength: textView.length, providers: providerIds)
+
+        self.providerIdCounter = providers.count
 
         super.init()
 
-        highlightProvider?.setUp(textView: textView, codeLanguage: language)
-
-        if let scrollView = textView.enclosingScrollView {
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(visibleTextChanged(_:)),
-                name: NSView.frameDidChangeNotification,
-                object: scrollView
-            )
-
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(visibleTextChanged(_:)),
-                name: NSView.boundsDidChangeNotification,
-                object: scrollView.contentView
+        styleContainer.delegate = self
+        visibleRangeProvider.delegate = self
+        self.highlightProviders = providers.enumerated().map { (idx, provider) in
+            HighlightProviderState(
+                id: providerIds[idx],
+                delegate: styleContainer,
+                highlightProvider: provider,
+                textView: textView,
+                visibleRangeProvider: visibleRangeProvider,
+                language: language
             )
         }
     }
 
     // MARK: - Public
 
-    /// Invalidates all text in the textview. Useful for updating themes.
+    /// Invalidates all text in the editor. Useful for updating themes.
     public func invalidate() {
-        guard let textView else { return }
-        updateVisibleSet(textView: textView)
-        invalidate(range: textView.documentRange)
+        highlightProviders.forEach { $0.invalidate() }
+    }
+
+    public func invalidate(_ set: IndexSet) {
+        highlightProviders.forEach { $0.invalidate(set) }
     }
 
     /// Sets the language and causes a re-highlight of the entire text.
     /// - Parameter language: The language to update to.
     public func setLanguage(language: CodeLanguage) {
         guard let textView = self.textView else { return }
+
         // Remove all current highlights. Makes the language setting feel snappier and tells the user we're doing
         // something immediately.
         textView.textStorage.setAttributes(
@@ -117,209 +139,157 @@ class Highlighter: NSObject {
             range: NSRange(location: 0, length: textView.textStorage.length)
         )
         textView.layoutManager.invalidateLayoutForRect(textView.visibleRect)
-        validSet.removeAll()
-        pendingSet.removeAll()
-        highlightProvider?.setUp(textView: textView, codeLanguage: language)
-        invalidate()
+
+        highlightProviders.forEach { $0.setLanguage(language: language) }
     }
 
-    /// Sets the highlight provider. Will cause a re-highlight of the entire text.
-    /// - Parameter provider: The provider to use for future syntax highlights.
-    public func setHighlightProvider(_ provider: HighlightProviding) {
-        self.highlightProvider = provider
-        guard let textView = self.textView else { return }
-        highlightProvider?.setUp(textView: textView, codeLanguage: self.language)
-        invalidate()
+    /// Updates the highlight providers the highlighter is using, removing any that don't appear in the given array,
+    /// and setting up any new ones.
+    ///
+    /// This is essential for working with SwiftUI, as we'd like to allow highlight providers to be added and removed
+    /// after the view is initialized. For instance after some sort of async registration method.
+    ///
+    /// - Note: Each provider will be identified by it's object ID.
+    /// - Parameter providers: All providers to use.
+    public func setProviders(_ providers: [HighlightProviding]) {
+        guard let textView else { return }
+
+        let existingIds: [ObjectIdentifier] = self.highlightProviders
+            .compactMap { $0.highlightProvider }
+            .map { ObjectIdentifier($0) }
+        let newIds: [ObjectIdentifier] = providers.map { ObjectIdentifier($0) }
+        // 2nd param is what we're moving *from*. We want to find how we to make existingIDs equal newIDs
+        let difference = newIds.difference(from: existingIds).inferringMoves()
+
+        var highlightProviders = self.highlightProviders // Make a mutable copy
+        var moveMap: [Int: HighlightProviderState] = [:]
+
+        for change in difference {
+            switch change {
+            case let .insert(offset, element, associatedOffset):
+                guard associatedOffset == nil,
+                      let newProvider = providers.first(where: { ObjectIdentifier($0) == element }) else {
+                    // Moved, grab the moved object from the move map
+                    guard let movedProvider = moveMap[offset] else {
+                        continue
+                    }
+                    highlightProviders.insert(movedProvider, at: offset)
+                    continue
+                }
+                // Set up a new provider and insert it with a unique ID
+                providerIdCounter += 1
+                let state = HighlightProviderState( // This will call setup on the highlight provider
+                    id: providerIdCounter,
+                    delegate: styleContainer,
+                    highlightProvider: newProvider,
+                    textView: textView,
+                    visibleRangeProvider: visibleRangeProvider,
+                    language: language
+                )
+                highlightProviders.insert(state, at: offset)
+                styleContainer.addProvider(providerIdCounter, documentLength: textView.length)
+                state.invalidate() // Invalidate this new one
+            case let .remove(offset, _, associatedOffset):
+                guard associatedOffset == nil else {
+                    // Moved, add it to the move map
+                    moveMap[associatedOffset!] = highlightProviders.remove(at: offset)
+                    continue
+                }
+                // Removed entirely
+                styleContainer.removeProvider(highlightProviders.remove(at: offset).id)
+            }
+        }
+
+        self.highlightProviders = highlightProviders
     }
 
     deinit {
-        NotificationCenter.default.removeObserver(self)
         self.attributeProvider = nil
         self.textView = nil
-        self.highlightProvider = nil
+        self.highlightProviders = []
     }
 }
 
-// MARK: - Highlighting
+// MARK: NSTextStorageDelegate
 
-private extension Highlighter {
+extension Highlighter: NSTextStorageDelegate {
+    /// Processes an edited range in the text.
+    func textStorage(
+        _ textStorage: NSTextStorage,
+        didProcessEditing editedMask: NSTextStorageEditActions,
+        range editedRange: NSRange,
+        changeInLength delta: Int
+    ) {
+        // This method is called whenever attributes are updated, so to avoid re-highlighting the entire document
+        // each time an attribute is applied, we check to make sure this is in response to an edit.
+        guard editedMask.contains(.editedCharacters), let textView else { return }
 
-    /// Invalidates a given range and adds it to the queue to be highlighted.
-    /// - Parameter range: The range to invalidate.
-    func invalidate(range: NSRange) {
-        let set = IndexSet(integersIn: range)
+        let styleContainerRange: Range<Int>
+        let newLength: Int
 
-        if set.isEmpty {
-            return
+        if editedRange.length == 0 { // Deleting, editedRange is at beginning of the range that was deleted
+            styleContainerRange = editedRange.location..<(editedRange.location - delta)
+            newLength = 0
+        } else { // Replacing or inserting
+            styleContainerRange = editedRange.location..<(editedRange.location + editedRange.length - delta)
+            newLength = editedRange.length
         }
 
-        validSet.subtract(set)
-
-        highlightInvalidRanges()
-    }
-
-    /// Begins highlighting any invalid ranges
-    func highlightInvalidRanges() {
-        // If there aren't any more ranges to highlight, don't do anything, otherwise continue highlighting
-        // any available ranges.
-        var rangesToQuery: [NSRange] = []
-        while let range = getNextRange() {
-            rangesToQuery.append(range)
-            pendingSet.insert(range: range)
-        }
-
-        queryHighlights(for: rangesToQuery)
-    }
-
-    /// Highlights the given ranges
-    /// - Parameter ranges: The ranges to request highlights for.
-    func queryHighlights(for rangesToHighlight: [NSRange]) {
-        guard let textView else { return }
-
-        if !Thread.isMainThread {
-            DispatchQueue.main.async { [weak self] in
-                for range in rangesToHighlight {
-                    self?.highlightProvider?.queryHighlightsFor(
-                        textView: textView,
-                        range: range
-                    ) { [weak self] highlights in
-                        self?.applyHighlightResult(highlights, rangeToHighlight: range)
-                    }
-                }
-            }
-        } else {
-            for range in rangesToHighlight {
-                highlightProvider?.queryHighlightsFor(textView: textView, range: range) { [weak self] highlights in
-                    self?.applyHighlightResult(highlights, rangeToHighlight: range)
-                }
-            }
-        }
-    }
-
-    /// Applies a highlight query result to the text view.
-    /// - Parameters:
-    ///   - results: The result of a highlight query.
-    ///   - rangeToHighlight: The range to apply the highlight to.
-    private func applyHighlightResult(_ results: [HighlightRange], rangeToHighlight: NSRange) {
-        guard let attributeProvider = self.attributeProvider else {
-            return
-        }
-
-        pendingSet.remove(integersIn: rangeToHighlight)
-        guard visibleSet.intersects(integersIn: rangeToHighlight) else {
-            return
-        }
-        validSet.formUnion(IndexSet(integersIn: rangeToHighlight))
-
-        // Loop through each highlight and modify the textStorage accordingly.
-        textView?.layoutManager.beginTransaction()
-        textView?.textStorage.beginEditing()
-
-        // Create a set of indexes that were not highlighted.
-        var ignoredIndexes = IndexSet(integersIn: rangeToHighlight)
-
-        // Apply all highlights that need color
-        for highlight in results
-        where textView?.documentRange.upperBound ?? 0 > highlight.range.upperBound {
-            textView?.textStorage.setAttributes(
-                attributeProvider.attributesFor(highlight.capture),
-                range: highlight.range
-            )
-
-            // Remove highlighted indexes from the "ignored" indexes.
-            ignoredIndexes.remove(integersIn: highlight.range)
-        }
-
-        // For any indices left over, we need to apply normal attributes to them
-        // This fixes the case where characters are changed to have a non-text color, and then are skipped when
-        // they need to be changed back.
-        for ignoredRange in ignoredIndexes.rangeView
-        where textView?.documentRange.upperBound ?? 0 > ignoredRange.upperBound {
-            textView?.textStorage.setAttributes(attributeProvider.attributesFor(nil), range: NSRange(ignoredRange))
-        }
-
-        textView?.textStorage.endEditing()
-        textView?.layoutManager.endTransaction()
-    }
-
-    /// Gets the next `NSRange` to highlight based on the invalid set, visible set, and pending set.
-    /// - Returns: An `NSRange` to highlight if it could be fetched.
-    func getNextRange() -> NSRange? {
-        let set: IndexSet = IndexSet(integersIn: textView?.documentRange ?? .zero) // All text
-            .subtracting(validSet) // Subtract valid = Invalid set
-            .intersection(visibleSet) // Only visible indexes
-            .subtracting(pendingSet) // Don't include pending indexes
-
-        guard let range = set.rangeView.first else {
-            return nil
-        }
-
-        // Chunk the ranges in sets of rangeChunkLimit characters.
-        return NSRange(
-            location: range.lowerBound,
-            length: min(rangeChunkLimit, range.upperBound - range.lowerBound)
+        styleContainer.storageUpdated(
+            replacedContentIn: styleContainerRange,
+            withCount: newLength
         )
-    }
-}
 
-// MARK: - Visible Content Updates
-
-private extension Highlighter {
-    private func updateVisibleSet(textView: TextView) {
-        if let newVisibleRange = textView.visibleTextRange {
-            visibleSet = IndexSet(integersIn: newVisibleRange)
-        }
-    }
-
-    /// Updates the view to highlight newly visible text when the textview is scrolled or bounds change.
-    @objc func visibleTextChanged(_ notification: Notification) {
-        let textView: TextView
-        if let clipView = notification.object as? NSClipView,
-           let documentView = clipView.enclosingScrollView?.documentView as? TextView {
-            textView = documentView
-        } else if let scrollView = notification.object as? NSScrollView,
-                  let documentView = scrollView.documentView as? TextView {
-            textView = documentView
-        } else {
-            return
-        }
-
-        updateVisibleSet(textView: textView)
-
-        // Any indices that are both *not* valid and in the visible text range should be invalidated
-        let newlyInvalidSet = visibleSet.subtracting(validSet)
-
-        for range in newlyInvalidSet.rangeView.map({ NSRange($0) }) {
-            invalidate(range: range)
-        }
-    }
-}
-
-// MARK: - Editing
-
-extension Highlighter {
-    func storageDidEdit(editedRange: NSRange, delta: Int) {
-        guard let textView else { return }
-
-        let range = NSRange(location: editedRange.location, length: editedRange.length - delta)
         if delta > 0 {
-            visibleSet.insert(range: editedRange)
+            visibleRangeProvider.visibleSet.insert(range: editedRange)
         }
 
-        updateVisibleSet(textView: textView)
+        visibleRangeProvider.updateVisibleSet(textView: textView)
 
-        highlightProvider?.applyEdit(textView: textView, range: range, delta: delta) { [weak self] invalidIndexSet in
-            let indexSet = invalidIndexSet
-                .union(IndexSet(integersIn: editedRange))
-
-            for range in indexSet.rangeView {
-                self?.invalidate(range: NSRange(range))
-            }
-        }
+        let providerRange = NSRange(location: editedRange.location, length: editedRange.length - delta)
+        highlightProviders.forEach { $0.storageDidUpdate(range: providerRange, delta: delta) }
     }
 
-    func storageWillEdit(editedRange: NSRange) {
-        guard let textView else { return }
-        highlightProvider?.willApplyEdit(textView: textView, range: editedRange)
+    func textStorage(
+        _ textStorage: NSTextStorage,
+        willProcessEditing editedMask: NSTextStorageEditActions,
+        range editedRange: NSRange,
+        changeInLength delta: Int
+    ) {
+        guard editedMask.contains(.editedCharacters) else { return }
+        highlightProviders.forEach { $0.storageWillUpdate(in: editedRange) }
+    }
+}
+
+// MARK: - StyledRangeContainerDelegate
+
+extension Highlighter: StyledRangeContainerDelegate {
+    func styleContainerDidUpdate(in range: NSRange) {
+        guard let textView, let attributeProvider else { return }
+        textView.layoutManager.beginTransaction()
+        textView.textStorage.beginEditing()
+
+        let storage = textView.textStorage
+
+        var offset = range.location
+        for run in styleContainer.runsIn(range: range) {
+            guard let range = NSRange(location: offset, length: run.length).intersection(range) else {
+                continue
+            }
+            storage?.setAttributes(attributeProvider.attributesFor(run.capture), range: range)
+            offset += range.length
+        }
+
+        textView.textStorage.endEditing()
+        textView.layoutManager.endTransaction()
+        textView.layoutManager.invalidateLayoutForRange(range)
+    }
+}
+
+// MARK: - VisibleRangeProviderDelegate
+
+extension Highlighter: VisibleRangeProviderDelegate {
+    func visibleSetDidUpdate(_ newIndices: IndexSet) {
+        highlightProviders.forEach { $0.highlightInvalidRanges() }
     }
 }

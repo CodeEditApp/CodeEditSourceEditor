@@ -35,7 +35,7 @@ extension TextViewController {
             for: .horizontal
         )
 
-        let searchController = SearchViewController(target: self, childView: scrollView)
+        let searchController = FindViewController(target: self, childView: scrollView)
         addChild(searchController)
         self.view.addSubview(searchController.view)
         searchController.view.viewDidMoveToSuperview()
@@ -129,18 +129,49 @@ extension TextViewController {
                 return nil
             case (.command, "f"):
                 _ = self?.textView.resignFirstResponder()
-                self?.searchController?.showSearchBar()
+                self?.searchController?.showFindPanel()
                 return nil
             case ([], "\u{1b}"): // Escape key
-                self?.searchController?.hideSearchBar()
-                _ = self?.textView.becomeFirstResponder()
-                self?.textView.selectionManager.setSelectedRanges(
-                    self?.textView.selectionManager.textSelections.map { $0.range } ?? []
-                )
+                self?.searchController?.findPanel.cancel()
                 return nil
             default:
                 return event
             }
         }
+    }
+    func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
+        let commandKey = NSEvent.ModifierFlags.command.rawValue
+
+        switch (modifierFlags, event.charactersIgnoringModifiers) {
+        case (commandKey, "/"):
+            handleCommandSlash()
+            return nil
+        case (commandKey, "["):
+            handleIndent(inwards: true)
+            return nil
+        case (commandKey, "]"):
+            handleIndent()
+            return nil
+        case (_, _):
+            return event
+        }
+    }
+
+    /// Handles the tab key event.
+    /// If the Shift key is pressed, it handles unindenting. If no modifier key is pressed, it checks if multiple lines
+    /// are highlighted and handles indenting accordingly.
+    ///
+    /// - Returns: The original event if it should be passed on, or `nil` to indicate handling within the method.
+    func handleTab(event: NSEvent, modifierFalgs: UInt) -> NSEvent? {
+        let shiftKey = NSEvent.ModifierFlags.shift.rawValue
+
+        if modifierFalgs == shiftKey {
+            handleIndent(inwards: true)
+        } else {
+            // Only allow tab to work if multiple lines are selected
+            guard multipleLinesHighlighted() else { return event }
+            handleIndent()
+        }
+        return nil
     }
 }

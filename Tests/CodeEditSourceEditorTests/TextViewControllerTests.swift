@@ -12,24 +12,7 @@ final class TextViewControllerTests: XCTestCase {
     var theme: EditorTheme!
 
     override func setUpWithError() throws {
-        theme = EditorTheme(
-            text: .textColor,
-            insertionPoint: .textColor,
-            invisibles: .gray,
-            background: .textBackgroundColor,
-            lineHighlight: .highlightColor,
-            selection: .selectedTextColor,
-            keywords: .systemPink,
-            commands: .systemBlue,
-            types: .systemMint,
-            attributes: .systemTeal,
-            variables: .systemCyan,
-            values: .systemOrange,
-            numbers: .systemYellow,
-            strings: .systemRed,
-            characters: .systemRed,
-            comments: .systemGreen
-        )
+        theme = Mock.theme()
         controller = TextViewController(
             string: "",
             language: .default,
@@ -42,7 +25,7 @@ final class TextViewControllerTests: XCTestCase {
             cursorPositions: [],
             editorOverscroll: 0.5,
             useThemeBackground: true,
-            highlightProvider: nil,
+            highlightProviders: [],
             contentInsets: NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0),
             isEditable: true,
             isSelectable: true,
@@ -59,24 +42,24 @@ final class TextViewControllerTests: XCTestCase {
     func test_captureNames() throws {
         // test for "keyword"
         let captureName1 = "keyword"
-        let color1 = controller.attributesFor(CaptureName(rawValue: captureName1))[.foregroundColor] as? NSColor
+        let color1 = controller.attributesFor(CaptureName.fromString(captureName1))[.foregroundColor] as? NSColor
         XCTAssertEqual(color1, NSColor.systemPink)
 
         // test for "comment"
         let captureName2 = "comment"
-        let color2 = controller.attributesFor(CaptureName(rawValue: captureName2))[.foregroundColor] as? NSColor
+        let color2 = controller.attributesFor(CaptureName.fromString(captureName2))[.foregroundColor] as? NSColor
         XCTAssertEqual(color2, NSColor.systemGreen)
 
         /* ... additional tests here ... */
 
         // test for empty case
         let captureName3 = ""
-        let color3 = controller.attributesFor(CaptureName(rawValue: captureName3))[.foregroundColor] as? NSColor
+        let color3 = controller.attributesFor(CaptureName.fromString(captureName3))[.foregroundColor] as? NSColor
         XCTAssertEqual(color3, NSColor.textColor)
 
         // test for random case
         let captureName4 = "abc123"
-        let color4 = controller.attributesFor(CaptureName(rawValue: captureName4))[.foregroundColor] as? NSColor
+        let color4 = controller.attributesFor(CaptureName.fromString(captureName4))[.foregroundColor] as? NSColor
         XCTAssertEqual(color4, NSColor.textColor)
     }
 
@@ -417,6 +400,15 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.cursorPositions[1].range.length, 0)
         XCTAssertEqual(controller.cursorPositions[1].line, 3)
         XCTAssertEqual(controller.cursorPositions[1].column, 1)
+    }
+
+    // MARK: - TreeSitterClient
+
+    func test_treeSitterSetUp() {
+        // Set up with a user-initiated `TreeSitterClient` should still use that client for things like tag
+        // completion.
+        let controller = Mock.textViewController(theme: Mock.theme())
+        XCTAssertNotNil(controller.treeSitterClient)
     }
 }
 // swiftlint:enable all

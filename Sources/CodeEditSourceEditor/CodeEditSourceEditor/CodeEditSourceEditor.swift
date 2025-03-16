@@ -57,7 +57,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         editorOverscroll: CGFloat = 0,
         cursorPositions: Binding<[CursorPosition]>,
         useThemeBackground: Bool = true,
-        highlightProvider: HighlightProviding? = nil,
+        highlightProviders: [any HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
         isSelectable: Bool = true,
@@ -78,7 +78,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.wrapLines = wrapLines
         self.editorOverscroll = editorOverscroll
         self.cursorPositions = cursorPositions
-        self.highlightProvider = highlightProvider
+        self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
@@ -132,7 +132,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         editorOverscroll: CGFloat = 0,
         cursorPositions: Binding<[CursorPosition]>,
         useThemeBackground: Bool = true,
-        highlightProvider: HighlightProviding? = nil,
+        highlightProviders: [any HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
         isSelectable: Bool = true,
@@ -153,7 +153,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.wrapLines = wrapLines
         self.editorOverscroll = editorOverscroll
         self.cursorPositions = cursorPositions
-        self.highlightProvider = highlightProvider
+        self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
@@ -179,7 +179,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     private var editorOverscroll: CGFloat
     package var cursorPositions: Binding<[CursorPosition]>
     private var useThemeBackground: Bool
-    private var highlightProvider: HighlightProviding?
+    private var highlightProviders: [any HighlightProviding]
     private var contentInsets: NSEdgeInsets?
     private var isEditable: Bool
     private var isSelectable: Bool
@@ -204,14 +204,15 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             cursorPositions: cursorPositions.wrappedValue,
             editorOverscroll: editorOverscroll,
             useThemeBackground: useThemeBackground,
-            highlightProvider: highlightProvider,
+            highlightProviders: highlightProviders,
             contentInsets: contentInsets,
             isEditable: isEditable,
             isSelectable: isSelectable,
             letterSpacing: letterSpacing,
             useSystemCursor: useSystemCursor,
             bracketPairHighlight: bracketPairHighlight,
-            undoManager: undoManager
+            undoManager: undoManager,
+            coordinators: coordinators
         )
         switch text {
         case .binding(let binding):
@@ -227,14 +228,11 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         }
 
         context.coordinator.controller = controller
-        coordinators.forEach {
-            $0.prepareCoordinator(controller: controller)
-        }
         return controller
     }
 
     public func makeCoordinator() -> Coordinator {
-        Coordinator(parent: self)
+        Coordinator(text: text, cursorPositions: cursorPositions)
     }
 
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
@@ -246,6 +244,9 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         } else {
             context.coordinator.isUpdateFromTextView = false
         }
+
+        // Set this no matter what to avoid having to compare object pointers.
+        controller.textCoordinators = coordinators.map { WeakCoordinator($0) }
 
         // Do manual diffing to reduce the amount of reloads.
         // This helps a lot in view performance, as it otherwise gets triggered on each environment change.
@@ -304,6 +305,10 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             controller.useSystemCursor = useSystemCursor
         }
 
+        if !areHighlightProvidersEqual(controller: controller) {
+            controller.setHighlightProviders(highlightProviders)
+        }
+
         controller.bracketPairHighlight = bracketPairHighlight
     }
 
@@ -325,7 +330,12 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.tabWidth == tabWidth &&
         controller.letterSpacing == letterSpacing &&
         controller.bracketPairHighlight == bracketPairHighlight &&
-        controller.useSystemCursor == useSystemCursor
+        controller.useSystemCursor == useSystemCursor &&
+        areHighlightProvidersEqual(controller: controller)
+    }
+
+    private func areHighlightProvidersEqual(controller: TextViewController) -> Bool {
+        controller.highlightProviders.map { ObjectIdentifier($0) } == highlightProviders.map { ObjectIdentifier($0) }
     }
 }
 

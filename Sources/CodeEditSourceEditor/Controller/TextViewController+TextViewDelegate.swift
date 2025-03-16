@@ -10,8 +10,23 @@ import CodeEditTextView
 import TextStory
 
 extension TextViewController: TextViewDelegate {
-    public func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with: String) {
+    public func textView(_ textView: TextView, willReplaceContentsIn range: NSRange, with string: String) {
+        for coordinator in self.textCoordinators.values() {
+            if let coordinator = coordinator as? TextViewDelegate {
+                coordinator.textView(textView, willReplaceContentsIn: range, with: string)
+            }
+        }
+    }
+
+    public func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with string: String) {
         gutterView.needsDisplay = true
+        for coordinator in self.textCoordinators.values() {
+            if let coordinator = coordinator as? TextViewDelegate {
+                coordinator.textView(textView, didReplaceContentsIn: range, with: string)
+            } else {
+                coordinator.textViewDidChangeText(controller: self)
+            }
+        }
     }
 
     public func textView(_ textView: TextView, shouldReplaceContentsIn range: NSRange, with string: String) -> Bool {

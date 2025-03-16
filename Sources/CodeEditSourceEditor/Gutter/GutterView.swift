@@ -13,6 +13,24 @@ public protocol GutterViewDelegate: AnyObject {
     func gutterViewWidthDidUpdate(newWidth: CGFloat)
 }
 
+/// The gutter view displays line numbers that match the text view's line indexes.
+/// This view is used as a scroll view's ruler view. It sits on top of the text view so text scrolls underneath the
+/// gutter if line wrapping is disabled.
+///
+/// If the gutter needs more space (when the number of digits in the numbers increases eg. adding a line after line 99),
+/// it will notify it's delegate via the ``GutterViewDelegate/gutterViewWidthDidUpdate(newWidth:)`` method. In
+/// `CodeEditSourceEditor`, this notifies the ``TextViewController``, which in turn updates the textview's edge insets
+/// to adjust for the new leading inset.
+///
+/// This view also listens for selection updates, and draws a selected background on selected lines to keep the illusion
+/// that the gutter's line numbers are inline with the line itself.
+///
+/// The gutter view has insets of it's own that are relative to the widest line index. By default, these insets are 20px
+/// leading, and 12px trailing. However, this view also has a ``GutterView/backgroundEdgeInsets`` property, that pads
+/// the rect that has a background drawn. This allows the text to be scrolled under the gutter view for 8px before being
+/// overlapped by the gutter. It should help the textview keep the cursor visible if the user types while the cursor is
+/// off the leading edge of the editor.
+///
 public class GutterView: NSView {
     struct EdgeInsets: Equatable, Hashable {
         let leading: CGFloat
@@ -33,6 +51,9 @@ public class GutterView: NSView {
     var edgeInsets: EdgeInsets = EdgeInsets(leading: 20, trailing: 12)
 
     @Invalidating(.display)
+    var backgroundEdgeInsets: EdgeInsets = EdgeInsets(leading: 0, trailing: 8)
+
+    @Invalidating(.display)
     var backgroundColor: NSColor? = NSColor.controlBackgroundColor
 
     @Invalidating(.display)
@@ -44,6 +65,7 @@ public class GutterView: NSView {
     @Invalidating(.display)
     var selectedLineColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
 
+    /// The required width of the entire gutter, including padding.
     private(set) public var gutterWidth: CGFloat = 0
 
     private weak var textView: TextView?
@@ -118,6 +140,17 @@ public class GutterView: NSView {
         }
     }
 
+    private func drawBackground(_ context: CGContext) {
+        guard let backgroundColor else { return }
+        let xPos = backgroundEdgeInsets.leading
+        let width = gutterWidth - backgroundEdgeInsets.trailing
+
+        context.saveGState()
+        context.setFillColor(backgroundColor.cgColor)
+        context.fill(CGRect(x: xPos, y: 0, width: width, height: frame.height))
+        context.restoreGState()
+    }
+
     private func drawSelectedLines(_ context: CGContext) {
         guard let textView = textView,
               let selectionManager = textView.selectionManager,
@@ -126,10 +159,14 @@ public class GutterView: NSView {
             return
         }
         context.saveGState()
+
         var highlightedLines: Set<UUID> = []
         context.setFillColor(selectedLineColor.cgColor)
-        for selection in selectionManager.textSelections
-        where selection.range.isEmpty {
+
+        let xPos = backgroundEdgeInsets.leading
+        let width = gutterWidth - backgroundEdgeInsets.trailing
+
+        for selection in selectionManager.textSelections where selection.range.isEmpty {
             guard let line = textView.layoutManager.textLineForOffset(selection.range.location),
                   visibleRange.intersection(line.range) != nil || selection.range.location == textView.length,
                   !highlightedLines.contains(line.data.id) else {
@@ -138,13 +175,14 @@ public class GutterView: NSView {
             highlightedLines.insert(line.data.id)
             context.fill(
                 CGRect(
-                    x: 0.0,
+                    x: xPos,
                     y: line.yPos,
-                    width: maxWidth + edgeInsets.horizontal,
+                    width: width,
                     height: line.height
                 )
             )
         }
+
         context.restoreGState()
     }
 
@@ -204,8 +242,8 @@ public class GutterView: NSView {
         CATransaction.begin()
         superview?.clipsToBounds = false
         superview?.layer?.masksToBounds = false
-        layer?.backgroundColor = backgroundColor?.cgColor
         updateWidthIfNeeded()
+        drawBackground(context)
         drawSelectedLines(context)
         drawLineNumbers(context)
         CATransaction.commit()

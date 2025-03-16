@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import CodeEditTextView
 
 extension TextViewController {
     package func generateParagraphStyle() -> NSMutableParagraphStyle {
@@ -22,6 +23,7 @@ extension TextViewController {
         textView.selectionManager.selectedLineBackgroundColor = getThemeBackground()
         textView.selectionManager.highlightSelectedLine = isEditable
         textView.selectionManager.insertionPointColor = theme.insertionPoint
+        textView.enclosingScrollView?.backgroundColor = useThemeBackground ? theme.background : .clear
         paragraphStyle = generateParagraphStyle()
         textView.typingAttributes = attributesFor(nil)
     }
@@ -48,7 +50,7 @@ extension TextViewController {
         : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
         gutterView.highlightSelectedLines = isEditable
         gutterView.font = font.rulerFont
-        gutterView.backgroundColor = useThemeBackground ? theme.background : .textBackgroundColor
+        gutterView.backgroundColor = useThemeBackground ? theme.background : .windowBackgroundColor
         if self.isEditable == false {
             gutterView.selectedLineTextColor = nil
             gutterView.selectedLineColor = .clear
@@ -58,8 +60,6 @@ extension TextViewController {
     /// Style the scroll view.
     package func styleScrollView() {
         guard let scrollView = view as? NSScrollView else { return }
-        scrollView.drawsBackground = useThemeBackground
-        scrollView.backgroundColor = useThemeBackground ? theme.background : .clear
         if let contentInsets {
             scrollView.automaticallyAdjustsContentInsets = false
             scrollView.contentInsets = contentInsets

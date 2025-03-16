@@ -20,9 +20,16 @@ public class TextViewController: NSViewController {
     // swiftlint:disable:next line_length
     public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
 
-    weak var searchController: SearchViewController?
+    weak var searchController: FindViewController?
 
     var scrollView: NSScrollView!
+
+    // SEARCH
+    var stackview: NSStackView!
+    var searchField: NSTextField!
+    var prevButton: NSButton!
+    var nextButton: NSButton!
+
     var textView: TextView!
     var gutterView: GutterView!
     internal var _undoManager: CEUndoManager!
@@ -95,6 +102,7 @@ public class TextViewController: NSViewController {
         didSet {
             textView.layoutManager.wrapLines = wrapLines
             scrollView.hasHorizontalScroller = !wrapLines
+            textView.textInsets = textViewInsets
         }
     }
 
@@ -111,7 +119,7 @@ public class TextViewController: NSViewController {
     public var useThemeBackground: Bool
 
     /// The provided highlight provider.
-    public var highlightProvider: HighlightProviding?
+    public var highlightProviders: [HighlightProviding]
 
     /// Optional insets to offset the text view in the scroll view by.
     public var contentInsets: NSEdgeInsets?
@@ -168,6 +176,8 @@ public class TextViewController: NSViewController {
         }
     }
 
+    var textCoordinators: [WeakCoordinator] = []
+
     var highlighter: Highlighter?
 
     /// The tree sitter client managed by the source editor.
@@ -194,6 +204,20 @@ public class TextViewController: NSViewController {
         return max(inset, .zero)
     }
 
+    /// The trailing inset for the editor. Grows when line wrapping is disabled.
+    package var textViewTrailingInset: CGFloat {
+        // See https://github.com/CodeEditApp/CodeEditTextView/issues/66
+        // wrapLines ? 1 : 48
+        0
+    }
+
+    package var textViewInsets: HorizontalEdgeInsets {
+        HorizontalEdgeInsets(
+            left: gutterView.gutterWidth,
+            right: textViewTrailingInset
+        )
+    }
+
     // MARK: Init
 
     init(
@@ -208,14 +232,15 @@ public class TextViewController: NSViewController {
         cursorPositions: [CursorPosition],
         editorOverscroll: CGFloat,
         useThemeBackground: Bool,
-        highlightProvider: HighlightProviding?,
+        highlightProviders: [HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets?,
         isEditable: Bool,
         isSelectable: Bool,
         letterSpacing: Double,
         useSystemCursor: Bool,
         bracketPairHighlight: BracketPairHighlight?,
-        undoManager: CEUndoManager? = nil
+        undoManager: CEUndoManager? = nil,
+        coordinators: [TextViewCoordinator] = []
     ) {
         self.language = language
         self.font = font
@@ -227,7 +252,7 @@ public class TextViewController: NSViewController {
         self.cursorPositions = cursorPositions
         self.editorOverscroll = editorOverscroll
         self.useThemeBackground = useThemeBackground
-        self.highlightProvider = highlightProvider
+        self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
@@ -244,10 +269,15 @@ public class TextViewController: NSViewController {
             platformGuardedSystemCursor = false
         }
 
+        if let idx = highlightProviders.firstIndex(where: { $0 is TreeSitterClient }),
+           let client = highlightProviders[idx] as? TreeSitterClient {
+            self.treeSitterClient = client
+        }
+
         self.textView = TextView(
             string: string,
             font: font,
-            textColor: theme.text,
+            textColor: theme.text.color,
             lineHeightMultiplier: lineHeightMultiple,
             wrapLines: wrapLines,
             isEditable: isEditable,
@@ -256,6 +286,10 @@ public class TextViewController: NSViewController {
             useSystemCursor: platformGuardedSystemCursor,
             delegate: self
         )
+
+        coordinators.forEach {
+            $0.prepareCoordinator(controller: self)
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -293,7 +327,11 @@ public class TextViewController: NSViewController {
             textView.removeStorageDelegate(highlighter)
         }
         highlighter = nil
-        highlightProvider = nil
+        highlightProviders.removeAll()
+        textCoordinators.values().forEach {
+            $0.destroy()
+        }
+        textCoordinators.removeAll()
         NotificationCenter.default.removeObserver(self)
         cancellables.forEach { $0.cancel() }
         if let localEvenMonitor {
@@ -306,6 +344,6 @@ public class TextViewController: NSViewController {
 extension TextViewController: GutterViewDelegate {
     public func gutterViewWidthDidUpdate(newWidth: CGFloat) {
         gutterView?.frame.size.width = newWidth
-        textView?.edgeInsets = HorizontalEdgeInsets(left: newWidth, right: 0)
+        textView?.textInsets = textViewInsets
     }
 }

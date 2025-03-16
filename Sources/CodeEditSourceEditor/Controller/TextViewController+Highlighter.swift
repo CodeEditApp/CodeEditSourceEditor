@@ -9,44 +9,38 @@ import Foundation
 import SwiftTreeSitter
 
 extension TextViewController {
-    internal func setUpHighlighter() {
+    package func setUpHighlighter() {
         if let highlighter {
             textView.removeStorageDelegate(highlighter)
             self.highlighter = nil
         }
 
-        self.highlighter = Highlighter(
+        let highlighter = Highlighter(
             textView: textView,
-            highlightProvider: highlightProvider,
-            theme: theme,
+            providers: highlightProviders,
             attributeProvider: self,
             language: language
         )
-        textView.addStorageDelegate(highlighter!)
-        setHighlightProvider(self.highlightProvider)
+        textView.addStorageDelegate(highlighter)
+        self.highlighter = highlighter
     }
 
-    internal func setHighlightProvider(_ highlightProvider: HighlightProviding? = nil) {
-        var provider: HighlightProviding?
-
-        if let highlightProvider = highlightProvider {
-            provider = highlightProvider
-        } else {
-            self.treeSitterClient = TreeSitterClient()
-            provider = self.treeSitterClient!
-        }
-
-        if let provider = provider {
-            self.highlightProvider = provider
-            highlighter?.setHighlightProvider(provider)
-        }
+    /// Sets new highlight providers. Recognizes when objects move in the array or are removed or inserted.
+    ///
+    /// This is in place of a setter on the ``highlightProviders`` variable to avoid wasting resources setting up
+    /// providers early.
+    ///
+    /// - Parameter newProviders: All the new providers.
+    package func setHighlightProviders(_ newProviders: [HighlightProviding]) {
+        highlighter?.setProviders(newProviders)
+        highlightProviders = newProviders
     }
 }
 
 extension TextViewController: ThemeAttributesProviding {
     public func attributesFor(_ capture: CaptureName?) -> [NSAttributedString.Key: Any] {
         [
-            .font: font,
+            .font: theme.fontFor(for: capture, from: font),
             .foregroundColor: theme.colorFor(capture),
             .kern: textView.kern
         ]
