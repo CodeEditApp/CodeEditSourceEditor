@@ -161,29 +161,46 @@ extension FindViewController {
 
 extension FindViewController: FindPanelDelegate {
     func findPanelOnSubmit() {
+        let previousIndex = target?.emphasizeAPI?.emphasizedRangeIndex ?? -1
         target?.emphasizeAPI?.highlightNext()
-//        if let textViewController = target as? TextViewController,
-//           let emphasizeAPI = target?.emphasizeAPI,
-//           !emphasizeAPI.emphasizedRanges.isEmpty {
-//            let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
-//            let range = emphasizeAPI.emphasizedRanges[activeIndex].range
-//            textViewController.textView.scrollToRange(range)
-//            textViewController.setCursorPositions([CursorPosition(range: range)])
-//        }
+        if let textViewController = target as? TextViewController,
+           let emphasizeAPI = target?.emphasizeAPI {
+            if emphasizeAPI.emphasizedRanges.isEmpty {
+                // Show "no matches" bezel notification and play beep
+                NSSound.beep()
+                BezelNotification.show(
+                    symbolName: "arrow.down.to.line",
+                    over: textViewController.textView
+                )
+            } else {
+                let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
+                let range = emphasizeAPI.emphasizedRanges[activeIndex].range
+                textViewController.textView.scrollToRange(range)
+                textViewController.setCursorPositions([CursorPosition(range: range)])
+                
+                // Show bezel notification if we cycled from last to first match
+                if previousIndex == emphasizeAPI.emphasizedRanges.count - 1 && activeIndex == 0 {
+                    BezelNotification.show(
+                        symbolName: "arrow.triangle.capsulepath",
+                        over: textViewController.textView
+                    )
+                }
+            }
+        }
     }
 
     func findPanelOnCancel() {
         // Return focus to the editor and restore cursor
         if let textViewController = target as? TextViewController {
             // Get the current highlight range before doing anything else
-//            var rangeToSelect: NSRange?
-//            if let emphasizeAPI = target?.emphasizeAPI {
-//                if !emphasizeAPI.emphasizedRanges.isEmpty {
-//                    // Get the active highlight range
-//                    let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
-//                    rangeToSelect = emphasizeAPI.emphasizedRanges[activeIndex].range
-//                }
-//            }
+            var rangeToSelect: NSRange?
+            if let emphasizeAPI = target?.emphasizeAPI {
+                if !emphasizeAPI.emphasizedRanges.isEmpty {
+                    // Get the active highlight range
+                    let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
+                    rangeToSelect = emphasizeAPI.emphasizedRanges[activeIndex].range
+                }
+            }
 
             // Now hide the panel
             if isShowingFindPanel {
@@ -197,23 +214,23 @@ extension FindViewController: FindPanelDelegate {
                 self.view.window?.makeFirstResponder(textViewController.textView)
 
                 // If we had an active highlight, select it
-//                if let rangeToSelect = rangeToSelect {
-//                    // Set the selection first
-//                    textViewController.textView.selectionManager.setSelectedRanges([rangeToSelect])
-//                    textViewController.setCursorPositions([CursorPosition(range: rangeToSelect)])
-//                    textViewController.textView.scrollToRange(rangeToSelect)
-//
-//                    // Then clear highlights after a short delay to ensure selection is set
-//                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-//                        self.target?.emphasizeAPI?.removeEmphasizeLayers()
-//                        textViewController.textView.needsDisplay = true
-//                    }
-//                } else if let currentPosition = textViewController.cursorPositions.first {
-//                    // Otherwise ensure cursor is visible at last position
-//                    textViewController.textView.scrollToRange(currentPosition.range)
-//                    textViewController.textView.selectionManager.setSelectedRanges([currentPosition.range])
-//                    self.target?.emphasizeAPI?.removeEmphasizeLayers()
-//                }
+                if let rangeToSelect = rangeToSelect {
+                    // Set the selection first
+                    textViewController.textView.selectionManager.setSelectedRanges([rangeToSelect])
+                    textViewController.setCursorPositions([CursorPosition(range: rangeToSelect)])
+                    textViewController.textView.scrollToRange(rangeToSelect)
+
+                    // Then clear highlights after a short delay to ensure selection is set
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        self.target?.emphasizeAPI?.removeEmphasizeLayers()
+                        textViewController.textView.needsDisplay = true
+                    }
+                } else if let currentPosition = textViewController.cursorPositions.first {
+                    // Otherwise ensure cursor is visible at last position
+                    textViewController.textView.scrollToRange(currentPosition.range)
+                    textViewController.textView.selectionManager.setSelectedRanges([currentPosition.range])
+                    self.target?.emphasizeAPI?.removeEmphasizeLayers()
+                }
             }
         }
     }
@@ -231,27 +248,45 @@ extension FindViewController: FindPanelDelegate {
     }
 
     func findPanelPrevButtonClicked() {
+        let previousIndex = target?.emphasizeAPI?.emphasizedRangeIndex ?? -1
         target?.emphasizeAPI?.highlightPrevious()
-//        if let textViewController = target as? TextViewController,
-//           let emphasizeAPI = target?.emphasizeAPI,
-//           !emphasizeAPI.emphasizedRanges.isEmpty {
-//            let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
-//            let range = emphasizeAPI.emphasizedRanges[activeIndex].range
-//            textViewController.textView.scrollToRange(range)
-//            textViewController.setCursorPositions([CursorPosition(range: range)])
-//        }
+        if let textViewController = target as? TextViewController,
+           let emphasizeAPI = target?.emphasizeAPI,
+           !emphasizeAPI.emphasizedRanges.isEmpty {
+            let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
+            let range = emphasizeAPI.emphasizedRanges[activeIndex].range
+            textViewController.textView.scrollToRange(range)
+            textViewController.setCursorPositions([CursorPosition(range: range)])
+
+            // Show bezel notification if we cycled from first to last match
+            if previousIndex == 0 && activeIndex == emphasizeAPI.emphasizedRanges.count - 1 {
+                BezelNotification.show(
+                    symbolName: "arrow.trianglehead.bottomleft.capsulepath.clockwise",
+                    over: textViewController.textView
+                )
+            }
+        }
     }
 
     func findPanelNextButtonClicked() {
+        let previousIndex = target?.emphasizeAPI?.emphasizedRangeIndex ?? -1
         target?.emphasizeAPI?.highlightNext()
-//        if let textViewController = target as? TextViewController,
-//           let emphasizeAPI = target?.emphasizeAPI,
-//           !emphasizeAPI.emphasizedRanges.isEmpty {
-//            let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
-//            let range = emphasizeAPI.emphasizedRanges[activeIndex].range
-//            textViewController.textView.scrollToRange(range)
-//            textViewController.setCursorPositions([CursorPosition(range: range)])
-//        }
+        if let textViewController = target as? TextViewController,
+           let emphasizeAPI = target?.emphasizeAPI,
+           !emphasizeAPI.emphasizedRanges.isEmpty {
+            let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
+            let range = emphasizeAPI.emphasizedRanges[activeIndex].range
+            textViewController.textView.scrollToRange(range)
+            textViewController.setCursorPositions([CursorPosition(range: range)])
+
+            // Show bezel notification if we cycled from last to first match
+            if previousIndex == emphasizeAPI.emphasizedRanges.count - 1 && activeIndex == 0 {
+                BezelNotification.show(
+                    symbolName: "arrow.triangle.capsulepath",
+                    over: textViewController.textView
+                )
+            }
+        }
     }
 
     func searchFile(query: String) {
@@ -290,16 +325,16 @@ extension FindViewController: FindPanelDelegate {
         findPanel.searchDelegate?.findPanelUpdateMatchCount(searchResults.count)
 
         // If we have an active highlight and the same number of matches, try to preserve the active index
-//        let currentActiveIndex = target.emphasizeAPI?.emphasizedRangeIndex ?? 0
-//        let activeIndex = (target.emphasizeAPI?.emphasizedRanges.count == searchResults.count) ? 
-//                         currentActiveIndex : 0
+        let currentActiveIndex = target.emphasizeAPI?.emphasizedRangeIndex ?? 0
+        let activeIndex = (target.emphasizeAPI?.emphasizedRanges.count == searchResults.count) ?
+                         currentActiveIndex : 0
 
-//        emphasizeAPI.emphasizeRanges(ranges: searchResults, activeIndex: activeIndex)
-        
+        emphasizeAPI.emphasizeRanges(ranges: searchResults, activeIndex: activeIndex)
+
         // Only set cursor position if we're actively searching (not when clearing)
         if !query.isEmpty {
             // Always select the active highlight
-//            target.setCursorPositions([CursorPosition(range: searchResults[activeIndex])])
+            target.setCursorPositions([CursorPosition(range: searchResults[activeIndex])])
         }
     }
 

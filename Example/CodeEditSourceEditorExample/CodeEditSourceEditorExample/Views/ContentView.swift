@@ -44,10 +44,10 @@ struct ContentView: View {
                 cursorPositions: $cursorPositions,
                 useThemeBackground: true,
                 highlightProviders: [treeSitterClient],
-                contentInsets: NSEdgeInsets(top: proxy.safeAreaInsets.top, left: 0, bottom: 0, right: 0),
+                contentInsets: NSEdgeInsets(top: proxy.safeAreaInsets.top, left: 0, bottom: 28.0, right: 0),
                 useSystemCursor: useSystemCursor
             )
-            .safeAreaInset(edge: .bottom, spacing: 0) {
+            .overlay(alignment: .bottom) {
                 HStack {
                     Toggle("Wrap Lines", isOn: $wrapLines)
                         .toggleStyle(.button)
