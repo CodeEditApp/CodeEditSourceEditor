@@ -290,7 +290,6 @@ extension FindViewController: FindPanelDelegate {
     }
 
     func searchFile(query: String) {
-        // Don't search if target or emphasizeAPI isn't ready
         guard let target = target,
               let emphasizeAPI = target.emphasizeAPI else {
             findPanel.searchDelegate?.findPanelUpdateMatchCount(0)
@@ -336,6 +335,10 @@ extension FindViewController: FindPanelDelegate {
         }
     }
 
+    /// Finds the index of the nearest emphasised match range relative to the cursor or visible text range.
+    ///
+    /// - Parameter matchRanges: An array of `NSRange` representing the emphasised match locations.
+    /// - Returns: The index of the nearest match in `matchRanges`, or `nil` if no matches are found.
     private func getNearestHighlightIndex(matchRanges: borrowing [NSRange]) -> Int? {
         guard !matchRanges.isEmpty,
               let textViewController = target as? TextViewController,
