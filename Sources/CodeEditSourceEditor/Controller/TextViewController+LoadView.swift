@@ -18,7 +18,8 @@ extension TextViewController {
 
         gutterView = GutterView(
             font: font.rulerFont,
-            textColor: .secondaryLabelColor,
+            textColor: theme.text.color.withAlphaComponent(0.35),
+            selectedTextColor: theme.text.color,
             textView: textView,
             delegate: self
         )
@@ -105,6 +106,15 @@ extension TextViewController {
 
                 if self.systemAppearance != newValue.name {
                     self.systemAppearance = newValue.name
+
+                    // Reset content insets and gutter position when appearance changes
+                    if let contentInsets = self.contentInsets {
+                        self.scrollView.contentInsets = contentInsets
+                        if let searchController = self.searchController, searchController.isShowingFindPanel {
+                            self.scrollView.contentInsets.top += FindPanel.height
+                        }
+                        self.gutterView.frame.origin.y = -self.scrollView.contentInsets.top
+                    }
                 }
             }
             .store(in: &cancellables)

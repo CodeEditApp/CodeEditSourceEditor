@@ -71,6 +71,8 @@ public class TextViewController: NSViewController {
             )
             textView.selectionManager.selectedLineBackgroundColor = theme.selection
             highlighter?.invalidate()
+            gutterView.textColor = theme.text.color.withAlphaComponent(0.35)
+            gutterView.selectedLineTextColor = theme.text.color
         }
     }
 
