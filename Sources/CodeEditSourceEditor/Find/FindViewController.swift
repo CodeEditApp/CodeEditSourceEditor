@@ -177,7 +177,7 @@ extension FindViewController: FindPanelDelegate {
                 let range = emphasizeAPI.emphasizedRanges[activeIndex].range
                 textViewController.textView.scrollToRange(range)
                 textViewController.setCursorPositions([CursorPosition(range: range)])
-                
+
                 // Show bezel notification if we cycled from last to first match
                 if previousIndex == emphasizeAPI.emphasizedRanges.count - 1 && activeIndex == 0 {
                     BezelNotification.show(
@@ -324,10 +324,8 @@ extension FindViewController: FindPanelDelegate {
         let searchResults = matches.map { $0.range }
         findPanel.searchDelegate?.findPanelUpdateMatchCount(searchResults.count)
 
-        // If we have an active highlight and the same number of matches, try to preserve the active index
-        let currentActiveIndex = target.emphasizeAPI?.emphasizedRangeIndex ?? 0
-        let activeIndex = (target.emphasizeAPI?.emphasizedRanges.count == searchResults.count) ?
-                         currentActiveIndex : 0
+        // Get the nearest match to either the cursor or visible area
+        let activeIndex = getNearestHighlightIndex(matchRanges: searchResults) ?? 0
 
         emphasizeAPI.emphasizeRanges(ranges: searchResults, activeIndex: activeIndex)
 
@@ -338,48 +336,45 @@ extension FindViewController: FindPanelDelegate {
         }
     }
 
-    private func getNearestHighlightIndex(matchRanges: [NSRange]) -> Int? {
-        // order the array as follows
-        // Found: 1 -> 2 -> 3 -> 4
-        // Cursor:       |
-        // Result: 3 -> 4 -> 1 -> 2
-        guard let cursorPosition = target?.cursorPositions.first else { return nil }
-        let start = cursorPosition.range.location
+    private func getNearestHighlightIndex(matchRanges: borrowing [NSRange]) -> Int? {
+        guard !matchRanges.isEmpty,
+              let textViewController = target as? TextViewController,
+              let textView = textViewController.textView,
+              let visibleRange = textView.visibleTextRange else { return nil }
 
-        var left = 0
-        var right = matchRanges.count - 1
-        var bestIndex = -1
-        var bestDiff = Int.max  // Stores the closest difference
+        // Determine target position based on cursor visibility
+        let targetPosition: Int
+        if let cursorPosition = textViewController.cursorPositions.first?.range.location,
+           visibleRange.contains(cursorPosition) {
+            targetPosition = cursorPosition
+        } else {
+            targetPosition = visibleRange.location
+        }
+
+        // Binary search for the nearest match
+        var left = 0, right = matchRanges.count - 1
+        var bestIndex: Int? = nil
+        var bestDiff = Int.max
 
         while left <= right {
             let mid = left + (right - left) / 2
             let midStart = matchRanges[mid].location
-            let diff = abs(midStart - start)
+            let diff = abs(midStart - targetPosition)
 
-            // If it's an exact match, return immediately
-            if diff == 0 {
-                return mid
-            }
-
-            // If this is the closest so far, update the best index
             if diff < bestDiff {
                 bestDiff = diff
                 bestIndex = mid
             }
 
-            // Move left or right based on the cursor position
-            if midStart < start {
+            if midStart < targetPosition {
                 left = mid + 1
             } else {
                 right = mid - 1
             }
         }
 
-        return bestIndex >= 0 ? bestIndex : nil
+        return bestIndex
     }
-
-    // Only re-serach the part of the file that changed upwards
-    private func reSearch() { }
 
     // Returns true if string contains uppercase letter
     // used for: ignores letter case if the search query is all lowercase
