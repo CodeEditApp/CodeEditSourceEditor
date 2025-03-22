@@ -122,7 +122,11 @@ extension TextViewController {
         if let localEventMonitor = self.localEvenMonitor {
             NSEvent.removeMonitor(localEventMonitor)
         }
-        self.localEvenMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event -> NSEvent? in
+        setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
+    }
+
+    func setUpKeyBindings(eventMonitor: inout Any?) {
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event -> NSEvent? in
             guard self?.view.window?.firstResponder == self?.textView else { return event }
             let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
 
@@ -142,6 +146,7 @@ extension TextViewController {
             }
         }
     }
+
     func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
         let commandKey = NSEvent.ModifierFlags.command.rawValue
 

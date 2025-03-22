@@ -289,7 +289,7 @@ extension FindViewController: FindPanelDelegate {
         }
     }
 
-    func searchFile(query: String) {
+    func searchFile(query: String, respectCursorPosition: Bool = true) {
         guard let target = target,
               let emphasizeAPI = target.emphasizeAPI else {
             findPanel.searchDelegate?.findPanelUpdateMatchCount(0)
@@ -324,7 +324,7 @@ extension FindViewController: FindPanelDelegate {
         findPanel.searchDelegate?.findPanelUpdateMatchCount(searchResults.count)
 
         // Get the nearest match to either the cursor or visible area
-        let activeIndex = getNearestHighlightIndex(matchRanges: searchResults) ?? 0
+        let activeIndex = respectCursorPosition ? getNearestHighlightIndex(matchRanges: searchResults) ?? 0 : 0
 
         emphasizeAPI.emphasizeRanges(ranges: searchResults, activeIndex: activeIndex)
 
@@ -356,7 +356,7 @@ extension FindViewController: FindPanelDelegate {
 
         // Binary search for the nearest match
         var left = 0, right = matchRanges.count - 1
-        var bestIndex: Int? = nil
+        var bestIndex: Int?
         var bestDiff = Int.max
 
         while left <= right {
