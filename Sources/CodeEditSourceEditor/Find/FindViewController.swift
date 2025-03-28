@@ -436,29 +436,36 @@ extension FindViewController: FindPanelDelegate {
         guard let cursorPosition = target?.cursorPositions.first else { return nil }
         let start = cursorPosition.range.location
 
-        // Binary search for the nearest match
-        var left = 0, right = matchRanges.count - 1
-        var bestIndex: Int?
-        var bestDiff = Int.max
+        var left = 0
+        var right = matchRanges.count - 1
+        var bestIndex = -1
+        var bestDiff = Int.max  // Stores the closest difference
 
         while left <= right {
             let mid = left + (right - left) / 2
             let midStart = matchRanges[mid].location
-            let diff = abs(midStart - targetPosition)
+            let diff = abs(midStart - start)
 
+            // If it's an exact match, return immediately
+            if diff == 0 {
+                return mid
+            }
+
+            // If this is the closest so far, update the best index
             if diff < bestDiff {
                 bestDiff = diff
                 bestIndex = mid
             }
 
-            if midStart < targetPosition {
+            // Move left or right based on the cursor position
+            if midStart < start {
                 left = mid + 1
             } else {
                 right = mid - 1
             }
         }
 
-        return bestIndex
+        return bestIndex >= 0 ? bestIndex : nil
     }
 
     // Only re-find the part of the file that changed upwards
