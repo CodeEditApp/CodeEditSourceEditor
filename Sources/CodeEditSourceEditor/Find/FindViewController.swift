@@ -6,12 +6,16 @@
 //
 
 import AppKit
+import CodeEditTextView
 
-/// Creates a container controller for displaying and hiding a search bar with a content view.
+/// Creates a container controller for displaying and hiding a find panel with a content view.
 final class FindViewController: NSViewController {
     weak var target: FindPanelTarget?
     var childView: NSView
     var findPanel: FindPanel!
+    private var findMatches: [NSRange] = []
+    private var currentFindMatchIndex: Int = 0
+    private var findText: String = ""
 
     private var findPanelVerticalConstraint: NSLayoutConstraint!
 
@@ -22,6 +26,86 @@ final class FindViewController: NSViewController {
         self.childView = childView
         super.init(nibName: nil, bundle: nil)
         self.findPanel = FindPanel(delegate: self, textView: target as? NSView)
+
+        // Add notification observer for text changes
+        if let textViewController = target as? TextViewController {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(textDidChange),
+                name: TextView.textDidChangeNotification,
+                object: textViewController.textView
+            )
+        }
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
+    @objc private func textDidChange() {
+        // Only update if we have find text
+        if !findText.isEmpty {
+            performFind(query: findText)
+        }
+    }
+
+    private func performFind(query: String) {
+        // Don't find if target or emphasisManager isn't ready
+        guard let target = target else {
+            findPanel.findDelegate?.findPanelUpdateMatchCount(0)
+            findMatches = []
+            currentFindMatchIndex = 0
+            return
+        }
+
+        // Clear emphases and return if query is empty
+        if query.isEmpty {
+            findPanel.findDelegate?.findPanelUpdateMatchCount(0)
+            findMatches = []
+            currentFindMatchIndex = 0
+            return
+        }
+
+        let findOptions: NSRegularExpression.Options = smartCase(str: query) ? [] : [.caseInsensitive]
+        let escapedQuery = NSRegularExpression.escapedPattern(for: query)
+
+        guard let regex = try? NSRegularExpression(pattern: escapedQuery, options: findOptions) else {
+            findPanel.findDelegate?.findPanelUpdateMatchCount(0)
+            findMatches = []
+            currentFindMatchIndex = 0
+            return
+        }
+
+        let text = target.text
+        let matches = regex.matches(in: text, range: NSRange(location: 0, length: text.utf16.count))
+
+        findMatches = matches.map { $0.range }
+        findPanel.findDelegate?.findPanelUpdateMatchCount(findMatches.count)
+
+        // Find the nearest match to the current cursor position
+        currentFindMatchIndex = getNearestEmphasisIndex(matchRanges: findMatches) ?? 0
+    }
+
+    private func addEmphases() {
+        guard let target = target,
+              let emphasisManager = target.emphasisManager else { return }
+
+        // Clear existing emphases
+        emphasisManager.removeEmphases(for: "find")
+
+        // Create emphasis with the nearest match as active
+        let emphases = findMatches.enumerated().map { index, range in
+            Emphasis(
+                range: range,
+                style: .standard,
+                flash: false,
+                inactive: index != currentFindMatchIndex,
+                select: index == currentFindMatchIndex
+            )
+        }
+
+        // Add all emphases
+        emphasisManager.addEmphases(emphases, for: "find")
     }
 
     required init?(coder: NSCoder) {
@@ -32,9 +116,9 @@ final class FindViewController: NSViewController {
         super.loadView()
 
         // Set up the `childView` as a subview of our view. Constrained to all edges, except the top is constrained to
-        // the search bar's bottom
-        // The search bar is constrained to the top of the view.
-        // The search bar's top anchor when hidden, is equal to it's negated height hiding it above the view's contents.
+        // the find panel's bottom
+        // The find panel is constrained to the top of the view.
+        // The find panel's top anchor when hidden, is equal to it's negated height hiding it above the view's contents.
         // When visible, it's set to 0.
 
         view.clipsToBounds = false
@@ -48,7 +132,7 @@ final class FindViewController: NSViewController {
         findPanelVerticalConstraint = findPanel.topAnchor.constraint(equalTo: view.topAnchor)
 
         NSLayoutConstraint.activate([
-            // Constrain search bar
+            // Constrain find panel
             findPanelVerticalConstraint,
             findPanel.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             findPanel.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -73,7 +157,7 @@ final class FindViewController: NSViewController {
     /// Sets the find panel constraint to show the find panel.
     /// Can be animated using implicit animation.
     private func setFindPanelConstraintShow() {
-        // Update the search bar's top to be equal to the view's top.
+        // Update the find panel's top to be equal to the view's top.
         findPanelVerticalConstraint.constant = view.safeAreaInsets.top
         findPanelVerticalConstraint.isActive = true
     }
@@ -81,7 +165,7 @@ final class FindViewController: NSViewController {
     /// Sets the find panel constraint to hide the find panel.
     /// Can be animated using implicit animation.
     private func setFindPanelConstraintHide() {
-        // Update the search bar's top anchor to be equal to it's negative height, hiding it above the view.
+        // Update the find panel's top anchor to be equal to it's negative height, hiding it above the view.
 
         // SwiftUI hates us. It refuses to move views outside of the safe are if they don't have the `.ignoresSafeArea`
         // modifier, but with that modifier on it refuses to allow it to be animated outside the safe area.
@@ -91,10 +175,10 @@ final class FindViewController: NSViewController {
     }
 }
 
-// MARK: - Toggle Search Bar
+// MARK: - Toggle find panel
 
 extension FindViewController {
-    /// Toggle the search bar
+    /// Toggle the find panel
     func toggleFindPanel() {
         if isShowingFindPanel {
             hideFindPanel()
@@ -103,9 +187,14 @@ extension FindViewController {
         }
     }
 
-    /// Show the search bar
+    /// Show the find panel
     func showFindPanel(animated: Bool = true) {
-        guard !isShowingFindPanel else { return }
+        if isShowingFindPanel {
+            // If panel is already showing, just focus the text field
+            _ = findPanel?.becomeFirstResponder()
+            return
+        }
+
         isShowingFindPanel = true
 
         let updates: () -> Void = { [self] in
@@ -122,12 +211,14 @@ extension FindViewController {
         }
 
         _ = findPanel?.becomeFirstResponder()
+        findPanel?.addEventMonitor()
     }
 
-    /// Hide the search bar
+    /// Hide the find panel
     func hideFindPanel(animated: Bool = true) {
         isShowingFindPanel = false
         _ = findPanel?.resignFirstResponder()
+        findPanel?.removeEventMonitor()
 
         let updates: () -> Void = { [self] in
             target?.findPanelWillHide(panelHeight: FindPanel.height)
@@ -138,6 +229,11 @@ extension FindViewController {
             withAnimation(updates)
         } else {
             updates()
+        }
+
+        // Set first responder back to text view
+        if let textViewController = target as? TextViewController {
+            _ = textViewController.textView.window?.makeFirstResponder(textViewController.textView)
         }
     }
 
@@ -157,202 +253,188 @@ extension FindViewController {
     }
 }
 
-// MARK: - Search Bar Delegate
+// MARK: - Find Panel Delegate
 
 extension FindViewController: FindPanelDelegate {
     func findPanelOnSubmit() {
-        let previousIndex = target?.emphasizeAPI?.emphasizedRangeIndex ?? -1
-        target?.emphasizeAPI?.highlightNext()
-        if let textViewController = target as? TextViewController,
-           let emphasizeAPI = target?.emphasizeAPI {
-            if emphasizeAPI.emphasizedRanges.isEmpty {
-                // Show "no matches" bezel notification and play beep
-                NSSound.beep()
-                BezelNotification.show(
-                    symbolName: "arrow.down.to.line",
-                    over: textViewController.textView
-                )
-            } else {
-                let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
-                let range = emphasizeAPI.emphasizedRanges[activeIndex].range
-                textViewController.textView.scrollToRange(range)
-                textViewController.setCursorPositions([CursorPosition(range: range)])
-
-                // Show bezel notification if we cycled from last to first match
-                if previousIndex == emphasizeAPI.emphasizedRanges.count - 1 && activeIndex == 0 {
-                    BezelNotification.show(
-                        symbolName: "arrow.triangle.capsulepath",
-                        over: textViewController.textView
-                    )
-                }
-            }
-        }
+        findPanelNextButtonClicked()
     }
 
     func findPanelOnCancel() {
-        // Return focus to the editor and restore cursor
-        if let textViewController = target as? TextViewController {
-            // Get the current highlight range before doing anything else
-            var rangeToSelect: NSRange?
-            if let emphasizeAPI = target?.emphasizeAPI {
-                if !emphasizeAPI.emphasizedRanges.isEmpty {
-                    // Get the active highlight range
-                    let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
-                    rangeToSelect = emphasizeAPI.emphasizedRanges[activeIndex].range
-                }
-            }
-
-            // Now hide the panel
-            if isShowingFindPanel {
-                hideFindPanel()
-            }
-
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-
-                // First make the text view first responder
-                self.view.window?.makeFirstResponder(textViewController.textView)
-
-                // If we had an active highlight, select it
-                if let rangeToSelect = rangeToSelect {
-                    // Set the selection first
-                    textViewController.textView.selectionManager.setSelectedRanges([rangeToSelect])
-                    textViewController.setCursorPositions([CursorPosition(range: rangeToSelect)])
-                    textViewController.textView.scrollToRange(rangeToSelect)
-
-                    // Then clear highlights after a short delay to ensure selection is set
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                        self.target?.emphasizeAPI?.removeEmphasizeLayers()
-                        textViewController.textView.needsDisplay = true
-                    }
-                } else if let currentPosition = textViewController.cursorPositions.first {
-                    // Otherwise ensure cursor is visible at last position
-                    textViewController.textView.scrollToRange(currentPosition.range)
-                    textViewController.textView.selectionManager.setSelectedRanges([currentPosition.range])
-                    self.target?.emphasizeAPI?.removeEmphasizeLayers()
-                }
-            }
+        if isShowingFindPanel {
+            hideFindPanel()
         }
     }
 
-    func findPanelDidUpdate(_ searchText: String) {
-        // Only perform search if we're not handling a mouse click in the text view
+    func findPanelDidUpdate(_ text: String) {
+        // Check if this update was triggered by a return key without shift
+        if let currentEvent = NSApp.currentEvent,
+           currentEvent.type == .keyDown,
+           currentEvent.keyCode == 36, // Return key
+           !currentEvent.modifierFlags.contains(.shift) {
+            return // Skip find for regular return key
+        }
+
+        // Only perform find if we're focusing the text view
         if let textViewController = target as? TextViewController,
            textViewController.textView.window?.firstResponder === textViewController.textView {
-            // If the text view has focus, just clear emphasis layers without searching
-            target?.emphasizeAPI?.removeEmphasizeLayers()
-            findPanel.searchDelegate?.findPanelUpdateMatchCount(0)
+            // If the text view has focus, just clear visual emphases but keep matches in memory
+            target?.emphasisManager?.removeEmphases(for: "find")
+            // Re-add the current active emphasis without visual emphasis
+            if let emphases = target?.emphasisManager?.getEmphases(for: "find"),
+               let activeEmphasis = emphases.first(where: { !$0.inactive }) {
+                target?.emphasisManager?.addEmphasis(
+                    Emphasis(
+                        range: activeEmphasis.range,
+                        style: .standard,
+                        flash: false,
+                        inactive: false,
+                        select: true
+                    ),
+                    for: "find"
+                )
+            }
             return
         }
-        searchFile(query: searchText)
+
+        // Clear existing emphases before performing new find
+        target?.emphasisManager?.removeEmphases(for: "find")
+        find(text: text)
     }
 
     func findPanelPrevButtonClicked() {
-        let previousIndex = target?.emphasizeAPI?.emphasizedRangeIndex ?? -1
-        target?.emphasizeAPI?.highlightPrevious()
-        if let textViewController = target as? TextViewController,
-           let emphasizeAPI = target?.emphasizeAPI,
-           !emphasizeAPI.emphasizedRanges.isEmpty {
-            let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
-            let range = emphasizeAPI.emphasizedRanges[activeIndex].range
-            textViewController.textView.scrollToRange(range)
-            textViewController.setCursorPositions([CursorPosition(range: range)])
+        guard let textViewController = target as? TextViewController,
+              let emphasisManager = target?.emphasisManager else { return }
 
-            // Show bezel notification if we cycled from first to last match
-            if previousIndex == 0 && activeIndex == emphasizeAPI.emphasizedRanges.count - 1 {
-                BezelNotification.show(
-                    symbolName: "arrow.trianglehead.bottomleft.capsulepath.clockwise",
-                    over: textViewController.textView
-                )
-            }
+        // Check if there are any matches
+        if findMatches.isEmpty {
+            return
         }
+
+        // Update to previous match
+        let oldIndex = currentFindMatchIndex
+        currentFindMatchIndex = (currentFindMatchIndex - 1 + findMatches.count) % findMatches.count
+
+        // Show bezel notification if we cycled from first to last match
+        if oldIndex == 0 && currentFindMatchIndex == findMatches.count - 1 {
+            BezelNotification.show(
+                symbolName: "arrow.trianglehead.bottomleft.capsulepath.clockwise",
+                over: textViewController.textView
+            )
+        }
+
+        // If the text view has focus, show a flash animation for the current match
+        if textViewController.textView.window?.firstResponder === textViewController.textView {
+            let newActiveRange = findMatches[currentFindMatchIndex]
+
+            // Clear existing emphases before adding the flash
+            emphasisManager.removeEmphases(for: "find")
+
+            emphasisManager.addEmphasis(
+                Emphasis(
+                    range: newActiveRange,
+                    style: .standard,
+                    flash: true,
+                    inactive: false,
+                    select: true
+                ),
+                for: "find"
+            )
+
+            return
+        }
+
+        // Create updated emphases with new active state
+        let updatedEmphases = findMatches.enumerated().map { index, range in
+            Emphasis(
+                range: range,
+                style: .standard,
+                flash: false,
+                inactive: index != currentFindMatchIndex,
+                select: index == currentFindMatchIndex
+            )
+        }
+
+        // Replace all emphases to update state
+        emphasisManager.replaceEmphases(updatedEmphases, for: "find")
     }
 
     func findPanelNextButtonClicked() {
-        let previousIndex = target?.emphasizeAPI?.emphasizedRangeIndex ?? -1
-        target?.emphasizeAPI?.highlightNext()
-        if let textViewController = target as? TextViewController,
-           let emphasizeAPI = target?.emphasizeAPI,
-           !emphasizeAPI.emphasizedRanges.isEmpty {
-            let activeIndex = emphasizeAPI.emphasizedRangeIndex ?? 0
-            let range = emphasizeAPI.emphasizedRanges[activeIndex].range
-            textViewController.textView.scrollToRange(range)
-            textViewController.setCursorPositions([CursorPosition(range: range)])
+        guard let textViewController = target as? TextViewController,
+              let emphasisManager = target?.emphasisManager else { return }
 
-            // Show bezel notification if we cycled from last to first match
-            if previousIndex == emphasizeAPI.emphasizedRanges.count - 1 && activeIndex == 0 {
-                BezelNotification.show(
-                    symbolName: "arrow.triangle.capsulepath",
-                    over: textViewController.textView
-                )
-            }
+        // Check if there are any matches
+        if findMatches.isEmpty {
+            // Show "no matches" bezel notification and play beep
+            NSSound.beep()
+            BezelNotification.show(
+                symbolName: "arrow.down.to.line",
+                over: textViewController.textView
+            )
+            return
         }
+
+        // Update to next match
+        let oldIndex = currentFindMatchIndex
+        currentFindMatchIndex = (currentFindMatchIndex + 1) % findMatches.count
+
+        // Show bezel notification if we cycled from last to first match
+        if oldIndex == findMatches.count - 1 && currentFindMatchIndex == 0 {
+            BezelNotification.show(
+                symbolName: "arrow.triangle.capsulepath",
+                over: textViewController.textView
+            )
+        }
+
+        // If the text view has focus, show a flash animation for the current match
+        if textViewController.textView.window?.firstResponder === textViewController.textView {
+            let newActiveRange = findMatches[currentFindMatchIndex]
+
+            // Clear existing emphases before adding the flash
+            emphasisManager.removeEmphases(for: "find")
+
+            emphasisManager.addEmphasis(
+                Emphasis(
+                    range: newActiveRange,
+                    style: .standard,
+                    flash: true,
+                    inactive: false,
+                    select: true
+                ),
+                for: "find"
+            )
+
+            return
+        }
+
+        // Create updated emphases with new active state
+        let updatedEmphases = findMatches.enumerated().map { index, range in
+            Emphasis(
+                range: range,
+                style: .standard,
+                flash: false,
+                inactive: index != currentFindMatchIndex,
+                select: index == currentFindMatchIndex
+            )
+        }
+
+        // Replace all emphases to update state
+        emphasisManager.replaceEmphases(updatedEmphases, for: "find")
     }
 
-    func searchFile(query: String, respectCursorPosition: Bool = true) {
-        guard let target = target,
-              let emphasizeAPI = target.emphasizeAPI else {
-            findPanel.searchDelegate?.findPanelUpdateMatchCount(0)
-            return
-        }
-
-        // Clear highlights and return if query is empty
-        if query.isEmpty {
-            emphasizeAPI.removeEmphasizeLayers()
-            findPanel.searchDelegate?.findPanelUpdateMatchCount(0)
-            return
-        }
-
-        let searchOptions: NSRegularExpression.Options = smartCase(str: query) ? [] : [.caseInsensitive]
-        let escapedQuery = NSRegularExpression.escapedPattern(for: query)
-
-        guard let regex = try? NSRegularExpression(pattern: escapedQuery, options: searchOptions) else {
-            emphasizeAPI.removeEmphasizeLayers()
-            findPanel.searchDelegate?.findPanelUpdateMatchCount(0)
-            return
-        }
-
-        let text = target.text
-        let matches = regex.matches(in: text, range: NSRange(location: 0, length: text.utf16.count))
-        guard !matches.isEmpty else {
-            emphasizeAPI.removeEmphasizeLayers()
-            findPanel.searchDelegate?.findPanelUpdateMatchCount(0)
-            return
-        }
-
-        let searchResults = matches.map { $0.range }
-        findPanel.searchDelegate?.findPanelUpdateMatchCount(searchResults.count)
-
-        // Get the nearest match to either the cursor or visible area
-        let activeIndex = respectCursorPosition ? getNearestHighlightIndex(matchRanges: searchResults) ?? 0 : 0
-
-        emphasizeAPI.emphasizeRanges(ranges: searchResults, activeIndex: activeIndex)
-
-        // Only set cursor position if we're actively searching (not when clearing)
-        if !query.isEmpty {
-            // Always select the active highlight
-            target.setCursorPositions([CursorPosition(range: searchResults[activeIndex])])
-        }
+    func find(text: String) {
+        findText = text
+        performFind(query: text)
+        addEmphases()
     }
 
-    /// Finds the index of the nearest emphasised match range relative to the cursor or visible text range.
-    ///
-    /// - Parameter matchRanges: An array of `NSRange` representing the emphasised match locations.
-    /// - Returns: The index of the nearest match in `matchRanges`, or `nil` if no matches are found.
-    private func getNearestHighlightIndex(matchRanges: borrowing [NSRange]) -> Int? {
-        guard !matchRanges.isEmpty,
-              let textViewController = target as? TextViewController,
-              let textView = textViewController.textView,
-              let visibleRange = textView.visibleTextRange else { return nil }
-
-        // Determine target position based on cursor visibility
-        let targetPosition: Int
-        if let cursorPosition = textViewController.cursorPositions.first?.range.location,
-           visibleRange.contains(cursorPosition) {
-            targetPosition = cursorPosition
-        } else {
-            targetPosition = visibleRange.location
-        }
+    private func getNearestEmphasisIndex(matchRanges: [NSRange]) -> Int? {
+        // order the array as follows
+        // Found: 1 -> 2 -> 3 -> 4
+        // Cursor:       |
+        // Result: 3 -> 4 -> 1 -> 2
+        guard let cursorPosition = target?.cursorPositions.first else { return nil }
+        let start = cursorPosition.range.location
 
         // Binary search for the nearest match
         var left = 0, right = matchRanges.count - 1
@@ -379,8 +461,11 @@ extension FindViewController: FindPanelDelegate {
         return bestIndex
     }
 
+    // Only re-find the part of the file that changed upwards
+    private func reFind() { }
+
     // Returns true if string contains uppercase letter
-    // used for: ignores letter case if the search query is all lowercase
+    // used for: ignores letter case if the find text is all lowercase
     private func smartCase(str: String) -> Bool {
         return str.range(of: "[A-Z]", options: .regularExpression) != nil
     }
@@ -390,7 +475,6 @@ extension FindViewController: FindPanelDelegate {
     }
 
     func findPanelClearEmphasis() {
-        target?.emphasizeAPI?.removeEmphasizeLayers()
-        findPanel.searchDelegate?.findPanelUpdateMatchCount(0)
+        target?.emphasisManager?.removeEmphases(for: "find")
     }
 }

@@ -74,8 +74,8 @@ extension TextViewController {
         ) { [weak self] _ in
             self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
             self?.gutterView.needsDisplay = true
-            if self?.bracketPairHighlight == .flash {
-                self?.removeHighlightLayers()
+            if self?.bracketPairEmphasis == .flash {
+                self?.emphasisManager?.removeEmphases(for: "bracketPairs")
             }
         }
 
@@ -94,7 +94,7 @@ extension TextViewController {
             queue: .main
         ) { [weak self] _ in
             self?.updateCursorPosition()
-            self?.highlightSelectionPairs()
+            self?.emphasizeSelectionPairs()
         }
 
         textView.updateFrameIfNeeded()

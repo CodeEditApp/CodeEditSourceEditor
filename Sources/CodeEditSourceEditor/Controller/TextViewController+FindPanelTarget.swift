@@ -19,7 +19,7 @@ extension TextViewController: FindPanelTarget {
         gutterView.frame.origin.y = -scrollView.contentInsets.top
     }
 
-    var emphasizeAPI: EmphasizeAPI? {
-        textView?.emphasizeAPI
+    var emphasisManager: EmphasisManager? {
+        textView?.emphasisManager
     }
 }

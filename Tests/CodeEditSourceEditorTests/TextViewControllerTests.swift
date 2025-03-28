@@ -31,7 +31,7 @@ final class TextViewControllerTests: XCTestCase {
             isSelectable: true,
             letterSpacing: 1.0,
             useSystemCursor: false,
-            bracketPairHighlight: .flash
+            bracketPairEmphasis: .flash
         )
 
         controller.loadView()
@@ -225,26 +225,26 @@ final class TextViewControllerTests: XCTestCase {
         controller.scrollView.setFrameSize(NSSize(width: 500, height: 500))
         controller.viewDidLoad()
         let _ = controller.textView.becomeFirstResponder()
-        controller.bracketPairHighlight = nil
+        controller.bracketPairEmphasis = nil
         controller.setText("{ Lorem Ipsum {} }")
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssert(controller.highlightLayers.isEmpty, "Controller added highlight layer when setting is set to `nil`")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
 
-        controller.bracketPairHighlight = .bordered(color: .black)
+        controller.bracketPairEmphasis = .bordered(color: .black)
         controller.textView.setNeedsDisplay()
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssert(controller.highlightLayers.count == 2, "Controller created an incorrect number of layers for bordered. Expected 2, found \(controller.highlightLayers.count)")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
         XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove bracket pair layers.")
 
-        controller.bracketPairHighlight = .underline(color: .black)
+        controller.bracketPairEmphasis = .underline(color: .black)
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssert(controller.highlightLayers.count == 2, "Controller created an incorrect number of layers for underline. Expected 2, found \(controller.highlightLayers.count)")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
         XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove bracket pair layers.")
 
-        controller.bracketPairHighlight = .flash
+        controller.bracketPairEmphasis = .flash
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssert(controller.highlightLayers.count == 1, "Controller created more than one layer for flash animation. Expected 1, found \(controller.highlightLayers.count)")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])

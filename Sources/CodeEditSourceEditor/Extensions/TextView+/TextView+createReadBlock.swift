@@ -1,5 +1,5 @@
 //
-//  HighlighterTextView+createReadBlock.swift
+//  TextView+createReadBlock.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 5/20/23.

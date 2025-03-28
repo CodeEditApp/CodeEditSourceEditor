@@ -62,8 +62,7 @@ enum Mock {
             isEditable: true,
             isSelectable: true,
             letterSpacing: 1.0,
-            useSystemCursor: false,
-            bracketPairHighlight: .flash
+            useSystemCursor: false
         )
     }
 

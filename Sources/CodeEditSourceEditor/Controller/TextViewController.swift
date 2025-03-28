@@ -150,9 +150,9 @@ public class TextViewController: NSViewController {
     }
 
     /// The type of highlight to use when highlighting bracket pairs. Leave as `nil` to disable highlighting.
-    public var bracketPairHighlight: BracketPairHighlight? {
+    public var bracketPairEmphasis: BracketPairEmphasis? {
         didSet {
-            highlightSelectionPairs()
+            emphasizeSelectionPairs()
         }
     }
 
@@ -240,7 +240,7 @@ public class TextViewController: NSViewController {
         isSelectable: Bool,
         letterSpacing: Double,
         useSystemCursor: Bool,
-        bracketPairHighlight: BracketPairHighlight?,
+        bracketPairEmphasis: BracketPairEmphasis?,
         undoManager: CEUndoManager? = nil,
         coordinators: [TextViewCoordinator] = []
     ) {
@@ -259,7 +259,7 @@ public class TextViewController: NSViewController {
         self.isEditable = isEditable
         self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
-        self.bracketPairHighlight = bracketPairHighlight
+        self.bracketPairEmphasis = bracketPairEmphasis
         self._undoManager = undoManager
 
         super.init(nibName: nil, bundle: nil)

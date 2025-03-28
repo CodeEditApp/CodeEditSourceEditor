@@ -13,18 +13,21 @@ import Combine
 final class FindPanel: NSView {
     static let height: CGFloat = 28
 
-    weak var searchDelegate: FindPanelDelegate?
+    weak var findDelegate: FindPanelDelegate?
     private var hostingView: NSHostingView<FindPanelView>!
     private var viewModel: FindPanelViewModel!
     private weak var textView: NSView?
     private var isViewReady = false
+    private var findQueryText: String = "" // Store search text at panel level
+    private var eventMonitor: Any?
 
     init(delegate: FindPanelDelegate?, textView: NSView?) {
-        self.searchDelegate = delegate
+        self.findDelegate = delegate
         self.textView = textView
         super.init(frame: .zero)
 
-        viewModel = FindPanelViewModel(delegate: searchDelegate)
+        viewModel = FindPanelViewModel(delegate: findDelegate)
+        viewModel.findText = findQueryText // Initialize with stored value
         hostingView = NSHostingView(rootView: FindPanelView(viewModel: viewModel))
         hostingView.translatesAutoresizingMaskIntoConstraints = false
 
@@ -52,7 +55,7 @@ final class FindPanel: NSView {
         super.viewDidMoveToSuperview()
         if !isViewReady && superview != nil {
             isViewReady = true
-            viewModel.startObservingSearchText()
+            viewModel.startObservingFindText()
         }
     }
 
@@ -76,6 +79,25 @@ final class FindPanel: NSView {
         return true
     }
 
+    // MARK: - Event Monitor Management
+
+    func addEventMonitor() {
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event -> NSEvent? in
+            if event.keyCode == 53 { // if esc pressed
+                self?.cancel()
+                return nil // do not play "beep" sound
+            }
+            return event
+        }
+    }
+
+    func removeEventMonitor() {
+        if let monitor = eventMonitor {
+            NSEvent.removeMonitor(monitor)
+            eventMonitor = nil
+        }
+    }
+
     // MARK: - Public Methods
 
     func cancel() {
@@ -84,5 +106,13 @@ final class FindPanel: NSView {
 
     func updateMatchCount(_ count: Int) {
         viewModel.updateMatchCount(count)
+    }
+
+    // MARK: - Search Text Management
+
+    func updateSearchText(_ text: String) {
+        findQueryText = text
+        viewModel.findText = text
+        findDelegate?.findPanelDidUpdate(text)
     }
 }

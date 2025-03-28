@@ -40,7 +40,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///                   value is true, and `isEditable` is false, the editor is selectable but not editable.
     ///   - letterSpacing: The amount of space to use between letters, as a percent. Eg: `1.0` = no space, `1.5` = 1/2 a
     ///                    character's width between characters, etc. Defaults to `1.0`
-    ///   - bracketPairHighlight: The type of highlight to use to highlight bracket pairs.
+    ///   - bracketPairEmphasis: The type of highlight to use to highlight bracket pairs.
     ///                           See `BracketPairHighlight` for more information. Defaults to `nil`
     ///   - useSystemCursor: If true, uses the system cursor on `>=macOS 14`.
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
@@ -62,7 +62,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         isEditable: Bool = true,
         isSelectable: Bool = true,
         letterSpacing: Double = 1.0,
-        bracketPairHighlight: BracketPairHighlight? = nil,
+        bracketPairEmphasis: BracketPairEmphasis? = .flash,
         useSystemCursor: Bool = true,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = []
@@ -83,7 +83,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.isEditable = isEditable
         self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
-        self.bracketPairHighlight = bracketPairHighlight
+        self.bracketPairEmphasis = bracketPairEmphasis
         if #available(macOS 14, *) {
             self.useSystemCursor = useSystemCursor
         } else {
@@ -116,8 +116,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///                   value is true, and `isEditable` is false, the editor is selectable but not editable.
     ///   - letterSpacing: The amount of space to use between letters, as a percent. Eg: `1.0` = no space, `1.5` = 1/2 a
     ///                    character's width between characters, etc. Defaults to `1.0`
-    ///   - bracketPairHighlight: The type of highlight to use to highlight bracket pairs.
-    ///                           See `BracketPairHighlight` for more information. Defaults to `nil`
+    ///   - bracketPairEmphasis: The type of highlight to use to highlight bracket pairs.
+    ///                           See `BracketPairEmphasis` for more information. Defaults to `nil`
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
     ///   - coordinators: Any text coordinators for the view to use. See ``TextViewCoordinator`` for more information.
     public init(
@@ -137,7 +137,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         isEditable: Bool = true,
         isSelectable: Bool = true,
         letterSpacing: Double = 1.0,
-        bracketPairHighlight: BracketPairHighlight? = nil,
+        bracketPairEmphasis: BracketPairEmphasis? = .flash,
         useSystemCursor: Bool = true,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = []
@@ -158,7 +158,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.isEditable = isEditable
         self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
-        self.bracketPairHighlight = bracketPairHighlight
+        self.bracketPairEmphasis = bracketPairEmphasis
         if #available(macOS 14, *) {
             self.useSystemCursor = useSystemCursor
         } else {
@@ -184,7 +184,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     private var isEditable: Bool
     private var isSelectable: Bool
     private var letterSpacing: Double
-    private var bracketPairHighlight: BracketPairHighlight?
+    private var bracketPairEmphasis: BracketPairEmphasis?
     private var useSystemCursor: Bool
     private var undoManager: CEUndoManager?
     package var coordinators: [any TextViewCoordinator]
@@ -210,7 +210,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             isSelectable: isSelectable,
             letterSpacing: letterSpacing,
             useSystemCursor: useSystemCursor,
-            bracketPairHighlight: bracketPairHighlight,
+            bracketPairEmphasis: bracketPairEmphasis,
             undoManager: undoManager,
             coordinators: coordinators
         )
@@ -309,7 +309,9 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             controller.setHighlightProviders(highlightProviders)
         }
 
-        controller.bracketPairHighlight = bracketPairHighlight
+        if controller.bracketPairEmphasis != bracketPairEmphasis {
+            controller.bracketPairEmphasis = bracketPairEmphasis
+        }
     }
 
     /// Checks if the controller needs updating.
@@ -329,7 +331,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.indentOption == indentOption &&
         controller.tabWidth == tabWidth &&
         controller.letterSpacing == letterSpacing &&
-        controller.bracketPairHighlight == bracketPairHighlight &&
+        controller.bracketPairEmphasis == bracketPairEmphasis &&
         controller.useSystemCursor == useSystemCursor &&
         areHighlightProvidersEqual(controller: controller)
     }
@@ -359,7 +361,7 @@ public struct CodeEditTextView: View {
         isEditable: Bool = true,
         isSelectable: Bool = true,
         letterSpacing: Double = 1.0,
-        bracketPairHighlight: BracketPairHighlight? = nil,
+        bracketPairEmphasis: BracketPairEmphasis? = nil,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = []
     ) {

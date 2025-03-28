@@ -6,13 +6,10 @@
 //
 
 import Foundation
-
-// This dependency is not ideal, maybe we could make this another protocol that the emphasize API conforms to similar
-// to this one?
 import CodeEditTextView
 
 protocol FindPanelTarget: AnyObject {
-    var emphasizeAPI: EmphasizeAPI? { get }
+    var emphasisManager: EmphasisManager? { get }
     var text: String { get }
 
     var cursorPositions: [CursorPosition] { get }

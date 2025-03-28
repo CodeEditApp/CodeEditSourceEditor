@@ -9,23 +9,24 @@ import SwiftUI
 import Combine
 
 class FindPanelViewModel: ObservableObject {
-    weak var delegate: FindPanelDelegate?
-    @Published var isFocused: Bool = false
-    @Published var searchText: String = ""
+    @Published var findText: String = ""
     @Published var matchCount: Int = 0
-    private var cancellables = Set<AnyCancellable>()
+    @Published var isFocused: Bool = false
+
+    private weak var delegate: FindPanelDelegate?
 
     init(delegate: FindPanelDelegate?) {
         self.delegate = delegate
     }
 
-    func startObservingSearchText() {
-        // Set up observer for searchText changes
-        $searchText
-            .sink { [weak self] newValue in
-                self?.delegate?.findPanelDidUpdate(newValue)
-            }
-            .store(in: &cancellables)
+    func startObservingFindText() {
+        if !findText.isEmpty {
+            delegate?.findPanelDidUpdate(findText)
+        }
+    }
+
+    func onFindTextChange(_ text: String) {
+        delegate?.findPanelDidUpdate(text)
     }
 
     func onSubmit() {
@@ -33,21 +34,15 @@ class FindPanelViewModel: ObservableObject {
     }
 
     func onCancel() {
-        setFocus(false)  // Remove focus from search field
-        delegate?.findPanelOnCancel()  // Call delegate first
-        searchText = ""  // Clear the search text last
-    }
-
-    func prevButtonClicked() {
-        delegate?.findPanelPrevButtonClicked()
-    }
-
-    func nextButtonClicked() {
-        delegate?.findPanelNextButtonClicked()
+        delegate?.findPanelOnCancel()
     }
 
     func setFocus(_ focused: Bool) {
         isFocused = focused
+        if focused && !findText.isEmpty {
+            // Restore emphases when focus is regained and we have search text
+            delegate?.findPanelDidUpdate(findText)
+        }
     }
 
     func updateMatchCount(_ count: Int) {
@@ -56,5 +51,13 @@ class FindPanelViewModel: ObservableObject {
 
     func removeEmphasis() {
         delegate?.findPanelClearEmphasis()
+    }
+
+    func prevButtonClicked() {
+        delegate?.findPanelPrevButtonClicked()
+    }
+
+    func nextButtonClicked() {
+        delegate?.findPanelNextButtonClicked()
     }
 }

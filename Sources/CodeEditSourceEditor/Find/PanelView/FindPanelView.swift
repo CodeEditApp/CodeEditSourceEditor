@@ -17,7 +17,7 @@ struct FindPanelView: View {
         HStack(spacing: 5) {
             PanelTextField(
                 "Search...",
-                text: $viewModel.searchText,
+                text: $viewModel.findText,
                 leadingAccessories: {
                     Image(systemName: "magnifyingglass")
                         .padding(.leading, 8)
@@ -25,12 +25,15 @@ struct FindPanelView: View {
                         .font(.system(size: 12))
                         .frame(width: 16, height: 20)
                 },
-                helperText: viewModel.searchText.isEmpty
+                helperText: viewModel.findText.isEmpty
                 ? nil
                 : "\(viewModel.matchCount) \(viewModel.matchCount == 1 ? "match" : "matches")",
                 clearable: true
             )
             .focused($isFocused)
+            .onChange(of: viewModel.findText) { newValue in
+                viewModel.onFindTextChange(newValue)
+            }
             .onChange(of: viewModel.isFocused) { newValue in
                 isFocused = newValue
                 if !newValue {
@@ -72,15 +75,5 @@ struct FindPanelView: View {
         .padding(.horizontal, 5)
         .frame(height: FindPanel.height)
         .background(.bar)
-        .onAppear {
-            NSEvent.addLocalMonitorForEvents(matching: .keyDown) { (event) -> NSEvent? in
-                if event.keyCode == 53 { // if esc pressed
-                    viewModel.onCancel()
-                    return nil // do not play "beep" sound
-                }
-
-                return event
-            }
-        }
     }
 }
