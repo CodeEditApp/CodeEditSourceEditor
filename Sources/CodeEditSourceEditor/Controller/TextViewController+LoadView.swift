@@ -129,21 +129,7 @@ extension TextViewController {
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event -> NSEvent? in
             guard self?.view.window?.firstResponder == self?.textView else { return event }
             let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-
-            switch (modifierFlags, event.charactersIgnoringModifiers?.lowercased()) {
-            case (.command, "/"):
-                self?.handleCommandSlash()
-                return nil
-            case (.command, "f"):
-                _ = self?.textView.resignFirstResponder()
-                self?.searchController?.showFindPanel()
-                return nil
-            case ([], "\u{1b}"): // Escape key
-                self?.searchController?.findPanel.cancel()
-                return nil
-            default:
-                return event
-            }
+            return self?.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
         }
     }
 
@@ -159,6 +145,13 @@ extension TextViewController {
             return nil
         case (commandKey, "]"):
             handleIndent()
+            return nil
+        case (commandKey, "f"):
+            _ = self.textView.resignFirstResponder()
+            self.searchController?.showFindPanel()
+            return nil
+        case (0, "\u{1b}"): // Escape key
+            self.searchController?.findPanel.cancel()
             return nil
         case (_, _):
             return event

@@ -21,7 +21,7 @@ struct ContentView: View {
     @State private var theme: EditorTheme = .light
     @State private var font: NSFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .medium)
     @AppStorage("wrapLines") private var wrapLines: Bool = true
-    @State private var cursorPositions: [CursorPosition] = []
+    @State private var cursorPositions: [CursorPosition] = [.init(line: 1, column: 1)]
     @AppStorage("systemCursor") private var useSystemCursor: Bool = false
     @State private var isInLongParse = false
     @State private var treeSitterClient = TreeSitterClient()
