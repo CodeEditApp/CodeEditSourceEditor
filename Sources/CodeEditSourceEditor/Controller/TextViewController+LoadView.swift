@@ -127,9 +127,17 @@ extension TextViewController {
 
     func setUpKeyBindings(eventMonitor: inout Any?) {
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event -> NSEvent? in
-            guard self?.view.window?.firstResponder == self?.textView else { return event }
+            guard let self = self else { return event }
+
+            // Check if this window is key and if the text view is the first responder
+            let isKeyWindow = self.view.window?.isKeyWindow ?? false
+            let isFirstResponder = self.view.window?.firstResponder === self.textView
+
+            // Only handle commands if this is the key window and text view is first responder
+            guard isKeyWindow && isFirstResponder else { return event }
+
             let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-            return self?.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
+            return self.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
         }
     }
 
