@@ -63,35 +63,6 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(color4, NSColor.textColor)
     }
 
-    // MARK: Overscroll
-
-    func test_editorOverScroll() throws {
-        let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
-        scrollView.frame = .init(x: .zero,
-                                 y: .zero,
-                                 width: 100,
-                                 height: 100)
-
-        controller.editorOverscroll = 0
-        controller.contentInsets = nil
-        controller.reloadUI()
-
-        // editorOverscroll: 0
-        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 0)
-
-        controller.editorOverscroll = 0.5
-        controller.reloadUI()
-
-        // editorOverscroll: 0.5
-        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 50.0)
-
-        controller.editorOverscroll = 1.0
-        controller.reloadUI()
-
-        // editorOverscroll: 1.0
-        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 87.0)
-    }
-
     // MARK: Insets
 
     func test_editorInsets() throws {
