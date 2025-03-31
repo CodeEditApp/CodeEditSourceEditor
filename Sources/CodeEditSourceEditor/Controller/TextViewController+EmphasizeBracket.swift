@@ -113,8 +113,7 @@ extension TextViewController {
     ///   - location: The location of the character to emphasize
     ///   - scrollToRange: Set to true to scroll to the given range when emphasizing. Defaults to `false`.
     private func emphasizeCharacter(_ location: Int, scrollToRange: Bool = false) {
-        guard let bracketPairEmphasis = bracketPairEmphasis,
-              let rectToEmphasize = textView.layoutManager.rectForOffset(location) else {
+        guard let bracketPairEmphasis = bracketPairEmphasis else {
             return
         }
 
