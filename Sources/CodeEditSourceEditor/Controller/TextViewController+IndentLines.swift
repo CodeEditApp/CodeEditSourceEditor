@@ -1,12 +1,12 @@
 //
 //  TextViewController+IndentLines.swift
-//
+//  CodeEditTextView
 //
 //  Created by Ludwig, Tom on 11.09.24.
 //
 
-import CodeEditTextView
 import AppKit
+import CodeEditTextView
 
 extension TextViewController {
     /// Handles indentation and unindentation
@@ -23,7 +23,7 @@ extension TextViewController {
         guard !cursorPositions.isEmpty else { return }
 
         textView.undoManager?.beginUndoGrouping()
-for cursorPosition in self.cursorPositions.reversed() {
+        for cursorPosition in self.cursorPositions.reversed() {
             // get lineindex, i.e line-numbers+1
             guard let lineIndexes = getHighlightedLines(for: cursorPosition.range) else { continue }
 
