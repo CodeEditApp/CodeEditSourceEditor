@@ -66,7 +66,7 @@ extension FindViewController {
                 style: .standard,
                 flash: false,
                 inactive: index != currentFindMatchIndex,
-                select: index == currentFindMatchIndex
+                selectInDocument: index == currentFindMatchIndex
             )
         }
 

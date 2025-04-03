@@ -48,7 +48,7 @@ extension FindViewController: FindPanelDelegate {
                         style: .standard,
                         flash: false,
                         inactive: false,
-                        select: true
+                        selectInDocument: true
                     ),
                     for: "find"
                 )
@@ -95,7 +95,7 @@ extension FindViewController: FindPanelDelegate {
                     style: .standard,
                     flash: true,
                     inactive: false,
-                    select: true
+                    selectInDocument: true
                 ),
                 for: "find"
             )
@@ -110,7 +110,7 @@ extension FindViewController: FindPanelDelegate {
                 style: .standard,
                 flash: false,
                 inactive: index != currentFindMatchIndex,
-                select: index == currentFindMatchIndex
+                selectInDocument: index == currentFindMatchIndex
             )
         }
 
@@ -158,7 +158,7 @@ extension FindViewController: FindPanelDelegate {
                     style: .standard,
                     flash: true,
                     inactive: false,
-                    select: true
+                    selectInDocument: true
                 ),
                 for: "find"
             )
@@ -173,7 +173,7 @@ extension FindViewController: FindPanelDelegate {
                 style: .standard,
                 flash: false,
                 inactive: index != currentFindMatchIndex,
-                select: index == currentFindMatchIndex
+                selectInDocument: index == currentFindMatchIndex
             )
         }
 
