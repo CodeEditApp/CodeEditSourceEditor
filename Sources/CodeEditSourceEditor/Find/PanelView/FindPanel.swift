@@ -84,7 +84,7 @@ final class FindPanel: NSView {
     func addEventMonitor() {
         eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event -> NSEvent? in
             if event.keyCode == 53 { // if esc pressed
-                self?.cancel()
+                self?.dismiss()
                 return nil // do not play "beep" sound
             }
             return event
@@ -100,8 +100,8 @@ final class FindPanel: NSView {
 
     // MARK: - Public Methods
 
-    func cancel() {
-        viewModel.onCancel()
+    func dismiss() {
+        viewModel.onDismiss()
     }
 
     func updateMatchCount(_ count: Int) {

@@ -159,7 +159,7 @@ extension TextViewController {
             self.searchController?.showFindPanel()
             return nil
         case (0, "\u{1b}"): // Escape key
-            self.searchController?.findPanel.cancel()
+            self.searchController?.findPanel.dismiss()
             return nil
         case (_, _):
             return event

@@ -16,9 +16,7 @@ final class FindViewController: NSViewController {
     private var findMatches: [NSRange] = []
     private var currentFindMatchIndex: Int = 0
     private var findText: String = ""
-
     private var findPanelVerticalConstraint: NSLayoutConstraint!
-
     private(set) public var isShowingFindPanel: Bool = false
 
     init(target: FindPanelTarget, childView: NSView) {
@@ -178,15 +176,6 @@ final class FindViewController: NSViewController {
 // MARK: - Toggle find panel
 
 extension FindViewController {
-    /// Toggle the find panel
-    func toggleFindPanel() {
-        if isShowingFindPanel {
-            hideFindPanel()
-        } else {
-            showFindPanel()
-        }
-    }
-
     /// Show the find panel
     func showFindPanel(animated: Bool = true) {
         if isShowingFindPanel {
@@ -260,9 +249,15 @@ extension FindViewController: FindPanelDelegate {
         findPanelNextButtonClicked()
     }
 
-    func findPanelOnCancel() {
+    func findPanelOnDismiss() {
         if isShowingFindPanel {
             hideFindPanel()
+            // Ensure text view becomes first responder after hiding
+            if let textViewController = target as? TextViewController {
+                DispatchQueue.main.async {
+                    _ = textViewController.textView.window?.makeFirstResponder(textViewController.textView)
+                }
+            }
         }
     }
 

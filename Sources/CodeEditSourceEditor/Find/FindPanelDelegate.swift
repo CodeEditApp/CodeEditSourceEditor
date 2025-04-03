@@ -9,7 +9,7 @@ import Foundation
 
 protocol FindPanelDelegate: AnyObject {
     func findPanelOnSubmit()
-    func findPanelOnCancel()
+    func findPanelOnDismiss()
     func findPanelDidUpdate(_ searchText: String)
     func findPanelPrevButtonClicked()
     func findPanelNextButtonClicked()

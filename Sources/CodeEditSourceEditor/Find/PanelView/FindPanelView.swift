@@ -65,7 +65,7 @@ struct FindPanelView: View {
                 }
                 .controlGroupStyle(PanelControlGroupStyle())
                 .fixedSize()
-                Button(action: viewModel.onCancel) {
+                Button(action: viewModel.onDismiss) {
                     Text("Done")
                         .padding(.horizontal, 5)
                 }

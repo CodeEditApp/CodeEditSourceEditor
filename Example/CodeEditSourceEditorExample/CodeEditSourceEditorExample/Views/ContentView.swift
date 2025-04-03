@@ -24,6 +24,7 @@ struct ContentView: View {
     @State private var cursorPositions: [CursorPosition] = [.init(line: 1, column: 1)]
     @AppStorage("systemCursor") private var useSystemCursor: Bool = false
     @State private var isInLongParse = false
+    @State private var settingsIsPresented: Bool = false
     @State private var treeSitterClient = TreeSitterClient()
 
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
@@ -49,21 +50,24 @@ struct ContentView: View {
             )
             .overlay(alignment: .bottom) {
                 HStack {
-                    Toggle("Wrap Lines", isOn: $wrapLines)
-                        .toggleStyle(.button)
-                        .buttonStyle(.accessoryBar)
-                    if #available(macOS 14, *) {
-                        Toggle("Use System Cursor", isOn: $useSystemCursor)
-                            .toggleStyle(.button)
-                            .buttonStyle(.accessoryBar)
-                    } else {
-                        Toggle("Use System Cursor", isOn: $useSystemCursor)
-                            .disabled(true)
-                            .help("macOS 14 required")
-                            .toggleStyle(.button)
-                            .buttonStyle(.accessoryBar)
+                    Menu {
+                        Toggle("Wrap Lines", isOn: $wrapLines)
+                        if #available(macOS 14, *) {
+                            Toggle("Use System Cursor", isOn: $useSystemCursor)
+                        } else {
+                            Toggle("Use System Cursor", isOn: $useSystemCursor)
+                                .disabled(true)
+                                .help("macOS 14 required")
+                        }
+                    } label: {}
+                    .background {
+                        Image(systemName: "switch.2")
+                            .foregroundStyle(.secondary)
+                            .font(.system(size: 13.5, weight: .regular))
                     }
-
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .frame(maxWidth: 18, alignment: .center)
                     Spacer()
                     Group {
                         if isInLongParse {

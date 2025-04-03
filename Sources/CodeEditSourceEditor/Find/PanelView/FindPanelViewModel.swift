@@ -33,8 +33,8 @@ class FindPanelViewModel: ObservableObject {
         delegate?.findPanelOnSubmit()
     }
 
-    func onCancel() {
-        delegate?.findPanelOnCancel()
+    func onDismiss() {
+        delegate?.findPanelOnDismiss()
     }
 
     func setFocus(_ focused: Bool) {
