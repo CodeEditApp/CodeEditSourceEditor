@@ -20,10 +20,19 @@ public class TextViewController: NSViewController {
     // swiftlint:disable:next line_length
     public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
 
+    weak var searchController: FindViewController?
+
     var scrollView: NSScrollView!
-    private(set) public var textView: TextView!
+
+    // SEARCH
+    var stackview: NSStackView!
+    var searchField: NSTextField!
+    var prevButton: NSButton!
+    var nextButton: NSButton!
+
+    var textView: TextView!
     var gutterView: GutterView!
-    internal var _undoManager: CEUndoManager?
+    internal var _undoManager: CEUndoManager!
     /// Internal reference to any injected layers in the text view.
     internal var highlightLayers: [CALayer] = []
     internal var systemAppearance: NSAppearance.Name?
@@ -62,6 +71,8 @@ public class TextViewController: NSViewController {
             )
             textView.selectionManager.selectedLineBackgroundColor = theme.selection
             highlighter?.invalidate()
+            gutterView.textColor = theme.text.color.withAlphaComponent(0.35)
+            gutterView.selectedLineTextColor = theme.text.color
         }
     }
 
@@ -139,9 +150,9 @@ public class TextViewController: NSViewController {
     }
 
     /// The type of highlight to use when highlighting bracket pairs. Leave as `nil` to disable highlighting.
-    public var bracketPairHighlight: BracketPairHighlight? {
+    public var bracketPairEmphasis: BracketPairEmphasis? {
         didSet {
-            highlightSelectionPairs()
+            emphasizeSelectionPairs()
         }
     }
 
@@ -229,7 +240,7 @@ public class TextViewController: NSViewController {
         isSelectable: Bool,
         letterSpacing: Double,
         useSystemCursor: Bool,
-        bracketPairHighlight: BracketPairHighlight?,
+        bracketPairEmphasis: BracketPairEmphasis?,
         undoManager: CEUndoManager? = nil,
         coordinators: [TextViewCoordinator] = []
     ) {
@@ -248,7 +259,7 @@ public class TextViewController: NSViewController {
         self.isEditable = isEditable
         self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
-        self.bracketPairHighlight = bracketPairHighlight
+        self.bracketPairEmphasis = bracketPairEmphasis
         self._undoManager = undoManager
 
         super.init(nibName: nil, bundle: nil)

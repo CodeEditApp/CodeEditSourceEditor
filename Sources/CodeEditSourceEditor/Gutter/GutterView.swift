@@ -60,7 +60,7 @@ public class GutterView: NSView {
     var highlightSelectedLines: Bool = true
 
     @Invalidating(.display)
-    var selectedLineTextColor: NSColor? = .textColor
+    var selectedLineTextColor: NSColor? = .labelColor
 
     @Invalidating(.display)
     var selectedLineColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
@@ -81,11 +81,13 @@ public class GutterView: NSView {
     public init(
         font: NSFont,
         textColor: NSColor,
+        selectedTextColor: NSColor?,
         textView: TextView,
         delegate: GutterViewDelegate? = nil
     ) {
         self.font = font
         self.textColor = textColor
+        self.selectedLineTextColor = selectedTextColor ?? .secondaryLabelColor
         self.textView = textView
         self.delegate = delegate
 
@@ -200,15 +202,6 @@ public class GutterView: NSView {
         }
 
         context.saveGState()
-
-        context.setAllowsAntialiasing(true)
-        context.setShouldAntialias(true)
-        context.setAllowsFontSmoothing(false)
-        context.setAllowsFontSubpixelPositioning(true)
-        context.setShouldSubpixelPositionFonts(true)
-        context.setAllowsFontSubpixelQuantization(true)
-        context.setShouldSubpixelQuantizeFonts(true)
-        ContextSetHiddenSmoothingStyle(context, 16)
 
         context.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
         for linePosition in textView.layoutManager.visibleLines() {

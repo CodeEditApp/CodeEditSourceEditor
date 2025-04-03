@@ -13,5 +13,6 @@ struct CodeEditSourceEditorExampleApp: App {
         DocumentGroup(newDocument: CodeEditSourceEditorExampleDocument()) { file in
             ContentView(document: file.$document, fileURL: file.fileURL)
         }
+        .windowToolbarStyle(.unifiedCompact)
     }
 }

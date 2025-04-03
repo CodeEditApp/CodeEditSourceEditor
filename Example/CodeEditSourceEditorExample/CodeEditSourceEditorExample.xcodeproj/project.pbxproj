@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		61621C612C74FB2200494A4A /* CodeEditSourceEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 61621C602C74FB2200494A4A /* CodeEditSourceEditor */; };
+		61CE772F2D19BF7D00908C57 /* CodeEditSourceEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 61CE772E2D19BF7D00908C57 /* CodeEditSourceEditor */; };
+		61CE77322D19BFAA00908C57 /* CodeEditSourceEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 61CE77312D19BFAA00908C57 /* CodeEditSourceEditor */; };
 		6C13652E2B8A7B94004A1D18 /* CodeEditSourceEditorExampleApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C13652D2B8A7B94004A1D18 /* CodeEditSourceEditorExampleApp.swift */; };
 		6C1365302B8A7B94004A1D18 /* CodeEditSourceEditorExampleDocument.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C13652F2B8A7B94004A1D18 /* CodeEditSourceEditorExampleDocument.swift */; };
 		6C1365322B8A7B94004A1D18 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C1365312B8A7B94004A1D18 /* ContentView.swift */; };
@@ -41,6 +43,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				61621C612C74FB2200494A4A /* CodeEditSourceEditor in Frameworks */,
+				61CE772F2D19BF7D00908C57 /* CodeEditSourceEditor in Frameworks */,
+				61CE77322D19BFAA00908C57 /* CodeEditSourceEditor in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -140,6 +144,8 @@
 			name = CodeEditSourceEditorExample;
 			packageProductDependencies = (
 				61621C602C74FB2200494A4A /* CodeEditSourceEditor */,
+				61CE772E2D19BF7D00908C57 /* CodeEditSourceEditor */,
+				61CE77312D19BFAA00908C57 /* CodeEditSourceEditor */,
 			);
 			productName = CodeEditSourceEditorExample;
 			productReference = 6C13652A2B8A7B94004A1D18 /* CodeEditSourceEditorExample.app */;
@@ -409,6 +415,14 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		61621C602C74FB2200494A4A /* CodeEditSourceEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CodeEditSourceEditor;
+		};
+		61CE772E2D19BF7D00908C57 /* CodeEditSourceEditor */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = CodeEditSourceEditor;
+		};
+		61CE77312D19BFAA00908C57 /* CodeEditSourceEditor */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = CodeEditSourceEditor;
 		};
