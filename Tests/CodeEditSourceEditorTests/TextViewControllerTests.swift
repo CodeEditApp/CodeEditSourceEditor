@@ -63,6 +63,24 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(color4, NSColor.textColor)
     }
 
+    // MARK: Overscroll
+
+    func test_editorOverScroll() throws {
+        controller.editorOverscroll = 0
+
+        // editorOverscroll: 0
+        XCTAssertEqual(controller.textView.overscrollAmount, 0)
+
+        controller.editorOverscroll = 0.5
+
+        // editorOverscroll: 0.5
+        XCTAssertEqual(controller.textView.overscrollAmount, 0.5)
+
+        controller.editorOverscroll = 1.0
+
+        XCTAssertEqual(controller.textView.overscrollAmount, 1.0)
+    }
+
     // MARK: Insets
 
     func test_editorInsets() throws {
@@ -106,10 +124,10 @@ final class TextViewControllerTests: XCTestCase {
         // contentInsets: 16
         // editorOverscroll: 0.5
         controller.contentInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-        controller.editorOverscroll = 0.5
+        controller.editorOverscroll = 0.5 // Should be ignored
         controller.reloadUI()
 
-        try assertInsetsEqual(scrollView.contentInsets, NSEdgeInsets(top: 16, left: 16, bottom: 16 + 50, right: 16))
+        try assertInsetsEqual(scrollView.contentInsets, NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16))
         XCTAssertEqual(controller.gutterView.frame.origin.y, -16)
     }
 
