@@ -115,7 +115,11 @@ public class TextViewController: NSViewController {
     ///
     /// Measured in a percentage of the view's total height, meaning a `0.3` value will result in overscroll
     /// of 1/3 of the view.
-    public var editorOverscroll: CGFloat
+    public var editorOverscroll: CGFloat {
+        didSet {
+            textView.overscrollAmount = editorOverscroll
+        }
+    }
 
     /// Whether the code editor should use the theme background color or be transparent
     public var useThemeBackground: Bool
@@ -197,18 +201,6 @@ public class TextViewController: NSViewController {
     internal var textFilters: [TextFormation.Filter] = []
 
     internal var cancellables = Set<AnyCancellable>()
-
-    /// ScrollView's bottom inset using as editor overscroll
-    package var bottomContentInsets: CGFloat {
-        let height = view.frame.height
-        var inset = editorOverscroll * height
-
-        if height - inset < font.lineHeight * lineHeightMultiple {
-            inset = height - font.lineHeight * lineHeightMultiple
-        }
-
-        return max(inset, .zero)
-    }
 
     /// The trailing inset for the editor. Grows when line wrapping is disabled.
     package var textViewTrailingInset: CGFloat {

@@ -66,27 +66,19 @@ final class TextViewControllerTests: XCTestCase {
     // MARK: Overscroll
 
     func test_editorOverScroll() throws {
-        let scrollView = try XCTUnwrap(controller.scrollView)
-        scrollView.frame = .init(x: .zero, y: .zero, width: 100, height: 100)
-
         controller.editorOverscroll = 0
-        controller.contentInsets = nil
-        controller.reloadUI()
 
         // editorOverscroll: 0
-        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 0)
+        XCTAssertEqual(controller.textView.overscrollAmount, 0)
 
         controller.editorOverscroll = 0.5
-        controller.reloadUI()
 
         // editorOverscroll: 0.5
-        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 50.0)
+        XCTAssertEqual(controller.textView.overscrollAmount, 0.5)
 
         controller.editorOverscroll = 1.0
-        controller.reloadUI()
 
-        // editorOverscroll: 1.0
-        XCTAssertEqual(scrollView.contentView.contentInsets.bottom, 87.0)
+        XCTAssertEqual(controller.textView.overscrollAmount, 1.0)
     }
 
     // MARK: Insets
@@ -132,10 +124,10 @@ final class TextViewControllerTests: XCTestCase {
         // contentInsets: 16
         // editorOverscroll: 0.5
         controller.contentInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-        controller.editorOverscroll = 0.5
+        controller.editorOverscroll = 0.5 // Should be ignored
         controller.reloadUI()
 
-        try assertInsetsEqual(scrollView.contentInsets, NSEdgeInsets(top: 16, left: 16, bottom: 16 + 50, right: 16))
+        try assertInsetsEqual(scrollView.contentInsets, NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16))
         XCTAssertEqual(controller.gutterView.frame.origin.y, -16)
     }
 

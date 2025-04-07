@@ -74,6 +74,6 @@ extension TextViewController {
         } else {
             scrollView.automaticallyAdjustsContentInsets = true
         }
-        scrollView.contentInsets.bottom = (contentInsets?.bottom ?? 0) + bottomContentInsets
+        scrollView.contentInsets.bottom = contentInsets?.bottom ?? 0
     }
 }
