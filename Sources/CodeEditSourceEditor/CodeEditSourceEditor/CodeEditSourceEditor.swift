@@ -11,6 +11,7 @@ import CodeEditTextView
 import CodeEditLanguages
 
 // This type is messy, but it needs *so* many parameters that this is pretty much unavoidable.
+// swiftlint:disable file_length
 // swiftlint:disable type_body_length
 
 /// A SwiftUI View that provides source editing functionality.
@@ -399,3 +400,4 @@ public struct CodeEditTextView: View {
 }
 
 // swiftlint:enable type_body_length
+// swiftlint:enable file_length
