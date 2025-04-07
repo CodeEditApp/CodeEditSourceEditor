@@ -6,6 +6,7 @@
 //
 
 import AppKit
+import CodeEditTextView
 
 extension TextViewController {
     package func generateParagraphStyle() -> NSMutableParagraphStyle {
@@ -66,6 +67,6 @@ extension TextViewController {
         } else {
             scrollView.automaticallyAdjustsContentInsets = true
         }
-        scrollView.contentInsets.bottom = (contentInsets?.bottom ?? 0) + bottomContentInsets
+        scrollView.contentInsets.bottom = contentInsets?.bottom ?? 0
     }
 }

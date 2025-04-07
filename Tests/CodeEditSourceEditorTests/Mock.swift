@@ -69,22 +69,22 @@ enum Mock {
 
     static func theme() -> EditorTheme {
         EditorTheme(
-            text: .textColor,
+            text: EditorTheme.Attribute(color: .textColor),
             insertionPoint: .textColor,
-            invisibles: .gray,
+            invisibles: EditorTheme.Attribute(color: .gray),
             background: .textBackgroundColor,
             lineHighlight: .highlightColor,
             selection: .selectedTextColor,
-            keywords: .systemPink,
-            commands: .systemBlue,
-            types: .systemMint,
-            attributes: .systemTeal,
-            variables: .systemCyan,
-            values: .systemOrange,
-            numbers: .systemYellow,
-            strings: .systemRed,
-            characters: .systemRed,
-            comments: .systemGreen
+            keywords: EditorTheme.Attribute(color: .systemPink),
+            commands: EditorTheme.Attribute(color: .systemBlue),
+            types: EditorTheme.Attribute(color: .systemMint),
+            attributes: EditorTheme.Attribute(color: .systemTeal),
+            variables: EditorTheme.Attribute(color: .systemCyan),
+            values: EditorTheme.Attribute(color: .systemOrange),
+            numbers: EditorTheme.Attribute(color: .systemYellow),
+            strings: EditorTheme.Attribute(color: .systemRed),
+            characters: EditorTheme.Attribute(color: .systemRed),
+            comments: EditorTheme.Attribute(color: .systemGreen)
         )
     }
 
@@ -122,13 +122,13 @@ enum Mock {
     @MainActor
     static func highlighter(
         textView: TextView,
-        highlightProvider: HighlightProviding,
+        highlightProviders: [HighlightProviding],
         attributeProvider: ThemeAttributesProviding,
         language: CodeLanguage = .default
     ) -> Highlighter {
         Highlighter(
             textView: textView,
-            providers: [highlightProvider],
+            providers: highlightProviders,
             attributeProvider: attributeProvider,
             language: language
         )

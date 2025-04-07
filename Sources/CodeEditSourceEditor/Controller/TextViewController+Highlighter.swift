@@ -9,7 +9,7 @@ import Foundation
 import SwiftTreeSitter
 
 extension TextViewController {
-    internal func setUpHighlighter() {
+    package func setUpHighlighter() {
         if let highlighter {
             textView.removeStorageDelegate(highlighter)
             self.highlighter = nil
@@ -24,12 +24,23 @@ extension TextViewController {
         textView.addStorageDelegate(highlighter)
         self.highlighter = highlighter
     }
+
+    /// Sets new highlight providers. Recognizes when objects move in the array or are removed or inserted.
+    ///
+    /// This is in place of a setter on the ``highlightProviders`` variable to avoid wasting resources setting up
+    /// providers early.
+    ///
+    /// - Parameter newProviders: All the new providers.
+    package func setHighlightProviders(_ newProviders: [HighlightProviding]) {
+        highlighter?.setProviders(newProviders)
+        highlightProviders = newProviders
+    }
 }
 
 extension TextViewController: ThemeAttributesProviding {
     public func attributesFor(_ capture: CaptureName?) -> [NSAttributedString.Key: Any] {
         [
-            .font: font,
+            .font: theme.fontFor(for: capture, from: font),
             .foregroundColor: theme.colorFor(capture),
             .kern: textView.kern
         ]

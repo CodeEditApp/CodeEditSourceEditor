@@ -78,6 +78,9 @@ class Highlighter: NSObject {
 
     private var visibleRangeProvider: VisibleRangeProvider
 
+    /// Counts upwards to provide unique IDs for new highlight providers.
+    private var providerIdCounter: Int
+
     // MARK: - Init
 
     init(
@@ -90,10 +93,12 @@ class Highlighter: NSObject {
         self.textView = textView
         self.attributeProvider = attributeProvider
 
-        visibleRangeProvider = VisibleRangeProvider(textView: textView)
+        self.visibleRangeProvider = VisibleRangeProvider(textView: textView)
 
         let providerIds = providers.indices.map({ $0 })
-        styleContainer = StyledRangeContainer(documentLength: textView.length, providers: providerIds)
+        self.styleContainer = StyledRangeContainer(documentLength: textView.length, providers: providerIds)
+
+        self.providerIdCounter = providers.count
 
         super.init()
 
@@ -136,6 +141,66 @@ class Highlighter: NSObject {
         textView.layoutManager.invalidateLayoutForRect(textView.visibleRect)
 
         highlightProviders.forEach { $0.setLanguage(language: language) }
+    }
+
+    /// Updates the highlight providers the highlighter is using, removing any that don't appear in the given array,
+    /// and setting up any new ones.
+    ///
+    /// This is essential for working with SwiftUI, as we'd like to allow highlight providers to be added and removed
+    /// after the view is initialized. For instance after some sort of async registration method.
+    ///
+    /// - Note: Each provider will be identified by it's object ID.
+    /// - Parameter providers: All providers to use.
+    public func setProviders(_ providers: [HighlightProviding]) {
+        guard let textView else { return }
+
+        let existingIds: [ObjectIdentifier] = self.highlightProviders
+            .compactMap { $0.highlightProvider }
+            .map { ObjectIdentifier($0) }
+        let newIds: [ObjectIdentifier] = providers.map { ObjectIdentifier($0) }
+        // 2nd param is what we're moving *from*. We want to find how we to make existingIDs equal newIDs
+        let difference = newIds.difference(from: existingIds).inferringMoves()
+
+        var highlightProviders = self.highlightProviders // Make a mutable copy
+        var moveMap: [Int: HighlightProviderState] = [:]
+
+        for change in difference {
+            switch change {
+            case let .insert(offset, element, associatedOffset):
+                guard associatedOffset == nil,
+                      let newProvider = providers.first(where: { ObjectIdentifier($0) == element }) else {
+                    // Moved, grab the moved object from the move map
+                    guard let movedProvider = moveMap[offset] else {
+                        continue
+                    }
+                    highlightProviders.insert(movedProvider, at: offset)
+                    continue
+                }
+                // Set up a new provider and insert it with a unique ID
+                providerIdCounter += 1
+                let state = HighlightProviderState( // This will call setup on the highlight provider
+                    id: providerIdCounter,
+                    delegate: styleContainer,
+                    highlightProvider: newProvider,
+                    textView: textView,
+                    visibleRangeProvider: visibleRangeProvider,
+                    language: language
+                )
+                highlightProviders.insert(state, at: offset)
+                styleContainer.addProvider(providerIdCounter, documentLength: textView.length)
+                state.invalidate() // Invalidate this new one
+            case let .remove(offset, _, associatedOffset):
+                guard associatedOffset == nil else {
+                    // Moved, add it to the move map
+                    moveMap[associatedOffset!] = highlightProviders.remove(at: offset)
+                    continue
+                }
+                // Removed entirely
+                styleContainer.removeProvider(highlightProviders.remove(at: offset).id)
+            }
+        }
+
+        self.highlightProviders = highlightProviders
     }
 
     deinit {
@@ -201,7 +266,7 @@ extension Highlighter: NSTextStorageDelegate {
 extension Highlighter: StyledRangeContainerDelegate {
     func styleContainerDidUpdate(in range: NSRange) {
         guard let textView, let attributeProvider else { return }
-//        textView.layoutManager.beginTransaction()
+        textView.layoutManager.beginTransaction()
         textView.textStorage.beginEditing()
 
         let storage = textView.textStorage
@@ -216,8 +281,8 @@ extension Highlighter: StyledRangeContainerDelegate {
         }
 
         textView.textStorage.endEditing()
-//        textView.layoutManager.endTransaction()
-//        textView.layoutManager.invalidateLayoutForRange(range)
+        textView.layoutManager.endTransaction()
+        textView.layoutManager.invalidateLayoutForRange(range)
     }
 }
 

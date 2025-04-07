@@ -93,10 +93,7 @@ public class TextViewController: NSViewController {
         didSet {
             textView.layoutManager.wrapLines = wrapLines
             scrollView.hasHorizontalScroller = !wrapLines
-            textView.edgeInsets = HorizontalEdgeInsets(
-                left: textView.edgeInsets.left,
-                right: textViewTrailingInset // Refresh this value, see docs
-            )
+            textView.textInsets = textViewInsets
         }
     }
 
@@ -107,7 +104,11 @@ public class TextViewController: NSViewController {
     ///
     /// Measured in a percentage of the view's total height, meaning a `0.3` value will result in overscroll
     /// of 1/3 of the view.
-    public var editorOverscroll: CGFloat
+    public var editorOverscroll: CGFloat {
+        didSet {
+            textView.overscrollAmount = editorOverscroll
+        }
+    }
 
     /// Whether the code editor should use the theme background color or be transparent
     public var useThemeBackground: Bool
@@ -186,21 +187,18 @@ public class TextViewController: NSViewController {
 
     internal var cancellables = Set<AnyCancellable>()
 
-    /// ScrollView's bottom inset using as editor overscroll
-    package var bottomContentInsets: CGFloat {
-        let height = view.frame.height
-        var inset = editorOverscroll * height
-
-        if height - inset < font.lineHeight * lineHeightMultiple {
-            inset = height - font.lineHeight * lineHeightMultiple
-        }
-
-        return max(inset, .zero)
-    }
-
     /// The trailing inset for the editor. Grows when line wrapping is disabled.
     package var textViewTrailingInset: CGFloat {
-        wrapLines ? 1 : 48
+        // See https://github.com/CodeEditApp/CodeEditTextView/issues/66
+        // wrapLines ? 1 : 48
+        0
+    }
+
+    package var textViewInsets: HorizontalEdgeInsets {
+        HorizontalEdgeInsets(
+            left: gutterView.gutterWidth,
+            right: textViewTrailingInset
+        )
     }
 
     // MARK: Init
@@ -262,7 +260,7 @@ public class TextViewController: NSViewController {
         self.textView = TextView(
             string: string,
             font: font,
-            textColor: theme.text,
+            textColor: theme.text.color,
             lineHeightMultiplier: lineHeightMultiple,
             wrapLines: wrapLines,
             isEditable: isEditable,
@@ -328,6 +326,6 @@ public class TextViewController: NSViewController {
 extension TextViewController: GutterViewDelegate {
     public func gutterViewWidthDidUpdate(newWidth: CGFloat) {
         gutterView?.frame.size.width = newWidth
-        textView?.edgeInsets = HorizontalEdgeInsets(left: newWidth, right: textViewTrailingInset)
+        textView?.textInsets = textViewInsets
     }
 }

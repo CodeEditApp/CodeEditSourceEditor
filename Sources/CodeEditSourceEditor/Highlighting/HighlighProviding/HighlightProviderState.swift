@@ -50,7 +50,8 @@ class HighlightProviderState {
     private weak var delegate: HighlightProviderStateDelegate?
 
     /// Calculates invalidated ranges given an edit.
-    private weak var highlightProvider: HighlightProviding?
+    /// Marked as package for deduplication when updating highlight providers.
+    package weak var highlightProvider: HighlightProviding?
 
     /// Provides a constantly updated visible index set.
     private weak var visibleRangeProvider: VisibleRangeProvider?

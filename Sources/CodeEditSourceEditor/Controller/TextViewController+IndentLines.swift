@@ -1,12 +1,12 @@
 //
 //  TextViewController+IndentLines.swift
-//
+//  CodeEditTextView
 //
 //  Created by Ludwig, Tom on 11.09.24.
 //
 
-import CodeEditTextView
 import AppKit
+import CodeEditTextView
 
 extension TextViewController {
     /// Handles indentation and unindentation
