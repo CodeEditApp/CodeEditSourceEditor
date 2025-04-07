@@ -10,6 +10,9 @@ import SwiftUI
 import CodeEditTextView
 import CodeEditLanguages
 
+// This type is messy, but it needs *so* many parameters that this is pretty much unavoidable.
+// swiftlint:disable type_body_length
+
 /// A SwiftUI View that provides source editing functionality.
 public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     package enum TextAPI {
@@ -394,3 +397,5 @@ public struct CodeEditTextView: View {
         EmptyView()
     }
 }
+
+// swiftlint:enable type_body_length
