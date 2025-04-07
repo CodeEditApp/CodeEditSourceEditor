@@ -130,7 +130,7 @@ public class TextViewController: NSViewController {
     /// Optional insets to offset the text view in the scroll view by.
     public var contentInsets: NSEdgeInsets? {
         didSet {
-            findViewController?.topPadding = contentInsets?.top ?? view.safeAreaInsets.top
+            findViewController?.topPadding = contentInsets?.top
         }
     }
 

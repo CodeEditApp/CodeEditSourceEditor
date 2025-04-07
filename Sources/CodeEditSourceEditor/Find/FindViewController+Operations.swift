@@ -11,11 +11,11 @@ import CodeEditTextView
 extension FindViewController {
     func find(text: String) {
         findText = text
-        performFind(query: text)
+        performFind()
         addEmphases()
     }
 
-    func performFind(query: String) {
+    func performFind() {
         // Don't find if target or emphasisManager isn't ready
         guard let target = target else {
             findPanel.findDelegate?.findPanelUpdateMatchCount(0)
@@ -25,15 +25,15 @@ extension FindViewController {
         }
 
         // Clear emphases and return if query is empty
-        if query.isEmpty {
+        if findText.isEmpty {
             findPanel.findDelegate?.findPanelUpdateMatchCount(0)
             findMatches = []
             currentFindMatchIndex = 0
             return
         }
 
-        let findOptions: NSRegularExpression.Options = smartCase(str: query) ? [] : [.caseInsensitive]
-        let escapedQuery = NSRegularExpression.escapedPattern(for: query)
+        let findOptions: NSRegularExpression.Options = smartCase(str: findText) ? [] : [.caseInsensitive]
+        let escapedQuery = NSRegularExpression.escapedPattern(for: findText)
 
         guard let regex = try? NSRegularExpression(pattern: escapedQuery, options: findOptions) else {
             findPanel.findDelegate?.findPanelUpdateMatchCount(0)

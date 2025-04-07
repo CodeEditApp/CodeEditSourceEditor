@@ -36,7 +36,7 @@ extension TextViewController {
         findViewController.view.viewDidMoveToSuperview()
         self.findViewController = findViewController
 
-        findViewController.topPadding = contentInsets?.top ?? view.safeAreaInsets.top
+        findViewController.topPadding = contentInsets?.top
 
         if let _undoManager {
             textView.setUndoManager(_undoManager)

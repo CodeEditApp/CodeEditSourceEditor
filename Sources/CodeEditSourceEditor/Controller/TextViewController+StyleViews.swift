@@ -74,6 +74,6 @@ extension TextViewController {
         } else {
             scrollView.automaticallyAdjustsContentInsets = true
         }
-        scrollView.contentInsets.bottom = contentInsets?.bottom ?? 0
+        scrollView.contentInsets.top += (findViewController?.isShowingFindPanel ?? false) ? FindPanel.height : 0
     }
 }
