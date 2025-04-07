@@ -59,6 +59,10 @@ final class FindPanel: NSView {
         }
     }
 
+    deinit {
+        removeEventMonitor()
+    }
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
@@ -82,9 +86,9 @@ final class FindPanel: NSView {
     // MARK: - Event Monitor Management
 
     func addEventMonitor() {
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event -> NSEvent? in
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event -> NSEvent? in
             if event.keyCode == 53 { // if esc pressed
-                self?.dismiss()
+                self.dismiss()
                 return nil // do not play "beep" sound
             }
             return event
