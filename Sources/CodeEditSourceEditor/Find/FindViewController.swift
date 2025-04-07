@@ -14,7 +14,13 @@ final class FindViewController: NSViewController {
 
     /// The amount of padding from the top of the view to inset the find panel by.
     /// When set, the safe area is ignored, and the top padding is measured from the top of the view's frame.
-    var topPadding: CGFloat?
+    var topPadding: CGFloat? {
+        didSet {
+            if isShowingFindPanel {
+                setFindPanelConstraintShow()
+            }
+        }
+    }
 
     var childView: NSView
     var findPanel: FindPanel!
@@ -100,8 +106,10 @@ final class FindViewController: NSViewController {
     override func viewWillAppear() {
         super.viewWillAppear()
         if isShowingFindPanel { // Update constraints for initial state
+            findPanel.isHidden = false
             setFindPanelConstraintShow()
         } else {
+            findPanel.isHidden = true
             setFindPanelConstraintHide()
         }
     }

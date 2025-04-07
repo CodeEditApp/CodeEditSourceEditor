@@ -77,9 +77,7 @@ extension TextViewController {
         ) { [weak self] _ in
             self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
             self?.gutterView.needsDisplay = true
-            if self?.bracketPairEmphasis == .flash {
-                self?.emphasisManager?.removeEmphases(for: "bracketPairs")
-            }
+            self?.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
         }
 
         NotificationCenter.default.addObserver(
@@ -111,13 +109,8 @@ extension TextViewController {
                     self.systemAppearance = newValue.name
 
                     // Reset content insets and gutter position when appearance changes
-                    if let contentInsets = self.contentInsets {
-                        self.scrollView.contentInsets = contentInsets
-                        if let findViewController = self.findViewController, findViewController.isShowingFindPanel {
-                            self.scrollView.contentInsets.top += FindPanel.height
-                        }
-                        self.gutterView.frame.origin.y = -self.scrollView.contentInsets.top
-                    }
+                    self.styleScrollView()
+                    self.gutterView.frame.origin.y = -self.scrollView.contentInsets.top
                 }
             }
             .store(in: &cancellables)

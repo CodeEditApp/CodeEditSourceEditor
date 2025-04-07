@@ -35,6 +35,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///                        built-in `TreeSitterClient` highlighter.
     ///   - contentInsets: Insets to use to offset the content in the enclosing scroll view. Leave as `nil` to let the
     ///                    scroll view automatically adjust content insets.
+    ///   - additionalTextInsets: An additional amount to inset the text of the editor by.
     ///   - isEditable: A Boolean value that controls whether the text view allows the user to edit text.
     ///   - isSelectable: A Boolean value that controls whether the text view allows the user to select text. If this
     ///                   value is true, and `isEditable` is false, the editor is selectable but not editable.
@@ -59,6 +60,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         useThemeBackground: Bool = true,
         highlightProviders: [any HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets? = nil,
+        additionalTextInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
         isSelectable: Bool = true,
         letterSpacing: Double = 1.0,
@@ -80,6 +82,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.cursorPositions = cursorPositions
         self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
+        self.additionalTextInsets = additionalTextInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
@@ -134,6 +137,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         useThemeBackground: Bool = true,
         highlightProviders: [any HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets? = nil,
+        additionalTextInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
         isSelectable: Bool = true,
         letterSpacing: Double = 1.0,
@@ -155,6 +159,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.cursorPositions = cursorPositions
         self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
+        self.additionalTextInsets = additionalTextInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
@@ -181,6 +186,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     private var useThemeBackground: Bool
     private var highlightProviders: [any HighlightProviding]
     private var contentInsets: NSEdgeInsets?
+    private var additionalTextInsets: NSEdgeInsets?
     private var isEditable: Bool
     private var isSelectable: Bool
     private var letterSpacing: Double
@@ -206,6 +212,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             useThemeBackground: useThemeBackground,
             highlightProviders: highlightProviders,
             contentInsets: contentInsets,
+            additionalTextInsets: additionalTextInsets,
             isEditable: isEditable,
             isSelectable: isSelectable,
             letterSpacing: letterSpacing,
@@ -289,6 +296,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.lineHeightMultiple = lineHeight
         controller.editorOverscroll = editorOverscroll
         controller.contentInsets = contentInsets
+        controller.additionalTextInsets = additionalTextInsets
 
         if controller.indentOption != indentOption {
             controller.indentOption = indentOption
@@ -339,6 +347,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.lineHeightMultiple == lineHeight &&
         controller.editorOverscroll == editorOverscroll &&
         controller.contentInsets == contentInsets &&
+        controller.additionalTextInsets == additionalTextInsets &&
         controller.language.id == language.id &&
         controller.theme == theme &&
         controller.indentOption == indentOption &&

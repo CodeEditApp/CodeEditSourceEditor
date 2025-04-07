@@ -11,8 +11,8 @@ import CodeEditTextView
 extension TextViewController {
     /// Emphasizes bracket pairs using the current selection.
     internal func emphasizeSelectionPairs() {
-        guard bracketPairEmphasis != nil else { return }
-        textView.emphasisManager?.removeEmphases(for: "bracketPairs")
+        guard let bracketPairEmphasis else { return }
+        textView.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
         for range in textView.selectionManager.textSelections.map({ $0.range }) {
             if range.isEmpty,
                range.location > 0, // Range is not the beginning of the document
@@ -22,36 +22,42 @@ extension TextViewController {
                 for pair in BracketPairs.emphasisValues {
                     if precedingCharacter == pair.0 {
                         // Walk forwards
-                        if let characterIndex = findClosingPair(
-                            pair.0,
-                            pair.1,
-                            from: range.location,
-                            limit: min(NSMaxRange(textView.visibleTextRange ?? .zero) + 4096,
-                                       NSMaxRange(textView.documentRange)),
-                            reverse: false
-                        ) {
-                            emphasizeCharacter(characterIndex)
-                            if bracketPairEmphasis?.emphasizesSourceBracket ?? false {
-                                emphasizeCharacter(range.location - 1)
-                            }
-                        }
+                        emphasizeForwards(pair, range: range, emphasisType: bracketPairEmphasis)
                     } else if precedingCharacter == pair.1 && range.location - 1 > 0 {
                         // Walk backwards
-                        if let characterIndex = findClosingPair(
-                            pair.1,
-                            pair.0,
-                            from: range.location - 1,
-                            limit: max((textView.visibleTextRange?.location ?? 0) - 4096,
-                                       textView.documentRange.location),
-                            reverse: true
-                        ) {
-                            emphasizeCharacter(characterIndex)
-                            if bracketPairEmphasis?.emphasizesSourceBracket ?? false {
-                                emphasizeCharacter(range.location - 1)
-                            }
-                        }
+                        emphasizeBackwards(pair, range: range, emphasisType: bracketPairEmphasis)
                     }
                 }
+            }
+        }
+    }
+
+    private func emphasizeForwards(_ pair: (String, String), range: NSRange, emphasisType: BracketPairEmphasis) {
+        if let characterIndex = findClosingPair(
+            pair.0,
+            pair.1,
+            from: range.location,
+            limit: min((textView.visibleTextRange ?? .zero).max + 4096, textView.documentRange.max),
+            reverse: false
+        ) {
+            emphasizeCharacter(characterIndex)
+            if emphasisType.emphasizesSourceBracket {
+                emphasizeCharacter(range.location - 1)
+            }
+        }
+    }
+
+    private func emphasizeBackwards(_ pair: (String, String), range: NSRange, emphasisType: BracketPairEmphasis) {
+        if let characterIndex = findClosingPair(
+            pair.1,
+            pair.0,
+            from: range.location - 1,
+            limit: max((textView.visibleTextRange?.location ?? 0) - 4096, textView.documentRange.location),
+            reverse: true
+        ) {
+            emphasizeCharacter(characterIndex)
+            if emphasisType.emphasizesSourceBracket {
+                emphasizeCharacter(range.location - 1)
             }
         }
     }
@@ -128,7 +134,7 @@ extension TextViewController {
                     flash: true,
                     inactive: false
                 ),
-                for: "bracketPairs"
+                for: EmphasisGroup.brackets
             )
         case .bordered(let borderColor):
             textView.emphasisManager?.addEmphasis(
@@ -138,7 +144,7 @@ extension TextViewController {
                     flash: false,
                     inactive: false
                 ),
-                for: "bracketPairs"
+                for: EmphasisGroup.brackets
             )
         case .underline(let underlineColor):
             textView.emphasisManager?.addEmphasis(
@@ -148,7 +154,7 @@ extension TextViewController {
                     flash: false,
                     inactive: false
                 ),
-                for: "bracketPairs"
+                for: EmphasisGroup.brackets
             )
         }
     }

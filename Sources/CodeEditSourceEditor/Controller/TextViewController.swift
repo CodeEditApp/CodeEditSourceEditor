@@ -33,8 +33,6 @@ public class TextViewController: NSViewController {
     var textView: TextView!
     var gutterView: GutterView!
     internal var _undoManager: CEUndoManager!
-    /// Internal reference to any injected layers in the text view.
-    internal var highlightLayers: [CALayer] = []
     internal var systemAppearance: NSAppearance.Name?
 
     package var localEvenMonitor: Any?
@@ -127,10 +125,21 @@ public class TextViewController: NSViewController {
     /// The provided highlight provider.
     public var highlightProviders: [HighlightProviding]
 
-    /// Optional insets to offset the text view in the scroll view by.
+    /// Optional insets to offset the text view and find panel in the scroll view by.
     public var contentInsets: NSEdgeInsets? {
         didSet {
+            styleScrollView()
             findViewController?.topPadding = contentInsets?.top
+        }
+    }
+
+    /// An additional amount to inset text by. Horizontal values are ignored.
+    ///
+    /// This value does not affect decorations like the find panel, but affects things that are relative to text, such
+    /// as line numbers and of course the text itself.
+    public var additionalTextInsets: NSEdgeInsets? {
+        didSet {
+            styleScrollView()
         }
     }
 
@@ -232,6 +241,7 @@ public class TextViewController: NSViewController {
         useThemeBackground: Bool,
         highlightProviders: [HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets?,
+        additionalTextInsets: NSEdgeInsets? = nil,
         isEditable: Bool,
         isSelectable: Bool,
         letterSpacing: Double,
@@ -252,6 +262,7 @@ public class TextViewController: NSViewController {
         self.useThemeBackground = useThemeBackground
         self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
+        self.additionalTextInsets = additionalTextInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing

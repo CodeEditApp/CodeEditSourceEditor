@@ -38,9 +38,9 @@ extension FindViewController: FindPanelDelegate {
         if let textViewController = target as? TextViewController,
            textViewController.textView.window?.firstResponder === textViewController.textView {
             // If the text view has focus, just clear visual emphases but keep matches in memory
-            target?.emphasisManager?.removeEmphases(for: "find")
+            target?.emphasisManager?.removeEmphases(for: EmphasisGroup.find)
             // Re-add the current active emphasis without visual emphasis
-            if let emphases = target?.emphasisManager?.getEmphases(for: "find"),
+            if let emphases = target?.emphasisManager?.getEmphases(for: EmphasisGroup.find),
                let activeEmphasis = emphases.first(where: { !$0.inactive }) {
                 target?.emphasisManager?.addEmphasis(
                     Emphasis(
@@ -50,14 +50,14 @@ extension FindViewController: FindPanelDelegate {
                         inactive: false,
                         selectInDocument: true
                     ),
-                    for: "find"
+                    for: EmphasisGroup.find
                 )
             }
             return
         }
 
         // Clear existing emphases before performing new find
-        target?.emphasisManager?.removeEmphases(for: "find")
+        target?.emphasisManager?.removeEmphases(for: EmphasisGroup.find)
         find(text: text)
     }
 
@@ -87,7 +87,7 @@ extension FindViewController: FindPanelDelegate {
             let newActiveRange = findMatches[currentFindMatchIndex]
 
             // Clear existing emphases before adding the flash
-            emphasisManager.removeEmphases(for: "find")
+            emphasisManager.removeEmphases(for: EmphasisGroup.find)
 
             emphasisManager.addEmphasis(
                 Emphasis(
@@ -97,7 +97,7 @@ extension FindViewController: FindPanelDelegate {
                     inactive: false,
                     selectInDocument: true
                 ),
-                for: "find"
+                for: EmphasisGroup.find
             )
 
             return
@@ -115,7 +115,7 @@ extension FindViewController: FindPanelDelegate {
         }
 
         // Replace all emphases to update state
-        emphasisManager.replaceEmphases(updatedEmphases, for: "find")
+        emphasisManager.replaceEmphases(updatedEmphases, for: EmphasisGroup.find)
     }
 
     func findPanelNextButtonClicked() {
@@ -150,7 +150,7 @@ extension FindViewController: FindPanelDelegate {
             let newActiveRange = findMatches[currentFindMatchIndex]
 
             // Clear existing emphases before adding the flash
-            emphasisManager.removeEmphases(for: "find")
+            emphasisManager.removeEmphases(for: EmphasisGroup.find)
 
             emphasisManager.addEmphasis(
                 Emphasis(
@@ -160,7 +160,7 @@ extension FindViewController: FindPanelDelegate {
                     inactive: false,
                     selectInDocument: true
                 ),
-                for: "find"
+                for: EmphasisGroup.find
             )
 
             return
@@ -178,7 +178,7 @@ extension FindViewController: FindPanelDelegate {
         }
 
         // Replace all emphases to update state
-        emphasisManager.replaceEmphases(updatedEmphases, for: "find")
+        emphasisManager.replaceEmphases(updatedEmphases, for: EmphasisGroup.find)
     }
 
     func findPanelUpdateMatchCount(_ count: Int) {
@@ -186,6 +186,6 @@ extension FindViewController: FindPanelDelegate {
     }
 
     func findPanelClearEmphasis() {
-        target?.emphasisManager?.removeEmphases(for: "find")
+        target?.emphasisManager?.removeEmphases(for: EmphasisGroup.find)
     }
 }

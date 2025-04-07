@@ -57,7 +57,7 @@ extension FindViewController {
               let emphasisManager = target.emphasisManager else { return }
 
         // Clear existing emphases
-        emphasisManager.removeEmphases(for: "find")
+        emphasisManager.removeEmphases(for: EmphasisGroup.find)
 
         // Create emphasis with the nearest match as active
         let emphases = findMatches.enumerated().map { index, range in
@@ -71,7 +71,7 @@ extension FindViewController {
         }
 
         // Add all emphases
-        emphasisManager.addEmphases(emphases, for: "find")
+        emphasisManager.addEmphases(emphases, for: EmphasisGroup.find)
     }
 
     private func getNearestEmphasisIndex(matchRanges: [NSRange]) -> Int? {
