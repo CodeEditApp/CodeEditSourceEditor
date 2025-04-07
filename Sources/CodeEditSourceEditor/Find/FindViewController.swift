@@ -12,7 +12,9 @@ import CodeEditTextView
 final class FindViewController: NSViewController {
     weak var target: FindPanelTarget?
 
-    var topPadding: CGFloat = 0.0
+    /// The amount of padding from the top of the view to inset the find panel by.
+    /// When set, the safe area is ignored, and the top padding is measured from the top of the view's frame.
+    var topPadding: CGFloat?
 
     var childView: NSView
     var findPanel: FindPanel!
@@ -23,6 +25,12 @@ final class FindViewController: NSViewController {
     var findPanelVerticalConstraint: NSLayoutConstraint!
 
     var isShowingFindPanel: Bool = false
+
+    /// The 'real' top padding amount.
+    /// Is equal to ``topPadding`` if set, or the view's top safe area inset if not.
+    var resolvedTopPadding: CGFloat {
+        (topPadding ?? view.safeAreaInsets.top)
+    }
 
     init(target: FindPanelTarget, childView: NSView) {
         self.target = target
@@ -48,7 +56,7 @@ final class FindViewController: NSViewController {
     @objc private func textDidChange() {
         // Only update if we have find text
         if !findText.isEmpty {
-            performFind(query: findText)
+            performFind()
         }
     }
 

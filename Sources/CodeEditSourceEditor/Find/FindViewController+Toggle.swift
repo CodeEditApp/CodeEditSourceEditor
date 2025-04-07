@@ -9,6 +9,12 @@ import AppKit
 
 extension FindViewController {
     /// Show the find panel
+    ///
+    /// Performs the following:
+    /// - Makes the find panel the first responder.
+    /// - Sets the find panel to be just outside the visible area (`resolvedTopPadding - FindPanel.height`).
+    /// - Animates the find panel into position (resolvedTopPadding).
+    /// - Makes the find panel the first responder.
     func showFindPanel(animated: Bool = true) {
         if isShowingFindPanel {
             // If panel is already showing, just focus the text field
@@ -18,46 +24,40 @@ extension FindViewController {
 
         isShowingFindPanel = true
 
-        let updates: () -> Void = { [self] in
+        // Smooth out the animation by placing the find panel just outside the correct position before animating.
+        findPanel.isHidden = false
+        findPanelVerticalConstraint.constant = resolvedTopPadding - FindPanel.height
+        view.layoutSubtreeIfNeeded()
+
+        // Perform the animation
+        conditionalAnimated(animated) {
             // SwiftUI breaks things here, and refuses to return the correct `findPanel.fittingSize` so we
             // are forced to use a constant number.
             target?.findPanelWillShow(panelHeight: FindPanel.height)
             setFindPanelConstraintShow()
-        }
-
-        // Smooth this animation
-        findPanel.isHidden = false
-        findPanelVerticalConstraint.constant = topPadding - FindPanel.height
-        view.layoutSubtreeIfNeeded()
-
-        if animated {
-            withAnimation(updates) { }
-        } else {
-            updates()
-        }
+        } onComplete: { }
 
         _ = findPanel?.becomeFirstResponder()
         findPanel?.addEventMonitor()
     }
 
     /// Hide the find panel
+    ///
+    /// Performs the following:
+    /// - Resigns the find panel from first responder.
+    /// - Animates the find panel just outside the visible area (`resolvedTopPadding - FindPanel.height`).
+    /// - Hides the find panel.
+    /// - Sets the text view to be the first responder.
     func hideFindPanel(animated: Bool = true) {
         isShowingFindPanel = false
         _ = findPanel?.resignFirstResponder()
         findPanel?.removeEventMonitor()
 
-        let updates: () -> Void = { [self] in
+        conditionalAnimated(animated) {
             target?.findPanelWillHide(panelHeight: FindPanel.height)
             setFindPanelConstraintHide()
-        }
-
-        if animated {
-            withAnimation(updates) { [weak self] in
-                self?.findPanel.isHidden = true
-            }
-        } else {
-            updates()
-            findPanel.isHidden = true
+        } onComplete: { [weak self] in
+            self?.findPanel.isHidden = true
         }
 
         // Set first responder back to text view
@@ -66,12 +66,26 @@ extension FindViewController {
         }
     }
 
+    /// Performs an animation with a completion handler, conditionally animating the changes.
+    /// - Parameters:
+    ///   - animated: Determines if the changes are performed in an animation context.
+    ///   - animatable: Perform the changes to be animated in this callback. Implicit animation will be enabled.
+    ///   - onComplete: Called when the changes are complete, animated or not.
+    private func conditionalAnimated(_ animated: Bool, animatable: () -> Void, onComplete: @escaping () -> Void) {
+        if animated {
+            withAnimation(animatable, onComplete: onComplete)
+        } else {
+            animatable()
+            onComplete()
+        }
+    }
+
     /// Runs the `animatable` callback in an animation context with implicit animation enabled.
     /// - Parameter animatable: The callback run in the animation context. Perform layout or view updates in this
     ///                         callback to have them animated.
     private func withAnimation(_ animatable: () -> Void, onComplete: @escaping () -> Void) {
         NSAnimationContext.runAnimationGroup { animator in
-            animator.duration = 0.2
+            animator.duration = 0.15
             animator.allowsImplicitAnimation = true
 
             animatable()
@@ -87,7 +101,7 @@ extension FindViewController {
     /// Can be animated using implicit animation.
     func setFindPanelConstraintShow() {
         // Update the find panel's top to be equal to the view's top.
-        findPanelVerticalConstraint.constant = topPadding
+        findPanelVerticalConstraint.constant = resolvedTopPadding
         findPanelVerticalConstraint.isActive = true
     }
 
@@ -99,7 +113,7 @@ extension FindViewController {
         // SwiftUI hates us. It refuses to move views outside of the safe are if they don't have the `.ignoresSafeArea`
         // modifier, but with that modifier on it refuses to allow it to be animated outside the safe area.
         // The only way I found to fix it was to multiply the height by 3 here.
-        findPanelVerticalConstraint.constant = topPadding - FindPanel.height
+        findPanelVerticalConstraint.constant = resolvedTopPadding - (FindPanel.height * 3)
         findPanelVerticalConstraint.isActive = true
     }
 }
