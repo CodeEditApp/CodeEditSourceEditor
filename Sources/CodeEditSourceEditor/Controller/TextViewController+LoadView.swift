@@ -110,10 +110,10 @@ extension TextViewController {
             }
             .store(in: &cancellables)
 
-        if let localEventMonitor = self.localEvenMonitor {
+        if let localEventMonitor = self.localEventMonitor {
             NSEvent.removeMonitor(localEventMonitor)
         }
-        self.localEvenMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+        self.localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard self?.view.window?.firstResponder == self?.textView else { return event }
 
             let tabKey: UInt16 = 0x30
@@ -126,6 +126,7 @@ extension TextViewController {
             }
         }
     }
+
     func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
         let commandKey = NSEvent.ModifierFlags.command.rawValue
 
