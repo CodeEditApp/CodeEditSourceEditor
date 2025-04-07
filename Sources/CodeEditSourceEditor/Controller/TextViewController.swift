@@ -20,7 +20,7 @@ public class TextViewController: NSViewController {
     // swiftlint:disable:next line_length
     public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
 
-    weak var searchController: FindViewController?
+    weak var findViewController: FindViewController?
 
     var scrollView: NSScrollView!
 
@@ -124,7 +124,11 @@ public class TextViewController: NSViewController {
     public var highlightProviders: [HighlightProviding]
 
     /// Optional insets to offset the text view in the scroll view by.
-    public var contentInsets: NSEdgeInsets?
+    public var contentInsets: NSEdgeInsets? {
+        didSet {
+            findViewController?.topPadding = contentInsets?.top ?? view.safeAreaInsets.top
+        }
+    }
 
     /// Whether or not text view is editable by user
     public var isEditable: Bool {

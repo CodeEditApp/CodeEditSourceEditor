@@ -29,11 +29,14 @@ extension TextViewController {
             for: .horizontal
         )
 
-        let searchController = FindViewController(target: self, childView: scrollView)
-        addChild(searchController)
-        self.view.addSubview(searchController.view)
-        searchController.view.viewDidMoveToSuperview()
-        self.searchController = searchController
+        let findViewController = FindViewController(target: self, childView: scrollView)
+        addChild(findViewController)
+        self.findViewController = findViewController
+        self.view.addSubview(findViewController.view)
+        findViewController.view.viewDidMoveToSuperview()
+        self.findViewController = findViewController
+
+        findViewController.topPadding = contentInsets?.top ?? view.safeAreaInsets.top
 
         if let _undoManager {
             textView.setUndoManager(_undoManager)
@@ -46,10 +49,10 @@ extension TextViewController {
         setUpTextFormation()
 
         NSLayoutConstraint.activate([
-            searchController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            searchController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            searchController.view.topAnchor.constraint(equalTo: view.topAnchor),
-            searchController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            findViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            findViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            findViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            findViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
         if !cursorPositions.isEmpty {
@@ -110,7 +113,7 @@ extension TextViewController {
                     // Reset content insets and gutter position when appearance changes
                     if let contentInsets = self.contentInsets {
                         self.scrollView.contentInsets = contentInsets
-                        if let searchController = self.searchController, searchController.isShowingFindPanel {
+                        if let findViewController = self.findViewController, findViewController.isShowingFindPanel {
                             self.scrollView.contentInsets.top += FindPanel.height
                         }
                         self.gutterView.frame.origin.y = -self.scrollView.contentInsets.top
@@ -156,10 +159,10 @@ extension TextViewController {
             return nil
         case (commandKey, "f"):
             _ = self.textView.resignFirstResponder()
-            self.searchController?.showFindPanel()
+            self.findViewController?.showFindPanel()
             return nil
         case (0, "\u{1b}"): // Escape key
-            self.searchController?.findPanel.dismiss()
+            self.findViewController?.findPanel.dismiss()
             return nil
         case (_, _):
             return event

@@ -11,12 +11,17 @@ import CodeEditTextView
 /// Creates a container controller for displaying and hiding a find panel with a content view.
 final class FindViewController: NSViewController {
     weak var target: FindPanelTarget?
+
+    var topPadding: CGFloat = 0.0
+
     var childView: NSView
     var findPanel: FindPanel!
     var findMatches: [NSRange] = []
+
     var currentFindMatchIndex: Int = 0
     var findText: String = ""
     var findPanelVerticalConstraint: NSLayoutConstraint!
+
     var isShowingFindPanel: Bool = false
 
     init(target: FindPanelTarget, childView: NSView) {
@@ -91,25 +96,5 @@ final class FindViewController: NSViewController {
         } else {
             setFindPanelConstraintHide()
         }
-    }
-
-    /// Sets the find panel constraint to show the find panel.
-    /// Can be animated using implicit animation.
-    private func setFindPanelConstraintShow() {
-        // Update the find panel's top to be equal to the view's top.
-        findPanelVerticalConstraint.constant = view.safeAreaInsets.top
-        findPanelVerticalConstraint.isActive = true
-    }
-
-    /// Sets the find panel constraint to hide the find panel.
-    /// Can be animated using implicit animation.
-    private func setFindPanelConstraintHide() {
-        // Update the find panel's top anchor to be equal to it's negative height, hiding it above the view.
-
-        // SwiftUI hates us. It refuses to move views outside of the safe are if they don't have the `.ignoresSafeArea`
-        // modifier, but with that modifier on it refuses to allow it to be animated outside the safe area.
-        // The only way I found to fix it was to multiply the height by 3 here.
-        findPanelVerticalConstraint.constant = view.safeAreaInsets.top - (FindPanel.height * 3)
-        findPanelVerticalConstraint.isActive = true
     }
 }
