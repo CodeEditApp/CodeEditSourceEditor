@@ -10,6 +10,10 @@ import SwiftUI
 import CodeEditTextView
 import CodeEditLanguages
 
+// This type is messy, but it needs *so* many parameters that this is pretty much unavoidable.
+// swiftlint:disable file_length
+// swiftlint:disable type_body_length
+
 /// A SwiftUI View that provides source editing functionality.
 public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     package enum TextAPI {
@@ -35,12 +39,13 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///                        built-in `TreeSitterClient` highlighter.
     ///   - contentInsets: Insets to use to offset the content in the enclosing scroll view. Leave as `nil` to let the
     ///                    scroll view automatically adjust content insets.
+    ///   - additionalTextInsets: An additional amount to inset the text of the editor by.
     ///   - isEditable: A Boolean value that controls whether the text view allows the user to edit text.
     ///   - isSelectable: A Boolean value that controls whether the text view allows the user to select text. If this
     ///                   value is true, and `isEditable` is false, the editor is selectable but not editable.
     ///   - letterSpacing: The amount of space to use between letters, as a percent. Eg: `1.0` = no space, `1.5` = 1/2 a
     ///                    character's width between characters, etc. Defaults to `1.0`
-    ///   - bracketPairHighlight: The type of highlight to use to highlight bracket pairs.
+    ///   - bracketPairEmphasis: The type of highlight to use to highlight bracket pairs.
     ///                           See `BracketPairHighlight` for more information. Defaults to `nil`
     ///   - useSystemCursor: If true, uses the system cursor on `>=macOS 14`.
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
@@ -59,10 +64,11 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         useThemeBackground: Bool = true,
         highlightProviders: [any HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets? = nil,
+        additionalTextInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
         isSelectable: Bool = true,
         letterSpacing: Double = 1.0,
-        bracketPairHighlight: BracketPairHighlight? = nil,
+        bracketPairEmphasis: BracketPairEmphasis? = .flash,
         useSystemCursor: Bool = true,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = []
@@ -80,10 +86,11 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.cursorPositions = cursorPositions
         self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
+        self.additionalTextInsets = additionalTextInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
-        self.bracketPairHighlight = bracketPairHighlight
+        self.bracketPairEmphasis = bracketPairEmphasis
         if #available(macOS 14, *) {
             self.useSystemCursor = useSystemCursor
         } else {
@@ -116,8 +123,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///                   value is true, and `isEditable` is false, the editor is selectable but not editable.
     ///   - letterSpacing: The amount of space to use between letters, as a percent. Eg: `1.0` = no space, `1.5` = 1/2 a
     ///                    character's width between characters, etc. Defaults to `1.0`
-    ///   - bracketPairHighlight: The type of highlight to use to highlight bracket pairs.
-    ///                           See `BracketPairHighlight` for more information. Defaults to `nil`
+    ///   - bracketPairEmphasis: The type of highlight to use to highlight bracket pairs.
+    ///                           See `BracketPairEmphasis` for more information. Defaults to `nil`
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
     ///   - coordinators: Any text coordinators for the view to use. See ``TextViewCoordinator`` for more information.
     public init(
@@ -134,10 +141,11 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         useThemeBackground: Bool = true,
         highlightProviders: [any HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets? = nil,
+        additionalTextInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
         isSelectable: Bool = true,
         letterSpacing: Double = 1.0,
-        bracketPairHighlight: BracketPairHighlight? = nil,
+        bracketPairEmphasis: BracketPairEmphasis? = .flash,
         useSystemCursor: Bool = true,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = []
@@ -155,10 +163,11 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.cursorPositions = cursorPositions
         self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
+        self.additionalTextInsets = additionalTextInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
-        self.bracketPairHighlight = bracketPairHighlight
+        self.bracketPairEmphasis = bracketPairEmphasis
         if #available(macOS 14, *) {
             self.useSystemCursor = useSystemCursor
         } else {
@@ -181,10 +190,11 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     private var useThemeBackground: Bool
     private var highlightProviders: [any HighlightProviding]
     private var contentInsets: NSEdgeInsets?
+    private var additionalTextInsets: NSEdgeInsets?
     private var isEditable: Bool
     private var isSelectable: Bool
     private var letterSpacing: Double
-    private var bracketPairHighlight: BracketPairHighlight?
+    private var bracketPairEmphasis: BracketPairEmphasis?
     private var useSystemCursor: Bool
     private var undoManager: CEUndoManager?
     package var coordinators: [any TextViewCoordinator]
@@ -206,11 +216,12 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             useThemeBackground: useThemeBackground,
             highlightProviders: highlightProviders,
             contentInsets: contentInsets,
+            additionalTextInsets: additionalTextInsets,
             isEditable: isEditable,
             isSelectable: isSelectable,
             letterSpacing: letterSpacing,
             useSystemCursor: useSystemCursor,
-            bracketPairHighlight: bracketPairHighlight,
+            bracketPairEmphasis: bracketPairEmphasis,
             undoManager: undoManager,
             coordinators: coordinators
         )
@@ -263,15 +274,16 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     /// Update the parameters of the controller.
     /// - Parameter controller: The controller to update.
     func updateControllerParams(controller: TextViewController) {
+        updateTextProperties(controller)
+        updateEditorProperties(controller)
+        updateThemeAndLanguage(controller)
+        updateHighlighting(controller)
+    }
+
+    private func updateTextProperties(_ controller: TextViewController) {
         if controller.font != font {
             controller.font = font
         }
-
-        controller.wrapLines = wrapLines
-        controller.useThemeBackground = useThemeBackground
-        controller.lineHeightMultiple = lineHeight
-        controller.editorOverscroll = editorOverscroll
-        controller.contentInsets = contentInsets
 
         if controller.isEditable != isEditable {
             controller.isEditable = isEditable
@@ -280,14 +292,15 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         if controller.isSelectable != isSelectable {
             controller.isSelectable = isSelectable
         }
+    }
 
-        if controller.language.id != language.id {
-            controller.language = language
-        }
-
-        if controller.theme != theme {
-            controller.theme = theme
-        }
+    private func updateEditorProperties(_ controller: TextViewController) {
+        controller.wrapLines = wrapLines
+        controller.useThemeBackground = useThemeBackground
+        controller.lineHeightMultiple = lineHeight
+        controller.editorOverscroll = editorOverscroll
+        controller.contentInsets = contentInsets
+        controller.additionalTextInsets = additionalTextInsets
 
         if controller.indentOption != indentOption {
             controller.indentOption = indentOption
@@ -304,12 +317,26 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         if controller.useSystemCursor != useSystemCursor {
             controller.useSystemCursor = useSystemCursor
         }
+    }
 
+    private func updateThemeAndLanguage(_ controller: TextViewController) {
+        if controller.language.id != language.id {
+            controller.language = language
+        }
+
+        if controller.theme != theme {
+            controller.theme = theme
+        }
+    }
+
+    private func updateHighlighting(_ controller: TextViewController) {
         if !areHighlightProvidersEqual(controller: controller) {
             controller.setHighlightProviders(highlightProviders)
         }
 
-        controller.bracketPairHighlight = bracketPairHighlight
+        if controller.bracketPairEmphasis != bracketPairEmphasis {
+            controller.bracketPairEmphasis = bracketPairEmphasis
+        }
     }
 
     /// Checks if the controller needs updating.
@@ -324,12 +351,13 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.lineHeightMultiple == lineHeight &&
         controller.editorOverscroll == editorOverscroll &&
         controller.contentInsets == contentInsets &&
+        controller.additionalTextInsets == additionalTextInsets &&
         controller.language.id == language.id &&
         controller.theme == theme &&
         controller.indentOption == indentOption &&
         controller.tabWidth == tabWidth &&
         controller.letterSpacing == letterSpacing &&
-        controller.bracketPairHighlight == bracketPairHighlight &&
+        controller.bracketPairEmphasis == bracketPairEmphasis &&
         controller.useSystemCursor == useSystemCursor &&
         areHighlightProvidersEqual(controller: controller)
     }
@@ -359,7 +387,7 @@ public struct CodeEditTextView: View {
         isEditable: Bool = true,
         isSelectable: Bool = true,
         letterSpacing: Double = 1.0,
-        bracketPairHighlight: BracketPairHighlight? = nil,
+        bracketPairEmphasis: BracketPairEmphasis? = nil,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = []
     ) {
@@ -370,3 +398,6 @@ public struct CodeEditTextView: View {
         EmptyView()
     }
 }
+
+// swiftlint:enable type_body_length
+// swiftlint:enable file_length

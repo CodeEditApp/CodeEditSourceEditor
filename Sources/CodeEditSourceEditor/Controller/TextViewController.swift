@@ -20,12 +20,19 @@ public class TextViewController: NSViewController {
     // swiftlint:disable:next line_length
     public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
 
+    weak var findViewController: FindViewController?
+
     var scrollView: NSScrollView!
-    private(set) public var textView: TextView!
+
+    // SEARCH
+    var stackview: NSStackView!
+    var searchField: NSTextField!
+    var prevButton: NSButton!
+    var nextButton: NSButton!
+
+    var textView: TextView!
     var gutterView: GutterView!
-    internal var _undoManager: CEUndoManager?
-    /// Internal reference to any injected layers in the text view.
-    internal var highlightLayers: [CALayer] = []
+    internal var _undoManager: CEUndoManager!
     internal var systemAppearance: NSAppearance.Name?
 
     package var localEvenMonitor: Any?
@@ -62,6 +69,8 @@ public class TextViewController: NSViewController {
             )
             textView.selectionManager.selectedLineBackgroundColor = theme.selection
             highlighter?.invalidate()
+            gutterView.textColor = theme.text.color.withAlphaComponent(0.35)
+            gutterView.selectedLineTextColor = theme.text.color
         }
     }
 
@@ -116,8 +125,23 @@ public class TextViewController: NSViewController {
     /// The provided highlight provider.
     public var highlightProviders: [HighlightProviding]
 
-    /// Optional insets to offset the text view in the scroll view by.
-    public var contentInsets: NSEdgeInsets?
+    /// Optional insets to offset the text view and find panel in the scroll view by.
+    public var contentInsets: NSEdgeInsets? {
+        didSet {
+            styleScrollView()
+            findViewController?.topPadding = contentInsets?.top
+        }
+    }
+
+    /// An additional amount to inset text by. Horizontal values are ignored.
+    ///
+    /// This value does not affect decorations like the find panel, but affects things that are relative to text, such
+    /// as line numbers and of course the text itself.
+    public var additionalTextInsets: NSEdgeInsets? {
+        didSet {
+            styleScrollView()
+        }
+    }
 
     /// Whether or not text view is editable by user
     public var isEditable: Bool {
@@ -143,9 +167,9 @@ public class TextViewController: NSViewController {
     }
 
     /// The type of highlight to use when highlighting bracket pairs. Leave as `nil` to disable highlighting.
-    public var bracketPairHighlight: BracketPairHighlight? {
+    public var bracketPairEmphasis: BracketPairEmphasis? {
         didSet {
-            highlightSelectionPairs()
+            emphasizeSelectionPairs()
         }
     }
 
@@ -217,11 +241,12 @@ public class TextViewController: NSViewController {
         useThemeBackground: Bool,
         highlightProviders: [HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets?,
+        additionalTextInsets: NSEdgeInsets? = nil,
         isEditable: Bool,
         isSelectable: Bool,
         letterSpacing: Double,
         useSystemCursor: Bool,
-        bracketPairHighlight: BracketPairHighlight?,
+        bracketPairEmphasis: BracketPairEmphasis?,
         undoManager: CEUndoManager? = nil,
         coordinators: [TextViewCoordinator] = []
     ) {
@@ -237,10 +262,11 @@ public class TextViewController: NSViewController {
         self.useThemeBackground = useThemeBackground
         self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
+        self.additionalTextInsets = additionalTextInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
-        self.bracketPairHighlight = bracketPairHighlight
+        self.bracketPairEmphasis = bracketPairEmphasis
         self._undoManager = undoManager
 
         super.init(nibName: nil, bundle: nil)

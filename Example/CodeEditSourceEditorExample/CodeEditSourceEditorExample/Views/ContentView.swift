@@ -11,16 +11,21 @@ import CodeEditLanguages
 import CodeEditTextView
 
 struct ContentView: View {
+    @Environment(\.colorScheme)
+    var colorScheme
+
     @Binding var document: CodeEditSourceEditorExampleDocument
     let fileURL: URL?
 
     @State private var language: CodeLanguage = .default
-    @State private var theme: EditorTheme = .standard
-    @State private var font: NSFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+    @State private var theme: EditorTheme = .light
+    @State private var font: NSFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .medium)
     @AppStorage("wrapLines") private var wrapLines: Bool = true
-    @State private var cursorPositions: [CursorPosition] = []
+    @State private var cursorPositions: [CursorPosition] = [.init(line: 1, column: 1)]
     @AppStorage("systemCursor") private var useSystemCursor: Bool = false
     @State private var isInLongParse = false
+    @State private var settingsIsPresented: Bool = false
+    @State private var treeSitterClient = TreeSitterClient()
 
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
         self._document = document
@@ -28,65 +33,99 @@ struct ContentView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("Language")
-                LanguagePicker(language: $language)
-                    .frame(maxWidth: 100)
-                Toggle("Wrap Lines", isOn: $wrapLines)
-                if #available(macOS 14, *) {
-                    Toggle("Use System Cursor", isOn: $useSystemCursor)
-                } else {
-                    Toggle("Use System Cursor", isOn: $useSystemCursor)
-                        .disabled(true)
-                        .help("macOS 14 required")
-                }
-                Spacer()
-                Text(getLabel(cursorPositions))
-            }
-            .padding(4)
-            .zIndex(2)
-            .background(Color(NSColor.windowBackgroundColor))
-            Divider()
-            ZStack {
-                if isInLongParse {
-                    VStack {
-                        HStack {
-                            Spacer()
-                            Text("Parsing document...")
-                            Spacer()
+        GeometryReader { proxy in
+            CodeEditSourceEditor(
+                $document.text,
+                language: language,
+                theme: theme,
+                font: font,
+                tabWidth: 4,
+                lineHeight: 1.2,
+                wrapLines: wrapLines,
+                cursorPositions: $cursorPositions,
+                useThemeBackground: true,
+                highlightProviders: [treeSitterClient],
+                contentInsets: NSEdgeInsets(top: proxy.safeAreaInsets.top, left: 0, bottom: 28.0, right: 0),
+                useSystemCursor: useSystemCursor
+            )
+            .overlay(alignment: .bottom) {
+                HStack {
+                    Menu {
+                        Toggle("Wrap Lines", isOn: $wrapLines)
+                        if #available(macOS 14, *) {
+                            Toggle("Use System Cursor", isOn: $useSystemCursor)
+                        } else {
+                            Toggle("Use System Cursor", isOn: $useSystemCursor)
+                                .disabled(true)
+                                .help("macOS 14 required")
                         }
-                        .padding(4)
-                        .background(Color(NSColor.windowBackgroundColor))
-                        Spacer()
+                    } label: {}
+                    .background {
+                        Image(systemName: "switch.2")
+                            .foregroundStyle(.secondary)
+                            .font(.system(size: 13.5, weight: .regular))
                     }
-                    .zIndex(2)
-                    .transition(.opacity)
+                    .menuStyle(.borderlessButton)
+                    .menuIndicator(.hidden)
+                    .frame(maxWidth: 18, alignment: .center)
+                    Spacer()
+                    Group {
+                        if isInLongParse {
+                            HStack(spacing: 5) {
+                                ProgressView()
+                                    .controlSize(.small)
+                                Text("Parsing Document")
+                            }
+                        } else {
+                            Text(getLabel(cursorPositions))
+                        }
+                    }
+                    .foregroundStyle(.secondary)
+                    Divider()
+                        .frame(height: 12)
+                    LanguagePicker(language: $language)
+                        .buttonStyle(.borderless)
                 }
-                CodeEditSourceEditor(
-                    $document.text,
-                    language: language,
-                    theme: theme,
-                    font: font,
-                    tabWidth: 4,
-                    lineHeight: 1.2,
-                    wrapLines: wrapLines,
-                    cursorPositions: $cursorPositions,
-                    useSystemCursor: useSystemCursor
-                )
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .controlSize(.small)
+                .padding(.horizontal, 8)
+                .frame(height: 28)
+                .background(.bar)
+                .overlay(alignment: .top) {
+                    VStack {
+                        Divider()
+                            .overlay {
+                                if colorScheme == .dark {
+                                    Color.black
+                                }
+                            }
+                    }
+                }
+                .zIndex(2)
+                .onAppear {
+                    self.language = detectLanguage(fileURL: fileURL) ?? .default
+                    self.theme = colorScheme == .dark ? .dark : .light
+                }
             }
-        }
-        .onAppear {
-            self.language = detectLanguage(fileURL: fileURL) ?? .default
-        }
-        .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParse)) { _ in
-            withAnimation(.easeIn(duration: 0.1)) {
-                isInLongParse = true
+            .ignoresSafeArea()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParse)) { _ in
+                withAnimation(.easeIn(duration: 0.1)) {
+                    isInLongParse = true
+                }
             }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParseFinished)) { _ in
-            withAnimation(.easeIn(duration: 0.1)) {
-                isInLongParse = false
+            .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParseFinished)) { _ in
+                withAnimation(.easeIn(duration: 0.1)) {
+                    isInLongParse = false
+                }
+            }
+            .onChange(of: colorScheme) { _, newValue in
+                if newValue == .dark {
+                    theme = .dark
+                } else {
+                    theme = .light
+                }
             }
         }
     }
@@ -105,7 +144,7 @@ struct ContentView: View {
     /// - Returns: A string describing the user's location in a document.
     func getLabel(_ cursorPositions: [CursorPosition]) -> String {
         if cursorPositions.isEmpty {
-            return ""
+            return "No cursor"
         }
 
         // More than one selection, display the number of selections.

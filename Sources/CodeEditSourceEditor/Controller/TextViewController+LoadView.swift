@@ -11,20 +11,15 @@ import AppKit
 extension TextViewController {
     // swiftlint:disable:next function_body_length
     override public func loadView() {
-        scrollView = NSScrollView()
-        textView.postsFrameChangedNotifications = true
-        textView.translatesAutoresizingMaskIntoConstraints = false
+        super.loadView()
 
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.contentView.postsFrameChangedNotifications = true
-        scrollView.hasVerticalScroller = true
-        scrollView.hasHorizontalScroller = !wrapLines
+        scrollView = NSScrollView()
         scrollView.documentView = textView
-        scrollView.contentView.postsBoundsChangedNotifications = true
 
         gutterView = GutterView(
             font: font.rulerFont,
-            textColor: .secondaryLabelColor,
+            textColor: theme.text.color.withAlphaComponent(0.35),
+            selectedTextColor: theme.text.color,
             textView: textView,
             delegate: self
         )
@@ -34,7 +29,15 @@ extension TextViewController {
             for: .horizontal
         )
 
-        self.view = scrollView
+        let findViewController = FindViewController(target: self, childView: scrollView)
+        addChild(findViewController)
+        self.findViewController = findViewController
+        self.view.addSubview(findViewController.view)
+        findViewController.view.viewDidMoveToSuperview()
+        self.findViewController = findViewController
+
+        findViewController.topPadding = contentInsets?.top
+
         if let _undoManager {
             textView.setUndoManager(_undoManager)
         }
@@ -46,10 +49,10 @@ extension TextViewController {
         setUpTextFormation()
 
         NSLayoutConstraint.activate([
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            findViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            findViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            findViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            findViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
         if !cursorPositions.isEmpty {
@@ -74,9 +77,7 @@ extension TextViewController {
         ) { [weak self] _ in
             self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
             self?.gutterView.needsDisplay = true
-            if self?.bracketPairHighlight == .flash {
-                self?.removeHighlightLayers()
-            }
+            self?.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
         }
 
         NotificationCenter.default.addObserver(
@@ -94,7 +95,7 @@ extension TextViewController {
             queue: .main
         ) { [weak self] _ in
             self?.updateCursorPosition()
-            self?.highlightSelectionPairs()
+            self?.emphasizeSelectionPairs()
         }
 
         textView.updateFrameIfNeeded()
@@ -106,6 +107,10 @@ extension TextViewController {
 
                 if self.systemAppearance != newValue.name {
                     self.systemAppearance = newValue.name
+
+                    // Reset content insets and gutter position when appearance changes
+                    self.styleScrollView()
+                    self.gutterView.frame.origin.y = -self.scrollView.contentInsets.top
                 }
             }
             .store(in: &cancellables)
@@ -113,19 +118,25 @@ extension TextViewController {
         if let localEventMonitor = self.localEvenMonitor {
             NSEvent.removeMonitor(localEventMonitor)
         }
-        self.localEvenMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard self?.view.window?.firstResponder == self?.textView else { return event }
+        setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
+    }
 
-            let tabKey: UInt16 = 0x30
-            let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
+    func setUpKeyBindings(eventMonitor: inout Any?) {
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event -> NSEvent? in
+            guard let self = self else { return event }
 
-            if event.keyCode == tabKey {
-                return self?.handleTab(event: event, modifierFalgs: modifierFlags)
-            } else {
-                return self?.handleCommand(event: event, modifierFlags: modifierFlags)
-            }
+            // Check if this window is key and if the text view is the first responder
+            let isKeyWindow = self.view.window?.isKeyWindow ?? false
+            let isFirstResponder = self.view.window?.firstResponder === self.textView
+
+            // Only handle commands if this is the key window and text view is first responder
+            guard isKeyWindow && isFirstResponder else { return event }
+
+            let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            return self.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
         }
     }
+
     func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
         let commandKey = NSEvent.ModifierFlags.command.rawValue
 
@@ -138,6 +149,13 @@ extension TextViewController {
             return nil
         case (commandKey, "]"):
             handleIndent()
+            return nil
+        case (commandKey, "f"):
+            _ = self.textView.resignFirstResponder()
+            self.findViewController?.showFindPanel()
+            return nil
+        case (0, "\u{1b}"): // Escape key
+            self.findViewController?.findPanel.dismiss()
             return nil
         case (_, _):
             return event

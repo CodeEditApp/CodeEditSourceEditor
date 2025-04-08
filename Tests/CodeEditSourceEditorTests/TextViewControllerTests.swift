@@ -31,7 +31,7 @@ final class TextViewControllerTests: XCTestCase {
             isSelectable: true,
             letterSpacing: 1.0,
             useSystemCursor: false,
-            bracketPairHighlight: .flash
+            bracketPairEmphasis: .flash
         )
 
         controller.loadView()
@@ -84,7 +84,7 @@ final class TextViewControllerTests: XCTestCase {
     // MARK: Insets
 
     func test_editorInsets() throws {
-        let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
+        let scrollView = try XCTUnwrap(controller.scrollView)
         scrollView.frame = .init(
             x: .zero,
             y: .zero,
@@ -131,8 +131,44 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.gutterView.frame.origin.y, -16)
     }
 
+    func test_additionalInsets() throws {
+        let scrollView = try XCTUnwrap(controller.scrollView)
+        scrollView.frame = .init(
+            x: .zero,
+            y: .zero,
+            width: 100,
+            height: 100
+        )
+
+        func assertInsetsEqual(_ lhs: NSEdgeInsets, _ rhs: NSEdgeInsets) throws {
+            XCTAssertEqual(lhs.top, rhs.top)
+            XCTAssertEqual(lhs.right, rhs.right)
+            XCTAssertEqual(lhs.bottom, rhs.bottom)
+            XCTAssertEqual(lhs.left, rhs.left)
+        }
+
+        controller.contentInsets = nil
+        controller.additionalTextInsets = nil
+
+        try assertInsetsEqual(scrollView.contentInsets, NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0))
+        XCTAssertEqual(controller.gutterView.frame.origin.y, 0)
+
+        controller.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+        controller.additionalTextInsets = NSEdgeInsets(top: 10, left: 0, bottom: 10, right: 0)
+
+        controller.findViewController?.showFindPanel(animated: false)
+
+        // Extra insets do not effect find panel's insets
+        try assertInsetsEqual(
+            scrollView.contentInsets,
+            NSEdgeInsets(top: 10 + FindPanel.height, left: 0, bottom: 10, right: 0)
+        )
+        XCTAssertEqual(controller.findViewController?.findPanelVerticalConstraint.constant, 0)
+        XCTAssertEqual(controller.gutterView.frame.origin.y, -10 - FindPanel.height)
+    }
+
     func test_editorOverScroll_ZeroCondition() throws {
-        let scrollView = try XCTUnwrap(controller.view as? NSScrollView)
+        let scrollView = try XCTUnwrap(controller.scrollView)
         scrollView.frame = .zero
 
         // editorOverscroll: 0
@@ -213,41 +249,46 @@ final class TextViewControllerTests: XCTestCase {
 
     // MARK: Bracket Highlights
 
-    func test_bracketHighlights() {
+    func test_bracketHighlights() throws {
+        let textView = try XCTUnwrap(controller.textView)
+        let emphasisManager = try XCTUnwrap(textView.emphasisManager)
+        func getEmphasisCount() -> Int { emphasisManager.getEmphases(for: EmphasisGroup.brackets).count }
+
         controller.scrollView.setFrameSize(NSSize(width: 500, height: 500))
         controller.viewDidLoad()
         let _ = controller.textView.becomeFirstResponder()
-        controller.bracketPairHighlight = nil
+        controller.bracketPairEmphasis = nil
         controller.setText("{ Lorem Ipsum {} }")
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
-        XCTAssert(controller.highlightLayers.isEmpty, "Controller added highlight layer when setting is set to `nil`")
+
+        XCTAssertEqual(getEmphasisCount(), 0, "Controller added bracket emphasis when setting is set to `nil`")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
 
-        controller.bracketPairHighlight = .bordered(color: .black)
+        controller.bracketPairEmphasis = .bordered(color: .black)
         controller.textView.setNeedsDisplay()
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
-        XCTAssert(controller.highlightLayers.count == 2, "Controller created an incorrect number of layers for bordered. Expected 2, found \(controller.highlightLayers.count)")
+        XCTAssertEqual(getEmphasisCount(), 2, "Controller created an incorrect number of emphases for bordered.")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
-        XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove bracket pair layers.")
+        XCTAssertEqual(getEmphasisCount(), 0, "Controller failed to remove bracket emphasis.")
 
-        controller.bracketPairHighlight = .underline(color: .black)
+        controller.bracketPairEmphasis = .underline(color: .black)
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
-        XCTAssert(controller.highlightLayers.count == 2, "Controller created an incorrect number of layers for underline. Expected 2, found \(controller.highlightLayers.count)")
+        XCTAssertEqual(getEmphasisCount(), 2, "Controller created an incorrect number of emphases for underline.")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
-        XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove bracket pair layers.")
+        XCTAssertEqual(getEmphasisCount(), 0, "Controller failed to remove bracket emphasis.")
 
-        controller.bracketPairHighlight = .flash
+        controller.bracketPairEmphasis = .flash
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
-        XCTAssert(controller.highlightLayers.count == 1, "Controller created more than one layer for flash animation. Expected 1, found \(controller.highlightLayers.count)")
+        XCTAssertEqual(getEmphasisCount(), 1, "Controller created more than one emphasis for flash animation.")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
-        XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove bracket pair layers.")
+        XCTAssertEqual(getEmphasisCount(), 0, "Controller failed to remove bracket emphasis.")
 
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
-        XCTAssert(controller.highlightLayers.count == 1, "Controller created more than one layer for flash animation. Expected 1, found \(controller.highlightLayers.count)")
+        XCTAssertEqual(getEmphasisCount(), 1, "Controller created more than one layer for flash animation.")
         let exp = expectation(description: "Test after 0.8 seconds")
         let result = XCTWaiter.wait(for: [exp], timeout: 0.8)
         if result == XCTWaiter.Result.timedOut {
-            XCTAssert(controller.highlightLayers.isEmpty, "Controller failed to remove layer after flash animation. Expected 0, found \(controller.highlightLayers.count)")
+            XCTAssertEqual(getEmphasisCount(), 0, "Controller failed to remove emphasis after flash animation.")
         } else {
             XCTFail("Delay interrupted")
         }
