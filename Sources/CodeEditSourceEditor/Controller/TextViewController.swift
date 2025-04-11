@@ -22,16 +22,14 @@ public class TextViewController: NSViewController {
 
     weak var findViewController: FindViewController?
 
+    // Container view for the editor contents (scrolling textview, gutter, and minimap)
+    // Is a child of the find container, so editor contents all move below the find panel when open.
+    var editorContainer: EditorContainerView!
     var scrollView: NSScrollView!
-
-    // SEARCH
-    var stackview: NSStackView!
-    var searchField: NSTextField!
-    var prevButton: NSButton!
-    var nextButton: NSButton!
-
     var textView: TextView!
     var gutterView: GutterView!
+    var minimapView: MinimapView!
+
     internal var _undoManager: CEUndoManager!
     internal var systemAppearance: NSAppearance.Name?
 
@@ -71,6 +69,7 @@ public class TextViewController: NSViewController {
             highlighter?.invalidate()
             gutterView.textColor = theme.text.color.withAlphaComponent(0.35)
             gutterView.selectedLineTextColor = theme.text.color
+            minimapView.theme = theme
         }
     }
 
