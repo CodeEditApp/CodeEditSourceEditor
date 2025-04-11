@@ -61,15 +61,6 @@ struct FindPanelView: View {
                 )
                 .controlSize(.small)
                 .focused($isFocused)
-                .onChange(of: viewModel.findText) { newValue in
-                    viewModel.onFindTextChange(newValue)
-                }
-                .onChange(of: viewModel.isFocused) { newValue in
-                    isFocused = newValue
-                    if !newValue {
-                        viewModel.removeEmphasis()
-                    }
-                }
                 .onChange(of: isFocused) { newValue in
                     viewModel.setFocus(newValue)
                 }
@@ -126,43 +117,31 @@ struct FindPanelView: View {
                             .frame(width: viewModel.findModePickerWidth, alignment: .leading)
                             Divider()
                         },
-                        helperText: viewModel.findText.isEmpty
-                        ? nil
-                        : "\(viewModel.matchCount) \(viewModel.matchCount == 1 ? "match" : "matches")",
                         clearable: true
                     )
                     .controlSize(.small)
-                    .onChange(of: viewModel.findText) { newValue in
-                        viewModel.onFindTextChange(newValue)
-                    }
-                    .onChange(of: viewModel.isFocused) { newValue in
-                        isFocused = newValue
-                        if !newValue {
-                            viewModel.removeEmphasis()
-                        }
-                    }
-                    .onChange(of: isFocused) { newValue in
-                        viewModel.setFocus(newValue)
-                    }
-                    .onSubmit {
-                        viewModel.onSubmit()
-                    }
+                    // TODO: Handle replace text field focus and submit
                     HStack(spacing: 4) {
                         ControlGroup {
-                            Button(action: viewModel.prevButtonClicked) {
+                            Button(action: {
+                                // TODO: Replace action
+                            }) {
                                 Text("Replace")
-                                    .opacity(viewModel.matchCount == 0 ? 0.33 : 1)
+                                    .opacity(viewModel.findText.isEmpty || viewModel.matchCount == 0 ? 0.33 : 1)
                                     .frame(width: viewModel.findControlsWidth/2 - 12 - 0.5)
                             }
-                            .disabled(viewModel.matchCount == 0)
+                            // TODO: disable if there is not an active match
+                            .disabled(viewModel.findText.isEmpty || viewModel.matchCount == 0)
                             Divider()
                                 .overlay(Color(nsColor: .tertiaryLabelColor))
-                            Button(action: viewModel.nextButtonClicked) {
+                            Button(action: {
+                                // TODO: Replace all action
+                            }) {
                                 Text("All")
-                                    .opacity(viewModel.matchCount == 0 ? 0.33 : 1)
+                                    .opacity(viewModel.findText.isEmpty || viewModel.matchCount == 0 ? 0.33 : 1)
                                     .frame(width: viewModel.findControlsWidth/2 - 12 - 0.5)
                             }
-                            .disabled(viewModel.matchCount == 0)
+                            .disabled(viewModel.findText.isEmpty || viewModel.matchCount == 0)
                         }
                         .controlGroupStyle(PanelControlGroupStyle())
                         .fixedSize()
@@ -171,8 +150,30 @@ struct FindPanelView: View {
                 .padding(.horizontal, 5)
             }
         }
-        .frame(height: viewModel.mode == .replace ? FindPanel.height * 2 : FindPanel.height)
+        .frame(height: viewModel.panelHeight)
         .background(.bar)
+        .onChange(of: viewModel.findText) { newValue in
+            viewModel.onFindTextChange(newValue)
+        }
+        .onChange(of: viewModel.replaceText) { newValue in
+            viewModel.onReplaceTextChange(newValue)
+        }
+        .onChange(of: viewModel.mode) { newMode in
+            viewModel.onModeChange(newMode)
+        }
+        .onChange(of: viewModel.wrapAround) { newValue in
+            viewModel.onWrapAroundChange(newValue)
+        }
+        .onChange(of: viewModel.matchCase) { newValue in
+            viewModel.onMatchCaseChange(newValue)
+        }
+        .onChange(of: viewModel.isFocused) { newValue in
+            isFocused = newValue
+            if !newValue {
+                viewModel.removeEmphasis()
+            }
+        }
+
     }
 }
 

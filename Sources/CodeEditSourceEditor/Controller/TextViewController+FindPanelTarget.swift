@@ -17,6 +17,11 @@ extension TextViewController: FindPanelTarget {
         updateContentInsets()
     }
 
+    func findPanelModeDidChange(to mode: FindPanelMode, panelHeight: CGFloat) {
+        scrollView.contentInsets.top += mode == .replace ? panelHeight/2 : -panelHeight
+        gutterView.frame.origin.y = -scrollView.contentInsets.top
+    }
+
     var emphasisManager: EmphasisManager? {
         textView?.emphasisManager
     }
