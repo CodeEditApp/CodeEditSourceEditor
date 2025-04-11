@@ -113,9 +113,9 @@ final class MinimapLineFragmentView: LineFragmentView {
         context.saveGState()
         for run in drawingRuns {
             let rect = CGRect(
-                x: 8 + (CGFloat(run.range.location) * 2),
+                x: 8 + (CGFloat(run.range.location) * 1.5),
                 y: 0,
-                width: CGFloat(run.range.length) * 2,
+                width: CGFloat(run.range.length) * 1.5,
                 height: 2.0
             )
             context.setFillColor(run.color.cgColor)

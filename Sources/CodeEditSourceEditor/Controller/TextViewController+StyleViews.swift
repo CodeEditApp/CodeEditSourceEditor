@@ -71,13 +71,19 @@ extension TextViewController {
         if let contentInsets {
             scrollView.automaticallyAdjustsContentInsets = false
             scrollView.contentInsets = contentInsets
+            minimapView.scrollView.contentInsets.top = contentInsets.top
+            minimapView.scrollView.contentInsets.top = contentInsets.bottom
         } else {
             scrollView.automaticallyAdjustsContentInsets = true
+            minimapView.scrollView.automaticallyAdjustsContentInsets = true
         }
 
         scrollView.contentInsets.top += additionalTextInsets?.top ?? 0
         scrollView.contentInsets.bottom += additionalTextInsets?.bottom ?? 0
 
         scrollView.contentInsets.top += (findViewController?.isShowingFindPanel ?? false) ? FindPanel.height : 0
+        minimapView.scrollView.contentInsets.top += (
+            findViewController?.isShowingFindPanel ?? false
+        ) ? FindPanel.height : 0
     }
 }

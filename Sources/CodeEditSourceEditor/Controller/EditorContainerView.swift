@@ -22,16 +22,31 @@ class EditorContainerView: NSView {
         addSubview(scrollView)
         addSubview(minimapView)
 
+        scrollView.hasVerticalScroller = true
+
+        let maxWidthConstraint = minimapView.widthAnchor.constraint(lessThanOrEqualToConstant: 150)
+        let relativeWidthConstraint = minimapView.widthAnchor.constraint(
+            equalTo: widthAnchor,
+            multiplier: 0.18
+        )
+        relativeWidthConstraint.priority = .defaultLow
+
+        guard let scrollerAnchor = scrollView.verticalScroller?.leadingAnchor else {
+            assertionFailure("Scroll view failed to create a scroller.")
+            return
+        }
+
         NSLayoutConstraint.activate([
             scrollView.topAnchor.constraint(equalTo: topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            minimapView.topAnchor.constraint(equalTo: safeAreaLayoutGuide.topAnchor),
+            minimapView.topAnchor.constraint(equalTo: topAnchor),
             minimapView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            minimapView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            minimapView.widthAnchor.constraint(equalToConstant: 150)
+            minimapView.trailingAnchor.constraint(equalTo: scrollerAnchor),
+            maxWidthConstraint,
+            relativeWidthConstraint
         ])
     }
 

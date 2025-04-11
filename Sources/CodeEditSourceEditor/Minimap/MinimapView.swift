@@ -10,6 +10,9 @@ import CodeEditTextView
 
 class MinimapView: NSView {
     weak var textView: TextView?
+
+    let scrollView: NSScrollView
+    let contentView: FlippedNSView
     var layoutManager: TextLayoutManager?
     let lineRenderer: MinimapLineRenderer
 
@@ -19,21 +22,32 @@ class MinimapView: NSView {
         }
     }
 
-    override var isFlipped: Bool { true }
-
     init(textView: TextView, theme: EditorTheme) {
         self.textView = textView
         self.theme = theme
         self.lineRenderer = MinimapLineRenderer(textView: textView)
 
+        self.scrollView = NSScrollView()
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
+        scrollView.hasVerticalScroller = false
+        scrollView.hasHorizontalScroller = false
+        scrollView.drawsBackground = false
+        scrollView.verticalScrollElasticity = .none
+
+        self.contentView = FlippedNSView(frame: .zero)
+        contentView.translatesAutoresizingMaskIntoConstraints = false
+
         super.init(frame: .zero)
+
+        addSubview(scrollView)
+        scrollView.documentView = contentView
 
         self.translatesAutoresizingMaskIntoConstraints = false
         let layoutManager = TextLayoutManager(
             textStorage: textView.textStorage,
             lineHeightMultiplier: 1.0,
             wrapLines: textView.wrapLines,
-            textView: self,
+            textView: contentView,
             delegate: self,
             renderDelegate: lineRenderer
         )
@@ -42,10 +56,29 @@ class MinimapView: NSView {
 
         wantsLayer = true
         layer?.backgroundColor = theme.background.cgColor
+
+        setUpConstraints()
+    }
+
+    private func setUpConstraints() {
+        NSLayoutConstraint.activate([
+            scrollView.topAnchor.constraint(equalTo: topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
+
+            contentView.widthAnchor.constraint(equalTo: widthAnchor)
+        ])
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override public var visibleRect: NSRect {
+        var rect = scrollView.documentVisibleRect
+        rect.origin.y += scrollView.contentInsets.top
+        return rect.pixelAligned
     }
 
     override func layout() {
@@ -64,26 +97,12 @@ class MinimapView: NSView {
 
         context.restoreGState()
     }
-}
 
-extension MinimapView: TextLayoutManagerDelegate {
-    func layoutManagerHeightDidUpdate(newHeight: CGFloat) {
-
-    }
-
-    func layoutManagerMaxWidthDidChange(newWidth: CGFloat) {
-
-    }
-
-    func layoutManagerTypingAttributes() -> [NSAttributedString.Key: Any] {
-        textView?.layoutManagerTypingAttributes() ?? [:]
-    }
-
-    func textViewportSize() -> CGSize {
-        self.frame.size
-    }
-
-    func layoutManagerYAdjustment(_ yAdjustment: CGFloat) {
-        // TODO: Adjust things
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        if visibleRect.contains(point) {
+            return self
+        } else {
+            return super.hitTest(point)
+        }
     }
 }

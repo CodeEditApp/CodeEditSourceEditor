@@ -24,7 +24,7 @@ final class MinimapLineRenderer: TextLayoutManagerRenderDelegate {
         breakStrategy: LineBreakStrategy
     ) {
         let maxWidth: CGFloat = if let textView, textView.wrapLines {
-            textView.frame.width
+            textView.layoutManager.maxLineLayoutWidth
         } else {
             .infinity
         }
@@ -39,10 +39,11 @@ final class MinimapLineRenderer: TextLayoutManagerRenderDelegate {
 
         // Make all fragments 2px tall
         textLine.lineFragments.forEach { fragmentPosition in
+            let remainingHeight = fragmentPosition.height - 3.0
             textLine.lineFragments.update(
-                atIndex: fragmentPosition.index,
+                atOffset: fragmentPosition.range.location,
                 delta: 0,
-                deltaHeight: -(fragmentPosition.height - 3.0)
+                deltaHeight: -remainingHeight
             )
             fragmentPosition.data.height = 2.0
             fragmentPosition.data.scaledHeight = 3.0
