@@ -9,7 +9,6 @@ import CodeEditTextView
 import AppKit
 
 extension TextViewController {
-    // swiftlint:disable:next function_body_length
     override public func loadView() {
         super.loadView()
 
@@ -29,7 +28,11 @@ extension TextViewController {
             for: .horizontal
         )
 
-        let findViewController = FindViewController(target: self, childView: scrollView)
+        minimapView = MinimapView(textView: textView, theme: theme)
+
+        editorContainer = EditorContainerView(scrollView: scrollView, minimapView: minimapView)
+
+        let findViewController = FindViewController(target: self, childView: editorContainer)
         addChild(findViewController)
         self.findViewController = findViewController
         self.view.addSubview(findViewController.view)
@@ -52,13 +55,24 @@ extension TextViewController {
             findViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             findViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             findViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
-            findViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            findViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
 
         if !cursorPositions.isEmpty {
             setCursorPositions(cursorPositions)
         }
 
+        setUpListeners()
+
+        textView.updateFrameIfNeeded()
+
+        if let localEventMonitor = self.localEvenMonitor {
+            NSEvent.removeMonitor(localEventMonitor)
+        }
+        setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
+    }
+
+    func setUpListeners() {
         // Layout on scroll change
         NotificationCenter.default.addObserver(
             forName: NSView.boundsDidChangeNotification,
@@ -98,8 +112,6 @@ extension TextViewController {
             self?.emphasizeSelectionPairs()
         }
 
-        textView.updateFrameIfNeeded()
-
         NSApp.publisher(for: \.effectiveAppearance)
             .receive(on: RunLoop.main)
             .sink { [weak self] newValue in
@@ -114,11 +126,6 @@ extension TextViewController {
                 }
             }
             .store(in: &cancellables)
-
-        if let localEventMonitor = self.localEvenMonitor {
-            NSEvent.removeMonitor(localEventMonitor)
-        }
-        setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
     }
 
     func setUpKeyBindings(eventMonitor: inout Any?) {

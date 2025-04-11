@@ -39,23 +39,11 @@ extension TextView: TextInterface {
     /// - Parameter mutation: The mutation to apply.
     public func applyMutation(_ mutation: TextMutation) {
         guard !mutation.isEmpty else { return }
-
-        delegate?.textView(self, willReplaceContentsIn: mutation.range, with: mutation.string)
-
-        layoutManager.beginTransaction()
-        textStorage.beginEditing()
-
-        layoutManager.willReplaceCharactersInRange(range: mutation.range, with: mutation.string)
         _undoManager?.registerMutation(mutation)
         textStorage.replaceCharacters(in: mutation.range, with: mutation.string)
         selectionManager.didReplaceCharacters(
             in: mutation.range,
             replacementLength: (mutation.string as NSString).length
         )
-
-        textStorage.endEditing()
-        layoutManager.endTransaction()
-
-        delegate?.textView(self, didReplaceContentsIn: mutation.range, with: mutation.string)
     }
 }
