@@ -11,14 +11,6 @@ import Combine
 
 // NSView wrapper for using SwiftUI view in AppKit
 final class FindPanel: NSView {
-    /// The height of the find panel.
-    static var height: CGFloat {
-        if let findPanel = NSApp.windows.first(where: { $0.contentView is FindPanel })?.contentView as? FindPanel {
-            return findPanel.viewModel.mode == .replace ? 56 : 28
-        }
-        return 28
-    }
-
     weak var findDelegate: FindPanelDelegate?
     private var hostingView: NSHostingView<FindPanelView>!
     private var viewModel: FindPanelViewModel!
@@ -116,6 +108,10 @@ final class FindPanel: NSView {
 
     func updateMatchCount(_ count: Int) {
         viewModel.updateMatchCount(count)
+    }
+
+    func updateMode(_ mode: FindPanelMode) {
+        viewModel.mode = mode
     }
 
     // MARK: - Search Text Management

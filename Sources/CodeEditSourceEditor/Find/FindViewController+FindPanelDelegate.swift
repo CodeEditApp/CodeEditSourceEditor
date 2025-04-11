@@ -9,6 +9,11 @@ import AppKit
 import CodeEditTextView
 
 extension FindViewController: FindPanelDelegate {
+    var findPanelMode: FindPanelMode { mode }
+    var findPanelWrapAround: Bool { wrapAround }
+    var findPanelMatchCase: Bool { matchCase }
+    var findPanelReplaceText: String { replaceText }
+
     func findPanelOnSubmit() {
         findPanelNextButtonClicked()
     }
@@ -59,6 +64,28 @@ extension FindViewController: FindPanelDelegate {
         // Clear existing emphases before performing new find
         target?.emphasisManager?.removeEmphases(for: EmphasisGroup.find)
         find(text: text)
+    }
+
+    func findPanelDidUpdateMode(_ mode: FindPanelMode) {
+        self.mode = mode
+        if isShowingFindPanel {
+            target?.findPanelModeDidChange(to: mode, panelHeight: panelHeight)
+        }
+    }
+
+    func findPanelDidUpdateWrapAround(_ wrapAround: Bool) {
+        self.wrapAround = wrapAround
+    }
+
+    func findPanelDidUpdateMatchCase(_ matchCase: Bool) {
+        self.matchCase = matchCase
+        if !findText.isEmpty {
+            performFind()
+        }
+    }
+
+    func findPanelDidUpdateReplaceText(_ text: String) {
+        self.replaceText = text
     }
 
     func findPanelPrevButtonClicked() {
