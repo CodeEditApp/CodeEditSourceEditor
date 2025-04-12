@@ -19,6 +19,16 @@ public enum IndentOption: Equatable, Hashable {
         }
     }
 
+    /// Represents the number of chacters that indent represents
+    var charCount: Int {
+        switch self {
+        case .spaces(let count):
+            count
+        case .tab:
+            1
+        }
+    }
+
     public static func == (lhs: IndentOption, rhs: IndentOption) -> Bool {
         switch (lhs, rhs) {
         case (.tab, .tab):
