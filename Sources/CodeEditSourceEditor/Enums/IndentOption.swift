@@ -6,7 +6,7 @@
 //
 
 /// Represents what to insert on a tab key press.
-public enum IndentOption: Equatable {
+public enum IndentOption: Equatable, Hashable {
     case spaces(count: Int)
     case tab
 

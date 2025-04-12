@@ -26,6 +26,7 @@ struct ContentView: View {
     @State private var isInLongParse = false
     @State private var settingsIsPresented: Bool = false
     @State private var treeSitterClient = TreeSitterClient()
+    @State private var indentOption: IndentOption = .spaces(count: 4)
 
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
         self._document = document
@@ -40,6 +41,7 @@ struct ContentView: View {
                 theme: theme,
                 font: font,
                 tabWidth: 4,
+                indentOption: indentOption,
                 lineHeight: 1.2,
                 wrapLines: wrapLines,
                 cursorPositions: $cursorPositions,
@@ -84,6 +86,8 @@ struct ContentView: View {
                     Divider()
                         .frame(height: 12)
                     LanguagePicker(language: $language)
+                        .buttonStyle(.borderless)
+                    IndentPicker(indentOption: $indentOption, enabled: document.text.isEmpty)
                         .buttonStyle(.borderless)
                 }
                 .font(.subheadline)
