@@ -125,22 +125,22 @@ struct FindPanelView: View {
                         ControlGroup {
                             Button(action: {
                                 // TODO: Replace action
-                            }) {
+                            }, label: {
                                 Text("Replace")
                                     .opacity(viewModel.findText.isEmpty || viewModel.matchCount == 0 ? 0.33 : 1)
                                     .frame(width: viewModel.findControlsWidth/2 - 12 - 0.5)
-                            }
+                            })
                             // TODO: disable if there is not an active match
                             .disabled(viewModel.findText.isEmpty || viewModel.matchCount == 0)
                             Divider()
                                 .overlay(Color(nsColor: .tertiaryLabelColor))
                             Button(action: {
                                 // TODO: Replace all action
-                            }) {
+                            }, label: {
                                 Text("All")
                                     .opacity(viewModel.findText.isEmpty || viewModel.matchCount == 0 ? 0.33 : 1)
                                     .frame(width: viewModel.findControlsWidth/2 - 12 - 0.5)
-                            }
+                            })
                             .disabled(viewModel.findText.isEmpty || viewModel.matchCount == 0)
                         }
                         .controlGroupStyle(PanelControlGroupStyle())
