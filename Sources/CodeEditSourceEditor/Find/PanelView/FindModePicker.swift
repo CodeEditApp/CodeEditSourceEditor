@@ -13,11 +13,7 @@ struct FindModePicker: NSViewRepresentable {
     @Environment(\.controlActiveState) var activeState
     let onToggleWrapAround: () -> Void
 
-    func makeNSView(context: Context) -> NSView {
-        let container = NSView()
-        container.wantsLayer = true
-
-        // Create the magnifying glass button
+    private func createSymbolButton(context: Context) -> NSButton {
         let button = NSButton(frame: .zero)
         button.bezelStyle = .regularSquare
         button.isBordered = false
@@ -26,29 +22,33 @@ struct FindModePicker: NSViewRepresentable {
             .withSymbolConfiguration(.init(pointSize: 12, weight: .regular))
         button.imagePosition = .imageOnly
         button.target = context.coordinator
+        button.action = nil
+        button.sendAction(on: .leftMouseDown)
+        button.target = context.coordinator
         button.action = #selector(Coordinator.openMenu(_:))
+        return button
+    }
 
-        // Create the popup button
+    private func createPopupButton(context: Context) -> NSPopUpButton {
         let popup = NSPopUpButton(frame: .zero, pullsDown: false)
         popup.bezelStyle = .regularSquare
         popup.isBordered = false
         popup.controlSize = .small
         popup.font = .systemFont(ofSize: NSFont.systemFontSize(for: .small))
         popup.autoenablesItems = false
+        return popup
+    }
 
-        // Calculate the required width
-        let font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: .small))
-        let maxWidth = FindPanelMode.allCases.map { mode in
-            mode.displayName.size(withAttributes: [.font: font]).width
-        }.max() ?? 0
-        let totalWidth = maxWidth + 28 // Add padding for the chevron and spacing
-
-        // Create menu
+    private func createMenu(context: Context) -> NSMenu {
         let menu = NSMenu()
 
         // Add mode items
         FindPanelMode.allCases.forEach { mode in
-            let item = NSMenuItem(title: mode.displayName, action: #selector(Coordinator.modeSelected(_:)), keyEquivalent: "")
+            let item = NSMenuItem(
+                title: mode.displayName,
+                action: #selector(Coordinator.modeSelected(_:)),
+                keyEquivalent: ""
+            )
             item.target = context.coordinator
             item.tag = mode == .find ? 0 : 1
             menu.addItem(item)
@@ -58,19 +58,19 @@ struct FindModePicker: NSViewRepresentable {
         menu.addItem(.separator())
 
         // Add wrap around item
-        let wrapItem = NSMenuItem(title: "Wrap Around", action: #selector(Coordinator.toggleWrapAround(_:)), keyEquivalent: "")
+        let wrapItem = NSMenuItem(
+            title: "Wrap Around",
+            action: #selector(Coordinator.toggleWrapAround(_:)),
+            keyEquivalent: ""
+        )
         wrapItem.target = context.coordinator
         wrapItem.state = wrapAround ? .on : .off
         menu.addItem(wrapItem)
 
-        popup.menu = menu
-        popup.selectItem(at: mode == .find ? 0 : 1)
+        return menu
+    }
 
-        // Add subviews
-        container.addSubview(button)
-        container.addSubview(popup)
-
-        // Set up constraints
+    private func setupConstraints(container: NSView, button: NSButton, popup: NSPopUpButton, totalWidth: CGFloat) {
         button.translatesAutoresizingMaskIntoConstraints = false
         popup.translatesAutoresizingMaskIntoConstraints = false
 
@@ -86,6 +86,30 @@ struct FindModePicker: NSViewRepresentable {
             popup.bottomAnchor.constraint(equalTo: container.bottomAnchor),
             popup.widthAnchor.constraint(equalToConstant: totalWidth)
         ])
+    }
+
+    func makeNSView(context: Context) -> NSView {
+        let container = NSView()
+        container.wantsLayer = true
+
+        let button = createSymbolButton(context: context)
+        let popup = createPopupButton(context: context)
+
+        // Calculate the required width
+        let font = NSFont.systemFont(ofSize: NSFont.systemFontSize(for: .small))
+        let maxWidth = FindPanelMode.allCases.map { mode in
+            mode.displayName.size(withAttributes: [.font: font]).width
+        }.max() ?? 0
+        let totalWidth = maxWidth + 28 // Add padding for the chevron and spacing
+
+        popup.menu = createMenu(context: context)
+        popup.selectItem(at: mode == .find ? 0 : 1)
+
+        // Add subviews
+        container.addSubview(button)
+        container.addSubview(popup)
+
+        setupConstraints(container: container, button: button, popup: popup, totalWidth: totalWidth)
 
         return container
     }
