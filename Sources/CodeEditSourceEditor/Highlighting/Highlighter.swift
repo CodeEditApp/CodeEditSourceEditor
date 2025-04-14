@@ -280,7 +280,6 @@ extension Highlighter: StyledRangeContainerDelegate {
         }
 
         textView.textStorage.endEditing()
-        textView.layoutManager.invalidateLayoutForRange(range)
     }
 }
 
