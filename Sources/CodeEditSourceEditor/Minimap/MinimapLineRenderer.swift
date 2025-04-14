@@ -40,14 +40,20 @@ final class MinimapLineRenderer: TextLayoutManagerRenderDelegate {
         // Make all fragments 2px tall
         textLine.lineFragments.forEach { fragmentPosition in
             let remainingHeight = fragmentPosition.height - 3.0
-            textLine.lineFragments.update(
-                atOffset: fragmentPosition.range.location,
-                delta: 0,
-                deltaHeight: -remainingHeight
-            )
+            if remainingHeight != 0 {
+                textLine.lineFragments.update(
+                    atOffset: fragmentPosition.range.location,
+                    delta: 0,
+                    deltaHeight: -remainingHeight
+                )
+            }
             fragmentPosition.data.height = 2.0
             fragmentPosition.data.scaledHeight = 3.0
         }
+    }
+
+    func estimatedLineHeight() -> CGFloat? {
+        3.0
     }
 
     func lineFragmentView(for lineFragment: LineFragment) -> LineFragmentView {

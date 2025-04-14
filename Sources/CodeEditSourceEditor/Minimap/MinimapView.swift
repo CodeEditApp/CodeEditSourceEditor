@@ -11,15 +11,38 @@ import CodeEditTextView
 class MinimapView: NSView {
     weak var textView: TextView?
 
+    /// The container scrollview for the minimap contents.
     let scrollView: NSScrollView
-    let contentView: FlippedNSView
+    /// The view text lines are rendered into.
+    let contentView: MinimapContentView
+    /// The box displaying the visible region on the minimap.
+    let documentVisibleView: NSView
+
+    /// The layout manager that uses the ``lineRenderer`` to render and layout lines.
     var layoutManager: TextLayoutManager?
+    /// A custom line renderer that lays out lines of text as 2px tall and draws contents as small lines
+    /// using ``MinimapLineFragmentView``
     let lineRenderer: MinimapLineRenderer
 
     var theme: EditorTheme {
         didSet {
+            documentVisibleView.layer?.backgroundColor = theme.text.color.withAlphaComponent(0.1).cgColor
             layer?.backgroundColor = theme.background.cgColor
         }
+    }
+
+    var visibleTextRange: NSRange? {
+        guard let layoutManager = layoutManager else { return nil }
+        let minY = max(visibleRect.minY, 0)
+        let maxY = min(visibleRect.maxY, layoutManager.estimatedHeight())
+        guard let minYLine = layoutManager.textLineForPosition(minY),
+              let maxYLine = layoutManager.textLineForPosition(maxY) else {
+            return nil
+        }
+        return NSRange(
+            location: minYLine.range.location,
+            length: (maxYLine.range.location - minYLine.range.location) + maxYLine.range.length
+        )
     }
 
     init(textView: TextView, theme: EditorTheme) {
@@ -34,12 +57,18 @@ class MinimapView: NSView {
         scrollView.drawsBackground = false
         scrollView.verticalScrollElasticity = .none
 
-        self.contentView = FlippedNSView(frame: .zero)
+        self.contentView = MinimapContentView(frame: .zero)
         contentView.translatesAutoresizingMaskIntoConstraints = false
+
+        self.documentVisibleView = NSView()
+        documentVisibleView.translatesAutoresizingMaskIntoConstraints = false
+        documentVisibleView.wantsLayer = true
+        documentVisibleView.layer?.backgroundColor = theme.text.color.withAlphaComponent(0.1).cgColor
 
         super.init(frame: .zero)
 
         addSubview(scrollView)
+        addSubview(documentVisibleView)
         scrollView.documentView = contentView
 
         self.translatesAutoresizingMaskIntoConstraints = false
@@ -58,6 +87,7 @@ class MinimapView: NSView {
         layer?.backgroundColor = theme.background.cgColor
 
         setUpConstraints()
+        setUpListeners()
     }
 
     private func setUpConstraints() {
@@ -67,8 +97,38 @@ class MinimapView: NSView {
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            contentView.widthAnchor.constraint(equalTo: widthAnchor)
+            contentView.widthAnchor.constraint(equalTo: widthAnchor),
+
+            documentVisibleView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            documentVisibleView.trailingAnchor.constraint(equalTo: trailingAnchor)
         ])
+    }
+
+    private func setUpListeners() {
+        guard let editorScrollView = textView?.enclosingScrollView else { return }
+        // Need to listen to:
+        // - ScrollView offset changed
+        // - ScrollView frame changed
+        // and update the document visible box to match.
+        NotificationCenter.default.addObserver(
+            forName: NSView.boundsDidChangeNotification,
+            object: editorScrollView.contentView,
+            queue: .main
+        ) { [weak self] _ in
+            // Scroll changed
+            self?.layoutManager?.layoutLines()
+            self?.updateDocumentVisibleViewPosition()
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: NSView.frameDidChangeNotification,
+            object: editorScrollView.contentView,
+            queue: .main
+        ) { [weak self] _ in
+            // Frame changed
+            self?.layoutManager?.layoutLines()
+            self?.updateDocumentVisibleViewPosition()
+        }
     }
 
     required init?(coder: NSCoder) {
@@ -84,18 +144,6 @@ class MinimapView: NSView {
     override func layout() {
         layoutManager?.layoutLines()
         super.layout()
-    }
-
-    override func draw(_ dirtyRect: NSRect) {
-        guard let context = NSGraphicsContext.current?.cgContext else { return }
-        context.saveGState()
-
-        context.setFillColor(NSColor.separatorColor.cgColor)
-        context.fill([
-            CGRect(x: 0, y: 0, width: 1, height: frame.height)
-        ])
-
-        context.restoreGState()
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
