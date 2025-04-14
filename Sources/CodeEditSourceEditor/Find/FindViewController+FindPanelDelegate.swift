@@ -88,54 +88,69 @@ extension FindViewController: FindPanelDelegate {
         self.replaceText = text
     }
 
+    private func flashCurrentMatch(emphasisManager: EmphasisManager, textViewController: TextViewController) {
+        let newActiveRange = findMatches[currentFindMatchIndex]
+        emphasisManager.removeEmphases(for: EmphasisGroup.find)
+        emphasisManager.addEmphasis(
+            Emphasis(
+                range: newActiveRange,
+                style: .standard,
+                flash: true,
+                inactive: false,
+                selectInDocument: true
+            ),
+            for: EmphasisGroup.find
+        )
+    }
+
     func findPanelPrevButtonClicked() {
         guard let textViewController = target as? TextViewController,
               let emphasisManager = target?.emphasisManager else { return }
 
         // Check if there are any matches
         if findMatches.isEmpty {
+            NSSound.beep()
+            BezelNotification.show(
+                symbolName: "arrow.up.to.line",
+                over: textViewController.textView
+            )
             return
         }
 
-        // Update to previous match
-        let oldIndex = currentFindMatchIndex
-        currentFindMatchIndex = (currentFindMatchIndex - 1 + findMatches.count) % findMatches.count
-
-        // Show bezel notification if we cycled from first to last match
-        if oldIndex == 0 && currentFindMatchIndex == findMatches.count - 1 {
+        // Check if we're at the first match and wrapAround is false
+        if !wrapAround && currentFindMatchIndex == 0 {
+            NSSound.beep()
             BezelNotification.show(
-                symbolName: "arrow.trianglehead.bottomleft.capsulepath.clockwise",
+                symbolName: "arrow.up.to.line",
                 over: textViewController.textView
             )
+            if textViewController.textView.window?.firstResponder === textViewController.textView {
+                flashCurrentMatch(emphasisManager: emphasisManager, textViewController: textViewController)
+                return
+            }
+            updateEmphasesForCurrentMatch(emphasisManager: emphasisManager)
+            return
         }
+
+        // Update to previous match∂
+        currentFindMatchIndex = (currentFindMatchIndex - 1 + findMatches.count) % findMatches.count
 
         // If the text view has focus, show a flash animation for the current match
         if textViewController.textView.window?.firstResponder === textViewController.textView {
-            let newActiveRange = findMatches[currentFindMatchIndex]
-
-            // Clear existing emphases before adding the flash
-            emphasisManager.removeEmphases(for: EmphasisGroup.find)
-
-            emphasisManager.addEmphasis(
-                Emphasis(
-                    range: newActiveRange,
-                    style: .standard,
-                    flash: true,
-                    inactive: false,
-                    selectInDocument: true
-                ),
-                for: EmphasisGroup.find
-            )
-
+            flashCurrentMatch(emphasisManager: emphasisManager, textViewController: textViewController)
             return
         }
 
-        // Create updated emphases with new active state
+        updateEmphasesForCurrentMatch(emphasisManager: emphasisManager)
+    }
+
+    private func updateEmphasesForCurrentMatch(emphasisManager: EmphasisManager, flash: Bool = false) {
+        // Create updated emphases with current match emphasized
         let updatedEmphases = findMatches.enumerated().map { index, range in
             Emphasis(
                 range: range,
                 style: .standard,
-                flash: false,
+                flash: flash,
                 inactive: index != currentFindMatchIndex,
                 selectInDocument: index == currentFindMatchIndex
             )
@@ -151,7 +166,6 @@ extension FindViewController: FindPanelDelegate {
 
         // Check if there are any matches
         if findMatches.isEmpty {
-            // Show "no matches" bezel notification and play beep
             NSSound.beep()
             BezelNotification.show(
                 symbolName: "arrow.down.to.line",
@@ -160,52 +174,31 @@ extension FindViewController: FindPanelDelegate {
             return
         }
 
-        // Update to next match
-        let oldIndex = currentFindMatchIndex
-        currentFindMatchIndex = (currentFindMatchIndex + 1) % findMatches.count
-
-        // Show bezel notification if we cycled from last to first match
-        if oldIndex == findMatches.count - 1 && currentFindMatchIndex == 0 {
+        // Check if we're at the last match and wrapAround is false
+        if !wrapAround && currentFindMatchIndex == findMatches.count - 1 {
+            NSSound.beep()
             BezelNotification.show(
-                symbolName: "arrow.triangle.capsulepath",
+                symbolName: "arrow.down.to.line",
                 over: textViewController.textView
             )
-        }
-
-        // If the text view has focus, show a flash animation for the current match
-        if textViewController.textView.window?.firstResponder === textViewController.textView {
-            let newActiveRange = findMatches[currentFindMatchIndex]
-
-            // Clear existing emphases before adding the flash
-            emphasisManager.removeEmphases(for: EmphasisGroup.find)
-
-            emphasisManager.addEmphasis(
-                Emphasis(
-                    range: newActiveRange,
-                    style: .standard,
-                    flash: true,
-                    inactive: false,
-                    selectInDocument: true
-                ),
-                for: EmphasisGroup.find
-            )
-
+            if textViewController.textView.window?.firstResponder === textViewController.textView {
+                flashCurrentMatch(emphasisManager: emphasisManager, textViewController: textViewController)
+                return
+            }
+            updateEmphasesForCurrentMatch(emphasisManager: emphasisManager)
             return
         }
 
-        // Create updated emphases with new active state
-        let updatedEmphases = findMatches.enumerated().map { index, range in
-            Emphasis(
-                range: range,
-                style: .standard,
-                flash: false,
-                inactive: index != currentFindMatchIndex,
-                selectInDocument: index == currentFindMatchIndex
-            )
+        // Update to next match
+        currentFindMatchIndex = (currentFindMatchIndex + 1) % findMatches.count
+
+        // If the text view has focus, show a flash animation for the current match
+        if textViewController.textView.window?.firstResponder === textViewController.textView {
+            flashCurrentMatch(emphasisManager: emphasisManager, textViewController: textViewController)
+            return
         }
 
-        // Replace all emphases to update state
-        emphasisManager.replaceEmphases(updatedEmphases, for: EmphasisGroup.find)
+        updateEmphasesForCurrentMatch(emphasisManager: emphasisManager)
     }
 
     func findPanelUpdateMatchCount(_ count: Int) {
