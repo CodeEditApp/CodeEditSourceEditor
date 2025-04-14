@@ -26,8 +26,13 @@ final class FindViewController: NSViewController {
     var findPanel: FindPanel!
     var findMatches: [NSRange] = []
 
+    // TODO: we might make this nil if no current match so we can disable the match button in the find panel
     var currentFindMatchIndex: Int = 0
     var findText: String = ""
+    var replaceText: String = ""
+    var matchCase: Bool = false
+    var wrapAround: Bool = true
+    var mode: FindPanelMode = .find
     var findPanelVerticalConstraint: NSLayoutConstraint!
 
     var isShowingFindPanel: Bool = false
@@ -36,6 +41,11 @@ final class FindViewController: NSViewController {
     /// Is equal to ``topPadding`` if set, or the view's top safe area inset if not.
     var resolvedTopPadding: CGFloat {
         (topPadding ?? view.safeAreaInsets.top)
+    }
+
+    /// The height of the find panel.
+    var panelHeight: CGFloat {
+        return self.mode == .replace ? 56 : 28
     }
 
     init(target: FindPanelTarget, childView: NSView) {

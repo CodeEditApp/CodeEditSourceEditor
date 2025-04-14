@@ -18,4 +18,5 @@ protocol FindPanelTarget: AnyObject {
 
     func findPanelWillShow(panelHeight: CGFloat)
     func findPanelWillHide(panelHeight: CGFloat)
+    func findPanelModeDidChange(to mode: FindPanelMode, panelHeight: CGFloat)
 }

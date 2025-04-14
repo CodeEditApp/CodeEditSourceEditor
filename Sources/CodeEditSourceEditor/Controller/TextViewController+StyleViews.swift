@@ -78,6 +78,8 @@ extension TextViewController {
         scrollView.contentInsets.top += additionalTextInsets?.top ?? 0
         scrollView.contentInsets.bottom += additionalTextInsets?.bottom ?? 0
 
-        scrollView.contentInsets.top += (findViewController?.isShowingFindPanel ?? false) ? FindPanel.height : 0
+        scrollView.contentInsets.top += (findViewController?.isShowingFindPanel ?? false)
+            ? findViewController?.panelHeight ?? 0
+            : 0
     }
 }

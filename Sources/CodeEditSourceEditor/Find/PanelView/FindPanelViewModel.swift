@@ -8,10 +8,34 @@
 import SwiftUI
 import Combine
 
+enum FindPanelMode: CaseIterable {
+    case find
+    case replace
+
+    var displayName: String {
+        switch self {
+        case .find:
+            return "Find"
+        case .replace:
+            return "Replace"
+        }
+    }
+}
+
 class FindPanelViewModel: ObservableObject {
     @Published var findText: String = ""
+    @Published var replaceText: String = ""
+    @Published var mode: FindPanelMode = .find
+    @Published var wrapAround: Bool = true
     @Published var matchCount: Int = 0
     @Published var isFocused: Bool = false
+    @Published var findModePickerWidth: CGFloat = 0
+    @Published var findControlsWidth: CGFloat = 0
+    @Published var matchCase: Bool = false
+
+    var panelHeight: CGFloat {
+        return mode == .replace ? 56 : 28
+    }
 
     private weak var delegate: FindPanelDelegate?
 
@@ -27,6 +51,22 @@ class FindPanelViewModel: ObservableObject {
 
     func onFindTextChange(_ text: String) {
         delegate?.findPanelDidUpdate(text)
+    }
+
+    func onReplaceTextChange(_ text: String) {
+        delegate?.findPanelDidUpdateReplaceText(text)
+    }
+
+    func onModeChange(_ mode: FindPanelMode) {
+        delegate?.findPanelDidUpdateMode(mode)
+    }
+
+    func onWrapAroundChange(_ wrapAround: Bool) {
+        delegate?.findPanelDidUpdateWrapAround(wrapAround)
+    }
+
+    func onMatchCaseChange(_ matchCase: Bool) {
+        delegate?.findPanelDidUpdateMatchCase(matchCase)
     }
 
     func onSubmit() {
@@ -59,5 +99,10 @@ class FindPanelViewModel: ObservableObject {
 
     func nextButtonClicked() {
         delegate?.findPanelNextButtonClicked()
+    }
+
+    func toggleWrapAround() {
+        wrapAround.toggle()
+        delegate?.findPanelDidUpdateWrapAround(wrapAround)
     }
 }

@@ -22,18 +22,24 @@ extension FindViewController {
             return
         }
 
+        if mode == .replace {
+            mode = .find
+            findPanel.updateMode(mode)
+        }
+
         isShowingFindPanel = true
 
         // Smooth out the animation by placing the find panel just outside the correct position before animating.
         findPanel.isHidden = false
-        findPanelVerticalConstraint.constant = resolvedTopPadding - FindPanel.height
+        findPanelVerticalConstraint.constant = resolvedTopPadding - panelHeight
+
         view.layoutSubtreeIfNeeded()
 
         // Perform the animation
         conditionalAnimated(animated) {
             // SwiftUI breaks things here, and refuses to return the correct `findPanel.fittingSize` so we
             // are forced to use a constant number.
-            target?.findPanelWillShow(panelHeight: FindPanel.height)
+            target?.findPanelWillShow(panelHeight: panelHeight)
             setFindPanelConstraintShow()
         } onComplete: { }
 
@@ -54,7 +60,7 @@ extension FindViewController {
         findPanel?.removeEventMonitor()
 
         conditionalAnimated(animated) {
-            target?.findPanelWillHide(panelHeight: FindPanel.height)
+            target?.findPanelWillHide(panelHeight: panelHeight)
             setFindPanelConstraintHide()
         } onComplete: { [weak self] in
             self?.findPanel.isHidden = true
@@ -113,7 +119,7 @@ extension FindViewController {
         // SwiftUI hates us. It refuses to move views outside of the safe are if they don't have the `.ignoresSafeArea`
         // modifier, but with that modifier on it refuses to allow it to be animated outside the safe area.
         // The only way I found to fix it was to multiply the height by 3 here.
-        findPanelVerticalConstraint.constant = resolvedTopPadding - (FindPanel.height * 3)
+        findPanelVerticalConstraint.constant = resolvedTopPadding - (panelHeight * 3)
         findPanelVerticalConstraint.isActive = true
     }
 }

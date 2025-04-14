@@ -24,6 +24,11 @@ let package = Package(
             url: "https://github.com/CodeEditApp/CodeEditLanguages.git",
             exact: "0.1.20"
         ),
+        // CodeEditSymbols
+        .package(
+            url: "https://github.com/CodeEditApp/CodeEditSymbols.git",
+            exact: "0.2.3"
+        ),
         // SwiftLint
         .package(
             url: "https://github.com/lukepistrol/SwiftLintPlugin",
@@ -42,7 +47,8 @@ let package = Package(
             dependencies: [
                 "CodeEditTextView",
                 "CodeEditLanguages",
-                "TextFormation"
+                "TextFormation",
+                "CodeEditSymbols"
             ],
             plugins: [
                 .plugin(name: "SwiftLint", package: "SwiftLintPlugin")
