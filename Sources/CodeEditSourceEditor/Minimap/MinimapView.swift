@@ -8,13 +8,13 @@
 import AppKit
 import CodeEditTextView
 
-class MinimapView: NSView {
+class MinimapView: FlippedNSView {
     weak var textView: TextView?
 
     /// The container scrollview for the minimap contents.
     let scrollView: NSScrollView
     /// The view text lines are rendered into.
-    let contentView: MinimapContentView
+    let contentView: FlippedNSView
     /// The box displaying the visible region on the minimap.
     let documentVisibleView: NSView
 
@@ -26,7 +26,7 @@ class MinimapView: NSView {
 
     var theme: EditorTheme {
         didSet {
-            documentVisibleView.layer?.backgroundColor = theme.text.color.withAlphaComponent(0.1).cgColor
+            documentVisibleView.layer?.backgroundColor = theme.text.color.withAlphaComponent(0.05).cgColor
             layer?.backgroundColor = theme.background.cgColor
         }
     }
@@ -57,13 +57,13 @@ class MinimapView: NSView {
         scrollView.drawsBackground = false
         scrollView.verticalScrollElasticity = .none
 
-        self.contentView = MinimapContentView(frame: .zero)
+        self.contentView = FlippedNSView(frame: .zero)
         contentView.translatesAutoresizingMaskIntoConstraints = false
 
         self.documentVisibleView = NSView()
         documentVisibleView.translatesAutoresizingMaskIntoConstraints = false
         documentVisibleView.wantsLayer = true
-        documentVisibleView.layer?.backgroundColor = theme.text.color.withAlphaComponent(0.1).cgColor
+        documentVisibleView.layer?.backgroundColor = theme.text.color.withAlphaComponent(0.05).cgColor
 
         super.init(frame: .zero)
 
@@ -97,7 +97,8 @@ class MinimapView: NSView {
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
-            contentView.widthAnchor.constraint(equalTo: widthAnchor),
+            contentView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             documentVisibleView.leadingAnchor.constraint(equalTo: leadingAnchor),
             documentVisibleView.trailingAnchor.constraint(equalTo: trailingAnchor)
@@ -152,5 +153,17 @@ class MinimapView: NSView {
         } else {
             return super.hitTest(point)
         }
+    }
+
+    override func draw(_ dirtyRect: NSRect) {
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+        context.saveGState()
+
+        context.setFillColor(NSColor.separatorColor.cgColor)
+        context.fill([
+            CGRect(x: 0, y: 0, width: 1, height: frame.height)
+        ])
+
+        context.restoreGState()
     }
 }

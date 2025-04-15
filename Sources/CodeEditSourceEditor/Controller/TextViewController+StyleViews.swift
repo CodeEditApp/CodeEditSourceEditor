@@ -67,6 +67,10 @@ extension TextViewController {
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = !wrapLines
 
+        updateContentInsets()
+    }
+
+    package func updateContentInsets() {
         scrollView.contentView.postsBoundsChangedNotifications = true
         if let contentInsets {
             scrollView.automaticallyAdjustsContentInsets = false
@@ -80,10 +84,14 @@ extension TextViewController {
 
         scrollView.contentInsets.top += additionalTextInsets?.top ?? 0
         scrollView.contentInsets.bottom += additionalTextInsets?.bottom ?? 0
+        minimapView.scrollView.contentInsets.top += additionalTextInsets?.top ?? 0
+        minimapView.scrollView.contentInsets.bottom += additionalTextInsets?.bottom ?? 0
 
-        scrollView.contentInsets.top += (findViewController?.isShowingFindPanel ?? false) ? FindPanel.height : 0
-        minimapView.scrollView.contentInsets.top += (
-            findViewController?.isShowingFindPanel ?? false
-        ) ? FindPanel.height : 0
+        let findInset = (findViewController?.isShowingFindPanel ?? false) ? FindPanel.height : 0
+        scrollView.contentInsets.top += findInset
+        minimapView.scrollView.contentInsets.top += findInset
+
+        scrollView.reflectScrolledClipView(scrollView.contentView)
+        minimapView.scrollView.reflectScrolledClipView(minimapView.scrollView.contentView)
     }
 }
