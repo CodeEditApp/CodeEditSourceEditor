@@ -22,19 +22,18 @@ public class TextViewController: NSViewController {
 
     weak var findViewController: FindViewController?
 
-    // Container view for the editor contents (scrolling textview, gutter, and minimap)
-    // Is a child of the find container, so editor contents all move below the find panel when open.
-    var editorContainer: EditorContainerView!
     var scrollView: NSScrollView!
     var textView: TextView!
     var gutterView: GutterView!
     var minimapView: MinimapView!
 
-    internal var _undoManager: CEUndoManager!
-    internal var systemAppearance: NSAppearance.Name?
+    var minimapXConstraint: NSLayoutConstraint?
 
-    package var localEvenMonitor: Any?
-    package var isPostingCursorNotification: Bool = false
+    var _undoManager: CEUndoManager!
+    var systemAppearance: NSAppearance.Name?
+
+    var localEvenMonitor: Any?
+    var isPostingCursorNotification: Bool = false
 
     /// The string contents.
     public var string: String {
@@ -100,6 +99,7 @@ public class TextViewController: NSViewController {
     public var wrapLines: Bool {
         didSet {
             textView.layoutManager.wrapLines = wrapLines
+            minimapView.layoutManager?.wrapLines = wrapLines
             scrollView.hasHorizontalScroller = !wrapLines
             textView.textInsets = textViewInsets
         }
@@ -127,7 +127,7 @@ public class TextViewController: NSViewController {
     /// Optional insets to offset the text view and find panel in the scroll view by.
     public var contentInsets: NSEdgeInsets? {
         didSet {
-            styleScrollView()
+            updateContentInsets()
             findViewController?.topPadding = contentInsets?.top
         }
     }

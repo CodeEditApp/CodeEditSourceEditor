@@ -12,11 +12,15 @@ class MinimapView: FlippedNSView {
     weak var textView: TextView?
 
     /// The container scrollview for the minimap contents.
-    let scrollView: NSScrollView
+    let scrollView: ForwardingScrollView
     /// The view text lines are rendered into.
     let contentView: FlippedNSView
     /// The box displaying the visible region on the minimap.
     let documentVisibleView: NSView
+
+    let separatorView: NSView
+
+    var documentVisibleViewDragGesture: NSPanGestureRecognizer?
 
     /// The layout manager that uses the ``lineRenderer`` to render and layout lines.
     var layoutManager: TextLayoutManager?
@@ -31,18 +35,21 @@ class MinimapView: FlippedNSView {
         }
     }
 
-    var visibleTextRange: NSRange? {
-        guard let layoutManager = layoutManager else { return nil }
-        let minY = max(visibleRect.minY, 0)
-        let maxY = min(visibleRect.maxY, layoutManager.estimatedHeight())
-        guard let minYLine = layoutManager.textLineForPosition(minY),
-              let maxYLine = layoutManager.textLineForPosition(maxY) else {
-            return nil
-        }
-        return NSRange(
-            location: minYLine.range.location,
-            length: (maxYLine.range.location - minYLine.range.location) + maxYLine.range.length
-        )
+    var minimapHeight: CGFloat {
+        contentView.frame.height
+    }
+
+    var editorHeight: CGFloat {
+        textView?.frame.height ?? 0.0
+    }
+
+    var editorToMinimapHeightRatio: CGFloat {
+        minimapHeight / editorHeight
+    }
+
+    var containerHeight: CGFloat {
+        (textView?.enclosingScrollView?.visibleRect.height ?? 0.0)
+        - (textView?.enclosingScrollView?.contentInsets.vertical ?? 0.0)
     }
 
     init(textView: TextView, theme: EditorTheme) {
@@ -50,12 +57,13 @@ class MinimapView: FlippedNSView {
         self.theme = theme
         self.lineRenderer = MinimapLineRenderer(textView: textView)
 
-        self.scrollView = NSScrollView()
+        self.scrollView = ForwardingScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.hasVerticalScroller = false
         scrollView.hasHorizontalScroller = false
         scrollView.drawsBackground = false
         scrollView.verticalScrollElasticity = .none
+        scrollView.receiver = textView.enclosingScrollView
 
         self.contentView = FlippedNSView(frame: .zero)
         contentView.translatesAutoresizingMaskIntoConstraints = false
@@ -65,10 +73,23 @@ class MinimapView: FlippedNSView {
         documentVisibleView.wantsLayer = true
         documentVisibleView.layer?.backgroundColor = theme.text.color.withAlphaComponent(0.05).cgColor
 
+        self.separatorView = NSView()
+        separatorView.translatesAutoresizingMaskIntoConstraints = false
+        separatorView.wantsLayer = true
+        separatorView.layer?.backgroundColor = NSColor.separatorColor.cgColor
+
         super.init(frame: .zero)
+
+        let documentVisibleViewDragGesture = NSPanGestureRecognizer(
+            target: self,
+            action: #selector(documentVisibleViewDragged(_:))
+        )
+        documentVisibleView.addGestureRecognizer(documentVisibleViewDragGesture)
+        self.documentVisibleViewDragGesture = documentVisibleViewDragGesture
 
         addSubview(scrollView)
         addSubview(documentVisibleView)
+        addSubview(separatorView)
         scrollView.documentView = contentView
 
         self.translatesAutoresizingMaskIntoConstraints = false
@@ -92,16 +113,25 @@ class MinimapView: FlippedNSView {
 
     private func setUpConstraints() {
         NSLayoutConstraint.activate([
+            // Constrain to all sides
             scrollView.topAnchor.constraint(equalTo: topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
             scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
+            // Scrolling, but match width
             contentView.leadingAnchor.constraint(equalTo: leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
+            // Y position set manually
             documentVisibleView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            documentVisibleView.trailingAnchor.constraint(equalTo: trailingAnchor)
+            documentVisibleView.trailingAnchor.constraint(equalTo: trailingAnchor),
+
+            // Separator on leading side
+            separatorView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            separatorView.topAnchor.constraint(equalTo: topAnchor),
+            separatorView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            separatorView.widthAnchor.constraint(equalToConstant: 1.0)
         ])
     }
 
@@ -117,7 +147,6 @@ class MinimapView: FlippedNSView {
             queue: .main
         ) { [weak self] _ in
             // Scroll changed
-            self?.layoutManager?.layoutLines()
             self?.updateDocumentVisibleViewPosition()
         }
 
@@ -127,7 +156,6 @@ class MinimapView: FlippedNSView {
             queue: .main
         ) { [weak self] _ in
             // Frame changed
-            self?.layoutManager?.layoutLines()
             self?.updateDocumentVisibleViewPosition()
         }
     }
@@ -148,22 +176,43 @@ class MinimapView: FlippedNSView {
     }
 
     override func hitTest(_ point: NSPoint) -> NSView? {
-        if visibleRect.contains(point) {
-            return self
+        if documentVisibleView.frame.contains(point) {
+            return documentVisibleView
+        } else if visibleRect.contains(point) {
+            return textView
         } else {
             return super.hitTest(point)
         }
     }
 
-    override func draw(_ dirtyRect: NSRect) {
-        guard let context = NSGraphicsContext.current?.cgContext else { return }
-        context.saveGState()
+    /// Responds to a drag gesture on the document visible view. Dragging the view scrolls the editor a relative amount.
+    @objc func documentVisibleViewDragged(_ sender: NSPanGestureRecognizer) {
+        guard let editorScrollView = textView?.enclosingScrollView else {
+            return
+        }
 
-        context.setFillColor(NSColor.separatorColor.cgColor)
-        context.fill([
-            CGRect(x: 0, y: 0, width: 1, height: frame.height)
-        ])
+        let translation = sender.translation(in: documentVisibleView)
+        let ratio = if minimapHeight > containerHeight {
+            containerHeight / (textView?.frame.height ?? 0.0)
+        } else {
+            editorToMinimapHeightRatio
+        }
+        let editorTranslation = translation.y / ratio
+        sender.setTranslation(.zero, in: documentVisibleView)
 
-        context.restoreGState()
+        var newScrollViewY = editorScrollView.contentView.bounds.origin.y - editorTranslation
+        newScrollViewY = max(-editorScrollView.contentInsets.top, newScrollViewY)
+        newScrollViewY = min(
+            editorScrollView.documentMaxOriginY - editorScrollView.contentInsets.top,
+            newScrollViewY
+        )
+
+        editorScrollView.contentView.scroll(
+            to: NSPoint(
+                x: editorScrollView.contentView.bounds.origin.x,
+                y: newScrollViewY
+            )
+        )
+        editorScrollView.reflectScrolledClipView(editorScrollView.contentView)
     }
 }

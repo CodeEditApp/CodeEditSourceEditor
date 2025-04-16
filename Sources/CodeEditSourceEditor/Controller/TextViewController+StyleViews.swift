@@ -67,6 +67,8 @@ extension TextViewController {
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = !wrapLines
 
+        scrollView.scrollerStyle = .overlay
+
         updateContentInsets()
     }
 

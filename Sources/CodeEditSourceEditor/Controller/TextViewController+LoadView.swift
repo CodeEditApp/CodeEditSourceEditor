@@ -29,10 +29,9 @@ extension TextViewController {
         )
 
         minimapView = MinimapView(textView: textView, theme: theme)
+        scrollView.addFloatingSubview(minimapView, for: .vertical)
 
-        editorContainer = EditorContainerView(scrollView: scrollView, minimapView: minimapView)
-
-        let findViewController = FindViewController(target: self, childView: editorContainer)
+        let findViewController = FindViewController(target: self, childView: scrollView)
         addChild(findViewController)
         self.findViewController = findViewController
         self.view.addSubview(findViewController.view)
@@ -51,17 +50,11 @@ extension TextViewController {
         setUpHighlighter()
         setUpTextFormation()
 
-        NSLayoutConstraint.activate([
-            findViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            findViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            findViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
-            findViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
-
         if !cursorPositions.isEmpty {
             setCursorPositions(cursorPositions)
         }
 
+        setUpConstraints()
         setUpListeners()
 
         textView.updateFrameIfNeeded()
@@ -72,15 +65,45 @@ extension TextViewController {
         setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
     }
 
+    func setUpConstraints() {
+        guard let findViewController else { return }
+
+        let maxWidthConstraint = minimapView.widthAnchor.constraint(lessThanOrEqualToConstant: 150)
+        let relativeWidthConstraint = minimapView.widthAnchor.constraint(
+            equalTo: view.widthAnchor,
+            multiplier: 0.17
+        )
+        relativeWidthConstraint.priority = .defaultLow
+        let minimapXConstraint = minimapView.trailingAnchor.constraint(
+            equalTo: scrollView.contentView.safeAreaLayoutGuide.trailingAnchor
+        )
+        self.minimapXConstraint = minimapXConstraint
+
+        NSLayoutConstraint.activate([
+            findViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            findViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            findViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            findViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            minimapView.topAnchor.constraint(equalTo: scrollView.contentView.safeAreaLayoutGuide.topAnchor),
+            minimapView.bottomAnchor.constraint(equalTo: scrollView.contentView.safeAreaLayoutGuide.bottomAnchor),
+            minimapXConstraint,
+            maxWidthConstraint,
+            relativeWidthConstraint,
+        ])
+    }
+
     func setUpListeners() {
         // Layout on scroll change
         NotificationCenter.default.addObserver(
             forName: NSView.boundsDidChangeNotification,
             object: scrollView.contentView,
             queue: .main
-        ) { [weak self] _ in
+        ) { [weak self] notification in
+            guard let clipView = notification.object as? NSClipView else { return }
             self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
             self?.gutterView.needsDisplay = true
+            self?.minimapXConstraint?.constant = clipView.bounds.origin.x
         }
 
         // Layout on frame change
