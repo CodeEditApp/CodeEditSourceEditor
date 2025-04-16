@@ -133,13 +133,11 @@ struct FindPanelView: View {
                     }
                     HStack(spacing: 4) {
                         ControlGroup {
-                            Button(action: {
-                                // TODO: Replace action
-                            }, label: {
+                            Button(action: viewModel.replaceButtonClicked) {
                                 Text("Replace")
                                     .opacity(viewModel.findText.isEmpty || viewModel.matchCount == 0 ? 0.33 : 1)
                                     .frame(width: viewModel.findControlsWidth/2 - 12 - 0.5)
-                            })
+                            }
                             // TODO: disable if there is not an active match
                             .disabled(viewModel.findText.isEmpty || viewModel.matchCount == 0)
                             Divider()

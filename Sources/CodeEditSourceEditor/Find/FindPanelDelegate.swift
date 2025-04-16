@@ -17,6 +17,7 @@ protocol FindPanelDelegate: AnyObject {
     func findPanelDidUpdateReplaceText(_ text: String)
     func findPanelPrevButtonClicked()
     func findPanelNextButtonClicked()
+    func findPanelReplaceButtonClicked()
     func findPanelUpdateMatchCount(_ count: Int)
     func findPanelClearEmphasis()
 }
