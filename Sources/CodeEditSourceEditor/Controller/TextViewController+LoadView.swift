@@ -38,8 +38,6 @@ extension TextViewController {
         findViewController.view.viewDidMoveToSuperview()
         self.findViewController = findViewController
 
-        findViewController.topPadding = contentInsets?.top
-
         if let _undoManager {
             textView.setUndoManager(_undoManager)
         }
@@ -63,6 +61,7 @@ extension TextViewController {
             NSEvent.removeMonitor(localEventMonitor)
         }
         setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
+        updateContentInsets()
     }
 
     func setUpConstraints() {
@@ -85,8 +84,8 @@ extension TextViewController {
             findViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
             findViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            minimapView.topAnchor.constraint(equalTo: scrollView.contentView.safeAreaLayoutGuide.topAnchor),
-            minimapView.bottomAnchor.constraint(equalTo: scrollView.contentView.safeAreaLayoutGuide.bottomAnchor),
+            minimapView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            minimapView.bottomAnchor.constraint(equalTo: scrollView.contentView.bottomAnchor),
             minimapXConstraint,
             maxWidthConstraint,
             relativeWidthConstraint,

@@ -38,14 +38,14 @@ extension MinimapView {
     }
 
     private func setScrollViewPosition(scrollPercentage: CGFloat) {
-        let totalHeight = contentView.frame.height + scrollView.contentInsets.top
-        let topInset = scrollView.contentInsets.top
+        let topInsets = scrollView.contentInsets.top
+        let totalHeight = contentView.frame.height + topInsets
         scrollView.contentView.scroll(
             to: NSPoint(
                 x: scrollView.contentView.frame.origin.x,
                 y: (
-                    scrollPercentage * (totalHeight - (scrollView.documentVisibleRect.height - topInset))
-                ) - topInset
+                    scrollPercentage * (totalHeight - (scrollView.documentVisibleRect.height - topInsets))
+                ) - topInsets
             )
         )
         scrollView.reflectScrolledClipView(scrollView.contentView)

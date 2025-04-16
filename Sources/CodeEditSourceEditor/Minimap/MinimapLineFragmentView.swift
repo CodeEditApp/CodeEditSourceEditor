@@ -119,7 +119,7 @@ final class MinimapLineFragmentView: LineFragmentView {
                 height: 2.0
             )
             context.setFillColor(run.color.cgColor)
-            context.fill(rect.pixelAligned)
+            context.fill(rect)
         }
 
         context.restoreGState()

@@ -46,8 +46,6 @@ extension TextViewController {
 
     /// Style the gutter view.
     package func styleGutterView() {
-        // Note: If changing this value, also change in ``findPanelWillShow/Hide()``
-        gutterView.frame.origin.y = -scrollView.contentInsets.top
         gutterView.selectedLineColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
         ? NSColor.quaternaryLabelColor
         : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
@@ -66,10 +64,7 @@ extension TextViewController {
         scrollView.contentView.postsFrameChangedNotifications = true
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = !wrapLines
-
         scrollView.scrollerStyle = .overlay
-
-        updateContentInsets()
     }
 
     package func updateContentInsets() {
@@ -77,8 +72,10 @@ extension TextViewController {
         if let contentInsets {
             scrollView.automaticallyAdjustsContentInsets = false
             scrollView.contentInsets = contentInsets
+
+            minimapView.scrollView.automaticallyAdjustsContentInsets = false
             minimapView.scrollView.contentInsets.top = contentInsets.top
-            minimapView.scrollView.contentInsets.top = contentInsets.bottom
+            minimapView.scrollView.contentInsets.bottom = contentInsets.bottom
         } else {
             scrollView.automaticallyAdjustsContentInsets = true
             minimapView.scrollView.automaticallyAdjustsContentInsets = true
@@ -95,5 +92,9 @@ extension TextViewController {
 
         scrollView.reflectScrolledClipView(scrollView.contentView)
         minimapView.scrollView.reflectScrolledClipView(minimapView.scrollView.contentView)
+
+        findViewController?.topPadding = contentInsets?.top
+
+        gutterView.frame.origin.y = -scrollView.contentInsets.top
     }
 }

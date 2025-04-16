@@ -17,7 +17,7 @@ class MinimapView: FlippedNSView {
     let contentView: FlippedNSView
     /// The box displaying the visible region on the minimap.
     let documentVisibleView: NSView
-
+    /// A small gray line on the left of the minimap distinguishing it from the editor.
     let separatorView: NSView
 
     var documentVisibleViewDragGesture: NSPanGestureRecognizer?
@@ -51,6 +51,8 @@ class MinimapView: FlippedNSView {
         (textView?.enclosingScrollView?.visibleRect.height ?? 0.0)
         - (textView?.enclosingScrollView?.contentInsets.vertical ?? 0.0)
     }
+
+    // MARK: - Init
 
     init(textView: TextView, theme: EditorTheme) {
         self.textView = textView
@@ -111,6 +113,8 @@ class MinimapView: FlippedNSView {
         setUpListeners()
     }
 
+    // MARK: - Constraints
+
     private func setUpConstraints() {
         NSLayoutConstraint.activate([
             // Constrain to all sides
@@ -134,6 +138,8 @@ class MinimapView: FlippedNSView {
             separatorView.widthAnchor.constraint(equalToConstant: 1.0)
         ])
     }
+
+    // MARK: - Scroll listeners
 
     private func setUpListeners() {
         guard let editorScrollView = textView?.enclosingScrollView else { return }
@@ -183,36 +189,5 @@ class MinimapView: FlippedNSView {
         } else {
             return super.hitTest(point)
         }
-    }
-
-    /// Responds to a drag gesture on the document visible view. Dragging the view scrolls the editor a relative amount.
-    @objc func documentVisibleViewDragged(_ sender: NSPanGestureRecognizer) {
-        guard let editorScrollView = textView?.enclosingScrollView else {
-            return
-        }
-
-        let translation = sender.translation(in: documentVisibleView)
-        let ratio = if minimapHeight > containerHeight {
-            containerHeight / (textView?.frame.height ?? 0.0)
-        } else {
-            editorToMinimapHeightRatio
-        }
-        let editorTranslation = translation.y / ratio
-        sender.setTranslation(.zero, in: documentVisibleView)
-
-        var newScrollViewY = editorScrollView.contentView.bounds.origin.y - editorTranslation
-        newScrollViewY = max(-editorScrollView.contentInsets.top, newScrollViewY)
-        newScrollViewY = min(
-            editorScrollView.documentMaxOriginY - editorScrollView.contentInsets.top,
-            newScrollViewY
-        )
-
-        editorScrollView.contentView.scroll(
-            to: NSPoint(
-                x: editorScrollView.contentView.bounds.origin.x,
-                y: newScrollViewY
-            )
-        )
-        editorScrollView.reflectScrolledClipView(editorScrollView.contentView)
     }
 }

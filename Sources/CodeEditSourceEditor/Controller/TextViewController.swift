@@ -128,7 +128,6 @@ public class TextViewController: NSViewController {
     public var contentInsets: NSEdgeInsets? {
         didSet {
             updateContentInsets()
-            findViewController?.topPadding = contentInsets?.top
         }
     }
 
