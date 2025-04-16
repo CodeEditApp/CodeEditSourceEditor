@@ -32,7 +32,8 @@ extension FindViewController {
             return
         }
 
-        let findOptions: NSRegularExpression.Options = smartCase(str: findText) ? [] : [.caseInsensitive]
+        // Set case sensitivity based on matchCase property
+        let findOptions: NSRegularExpression.Options = matchCase ? [] : [.caseInsensitive]
         let escapedQuery = NSRegularExpression.escapedPattern(for: findText)
 
         guard let regex = try? NSRegularExpression(pattern: escapedQuery, options: findOptions) else {
@@ -52,7 +53,7 @@ extension FindViewController {
         currentFindMatchIndex = getNearestEmphasisIndex(matchRanges: findMatches) ?? 0
     }
 
-    private func addEmphases() {
+    func addEmphases() {
         guard let target = target,
               let emphasisManager = target.emphasisManager else { return }
 
@@ -116,10 +117,4 @@ extension FindViewController {
 
     // Only re-find the part of the file that changed upwards
     private func reFind() { }
-
-    // Returns true if string contains uppercase letter
-    // used for: ignores letter case if the find text is all lowercase
-    private func smartCase(str: String) -> Bool {
-        return str.range(of: "[A-Z]", options: .regularExpression) != nil
-    }
 }
