@@ -12,6 +12,7 @@ struct FindModePicker: NSViewRepresentable {
     @Binding var wrapAround: Bool
     @Environment(\.controlActiveState) var activeState
     let onToggleWrapAround: () -> Void
+    let onModeChange: () -> Void
 
     private func createSymbolButton(context: Context) -> NSButton {
         let button = NSButton(frame: .zero)
@@ -156,6 +157,7 @@ struct FindModePicker: NSViewRepresentable {
 
         @objc func modeSelected(_ sender: NSMenuItem) {
             parent.mode = sender.tag == 0 ? .find : .replace
+            parent.onModeChange()
         }
 
         @objc func toggleWrapAround(_ sender: NSMenuItem) {
