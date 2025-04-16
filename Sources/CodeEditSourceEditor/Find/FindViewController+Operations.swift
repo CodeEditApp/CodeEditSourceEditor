@@ -53,6 +53,46 @@ extension FindViewController {
         currentFindMatchIndex = getNearestEmphasisIndex(matchRanges: findMatches) ?? 0
     }
 
+    func replaceCurrentMatch() {
+        guard let target = target,
+              !findMatches.isEmpty else { return }
+
+        // Get the current match range
+        let currentMatchRange = findMatches[currentFindMatchIndex]
+
+        // Set cursor positions to the match range
+        target.setCursorPositions([CursorPosition(range: currentMatchRange)])
+
+        // Replace the text using the cursor positions
+        if let textViewController = target as? TextViewController {
+            textViewController.textView.insertText(replaceText, replacementRange: currentMatchRange)
+        }
+
+        // Adjust the length of the replacement
+        let lengthDiff = replaceText.utf16.count - currentMatchRange.length
+
+        // Update the current match index
+        if findMatches.isEmpty {
+            currentFindMatchIndex = 0
+            findPanel.findDelegate?.findPanelUpdateMatchCount(0)
+        } else {
+            // Update all match ranges after the current match
+            for index in (currentFindMatchIndex + 1)..<findMatches.count {
+                findMatches[index].location += lengthDiff
+            }
+
+            // Remove the current match from the array
+            findMatches.remove(at: currentFindMatchIndex)
+
+            // Keep the current index in bounds
+            currentFindMatchIndex = min(currentFindMatchIndex, findMatches.count - 1)
+            findPanel.findDelegate?.findPanelUpdateMatchCount(findMatches.count)
+        }
+
+        // Update the emphases
+        addEmphases()
+    }
+
     func addEmphases() {
         guard let target = target,
               let emphasisManager = target.emphasisManager else { return }

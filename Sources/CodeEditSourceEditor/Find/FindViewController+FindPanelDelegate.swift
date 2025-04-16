@@ -12,7 +12,6 @@ extension FindViewController: FindPanelDelegate {
     var findPanelMode: FindPanelMode { mode }
     var findPanelWrapAround: Bool { wrapAround }
     var findPanelMatchCase: Bool { matchCase }
-    var findPanelReplaceText: String { replaceText }
 
     func findPanelOnSubmit() {
         findPanelNextButtonClicked()
@@ -200,6 +199,11 @@ extension FindViewController: FindPanelDelegate {
         }
 
         updateEmphasesForCurrentMatch(emphasisManager: emphasisManager)
+    }
+
+    func findPanelReplaceButtonClicked() {
+        guard !findMatches.isEmpty else { return }
+        replaceCurrentMatch()
     }
 
     func findPanelUpdateMatchCount(_ count: Int) {
