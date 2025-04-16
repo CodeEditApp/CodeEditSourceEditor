@@ -8,18 +8,35 @@
 import AppKit
 import CodeEditTextView
 
-class MinimapView: FlippedNSView {
+/// The minimap view displays a copy of editor contents as a series of small bubbles in place of text.
+///
+/// This view consists of the following subviews in order
+/// ```
+/// MinimapView
+/// |-> separatorView: A small, grey, leading, separator that distinguishes the minimap from other content.
+/// |-> documentVisibleView: Displays a rectangle that represents the portion of the minimap visible in the editor's
+/// |                        visible rect. This is draggable and responds to the editor's height.
+/// |-> scrollView: Container for the summary bubbles
+/// |   |-> contentView: Target view for the summary bubble content
+/// ```
+///
+/// To keep contents in sync with the text view, this view requires that its ``scrollView`` have the same vertical
+/// content insets as the editor's content insets.
+///
+/// The minimap can be styled using an ``EditorTheme``. See ``setTheme(_:)`` for use and colors used by this view.
+public class MinimapView: FlippedNSView {
     weak var textView: TextView?
 
     /// The container scrollview for the minimap contents.
-    let scrollView: ForwardingScrollView
+    public let scrollView: ForwardingScrollView
     /// The view text lines are rendered into.
-    let contentView: FlippedNSView
+    public let contentView: FlippedNSView
     /// The box displaying the visible region on the minimap.
-    let documentVisibleView: NSView
+    public let documentVisibleView: NSView
     /// A small gray line on the left of the minimap distinguishing it from the editor.
-    let separatorView: NSView
+    public let separatorView: NSView
 
+    /// Responder for a drag gesture on the ``documentVisibleView``.
     var documentVisibleViewDragGesture: NSPanGestureRecognizer?
 
     /// The layout manager that uses the ``lineRenderer`` to render and layout lines.
@@ -28,35 +45,33 @@ class MinimapView: FlippedNSView {
     /// using ``MinimapLineFragmentView``
     let lineRenderer: MinimapLineRenderer
 
-    var theme: EditorTheme {
-        didSet {
-            documentVisibleView.layer?.backgroundColor = theme.text.color.withAlphaComponent(0.05).cgColor
-            layer?.backgroundColor = theme.background.cgColor
-        }
-    }
+    // MARK: - Calculated Variables
 
     var minimapHeight: CGFloat {
         contentView.frame.height
     }
 
     var editorHeight: CGFloat {
-        textView?.frame.height ?? 0.0
+        textView?.layoutManager.estimatedHeight() ?? 1.0
     }
 
     var editorToMinimapHeightRatio: CGFloat {
         minimapHeight / editorHeight
     }
 
+    /// The height of the available container, less the scroll insets to reflect the visible height.
     var containerHeight: CGFloat {
-        (textView?.enclosingScrollView?.visibleRect.height ?? 0.0)
-        - (textView?.enclosingScrollView?.contentInsets.vertical ?? 0.0)
+        scrollView.visibleRect.height - scrollView.contentInsets.vertical
     }
 
     // MARK: - Init
 
-    init(textView: TextView, theme: EditorTheme) {
+    /// Creates a minimap view with the text view to track, and an initial theme.
+    /// - Parameters:
+    ///   - textView: The text view to match contents with.
+    ///   - theme: The theme for the minimap to use.
+    public init(textView: TextView, theme: EditorTheme) {
         self.textView = textView
-        self.theme = theme
         self.lineRenderer = MinimapLineRenderer(textView: textView)
 
         self.scrollView = ForwardingScrollView()
@@ -67,7 +82,7 @@ class MinimapView: FlippedNSView {
         scrollView.verticalScrollElasticity = .none
         scrollView.receiver = textView.enclosingScrollView
 
-        self.contentView = FlippedNSView(frame: .zero)
+        self.contentView = FlippedNSView()
         contentView.translatesAutoresizingMaskIntoConstraints = false
 
         self.documentVisibleView = NSView()
@@ -162,6 +177,7 @@ class MinimapView: FlippedNSView {
             queue: .main
         ) { [weak self] _ in
             // Frame changed
+            self?.updateContentViewHeight()
             self?.updateDocumentVisibleViewPosition()
         }
     }
@@ -176,18 +192,59 @@ class MinimapView: FlippedNSView {
         return rect.pixelAligned
     }
 
-    override func layout() {
+    override public func resetCursorRects() {
+        // Don't use an iBeam
+        addCursorRect(bounds, cursor: .arrow)
+    }
+
+    override public func layout() {
         layoutManager?.layoutLines()
         super.layout()
     }
 
-    override func hitTest(_ point: NSPoint) -> NSView? {
+    override public func hitTest(_ point: NSPoint) -> NSView? {
+        guard let point = superview?.convert(point, to: self) else { return nil }
+        // For performance, don't hitTest the layout fragment views, but make sure the `documentVisibleView` is
+        // hittable.
         if documentVisibleView.frame.contains(point) {
             return documentVisibleView
         } else if visibleRect.contains(point) {
-            return textView
+            return self
         } else {
             return super.hitTest(point)
         }
+    }
+
+    // Eat mouse events so we don't pass them on to the text view. Leads to some odd behavior.
+
+    override public func mouseDown(with event: NSEvent) { }
+    override public func mouseDragged(with event: NSEvent) { }
+
+    /// Sets the content view height, matching the text view's overscroll setting as well as the layout manager's
+    /// cached height.
+    func updateContentViewHeight() {
+        guard let estimatedContentHeight = layoutManager?.estimatedHeight(),
+              let overscrollAmount = textView?.overscrollAmount else {
+            return
+        }
+        let overscroll = containerHeight * overscrollAmount * editorToMinimapHeightRatio
+        let height = estimatedContentHeight + overscroll
+
+        // Only update a frame if needed
+        if contentView.frame.height != height {
+            contentView.frame.size.height = height
+        }
+    }
+
+    /// Updates the minimap to reflect a new theme.
+    ///
+    /// Colors used:
+    /// - ``documentVisibleView``'s background color = `theme.text` with `0.05` alpha.
+    /// - The minimap's background color = `theme.background`.
+    ///
+    /// - Parameter theme: The selected theme.
+    public func setTheme(_ theme: EditorTheme) {
+        documentVisibleView.layer?.backgroundColor = theme.text.color.withAlphaComponent(0.05).cgColor
+        layer?.backgroundColor = theme.background.cgColor
     }
 }

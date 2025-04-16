@@ -68,7 +68,7 @@ public class TextViewController: NSViewController {
             highlighter?.invalidate()
             gutterView.textColor = theme.text.color.withAlphaComponent(0.35)
             gutterView.selectedLineTextColor = theme.text.color
-            minimapView.theme = theme
+            minimapView.setTheme(theme)
         }
     }
 

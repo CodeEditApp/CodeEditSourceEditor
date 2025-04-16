@@ -42,11 +42,12 @@ struct ContentView: View {
                 tabWidth: 4,
                 lineHeight: 1.2,
                 wrapLines: wrapLines,
+                editorOverscroll: 0.3,
                 cursorPositions: $cursorPositions,
                 useThemeBackground: true,
                 highlightProviders: [treeSitterClient],
                 contentInsets: NSEdgeInsets(top: proxy.safeAreaInsets.top, left: 0, bottom: 28.0, right: 0),
-                additionalTextInsets: NSEdgeInsets(top: 1, left: 0, bottom: proxy.size.height * 0.3, right: 0),
+                additionalTextInsets: NSEdgeInsets(top: 1, left: 0, bottom: 1, right: 0),
                 useSystemCursor: useSystemCursor
             )
             .overlay(alignment: .bottom) {

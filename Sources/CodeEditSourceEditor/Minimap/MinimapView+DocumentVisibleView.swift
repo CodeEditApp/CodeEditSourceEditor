@@ -8,6 +8,20 @@
 import AppKit
 
 extension MinimapView {
+    /// Updates the ``documentVisibleView`` and ``scrollView`` to match the editor's scroll offset.
+    ///
+    /// - Note: In this context, the 'container' is the visible rect in the minimap.
+    /// - Note: This is *tricky*, there's two cases for both views. If modifying, make sure to test both when the
+    ///         minimap is shorter than the container height and when the minimap should scroll.
+    ///
+    /// The ``documentVisibleView`` uses a position that's entirely relative to the percent of the available scroll height scrolled.
+    /// If the minimap is smaller than the container, it uses the same percent scrolled, but as a percent of the minimap height.
+    ///
+    /// The height of the ``documentVisibleView`` is calculated using a ratio of the editor's height to the
+    /// minimap's height, then applying that to the container's height.
+    ///
+    /// The ``scrollView`` uses the scroll percentage calculated for the first case, and scrolls its content to that percentage.
+    /// The ``scrollView`` is only modified if the minimap is longer than the container view.
     func updateDocumentVisibleViewPosition() {
         guard let textView = textView, let editorScrollView = textView.enclosingScrollView, let layoutManager else {
             return
@@ -17,7 +31,8 @@ extension MinimapView {
         let scrollPercentage = editorScrollView.percentScrolled
         guard scrollPercentage.isFinite else { return }
 
-        // Update Visible Pane, should scroll down slowly as the user scrolls the document, following the scroller.
+        // Update Visible Pane, should scroll down slowly as the user scrolls the document, following a similar pace
+        // as the vertical `NSScroller`.
         // Visible pane's height   = scrollview visible height * (minimap line height / editor line height)
         // Visible pane's position = (container height - visible pane height) * scrollPercentage
         let visibleRectHeight = containerHeight * editorToMinimapHeightRatio

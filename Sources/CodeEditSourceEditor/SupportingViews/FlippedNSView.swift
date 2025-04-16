@@ -7,6 +7,6 @@
 
 import AppKit
 
-class FlippedNSView: NSView {
-    override var isFlipped: Bool { true }
+open class FlippedNSView: NSView {
+    open override var isFlipped: Bool { true }
 }
