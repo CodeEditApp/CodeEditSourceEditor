@@ -12,7 +12,8 @@ import CodeEditSymbols
 struct FindPanelView: View {
     @Environment(\.controlActiveState) var activeState
     @ObservedObject var viewModel: FindPanelViewModel
-    @FocusState private var isFocused: Bool
+    @FocusState private var isFindFieldFocused: Bool
+    @FocusState private var isReplaceFieldFocused: Bool
 
     var body: some View {
         VStack(spacing: 5) {
@@ -24,7 +25,13 @@ struct FindPanelView: View {
                         FindModePicker(
                             mode: $viewModel.mode,
                             wrapAround: $viewModel.wrapAround,
-                            onToggleWrapAround: viewModel.toggleWrapAround
+                            onToggleWrapAround: viewModel.toggleWrapAround,
+                            onModeChange: {
+                                isFindFieldFocused = true
+                                if let textField = NSApp.keyWindow?.firstResponder as? NSTextView {
+                                    textField.selectAll(nil)
+                                }
+                            }
                         )
                         .background(GeometryReader { geometry in
                             Color.clear.onAppear {
@@ -60,9 +67,9 @@ struct FindPanelView: View {
                     clearable: true
                 )
                 .controlSize(.small)
-                .focused($isFocused)
-                .onChange(of: isFocused) { newValue in
-                    viewModel.setFocus(newValue)
+                .focused($isFindFieldFocused)
+                .onChange(of: isFindFieldFocused) { newValue in
+                    viewModel.setFocus(newValue || isReplaceFieldFocused)
                 }
                 .onSubmit {
                     viewModel.onSubmit()
@@ -120,7 +127,10 @@ struct FindPanelView: View {
                         clearable: true
                     )
                     .controlSize(.small)
-                    // TODO: Handle replace text field focus and submit
+                    .focused($isReplaceFieldFocused)
+                    .onChange(of: isReplaceFieldFocused) { newValue in
+                        viewModel.setFocus(newValue || isFindFieldFocused)
+                    }
                     HStack(spacing: 4) {
                         ControlGroup {
                             Button(action: {
@@ -168,12 +178,11 @@ struct FindPanelView: View {
             viewModel.onMatchCaseChange(newValue)
         }
         .onChange(of: viewModel.isFocused) { newValue in
-            isFocused = newValue
+            isFindFieldFocused = newValue
             if !newValue {
                 viewModel.removeEmphasis()
             }
         }
-
     }
 }
 
