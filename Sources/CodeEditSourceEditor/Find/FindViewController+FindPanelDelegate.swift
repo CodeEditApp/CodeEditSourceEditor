@@ -81,6 +81,7 @@ extension FindViewController: FindPanelDelegate {
         self.matchCase = matchCase
         if !findText.isEmpty {
             performFind()
+            addEmphases()
         }
     }
 
@@ -132,7 +133,7 @@ extension FindViewController: FindPanelDelegate {
             return
         }
 
-        // Update to previous match∂
+        // Update to previous match
         currentFindMatchIndex = (currentFindMatchIndex - 1 + findMatches.count) % findMatches.count
 
         // If the text view has focus, show a flash animation for the current match
