@@ -27,6 +27,7 @@ struct ContentView: View {
     @State private var settingsIsPresented: Bool = false
     @State private var treeSitterClient = TreeSitterClient()
     @AppStorage("showMinimap") private var showMinimap: Bool = true
+    @State private var indentOption: IndentOption = .spaces(count: 4)
 
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
         self._document = document
@@ -41,6 +42,7 @@ struct ContentView: View {
                 theme: theme,
                 font: font,
                 tabWidth: 4,
+                indentOption: indentOption,
                 lineHeight: 1.2,
                 wrapLines: wrapLines,
                 editorOverscroll: 0.3,
@@ -62,7 +64,8 @@ struct ContentView: View {
                     isInLongParse: $isInLongParse,
                     language: $language,
                     theme: $theme,
-                    showMinimap: $showMinimap
+                    showMinimap: $showMinimap,
+                    indentOption: $indentOption
                 )
             }
             .ignoresSafeArea()

@@ -164,7 +164,13 @@ extension TextViewController {
             guard isKeyWindow && isFirstResponder else { return event }
 
             let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-            return self.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
+            let tabKey: UInt16 = 0x30
+
+            if event.keyCode == tabKey {
+                return self.handleTab(event: event, modifierFalgs: modifierFlags.rawValue)
+            } else {
+                return self.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
+            }
         }
     }
 

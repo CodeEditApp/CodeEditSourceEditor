@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1CB30C3A2DAA1C28008058A7 /* IndentPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CB30C392DAA1C28008058A7 /* IndentPicker.swift */; };
 		61621C612C74FB2200494A4A /* CodeEditSourceEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 61621C602C74FB2200494A4A /* CodeEditSourceEditor */; };
 		61CE772F2D19BF7D00908C57 /* CodeEditSourceEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 61CE772E2D19BF7D00908C57 /* CodeEditSourceEditor */; };
 		61CE77322D19BFAA00908C57 /* CodeEditSourceEditor in Frameworks */ = {isa = PBXBuildFile; productRef = 61CE77312D19BFAA00908C57 /* CodeEditSourceEditor */; };
@@ -23,6 +24,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1CB30C392DAA1C28008058A7 /* IndentPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IndentPicker.swift; sourceTree = "<group>"; };
 		6C13652A2B8A7B94004A1D18 /* CodeEditSourceEditorExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CodeEditSourceEditorExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6C13652D2B8A7B94004A1D18 /* CodeEditSourceEditorExampleApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeEditSourceEditorExampleApp.swift; sourceTree = "<group>"; };
 		6C13652F2B8A7B94004A1D18 /* CodeEditSourceEditorExampleDocument.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodeEditSourceEditorExampleDocument.swift; sourceTree = "<group>"; };
@@ -117,6 +119,7 @@
 				6C1365312B8A7B94004A1D18 /* ContentView.swift */,
 				6C2EE57D2DB1522E007E0A26 /* Toolbar.swift */,
 				6C1365452B8A7F2D004A1D18 /* LanguagePicker.swift */,
+				1CB30C392DAA1C28008058A7 /* IndentPicker.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -212,6 +215,7 @@
 				6C2EE57E2DB1522E007E0A26 /* Toolbar.swift in Sources */,
 				6C13652E2B8A7B94004A1D18 /* CodeEditSourceEditorExampleApp.swift in Sources */,
 				6C1365442B8A7EED004A1D18 /* String+Lines.swift in Sources */,
+				1CB30C3A2DAA1C28008058A7 /* IndentPicker.swift in Sources */,
 				6C1365322B8A7B94004A1D18 /* ContentView.swift in Sources */,
 				6C1365462B8A7F2D004A1D18 /* LanguagePicker.swift in Sources */,
 			);

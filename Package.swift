@@ -34,7 +34,8 @@ let package = Package(
         .package(
             url: "https://github.com/ChimeHQ/TextFormation",
             from: "0.8.2"
-        )
+        ),
+        .package(url: "https://github.com/pointfreeco/swift-custom-dump", from: "1.0.0")
     ],
     targets: [
         // A source editor with useful features for code editing.
@@ -56,6 +57,7 @@ let package = Package(
             dependencies: [
                 "CodeEditSourceEditor",
                 "CodeEditLanguages",
+                .product(name: "CustomDump", package: "swift-custom-dump")
             ],
             plugins: [
                 .plugin(name: "SwiftLint", package: "SwiftLintPlugin")
