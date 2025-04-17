@@ -37,7 +37,7 @@ public class MinimapView: FlippedNSView {
     public let separatorView: NSView
 
     /// Responder for a drag gesture on the ``documentVisibleView``.
-    var documentVisibleViewDragGesture: NSPanGestureRecognizer?
+    var documentVisibleViewPanGesture: NSPanGestureRecognizer?
 
     /// The layout manager that uses the ``lineRenderer`` to render and layout lines.
     var layoutManager: TextLayoutManager?
@@ -98,19 +98,36 @@ public class MinimapView: FlippedNSView {
 
         super.init(frame: .zero)
 
-        let documentVisibleViewDragGesture = NSPanGestureRecognizer(
-            target: self,
-            action: #selector(documentVisibleViewDragged(_:))
-        )
-        documentVisibleView.addGestureRecognizer(documentVisibleViewDragGesture)
-        self.documentVisibleViewDragGesture = documentVisibleViewDragGesture
+        setUpPanGesture()
 
         addSubview(scrollView)
         addSubview(documentVisibleView)
         addSubview(separatorView)
         scrollView.documentView = contentView
 
-        self.translatesAutoresizingMaskIntoConstraints = false
+        translatesAutoresizingMaskIntoConstraints = false
+        wantsLayer = true
+        layer?.backgroundColor = theme.background.cgColor
+
+        setUpLayoutManager(textView: textView)
+        setUpSelectionManager(textView: textView)
+
+        setUpConstraints()
+        setUpListeners()
+    }
+
+    /// Creates a pan gesture and attaches it to the ``documentVisibleView``.
+    private func setUpPanGesture() {
+        let documentVisibleViewPanGesture = NSPanGestureRecognizer(
+            target: self,
+            action: #selector(documentVisibleViewDragged(_:))
+        )
+        documentVisibleView.addGestureRecognizer(documentVisibleViewPanGesture)
+        self.documentVisibleViewPanGesture = documentVisibleViewPanGesture
+    }
+
+    /// Create the layout manager, using text contents from the given textview.
+    private func setUpLayoutManager(textView: TextView) {
         let layoutManager = TextLayoutManager(
             textStorage: textView.textStorage,
             lineHeightMultiplier: 1.0,
@@ -121,7 +138,15 @@ public class MinimapView: FlippedNSView {
         )
         self.layoutManager = layoutManager
         (textView.textStorage.delegate as? MultiStorageDelegate)?.addDelegate(layoutManager)
+    }
 
+    /// Set up a selection manager for drawing selections in the minimap.
+    /// Requires ``layoutManager`` to not be `nil`.
+    private func setUpSelectionManager(textView: TextView) {
+        guard let layoutManager = layoutManager else {
+            assertionFailure("No layout manager setup for the minimap.")
+            return
+        }
         self.selectionManager = TextSelectionManager(
             layoutManager: layoutManager,
             textStorage: textView.textStorage,
@@ -130,12 +155,6 @@ public class MinimapView: FlippedNSView {
         )
         contentView.textView = textView
         contentView.selectionManager = selectionManager
-
-        wantsLayer = true
-        layer?.backgroundColor = theme.background.cgColor
-
-        setUpConstraints()
-        setUpListeners()
     }
 
     // MARK: - Constraints
@@ -166,6 +185,7 @@ public class MinimapView: FlippedNSView {
 
     // MARK: - Scroll listeners
 
+    /// Set up listeners for relevant frame and selection updates.
     private func setUpListeners() {
         guard let editorScrollView = textView?.enclosingScrollView else { return }
         // Need to listen to:
@@ -213,7 +233,7 @@ public class MinimapView: FlippedNSView {
     }
 
     override public func resetCursorRects() {
-        // Don't use an iBeam
+        // Don't use an iBeam in this view
         addCursorRect(bounds, cursor: .arrow)
     }
 
@@ -235,7 +255,7 @@ public class MinimapView: FlippedNSView {
         }
     }
 
-    // Eat mouse events so we don't pass them on to the text view. Leads to some odd behavior.
+    // Eat mouse events so we don't pass them on to the text view. Leads to some odd behavior otherwise.
 
     override public func mouseDown(with event: NSEvent) { }
     override public func mouseDragged(with event: NSEvent) { }

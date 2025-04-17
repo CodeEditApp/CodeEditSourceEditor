@@ -23,6 +23,7 @@ struct Toolbar: View {
     @Binding var language: CodeLanguage
     @Binding var theme: EditorTheme
     @Binding var showMinimap: Bool
+    @Binding var indentOption: IndentOption
 
     var body: some View {
         HStack {
@@ -63,6 +64,8 @@ struct Toolbar: View {
             Divider()
                 .frame(height: 12)
             LanguagePicker(language: $language)
+                .buttonStyle(.borderless)
+            IndentPicker(indentOption: $indentOption, enabled: document.text.isEmpty)
                 .buttonStyle(.borderless)
         }
         .font(.subheadline)

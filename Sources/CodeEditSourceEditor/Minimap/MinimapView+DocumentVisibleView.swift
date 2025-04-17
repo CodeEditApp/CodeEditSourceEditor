@@ -14,14 +14,15 @@ extension MinimapView {
     /// - Note: This is *tricky*, there's two cases for both views. If modifying, make sure to test both when the
     ///         minimap is shorter than the container height and when the minimap should scroll.
     ///
-    /// The ``documentVisibleView`` uses a position that's entirely relative to the percent of the available scroll height scrolled.
-    /// If the minimap is smaller than the container, it uses the same percent scrolled, but as a percent of the minimap height.
+    /// The ``documentVisibleView`` uses a position that's entirely relative to the percent of the available scroll
+    /// height scrolled. If the minimap is smaller than the container, it uses the same percent scrolled, but as a
+    /// percent of the minimap height.
     ///
     /// The height of the ``documentVisibleView`` is calculated using a ratio of the editor's height to the
     /// minimap's height, then applying that to the container's height.
     ///
-    /// The ``scrollView`` uses the scroll percentage calculated for the first case, and scrolls its content to that percentage.
-    /// The ``scrollView`` is only modified if the minimap is longer than the container view.
+    /// The ``scrollView`` uses the scroll percentage calculated for the first case, and scrolls its content to that
+    /// percentage. The ``scrollView`` is only modified if the minimap is longer than the container view.
     func updateDocumentVisibleViewPosition() {
         guard let textView = textView, let editorScrollView = textView.enclosingScrollView, let layoutManager else {
             return
