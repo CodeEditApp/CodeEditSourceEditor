@@ -328,21 +328,6 @@ public class TextViewController: NSViewController {
     /// A default `NSParagraphStyle` with a set `lineHeight`
     package lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
 
-    // MARK: - Reload UI
-
-    func reloadUI() {
-        textView.isEditable = isEditable
-        textView.isSelectable = isSelectable
-
-        styleScrollView()
-        styleTextView()
-        styleGutterView()
-
-        highlighter?.invalidate()
-        minimapView.updateContentViewHeight()
-        minimapView.updateDocumentVisibleViewPosition()
-    }
-
     deinit {
         if let highlighter {
             textView.removeStorageDelegate(highlighter)
@@ -359,12 +344,5 @@ public class TextViewController: NSViewController {
             NSEvent.removeMonitor(localEvenMonitor)
         }
         localEvenMonitor = nil
-    }
-}
-
-extension TextViewController: GutterViewDelegate {
-    public func gutterViewWidthDidUpdate(newWidth: CGFloat) {
-        gutterView?.frame.size.width = newWidth
-        textView?.textInsets = textViewInsets
     }
 }

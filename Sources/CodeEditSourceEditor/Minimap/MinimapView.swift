@@ -246,6 +246,8 @@ public class MinimapView: FlippedNSView {
     override public func layout() {
         layoutManager?.layoutLines()
         super.layout()
+        updateContentViewHeight()
+        updateDocumentVisibleViewPosition()
     }
 
     override public func hitTest(_ point: NSPoint) -> NSView? {
