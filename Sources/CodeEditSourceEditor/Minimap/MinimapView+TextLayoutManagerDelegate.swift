@@ -10,7 +10,6 @@ import CodeEditTextView
 
 extension MinimapView: TextLayoutManagerDelegate {
     public func layoutManagerHeightDidUpdate(newHeight: CGFloat) {
-//        contentView.frame.size.height = newHeight
         updateContentViewHeight()
     }
 

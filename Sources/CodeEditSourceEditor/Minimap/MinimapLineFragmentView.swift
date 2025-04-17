@@ -10,7 +10,7 @@ import CodeEditTextView
 
 /// A custom line fragment view for the minimap.
 ///
-/// Instead of drawing line contents, this view calculates a series of boxes or 'runs' to draw to represent the text
+/// Instead of drawing line contents, this view calculates a series of bubbles or 'runs' to draw to represent the text
 /// in the line fragment.
 ///
 /// Runs are calculated when the view's fragment is set, and cached until invalidated, and all whitespace
@@ -114,12 +114,12 @@ final class MinimapLineFragmentView: LineFragmentView {
         for run in drawingRuns {
             let rect = CGRect(
                 x: 8 + (CGFloat(run.range.location) * 1.5),
-                y: 0,
+                y: 0.25,
                 width: CGFloat(run.range.length) * 1.5,
                 height: 2.0
             )
             context.setFillColor(run.color.cgColor)
-            context.fill(rect)
+            context.fill(rect.pixelAligned)
         }
 
         context.restoreGState()

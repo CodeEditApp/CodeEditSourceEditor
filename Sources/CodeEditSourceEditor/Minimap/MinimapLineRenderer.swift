@@ -59,4 +59,8 @@ final class MinimapLineRenderer: TextLayoutManagerRenderDelegate {
     func lineFragmentView(for lineFragment: LineFragment) -> LineFragmentView {
         MinimapLineFragmentView(textStorage: textView?.textStorage)
     }
+
+    func characterXPosition(in lineFragment: LineFragment, for offset: Int) -> CGFloat {
+        8 + (CGFloat(offset) * 1.5)
+    }
 }

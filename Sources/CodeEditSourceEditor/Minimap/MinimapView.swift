@@ -30,7 +30,7 @@ public class MinimapView: FlippedNSView {
     /// The container scrollview for the minimap contents.
     public let scrollView: ForwardingScrollView
     /// The view text lines are rendered into.
-    public let contentView: FlippedNSView
+    public let contentView: MinimapContentView
     /// The box displaying the visible region on the minimap.
     public let documentVisibleView: NSView
     /// A small gray line on the left of the minimap distinguishing it from the editor.
@@ -41,6 +41,7 @@ public class MinimapView: FlippedNSView {
 
     /// The layout manager that uses the ``lineRenderer`` to render and layout lines.
     var layoutManager: TextLayoutManager?
+    var selectionManager: TextSelectionManager?
     /// A custom line renderer that lays out lines of text as 2px tall and draws contents as small lines
     /// using ``MinimapLineFragmentView``
     let lineRenderer: MinimapLineRenderer
@@ -82,7 +83,7 @@ public class MinimapView: FlippedNSView {
         scrollView.verticalScrollElasticity = .none
         scrollView.receiver = textView.enclosingScrollView
 
-        self.contentView = FlippedNSView()
+        self.contentView = MinimapContentView()
         contentView.translatesAutoresizingMaskIntoConstraints = false
 
         self.documentVisibleView = NSView()
@@ -120,6 +121,15 @@ public class MinimapView: FlippedNSView {
         )
         self.layoutManager = layoutManager
         (textView.textStorage.delegate as? MultiStorageDelegate)?.addDelegate(layoutManager)
+
+        self.selectionManager = TextSelectionManager(
+            layoutManager: layoutManager,
+            textStorage: textView.textStorage,
+            textView: textView,
+            delegate: self
+        )
+        contentView.textView = textView
+        contentView.selectionManager = selectionManager
 
         wantsLayer = true
         layer?.backgroundColor = theme.background.cgColor
@@ -179,6 +189,16 @@ public class MinimapView: FlippedNSView {
             // Frame changed
             self?.updateContentViewHeight()
             self?.updateDocumentVisibleViewPosition()
+        }
+
+        NotificationCenter.default.addObserver(
+            forName: TextSelectionManager.selectionChangedNotification,
+            object: textView?.selectionManager,
+            queue: .main
+        ) { [weak self] _ in
+            self?.selectionManager?.setSelectedRanges(
+                self?.textView?.selectionManager.textSelections.map(\.range) ?? []
+            )
         }
     }
 
