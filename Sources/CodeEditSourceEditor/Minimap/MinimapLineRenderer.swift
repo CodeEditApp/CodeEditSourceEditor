@@ -61,6 +61,7 @@ final class MinimapLineRenderer: TextLayoutManagerRenderDelegate {
     }
 
     func characterXPosition(in lineFragment: LineFragment, for offset: Int) -> CGFloat {
-        8 + (CGFloat(offset) * 1.5)
+        // Offset is relative to the whole line, the CTLine is too.
+        return 8 + (CGFloat(offset - CTLineGetStringRange(lineFragment.ctLine).location) * 1.5)
     }
 }
