@@ -29,9 +29,7 @@ extension MinimapView {
         // Minimum Y value is the top of the scroll view
         newScrollViewY = max(-editorScrollView.contentInsets.top, newScrollViewY)
         newScrollViewY = min( // Max y value needs to take into account the editor overscroll
-            editorScrollView.documentMaxOriginY
-            - editorScrollView.contentInsets.top
-            + editorScrollView.contentInsets.bottom,
+            editorScrollView.documentMaxOriginY - editorScrollView.contentInsets.top, // Relative to the content's top
             newScrollViewY
         )
 

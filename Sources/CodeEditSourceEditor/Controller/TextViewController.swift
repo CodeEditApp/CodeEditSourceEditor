@@ -339,6 +339,8 @@ public class TextViewController: NSViewController {
         styleGutterView()
 
         highlighter?.invalidate()
+        minimapView.updateContentViewHeight()
+        minimapView.updateDocumentVisibleViewPosition()
     }
 
     deinit {

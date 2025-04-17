@@ -85,6 +85,9 @@ public class MinimapView: FlippedNSView {
 
         self.contentView = MinimapContentView()
         contentView.translatesAutoresizingMaskIntoConstraints = false
+        contentView.wantsLayer = true
+        contentView.layer?.borderWidth = 1.0
+        contentView.layer?.borderColor = NSColor.blue.cgColor
 
         self.documentVisibleView = NSView()
         documentVisibleView.translatesAutoresizingMaskIntoConstraints = false
@@ -153,6 +156,7 @@ public class MinimapView: FlippedNSView {
             textView: textView,
             delegate: self
         )
+        selectionManager?.insertionPointColor = .clear
         contentView.textView = textView
         contentView.selectionManager = selectionManager
     }
@@ -226,9 +230,14 @@ public class MinimapView: FlippedNSView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+
     override public var visibleRect: NSRect {
         var rect = scrollView.documentVisibleRect
         rect.origin.y += scrollView.contentInsets.top
+        rect.size.height -= scrollView.contentInsets.vertical
         return rect.pixelAligned
     }
 
@@ -264,14 +273,15 @@ public class MinimapView: FlippedNSView {
     /// cached height.
     func updateContentViewHeight() {
         guard let estimatedContentHeight = layoutManager?.estimatedHeight(),
-              let overscrollAmount = textView?.overscrollAmount else {
+              let editorEstimatedHeight = textView?.layoutManager.estimatedHeight() else {
             return
         }
-        let overscroll = containerHeight * overscrollAmount * editorToMinimapHeightRatio
+        let overscrollAmount = textView?.overscrollAmount ?? 0.0
+        let overscroll = containerHeight * overscrollAmount * (estimatedContentHeight / editorEstimatedHeight)
         let height = estimatedContentHeight + overscroll
 
         // Only update a frame if needed
-        if contentView.frame.height != height {
+        if contentView.frame.height != height && height.isFinite && height < (textView?.frame.height ?? 0.0) {
             contentView.frame.size.height = height
         }
     }

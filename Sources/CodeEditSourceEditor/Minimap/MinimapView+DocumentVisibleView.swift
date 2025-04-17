@@ -29,14 +29,23 @@ extension MinimapView {
         }
 
         let availableHeight = min(minimapHeight, containerHeight)
+        let editorScrollViewVisibleRect = (
+            editorScrollView.documentVisibleRect.height - editorScrollView.contentInsets.vertical
+        )
         let scrollPercentage = editorScrollView.percentScrolled
         guard scrollPercentage.isFinite else { return }
 
+        let multiplier = if minimapHeight < containerHeight {
+            editorScrollViewVisibleRect / textView.frame.height
+        } else {
+            editorToMinimapHeightRatio
+        }
+
         // Update Visible Pane, should scroll down slowly as the user scrolls the document, following a similar pace
         // as the vertical `NSScroller`.
-        // Visible pane's height   = scrollview visible height * (minimap line height / editor line height)
+        // Visible pane's height   = visible height * multiplier
         // Visible pane's position = (container height - visible pane height) * scrollPercentage
-        let visibleRectHeight = containerHeight * editorToMinimapHeightRatio
+        let visibleRectHeight = availableHeight * multiplier
         guard visibleRectHeight < 1e100 else { return }
 
         let availableContainerHeight = (availableHeight - visibleRectHeight)
@@ -54,14 +63,13 @@ extension MinimapView {
     }
 
     private func setScrollViewPosition(scrollPercentage: CGFloat) {
-        let topInsets = scrollView.contentInsets.top
-        let totalHeight = contentView.frame.height + topInsets
+        let totalHeight = contentView.frame.height + scrollView.contentInsets.vertical
+        let visibleHeight = scrollView.documentVisibleRect.height
+        let yPos = (totalHeight - visibleHeight) * scrollPercentage
         scrollView.contentView.scroll(
             to: NSPoint(
                 x: scrollView.contentView.frame.origin.x,
-                y: (
-                    scrollPercentage * (totalHeight - (scrollView.documentVisibleRect.height - topInsets))
-                ) - topInsets
+                y: yPos - scrollView.contentInsets.top
             )
         )
         scrollView.reflectScrolledClipView(scrollView.contentView)
