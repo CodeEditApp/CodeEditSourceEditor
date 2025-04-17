@@ -101,7 +101,7 @@ public class TextViewController: NSViewController {
             textView.layoutManager.wrapLines = wrapLines
             minimapView.layoutManager?.wrapLines = wrapLines
             scrollView.hasHorizontalScroller = !wrapLines
-            textView.textInsets = textViewInsets
+            updateTextInsets()
         }
     }
 
@@ -193,6 +193,16 @@ public class TextViewController: NSViewController {
         }
     }
 
+    public var showMinimap: Bool {
+        didSet {
+            minimapView?.isHidden = !showMinimap
+            if scrollView != nil { // Check for view existence
+                updateContentInsets()
+                updateTextInsets()
+            }
+        }
+    }
+
     var textCoordinators: [WeakCoordinator] = []
 
     var highlighter: Highlighter?
@@ -209,11 +219,11 @@ public class TextViewController: NSViewController {
 
     internal var cancellables = Set<AnyCancellable>()
 
-    /// The trailing inset for the editor. Grows when line wrapping is disabled.
+    /// The trailing inset for the editor. Grows when line wrapping is disabled or when the minimap is shown.
     package var textViewTrailingInset: CGFloat {
         // See https://github.com/CodeEditApp/CodeEditTextView/issues/66
         // wrapLines ? 1 : 48
-        0
+        (minimapView?.isHidden ?? false) ? 0 : (minimapView?.frame.width ?? 0.0)
     }
 
     package var textViewInsets: HorizontalEdgeInsets {
@@ -246,7 +256,8 @@ public class TextViewController: NSViewController {
         useSystemCursor: Bool,
         bracketPairEmphasis: BracketPairEmphasis?,
         undoManager: CEUndoManager? = nil,
-        coordinators: [TextViewCoordinator] = []
+        coordinators: [TextViewCoordinator] = [],
+        showMinimap: Bool
     ) {
         self.language = language
         self.font = font
@@ -266,6 +277,7 @@ public class TextViewController: NSViewController {
         self.letterSpacing = letterSpacing
         self.bracketPairEmphasis = bracketPairEmphasis
         self._undoManager = undoManager
+        self.showMinimap = showMinimap
 
         super.init(nibName: nil, bundle: nil)
 

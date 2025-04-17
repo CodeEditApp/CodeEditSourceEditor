@@ -68,6 +68,8 @@ extension TextViewController {
     }
 
     package func updateContentInsets() {
+        updateTextInsets()
+
         scrollView.contentView.postsBoundsChangedNotifications = true
         if let contentInsets {
             scrollView.automaticallyAdjustsContentInsets = false
@@ -81,20 +83,31 @@ extension TextViewController {
             minimapView.scrollView.automaticallyAdjustsContentInsets = true
         }
 
+        // `additionalTextInsets` only effects text content.
         scrollView.contentInsets.top += additionalTextInsets?.top ?? 0
         scrollView.contentInsets.bottom += additionalTextInsets?.bottom ?? 0
         minimapView.scrollView.contentInsets.top += additionalTextInsets?.top ?? 0
         minimapView.scrollView.contentInsets.bottom += additionalTextInsets?.bottom ?? 0
 
+        // Inset the top by the find panel height
         let findInset = (findViewController?.isShowingFindPanel ?? false) ? FindPanel.height : 0
         scrollView.contentInsets.top += findInset
         minimapView.scrollView.contentInsets.top += findInset
 
-        scrollView.reflectScrolledClipView(scrollView.contentView)
-        minimapView.scrollView.reflectScrolledClipView(minimapView.scrollView.contentView)
-
         findViewController?.topPadding = contentInsets?.top
 
         gutterView.frame.origin.y = -scrollView.contentInsets.top
+
+        // Update scrollview tiling
+        scrollView.reflectScrolledClipView(scrollView.contentView)
+        minimapView.scrollView.reflectScrolledClipView(minimapView.scrollView.contentView)
+    }
+
+    func updateTextInsets() {
+        // Allow this method to be called before ``loadView()``
+        guard textView != nil, minimapView != nil else { return }
+        if textView.textInsets != textViewInsets {
+            textView.textInsets = textViewInsets
+        }
     }
 }

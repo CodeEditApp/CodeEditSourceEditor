@@ -29,6 +29,7 @@ extension TextViewController {
         )
 
         minimapView = MinimapView(textView: textView, theme: theme)
+        minimapView.isHidden = !showMinimap
         scrollView.addFloatingSubview(minimapView, for: .vertical)
 
         let findViewController = FindViewController(target: self, childView: scrollView)
@@ -114,6 +115,7 @@ extension TextViewController {
             self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
             self?.gutterView.needsDisplay = true
             self?.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
+            self?.updateTextInsets()
         }
 
         NotificationCenter.default.addObserver(
