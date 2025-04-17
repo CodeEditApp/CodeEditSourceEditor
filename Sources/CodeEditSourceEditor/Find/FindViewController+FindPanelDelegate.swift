@@ -206,6 +206,11 @@ extension FindViewController: FindPanelDelegate {
         replaceCurrentMatch()
     }
 
+    func findPanelReplaceAllButtonClicked() {
+        guard !findMatches.isEmpty else { return }
+        replaceAllMatches()
+    }
+
     func findPanelUpdateMatchCount(_ count: Int) {
         findPanel.updateMatchCount(count)
     }

@@ -16,7 +16,7 @@ struct FindPanelView: View {
     @FocusState private var isReplaceFieldFocused: Bool
 
     var body: some View {
-        VStack(spacing: 5) {
+        VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 5) {
                 PanelTextField(
                     "Text",
@@ -117,6 +117,7 @@ struct FindPanelView: View {
                         leadingAccessories: {
                             HStack(spacing: 0) {
                                 Image(systemName: "pencil")
+                                    .foregroundStyle(.secondary)
                                     .padding(.leading, 8)
                                     .padding(.trailing, 5)
                                 Text("With")
@@ -135,20 +136,26 @@ struct FindPanelView: View {
                         ControlGroup {
                             Button(action: viewModel.replaceButtonClicked) {
                                 Text("Replace")
-                                    .opacity(viewModel.findText.isEmpty || viewModel.matchCount == 0 ? 0.33 : 1)
+                                    .opacity(
+                                        !viewModel.isFocused
+                                        || viewModel.findText.isEmpty
+                                        || viewModel.matchCount == 0 ? 0.33 : 1
+                                    )
                                     .frame(width: viewModel.findControlsWidth/2 - 12 - 0.5)
                             }
                             // TODO: disable if there is not an active match
-                            .disabled(viewModel.findText.isEmpty || viewModel.matchCount == 0)
+                            .disabled(
+                                !viewModel.isFocused
+                                || viewModel.findText.isEmpty
+                                || viewModel.matchCount == 0
+                            )
                             Divider()
                                 .overlay(Color(nsColor: .tertiaryLabelColor))
-                            Button(action: {
-                                // TODO: Replace all action
-                            }, label: {
+                            Button(action: viewModel.replaceAllButtonClicked) {
                                 Text("All")
                                     .opacity(viewModel.findText.isEmpty || viewModel.matchCount == 0 ? 0.33 : 1)
                                     .frame(width: viewModel.findControlsWidth/2 - 12 - 0.5)
-                            })
+                            }
                             .disabled(viewModel.findText.isEmpty || viewModel.matchCount == 0)
                         }
                         .controlGroupStyle(PanelControlGroupStyle())

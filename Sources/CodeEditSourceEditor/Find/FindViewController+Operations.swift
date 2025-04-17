@@ -81,13 +81,56 @@ extension FindViewController {
                 findMatches[index].location += lengthDiff
             }
 
-            // Remove the current match from the array
-            findMatches.remove(at: currentFindMatchIndex)
-
             // Keep the current index in bounds
             currentFindMatchIndex = min(currentFindMatchIndex, findMatches.count - 1)
             findPanel.findDelegate?.findPanelUpdateMatchCount(findMatches.count)
         }
+
+        // Update the emphases
+        addEmphases()
+    }
+
+    func replaceAllMatches() {
+        guard let target = target,
+              !findMatches.isEmpty,
+              let textViewController = target as? TextViewController else { return }
+
+        // Sort matches in reverse order to avoid range shifting issues
+        let sortedMatches = findMatches.sorted { $0.location > $1.location }
+
+        // Begin undo grouping using CEUndoManager
+        if let ceUndoManager = textViewController.textView.undoManager as? CEUndoManager.DelegatedUndoManager {
+            ceUndoManager.beginUndoGrouping()
+        }
+
+        // Replace each match
+        for matchRange in sortedMatches {
+            // Set cursor positions to the match range
+            target.setCursorPositions([CursorPosition(range: matchRange)])
+
+            // Replace the text using the cursor positions
+            textViewController.textView.insertText(replaceText, replacementRange: matchRange)
+        }
+
+        // End undo grouping
+        if let ceUndoManager = textViewController.textView.undoManager as? CEUndoManager.DelegatedUndoManager {
+            ceUndoManager.endUndoGrouping()
+        }
+
+        // Set cursor position to the end of the last replaced match
+        if let lastMatch = sortedMatches.first {
+            let endPosition = lastMatch.location + replaceText.utf16.count
+            let cursorRange = NSRange(location: endPosition, length: 0)
+            target.setCursorPositions([CursorPosition(range: cursorRange)])
+            textViewController.textView.selectionManager.setSelectedRanges([cursorRange])
+            textViewController.textView.scrollSelectionToVisible()
+            textViewController.textView.needsDisplay = true
+        }
+
+        // Clear all matches since they've been replaced
+        findMatches = []
+        currentFindMatchIndex = 0
+        findPanel.findDelegate?.findPanelUpdateMatchCount(0)
 
         // Update the emphases
         addEmphases()

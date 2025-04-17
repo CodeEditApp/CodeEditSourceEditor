@@ -66,16 +66,24 @@ struct PanelTextField<LeadingAccessories: View, TrailingAccessories: View>: View
                 Color(.textBackgroundColor)
             } else {
                 if colorScheme == .light {
-                    Color.black.opacity(0.06)
+                    // TODO: if over sidebar 0.06 else 0.085
+//                    Color.black.opacity(0.06)
+                    Color.black.opacity(0.085)
                 } else {
-                    Color.white.opacity(0.24)
+                    // TODO: if over sidebar 0.24 else 0.06
+//                    Color.white.opacity(0.24)
+                    Color.white.opacity(0.06)
                 }
             }
         } else {
             if colorScheme == .light {
-                Color.clear
+                // TODO: if over sidebar 0.0 else 0.06
+//                Color.clear
+                Color.black.opacity(0.06)
             } else {
-                Color.white.opacity(0.14)
+                // TODO: if over sidebar 0.14 else 0.045
+//                Color.white.opacity(0.14)
+                Color.white.opacity(0.045)
             }
         }
     }
@@ -98,6 +106,7 @@ struct PanelTextField<LeadingAccessories: View, TrailingAccessories: View>: View
                     Text(helperText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
             if clearable == true {

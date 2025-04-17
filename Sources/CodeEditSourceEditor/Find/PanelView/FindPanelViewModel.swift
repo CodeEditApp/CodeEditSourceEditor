@@ -105,6 +105,10 @@ class FindPanelViewModel: ObservableObject {
         delegate?.findPanelReplaceButtonClicked()
     }
 
+    func replaceAllButtonClicked() {
+        delegate?.findPanelReplaceAllButtonClicked()
+    }
+
     func toggleWrapAround() {
         wrapAround.toggle()
         delegate?.findPanelDidUpdateWrapAround(wrapAround)
