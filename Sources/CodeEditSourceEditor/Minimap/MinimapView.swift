@@ -85,9 +85,6 @@ public class MinimapView: FlippedNSView {
 
         self.contentView = MinimapContentView()
         contentView.translatesAutoresizingMaskIntoConstraints = false
-        contentView.wantsLayer = true
-        contentView.layer?.borderWidth = 1.0
-        contentView.layer?.borderColor = NSColor.blue.cgColor
 
         self.documentVisibleView = NSView()
         documentVisibleView.translatesAutoresizingMaskIntoConstraints = false
