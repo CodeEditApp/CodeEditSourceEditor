@@ -58,6 +58,8 @@ extension MinimapView {
         if minimapHeight > containerHeight {
             setScrollViewPosition(scrollPercentage: scrollPercentage)
         }
+
+        contentView.needsLayout = true
     }
 
     private func setScrollViewPosition(scrollPercentage: CGFloat) {
