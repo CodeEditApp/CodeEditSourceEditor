@@ -16,8 +16,9 @@ let package = Package(
     dependencies: [
         // A fast, efficient, text view for code.
         .package(
-            url: "https://github.com/CodeEditApp/CodeEditTextView.git",
-            from: "0.9.1"
+//            url: "https://github.com/CodeEditApp/CodeEditTextView.git",
+//            from: "0.9.1"
+            path: "../CodeEditTextView"
         ),
         // tree-sitter languages
         .package(

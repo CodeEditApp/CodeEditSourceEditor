@@ -71,7 +71,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         bracketPairEmphasis: BracketPairEmphasis? = .flash,
         useSystemCursor: Bool = true,
         undoManager: CEUndoManager? = nil,
-        coordinators: [any TextViewCoordinator] = []
+        coordinators: [any TextViewCoordinator] = [],
+        showMinimap: Bool
     ) {
         self.text = .binding(text)
         self.language = language
@@ -98,6 +99,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         }
         self.undoManager = undoManager
         self.coordinators = coordinators
+        self.showMinimap = showMinimap
     }
 
     /// Initializes a Text Editor
@@ -148,7 +150,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         bracketPairEmphasis: BracketPairEmphasis? = .flash,
         useSystemCursor: Bool = true,
         undoManager: CEUndoManager? = nil,
-        coordinators: [any TextViewCoordinator] = []
+        coordinators: [any TextViewCoordinator] = [],
+        showMinimap: Bool
     ) {
         self.text = .storage(text)
         self.language = language
@@ -175,6 +178,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         }
         self.undoManager = undoManager
         self.coordinators = coordinators
+        self.showMinimap = showMinimap
     }
 
     package var text: TextAPI
@@ -198,6 +202,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     private var useSystemCursor: Bool
     private var undoManager: CEUndoManager?
     package var coordinators: [any TextViewCoordinator]
+    package var showMinimap: Bool
 
     public typealias NSViewControllerType = TextViewController
 
@@ -223,7 +228,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             useSystemCursor: useSystemCursor,
             bracketPairEmphasis: bracketPairEmphasis,
             undoManager: undoManager,
-            coordinators: coordinators
+            coordinators: coordinators,
+            showMinimap: showMinimap
         )
         switch text {
         case .binding(let binding):
@@ -301,6 +307,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.editorOverscroll = editorOverscroll
         controller.contentInsets = contentInsets
         controller.additionalTextInsets = additionalTextInsets
+        controller.showMinimap = showMinimap
 
         if controller.indentOption != indentOption {
             controller.indentOption = indentOption
@@ -359,6 +366,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.letterSpacing == letterSpacing &&
         controller.bracketPairEmphasis == bracketPairEmphasis &&
         controller.useSystemCursor == useSystemCursor &&
+        controller.showMinimap == showMinimap &&
         areHighlightProvidersEqual(controller: controller)
     }
 
