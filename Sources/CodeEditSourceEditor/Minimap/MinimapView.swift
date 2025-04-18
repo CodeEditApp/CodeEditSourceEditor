@@ -137,6 +137,7 @@ public class MinimapView: FlippedNSView {
             renderDelegate: lineRenderer
         )
         self.layoutManager = layoutManager
+        self.contentView.layoutManager = layoutManager
         (textView.textStorage.delegate as? MultiStorageDelegate)?.addDelegate(layoutManager)
     }
 
@@ -244,7 +245,6 @@ public class MinimapView: FlippedNSView {
     }
 
     override public func layout() {
-        layoutManager?.layoutLines()
         super.layout()
         updateContentViewHeight()
         updateDocumentVisibleViewPosition()
@@ -279,9 +279,15 @@ public class MinimapView: FlippedNSView {
         let overscroll = containerHeight * overscrollAmount * (estimatedContentHeight / editorEstimatedHeight)
         let height = estimatedContentHeight + overscroll
 
+        // This seems odd, but this reduces layout passes drastically
+        let newFrame = CGRect(
+            origin: contentView.frame.origin,
+            size: CGSize(width: contentView.frame.width, height: height)
+        ).pixelAligned
+
         // Only update a frame if needed
-        if contentView.frame.height != height && height.isFinite && height < (textView?.frame.height ?? 0.0) {
-            contentView.frame.size.height = height
+        if contentView.frame != newFrame && height.isFinite && height < (textView?.frame.height ?? 0.0) {
+            contentView.frame = newFrame
         }
     }
 
