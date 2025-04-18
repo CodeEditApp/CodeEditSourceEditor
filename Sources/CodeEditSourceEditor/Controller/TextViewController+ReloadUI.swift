@@ -7,7 +7,7 @@
 
 import AppKit
 
-extension TextViewController [
+extension TextViewController {
     func reloadUI() {
         textView.isEditable = isEditable
         textView.isSelectable = isSelectable
@@ -20,4 +20,4 @@ extension TextViewController [
         minimapView.updateContentViewHeight()
         minimapView.updateDocumentVisibleViewPosition()
     }
-]
+}

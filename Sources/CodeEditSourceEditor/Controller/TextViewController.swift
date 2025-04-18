@@ -328,6 +328,13 @@ public class TextViewController: NSViewController {
     /// A default `NSParagraphStyle` with a set `lineHeight`
     package lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
 
+    override public func viewWillAppear() {
+        super.viewWillAppear()
+        // The calculation this causes cannot be done until the view knows it's final position
+        updateTextInsets()
+        minimapView.layout()
+    }
+
     deinit {
         if let highlighter {
             textView.removeStorageDelegate(highlighter)
