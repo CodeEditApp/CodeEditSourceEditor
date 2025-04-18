@@ -18,6 +18,7 @@ protocol VisibleRangeProviderDelegate: AnyObject {
 @MainActor
 class VisibleRangeProvider {
     private weak var textView: TextView?
+    private weak var minimapView: MinimapView?
     weak var delegate: VisibleRangeProviderDelegate?
 
     var documentRange: NSRange {
@@ -29,56 +30,44 @@ class VisibleRangeProvider {
         return IndexSet(integersIn: textView?.visibleTextRange ?? NSRange())
     }()
 
-    init(textView: TextView) {
+    init(textView: TextView, minimapView: MinimapView) {
         self.textView = textView
+        self.minimapView = minimapView
 
         if let scrollView = textView.enclosingScrollView {
             NotificationCenter.default.addObserver(
                 self,
-                selector: #selector(visibleTextChanged(_:)),
+                selector: #selector(visibleTextChanged),
                 name: NSView.frameDidChangeNotification,
                 object: scrollView
             )
 
             NotificationCenter.default.addObserver(
                 self,
-                selector: #selector(visibleTextChanged(_:)),
+                selector: #selector(visibleTextChanged),
                 name: NSView.boundsDidChangeNotification,
                 object: scrollView.contentView
             )
-        } else {
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(visibleTextChanged(_:)),
-                name: NSView.frameDidChangeNotification,
-                object: textView
-            )
         }
-    }
 
-    func updateVisibleSet(textView: TextView) {
-        if let newVisibleRange = textView.visibleTextRange {
-            visibleSet = IndexSet(integersIn: newVisibleRange)
-        }
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(visibleTextChanged),
+            name: NSView.frameDidChangeNotification,
+            object: textView
+        )
     }
 
     /// Updates the view to highlight newly visible text when the textview is scrolled or bounds change.
-    @objc func visibleTextChanged(_ notification: Notification) {
-        let textView: TextView
-        if let clipView = notification.object as? NSClipView,
-           let documentView = clipView.enclosingScrollView?.documentView as? TextView {
-            textView = documentView
-        } else if let scrollView = notification.object as? NSScrollView,
-                  let documentView = scrollView.documentView as? TextView {
-            textView = documentView
-        } else if let documentView = notification.object as? TextView {
-            textView = documentView
-        } else {
+    @objc func visibleTextChanged() {
+        guard let textViewVisibleRange = textView?.visibleTextRange else {
             return
         }
-
-        updateVisibleSet(textView: textView)
-
+        var visibleSet = IndexSet(integersIn: textViewVisibleRange)
+        if !(minimapView?.isHidden ?? true), let minimapVisibleRange = minimapView?.visibleTextRange {
+            visibleSet.formUnion(IndexSet(integersIn: minimapVisibleRange))
+        }
+        self.visibleSet = visibleSet
         delegate?.visibleSetDidUpdate(visibleSet)
     }
 
