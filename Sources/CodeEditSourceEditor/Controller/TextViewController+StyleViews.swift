@@ -67,6 +67,7 @@ extension TextViewController {
         scrollView.scrollerStyle = .overlay
     }
 
+    /// Updates all relevant content insets including the find panel, scroll view, minimap and gutter position.
     package func updateContentInsets() {
         updateTextInsets()
 
@@ -103,6 +104,7 @@ extension TextViewController {
         minimapView.scrollView.reflectScrolledClipView(minimapView.scrollView.contentView)
     }
 
+    /// Updates the text view's text insets. See ``textViewInsets`` for calculation.
     func updateTextInsets() {
         // Allow this method to be called before ``loadView()``
         guard textView != nil, minimapView != nil else { return }

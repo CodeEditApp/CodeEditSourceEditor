@@ -31,7 +31,8 @@ final class TextViewControllerTests: XCTestCase {
             isSelectable: true,
             letterSpacing: 1.0,
             useSystemCursor: false,
-            bracketPairEmphasis: .flash
+            bracketPairEmphasis: .flash,
+            showMinimap: true
         )
 
         controller.loadView()
