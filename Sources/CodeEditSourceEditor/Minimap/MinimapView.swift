@@ -286,8 +286,9 @@ public class MinimapView: FlippedNSView {
         ).pixelAligned
 
         // Only update a frame if needed
-        if contentView.frame != newFrame && height.isFinite && height < (textView?.frame.height ?? 0.0) {
+        if contentView.frame.height != newFrame.height && height.isFinite && height < (textView?.frame.height ?? 0.0) {
             contentView.frame = newFrame
+            layout()
         }
     }
 
