@@ -14,13 +14,11 @@ extension TextViewController: FindPanelTarget {
     }
 
     func findPanelWillShow(panelHeight: CGFloat) {
-        scrollView.contentInsets.top += panelHeight
-        gutterView.frame.origin.y = -scrollView.contentInsets.top
+        updateContentInsets()
     }
 
     func findPanelWillHide(panelHeight: CGFloat) {
-        scrollView.contentInsets.top -= panelHeight
-        gutterView.frame.origin.y = -scrollView.contentInsets.top
+        updateContentInsets()
     }
 
     func findPanelModeDidChange(to mode: FindPanelMode, panelHeight: CGFloat) {

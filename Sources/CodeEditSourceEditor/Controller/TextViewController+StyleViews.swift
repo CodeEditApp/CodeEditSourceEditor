@@ -46,8 +46,6 @@ extension TextViewController {
 
     /// Style the gutter view.
     package func styleGutterView() {
-        // Note: If changing this value, also change in ``findPanelWillShow/Hide()``
-        gutterView.frame.origin.y = -scrollView.contentInsets.top
         gutterView.selectedLineColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
         ? NSColor.quaternaryLabelColor
         : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
@@ -66,20 +64,57 @@ extension TextViewController {
         scrollView.contentView.postsFrameChangedNotifications = true
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = !wrapLines
+        scrollView.scrollerStyle = .overlay
+    }
+
+    package func styleMinimapView() {
+        minimapView.postsFrameChangedNotifications = true
+        minimapView.isHidden = !showMinimap
+    }
+
+    /// Updates all relevant content insets including the find panel, scroll view, minimap and gutter position.
+    package func updateContentInsets() {
+        updateTextInsets()
 
         scrollView.contentView.postsBoundsChangedNotifications = true
         if let contentInsets {
             scrollView.automaticallyAdjustsContentInsets = false
             scrollView.contentInsets = contentInsets
+
+            minimapView.scrollView.automaticallyAdjustsContentInsets = false
+            minimapView.scrollView.contentInsets.top = contentInsets.top
+            minimapView.scrollView.contentInsets.bottom = contentInsets.bottom
         } else {
             scrollView.automaticallyAdjustsContentInsets = true
+            minimapView.scrollView.automaticallyAdjustsContentInsets = true
         }
 
+        // `additionalTextInsets` only effects text content.
         scrollView.contentInsets.top += additionalTextInsets?.top ?? 0
         scrollView.contentInsets.bottom += additionalTextInsets?.bottom ?? 0
+        minimapView.scrollView.contentInsets.top += additionalTextInsets?.top ?? 0
+        minimapView.scrollView.contentInsets.bottom += additionalTextInsets?.bottom ?? 0
 
-        scrollView.contentInsets.top += (findViewController?.viewModel.isShowingFindPanel ?? false)
-            ? findViewController?.panelHeight ?? 0
-            : 0
+        // Inset the top by the find panel height
+        let findInset = (findViewController?.isShowingFindPanel ?? false) ? FindPanel.height : 0
+        scrollView.contentInsets.top += findInset
+        minimapView.scrollView.contentInsets.top += findInset
+
+        findViewController?.topPadding = contentInsets?.top
+
+        gutterView.frame.origin.y = -scrollView.contentInsets.top
+
+        // Update scrollview tiling
+        scrollView.reflectScrolledClipView(scrollView.contentView)
+        minimapView.scrollView.reflectScrolledClipView(minimapView.scrollView.contentView)
+    }
+
+    /// Updates the text view's text insets. See ``textViewInsets`` for calculation.
+    func updateTextInsets() {
+        // Allow this method to be called before ``loadView()``
+        guard textView != nil, minimapView != nil else { return }
+        if textView.textInsets != textViewInsets {
+            textView.textInsets = textViewInsets
+        }
     }
 }

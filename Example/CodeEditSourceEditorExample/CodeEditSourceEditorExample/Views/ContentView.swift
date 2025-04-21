@@ -26,6 +26,8 @@ struct ContentView: View {
     @State private var isInLongParse = false
     @State private var settingsIsPresented: Bool = false
     @State private var treeSitterClient = TreeSitterClient()
+    @AppStorage("showMinimap") private var showMinimap: Bool = true
+    @State private var indentOption: IndentOption = .spaces(count: 4)
 
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
         self._document = document
@@ -40,73 +42,31 @@ struct ContentView: View {
                 theme: theme,
                 font: font,
                 tabWidth: 4,
+                indentOption: indentOption,
                 lineHeight: 1.2,
                 wrapLines: wrapLines,
+                editorOverscroll: 0.3,
                 cursorPositions: $cursorPositions,
                 useThemeBackground: true,
                 highlightProviders: [treeSitterClient],
                 contentInsets: NSEdgeInsets(top: proxy.safeAreaInsets.top, left: 0, bottom: 28.0, right: 0),
-                useSystemCursor: useSystemCursor
+                additionalTextInsets: NSEdgeInsets(top: 1, left: 0, bottom: 1, right: 0),
+                useSystemCursor: useSystemCursor,
+                showMinimap: showMinimap
             )
             .overlay(alignment: .bottom) {
-                HStack {
-                    Menu {
-                        Toggle("Wrap Lines", isOn: $wrapLines)
-                        if #available(macOS 14, *) {
-                            Toggle("Use System Cursor", isOn: $useSystemCursor)
-                        } else {
-                            Toggle("Use System Cursor", isOn: $useSystemCursor)
-                                .disabled(true)
-                                .help("macOS 14 required")
-                        }
-                    } label: {}
-                    .background {
-                        Image(systemName: "switch.2")
-                            .foregroundStyle(.secondary)
-                            .font(.system(size: 13.5, weight: .regular))
-                    }
-                    .menuStyle(.borderlessButton)
-                    .menuIndicator(.hidden)
-                    .frame(maxWidth: 18, alignment: .center)
-                    Spacer()
-                    Group {
-                        if isInLongParse {
-                            HStack(spacing: 5) {
-                                ProgressView()
-                                    .controlSize(.small)
-                                Text("Parsing Document")
-                            }
-                        } else {
-                            Text(getLabel(cursorPositions))
-                        }
-                    }
-                    .foregroundStyle(.secondary)
-                    Divider()
-                        .frame(height: 12)
-                    LanguagePicker(language: $language)
-                        .buttonStyle(.borderless)
-                }
-                .font(.subheadline)
-                .fontWeight(.medium)
-                .controlSize(.small)
-                .padding(.horizontal, 8)
-                .frame(height: 28)
-                .background(.bar)
-                .overlay(alignment: .top) {
-                    VStack {
-                        Divider()
-                            .overlay {
-                                if colorScheme == .dark {
-                                    Color.black
-                                }
-                            }
-                    }
-                }
-                .zIndex(2)
-                .onAppear {
-                    self.language = detectLanguage(fileURL: fileURL) ?? .default
-                    self.theme = colorScheme == .dark ? .dark : .light
-                }
+                StatusBar(
+                    fileURL: fileURL,
+                    document: $document,
+                    wrapLines: $wrapLines,
+                    useSystemCursor: $useSystemCursor,
+                    cursorPositions: $cursorPositions,
+                    isInLongParse: $isInLongParse,
+                    language: $language,
+                    theme: $theme,
+                    showMinimap: $showMinimap,
+                    indentOption: $indentOption
+                )
             }
             .ignoresSafeArea()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -128,32 +88,6 @@ struct ContentView: View {
                 }
             }
         }
-    }
-
-    private func detectLanguage(fileURL: URL?) -> CodeLanguage? {
-        guard let fileURL else { return nil  }
-        return CodeLanguage.detectLanguageFrom(
-            url: fileURL,
-            prefixBuffer: document.text.getFirstLines(5),
-            suffixBuffer: document.text.getLastLines(5)
-        )
-    }
-
-    /// Create a label string for cursor positions.
-    /// - Parameter cursorPositions: The cursor positions to create the label for.
-    /// - Returns: A string describing the user's location in a document.
-    func getLabel(_ cursorPositions: [CursorPosition]) -> String {
-        if cursorPositions.isEmpty {
-            return "No cursor"
-        }
-
-        // More than one selection, display the number of selections.
-        if cursorPositions.count > 1 {
-            return "\(cursorPositions.count) selected ranges"
-        }
-
-        // When there's a single cursor, display the line and column.
-        return "Line: \(cursorPositions[0].line)  Col: \(cursorPositions[0].column) Range: \(cursorPositions[0].range)"
     }
 }
 

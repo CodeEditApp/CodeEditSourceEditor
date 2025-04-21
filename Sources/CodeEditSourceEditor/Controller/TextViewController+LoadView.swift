@@ -9,7 +9,6 @@ import CodeEditTextView
 import AppKit
 
 extension TextViewController {
-    // swiftlint:disable:next function_body_length
     override public func loadView() {
         super.loadView()
 
@@ -29,14 +28,15 @@ extension TextViewController {
             for: .horizontal
         )
 
+        minimapView = MinimapView(textView: textView, theme: theme)
+        scrollView.addFloatingSubview(minimapView, for: .vertical)
+
         let findViewController = FindViewController(target: self, childView: scrollView)
         addChild(findViewController)
         self.findViewController = findViewController
         self.view.addSubview(findViewController.view)
         findViewController.view.viewDidMoveToSuperview()
         self.findViewController = findViewController
-
-        findViewController.topPadding = contentInsets?.top
 
         if let _undoManager {
             textView.setUndoManager(_undoManager)
@@ -45,28 +45,65 @@ extension TextViewController {
         styleTextView()
         styleScrollView()
         styleGutterView()
+        styleMinimapView()
         setUpHighlighter()
         setUpTextFormation()
-
-        NSLayoutConstraint.activate([
-            findViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            findViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            findViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
-            findViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
 
         if !cursorPositions.isEmpty {
             setCursorPositions(cursorPositions)
         }
 
+        setUpConstraints()
+        setUpListeners()
+
+        textView.updateFrameIfNeeded()
+
+        if let localEventMonitor = self.localEvenMonitor {
+            NSEvent.removeMonitor(localEventMonitor)
+        }
+        setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
+        updateContentInsets()
+    }
+
+    func setUpConstraints() {
+        guard let findViewController else { return }
+
+        let maxWidthConstraint = minimapView.widthAnchor.constraint(lessThanOrEqualToConstant: MinimapView.maxWidth)
+        let relativeWidthConstraint = minimapView.widthAnchor.constraint(
+            equalTo: view.widthAnchor,
+            multiplier: 0.17
+        )
+        relativeWidthConstraint.priority = .defaultLow
+        let minimapXConstraint = minimapView.trailingAnchor.constraint(
+            equalTo: scrollView.contentView.safeAreaLayoutGuide.trailingAnchor
+        )
+        self.minimapXConstraint = minimapXConstraint
+
+        NSLayoutConstraint.activate([
+            findViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            findViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            findViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            findViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            minimapView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            minimapView.bottomAnchor.constraint(equalTo: scrollView.contentView.bottomAnchor),
+            minimapXConstraint,
+            maxWidthConstraint,
+            relativeWidthConstraint,
+        ])
+    }
+
+    func setUpListeners() {
         // Layout on scroll change
         NotificationCenter.default.addObserver(
             forName: NSView.boundsDidChangeNotification,
             object: scrollView.contentView,
             queue: .main
-        ) { [weak self] _ in
+        ) { [weak self] notification in
+            guard let clipView = notification.object as? NSClipView else { return }
             self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
             self?.gutterView.needsDisplay = true
+            self?.minimapXConstraint?.constant = clipView.bounds.origin.x
         }
 
         // Layout on frame change
@@ -78,6 +115,7 @@ extension TextViewController {
             self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
             self?.gutterView.needsDisplay = true
             self?.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
+            self?.updateTextInsets()
         }
 
         NotificationCenter.default.addObserver(
@@ -98,8 +136,6 @@ extension TextViewController {
             self?.emphasizeSelectionPairs()
         }
 
-        textView.updateFrameIfNeeded()
-
         NSApp.publisher(for: \.effectiveAppearance)
             .receive(on: RunLoop.main)
             .sink { [weak self] newValue in
@@ -114,11 +150,6 @@ extension TextViewController {
                 }
             }
             .store(in: &cancellables)
-
-        if let localEventMonitor = self.localEvenMonitor {
-            NSEvent.removeMonitor(localEventMonitor)
-        }
-        setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
     }
 
     func setUpKeyBindings(eventMonitor: inout Any?) {
@@ -133,7 +164,13 @@ extension TextViewController {
             guard isKeyWindow && isFirstResponder else { return event }
 
             let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-            return self.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
+            let tabKey: UInt16 = 0x30
+
+            if event.keyCode == tabKey {
+                return self.handleTab(event: event, modifierFalgs: modifierFlags.rawValue)
+            } else {
+                return self.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
+            }
         }
     }
 
