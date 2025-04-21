@@ -96,7 +96,7 @@ extension TextViewController {
         minimapView.scrollView.contentInsets.bottom += additionalTextInsets?.bottom ?? 0
 
         // Inset the top by the find panel height
-        let findInset = (findViewController?.isShowingFindPanel ?? false) ? FindPanel.height : 0
+        let findInset = (findViewController?.isShowingFindPanel ?? false) ? findViewController?.panelHeight ?? 0 : 0
         scrollView.contentInsets.top += findInset
         minimapView.scrollView.contentInsets.top += findInset
 
