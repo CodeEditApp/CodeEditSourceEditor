@@ -29,8 +29,6 @@ extension TextViewController {
         )
 
         minimapView = MinimapView(textView: textView, theme: theme)
-        minimapView.postsFrameChangedNotifications = true
-        minimapView.isHidden = !showMinimap
         scrollView.addFloatingSubview(minimapView, for: .vertical)
 
         let findViewController = FindViewController(target: self, childView: scrollView)
@@ -47,6 +45,7 @@ extension TextViewController {
         styleTextView()
         styleScrollView()
         styleGutterView()
+        styleMinimapView()
         setUpHighlighter()
         setUpTextFormation()
 
@@ -69,7 +68,7 @@ extension TextViewController {
     func setUpConstraints() {
         guard let findViewController else { return }
 
-        let maxWidthConstraint = minimapView.widthAnchor.constraint(lessThanOrEqualToConstant: 140)
+        let maxWidthConstraint = minimapView.widthAnchor.constraint(lessThanOrEqualToConstant: MinimapView.maxWidth)
         let relativeWidthConstraint = minimapView.widthAnchor.constraint(
             equalTo: view.widthAnchor,
             multiplier: 0.17

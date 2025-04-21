@@ -25,6 +25,8 @@ import CodeEditTextView
 ///
 /// The minimap can be styled using an ``EditorTheme``. See ``setTheme(_:)`` for use and colors used by this view.
 public class MinimapView: FlippedNSView {
+    static let maxWidth: CGFloat = 140.0
+
     weak var textView: TextView?
 
     /// The container scrollview for the minimap contents.
@@ -38,6 +40,7 @@ public class MinimapView: FlippedNSView {
 
     /// Responder for a drag gesture on the ``documentVisibleView``.
     var documentVisibleViewPanGesture: NSPanGestureRecognizer?
+    var contentViewHeightConstraint: NSLayoutConstraint?
 
     /// The layout manager that uses the ``lineRenderer`` to render and layout lines.
     var layoutManager: TextLayoutManager?
@@ -162,6 +165,8 @@ public class MinimapView: FlippedNSView {
     // MARK: - Constraints
 
     private func setUpConstraints() {
+        let contentViewHeightConstraint = contentView.heightAnchor.constraint(equalToConstant: 1.0)
+        self.contentViewHeightConstraint = contentViewHeightConstraint
         NSLayoutConstraint.activate([
             // Constrain to all sides
             scrollView.topAnchor.constraint(equalTo: topAnchor),
@@ -172,6 +177,7 @@ public class MinimapView: FlippedNSView {
             // Scrolling, but match width
             contentView.leadingAnchor.constraint(equalTo: leadingAnchor),
             contentView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            contentViewHeightConstraint,
 
             // Y position set manually
             documentVisibleView.leadingAnchor.constraint(equalTo: leadingAnchor),
@@ -272,7 +278,8 @@ public class MinimapView: FlippedNSView {
     /// cached height.
     func updateContentViewHeight() {
         guard let estimatedContentHeight = layoutManager?.estimatedHeight(),
-              let editorEstimatedHeight = textView?.layoutManager.estimatedHeight() else {
+              let editorEstimatedHeight = textView?.layoutManager.estimatedHeight(),
+              let contentViewHeightConstraint else {
             return
         }
         let overscrollAmount = textView?.overscrollAmount ?? 0.0
@@ -286,9 +293,12 @@ public class MinimapView: FlippedNSView {
         ).pixelAligned
 
         // Only update a frame if needed
-        if contentView.frame.height != newFrame.height && height.isFinite && height < (textView?.frame.height ?? 0.0) {
-            contentView.frame = newFrame
-            layout()
+        if contentViewHeightConstraint.constant != newFrame.height
+            && height.isFinite
+            && height < (textView?.frame.height ?? 0.0) {
+            contentViewHeightConstraint.constant = newFrame.height
+            contentViewHeightConstraint.isActive = true
+            updateConstraints()
         }
     }
 

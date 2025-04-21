@@ -67,6 +67,11 @@ extension TextViewController {
         scrollView.scrollerStyle = .overlay
     }
 
+    package func styleMinimapView() {
+        minimapView.postsFrameChangedNotifications = true
+        minimapView.isHidden = !showMinimap
+    }
+
     /// Updates all relevant content insets including the find panel, scroll view, minimap and gutter position.
     package func updateContentInsets() {
         updateTextInsets()
