@@ -5,10 +5,14 @@
 //  Created by Khan Winter on 3/16/25.
 //
 
-import Foundation
+import AppKit
 import CodeEditTextView
 
 extension TextViewController: FindPanelTarget {
+    var findPanelTargetView: NSView {
+        textView
+    }
+
     func findPanelWillShow(panelHeight: CGFloat) {
         scrollView.contentInsets.top += panelHeight
         gutterView.frame.origin.y = -scrollView.contentInsets.top
@@ -20,7 +24,7 @@ extension TextViewController: FindPanelTarget {
     }
 
     func findPanelModeDidChange(to mode: FindPanelMode, panelHeight: CGFloat) {
-        scrollView.contentInsets.top += mode == .replace ? panelHeight/2 : -panelHeight
+        scrollView.contentInsets.top += mode == .replace ? panelHeight : -(panelHeight/2)
         gutterView.frame.origin.y = -scrollView.contentInsets.top
     }
 

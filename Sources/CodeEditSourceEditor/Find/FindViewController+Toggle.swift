@@ -16,18 +16,17 @@ extension FindViewController {
     /// - Animates the find panel into position (resolvedTopPadding).
     /// - Makes the find panel the first responder.
     func showFindPanel(animated: Bool = true) {
-        if isShowingFindPanel {
+        if viewModel.isShowingFindPanel {
             // If panel is already showing, just focus the text field
-            _ = findPanel?.becomeFirstResponder()
+            _ = findPanel.becomeFirstResponder()
             return
         }
 
-        if mode == .replace {
-            mode = .find
-            findPanel.updateMode(mode)
+        if viewModel.mode == .replace {
+            viewModel.mode = .find
         }
 
-        isShowingFindPanel = true
+        viewModel.isShowingFindPanel = true
 
         // Smooth out the animation by placing the find panel just outside the correct position before animating.
         findPanel.isHidden = false
@@ -39,12 +38,12 @@ extension FindViewController {
         conditionalAnimated(animated) {
             // SwiftUI breaks things here, and refuses to return the correct `findPanel.fittingSize` so we
             // are forced to use a constant number.
-            target?.findPanelWillShow(panelHeight: panelHeight)
+            viewModel.target?.findPanelWillShow(panelHeight: panelHeight)
             setFindPanelConstraintShow()
         } onComplete: { }
 
-        _ = findPanel?.becomeFirstResponder()
-        findPanel?.addEventMonitor()
+        viewModel.isFocused = true
+        findPanel.addEventMonitor()
     }
 
     /// Hide the find panel
@@ -55,20 +54,21 @@ extension FindViewController {
     /// - Hides the find panel.
     /// - Sets the text view to be the first responder.
     func hideFindPanel(animated: Bool = true) {
-        isShowingFindPanel = false
-        _ = findPanel?.resignFirstResponder()
-        findPanel?.removeEventMonitor()
+        viewModel.isShowingFindPanel = false
+        _ = findPanel.resignFirstResponder()
+        findPanel.removeEventMonitor()
 
         conditionalAnimated(animated) {
-            target?.findPanelWillHide(panelHeight: panelHeight)
+            viewModel.target?.findPanelWillHide(panelHeight: panelHeight)
             setFindPanelConstraintHide()
         } onComplete: { [weak self] in
             self?.findPanel.isHidden = true
+            self?.viewModel.isFocused = false
         }
 
         // Set first responder back to text view
-        if let textViewController = target as? TextViewController {
-            _ = textViewController.textView.window?.makeFirstResponder(textViewController.textView)
+        if let target = viewModel.target {
+            _ = target.findPanelTargetView.window?.makeFirstResponder(target.findPanelTargetView)
         }
     }
 
