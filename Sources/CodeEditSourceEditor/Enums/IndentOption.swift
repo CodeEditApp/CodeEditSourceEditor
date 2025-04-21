@@ -6,7 +6,7 @@
 //
 
 /// Represents what to insert on a tab key press.
-public enum IndentOption: Equatable {
+public enum IndentOption: Equatable, Hashable {
     case spaces(count: Int)
     case tab
 
@@ -16,6 +16,16 @@ public enum IndentOption: Equatable {
             return String(repeating: " ", count: count)
         case .tab:
             return "\t"
+        }
+    }
+
+    /// Represents the number of chacters that indent represents
+    var charCount: Int {
+        switch self {
+        case .spaces(let count):
+            count
+        case .tab:
+            1
         }
     }
 

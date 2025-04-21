@@ -17,7 +17,7 @@ let package = Package(
         // A fast, efficient, text view for code.
         .package(
             url: "https://github.com/CodeEditApp/CodeEditTextView.git",
-            from: "0.8.2"
+            from: "0.10.1"
         ),
         // tree-sitter languages
         .package(
@@ -38,7 +38,8 @@ let package = Package(
         .package(
             url: "https://github.com/ChimeHQ/TextFormation",
             from: "0.8.2"
-        )
+        ),
+        .package(url: "https://github.com/pointfreeco/swift-custom-dump", from: "1.0.0")
     ],
     targets: [
         // A source editor with useful features for code editing.
@@ -61,6 +62,7 @@ let package = Package(
             dependencies: [
                 "CodeEditSourceEditor",
                 "CodeEditLanguages",
+                .product(name: "CustomDump", package: "swift-custom-dump")
             ],
             plugins: [
                 .plugin(name: "SwiftLint", package: "SwiftLintPlugin")

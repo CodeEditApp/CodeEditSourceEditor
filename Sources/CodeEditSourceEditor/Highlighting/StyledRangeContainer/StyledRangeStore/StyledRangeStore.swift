@@ -73,6 +73,13 @@ final class StyledRangeStore {
     ///   - runs: The runs to insert.
     ///   - range: The range to replace.
     func set(runs: [Run], for range: Range<Int>) {
+        let gutsRange = 0..<_guts.count(in: OffsetMetric())
+        if range.clamped(to: gutsRange) != range {
+            let upperBound = range.clamped(to: gutsRange).upperBound
+            let missingCharacters = range.upperBound - upperBound
+            storageUpdated(replacedCharactersIn: upperBound..<upperBound, withCount: missingCharacters)
+        }
+
         _guts.replaceSubrange(
             range,
             in: OffsetMetric(),
