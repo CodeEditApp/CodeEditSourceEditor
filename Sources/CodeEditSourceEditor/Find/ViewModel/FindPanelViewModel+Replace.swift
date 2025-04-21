@@ -47,7 +47,7 @@ extension FindPanelViewModel {
         // Update the emphases
         addMatchEmphases(flashCurrent: true)
     }
-    
+
     /// Replace a single match in the text view, updating all other find matches with any length changes.
     /// - Parameters:
     ///   - index: The index of the match to replace in the `matches` array.

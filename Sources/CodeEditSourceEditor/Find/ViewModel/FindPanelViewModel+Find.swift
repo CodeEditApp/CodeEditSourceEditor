@@ -9,7 +9,7 @@ import Foundation
 
 extension FindPanelViewModel {
     // MARK: - Find
-    
+
     /// Performs a find operation on the find target and updates both the ``findMatches`` array and the emphasis
     /// manager's emphases.
     func find() {
