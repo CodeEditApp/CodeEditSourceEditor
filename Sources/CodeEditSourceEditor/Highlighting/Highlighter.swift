@@ -85,7 +85,7 @@ class Highlighter: NSObject {
 
     init(
         textView: TextView,
-        minimapView: MinimapView,
+        minimapView: MinimapView?,
         providers: [HighlightProviding],
         attributeProvider: ThemeAttributesProviding,
         language: CodeLanguage

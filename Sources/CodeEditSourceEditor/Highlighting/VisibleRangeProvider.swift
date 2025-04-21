@@ -30,7 +30,7 @@ class VisibleRangeProvider {
         return IndexSet(integersIn: textView?.visibleTextRange ?? NSRange())
     }()
 
-    init(textView: TextView, minimapView: MinimapView) {
+    init(textView: TextView, minimapView: MinimapView?) {
         self.textView = textView
         self.minimapView = minimapView
 
