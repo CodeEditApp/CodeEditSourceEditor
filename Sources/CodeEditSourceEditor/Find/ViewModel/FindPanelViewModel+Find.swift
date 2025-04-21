@@ -12,7 +12,7 @@ extension FindPanelViewModel {
 
     func find() {
         // Don't find if target or emphasisManager isn't ready or the query is empty
-        guard let target = target, !findText.isEmpty else {
+        guard let target = target, isFocused, !findText.isEmpty else {
             updateMatches([])
             return
         }

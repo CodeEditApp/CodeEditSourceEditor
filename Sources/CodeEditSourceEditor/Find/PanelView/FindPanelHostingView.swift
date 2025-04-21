@@ -1,5 +1,5 @@
 //
-//  FindPanel.swift
+//  FindPanelHostingView.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 3/10/25.
@@ -10,7 +10,7 @@ import AppKit
 import Combine
 
 // NSView wrapper for using SwiftUI view in AppKit
-final class FindPanel: NSHostingView<FindPanelView> {
+final class FindPanelHostingView: NSHostingView<FindPanelView> {
     private weak var viewModel: FindPanelViewModel?
 
     private var eventMonitor: Any?

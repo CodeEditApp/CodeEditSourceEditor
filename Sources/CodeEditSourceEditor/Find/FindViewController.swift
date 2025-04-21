@@ -23,7 +23,7 @@ final class FindViewController: NSViewController {
     }
 
     var childView: NSView
-    var findPanel: FindPanel
+    var findPanel: FindPanelHostingView
     var findPanelVerticalConstraint: NSLayoutConstraint!
 
     /// The 'real' top padding amount.
@@ -32,16 +32,10 @@ final class FindViewController: NSViewController {
         (topPadding ?? view.safeAreaInsets.top)
     }
 
-    /// The height of the find panel.
-    var panelHeight: CGFloat {
-        print(findPanel.intrinsicContentSize.height)
-        return viewModel.mode == .replace ? 56 : 28
-    }
-
     init(target: FindPanelTarget, childView: NSView) {
         viewModel = FindPanelViewModel(target: target)
         self.childView = childView
-        findPanel = FindPanel(viewModel: viewModel)
+        findPanel = FindPanelHostingView(viewModel: viewModel)
         super.init(nibName: nil, bundle: nil)
         viewModel.dismiss = { [weak self] in
             self?.hideFindPanel()

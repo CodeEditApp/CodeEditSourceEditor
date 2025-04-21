@@ -18,7 +18,7 @@ extension FindViewController {
     func showFindPanel(animated: Bool = true) {
         if viewModel.isShowingFindPanel {
             // If panel is already showing, just focus the text field
-            _ = findPanel.becomeFirstResponder()
+            viewModel.isFocused = true
             return
         }
 
@@ -30,7 +30,7 @@ extension FindViewController {
 
         // Smooth out the animation by placing the find panel just outside the correct position before animating.
         findPanel.isHidden = false
-        findPanelVerticalConstraint.constant = resolvedTopPadding - panelHeight
+        findPanelVerticalConstraint.constant = resolvedTopPadding - viewModel.panelHeight
 
         view.layoutSubtreeIfNeeded()
 
@@ -38,7 +38,7 @@ extension FindViewController {
         conditionalAnimated(animated) {
             // SwiftUI breaks things here, and refuses to return the correct `findPanel.fittingSize` so we
             // are forced to use a constant number.
-            viewModel.target?.findPanelWillShow(panelHeight: panelHeight)
+            viewModel.target?.findPanelWillShow(panelHeight: viewModel.panelHeight)
             setFindPanelConstraintShow()
         } onComplete: { }
 
@@ -59,7 +59,7 @@ extension FindViewController {
         findPanel.removeEventMonitor()
 
         conditionalAnimated(animated) {
-            viewModel.target?.findPanelWillHide(panelHeight: panelHeight)
+            viewModel.target?.findPanelWillHide(panelHeight: viewModel.panelHeight)
             setFindPanelConstraintHide()
         } onComplete: { [weak self] in
             self?.findPanel.isHidden = true
@@ -119,7 +119,7 @@ extension FindViewController {
         // SwiftUI hates us. It refuses to move views outside of the safe are if they don't have the `.ignoresSafeArea`
         // modifier, but with that modifier on it refuses to allow it to be animated outside the safe area.
         // The only way I found to fix it was to multiply the height by 3 here.
-        findPanelVerticalConstraint.constant = resolvedTopPadding - (panelHeight * 3)
+        findPanelVerticalConstraint.constant = resolvedTopPadding - (viewModel.panelHeight * 3)
         findPanelVerticalConstraint.isActive = true
     }
 }

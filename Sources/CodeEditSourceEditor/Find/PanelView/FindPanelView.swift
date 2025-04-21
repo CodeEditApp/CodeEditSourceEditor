@@ -22,12 +22,23 @@ struct FindPanelView: View {
     @FocusState private var focus: FindPanelFocus?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            FindBarView(viewModel: viewModel, focus: $focus, findModePickerWidth: $findModePickerWidth)
-            if viewModel.mode == .replace {
-                ReplaceBarView(viewModel: viewModel, focus: $focus, findModePickerWidth: $findModePickerWidth)
+        HStack(spacing: 5) {
+            VStack(alignment: .leading, spacing: 4) {
+                FindSearchField(viewModel: viewModel, focus: $focus, findModePickerWidth: $findModePickerWidth)
+                if viewModel.mode == .replace {
+                    ReplaceSearchField(viewModel: viewModel, focus: $focus, findModePickerWidth: $findModePickerWidth)
+                }
             }
+            VStack(alignment: .leading, spacing: 4) {
+                doneNextControls
+                if viewModel.mode == .replace {
+                    Spacer(minLength: 0)
+                    replaceControls
+                }
+            }
+            .fixedSize()
         }
+        .padding(.horizontal, 5)
         .frame(height: viewModel.panelHeight)
         .background(.bar)
         .onChange(of: focus) { newValue in
@@ -36,15 +47,12 @@ struct FindPanelView: View {
         .onChange(of: viewModel.findText) { _ in
             viewModel.findTextDidChange()
         }
-//        .onChange(of: viewModel.mode) { newMode in
-            //
-//        }
-//        .onChange(of: viewModel.wrapAround) { newValue in
-//            viewModel.onWrapAroundChange(newValue)
-//        }
-//        .onChange(of: viewModel.matchCase) { newValue in
-//            viewModel.onMatchCaseChange(newValue)
-//        }
+        .onChange(of: viewModel.wrapAround) { _ in
+            viewModel.find()
+        }
+        .onChange(of: viewModel.matchCase) { _ in
+            viewModel.find()
+        }
         .onChange(of: viewModel.isFocused) { newValue in
             if newValue {
                 if focus == nil {
@@ -58,6 +66,77 @@ struct FindPanelView: View {
                 viewModel.clearMatchEmphases()
             }
         }
+    }
+
+    @ViewBuilder private var doneNextControls: some View {
+        HStack(spacing: 4) {
+            ControlGroup {
+                Button {
+                    viewModel.moveToPreviousMatch()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .opacity(viewModel.matchCount == 0 ? 0.33 : 1)
+                        .padding(.horizontal, 5)
+                }
+                .disabled(viewModel.matchCount == 0)
+                Divider()
+                    .overlay(Color(nsColor: .tertiaryLabelColor))
+                Button {
+                    viewModel.moveToNextMatch()
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .opacity(viewModel.matchCount == 0 ? 0.33 : 1)
+                        .padding(.horizontal, 5)
+                }
+                .disabled(viewModel.matchCount == 0)
+            }
+            .controlGroupStyle(PanelControlGroupStyle())
+            .fixedSize()
+            Button {
+                viewModel.dismiss?()
+            } label: {
+                Text("Done")
+                    .padding(.horizontal, 5)
+            }
+            .buttonStyle(PanelButtonStyle())
+        }
+    }
+
+    @ViewBuilder private var replaceControls: some View {
+        HStack(spacing: 4) {
+            ControlGroup {
+                Button {
+                    viewModel.replace(all: false)
+                } label: {
+                    Text("Replace")
+                        .opacity(
+                            !viewModel.isFocused
+                            || viewModel.findText.isEmpty
+                            || viewModel.matchCount == 0 ? 0.33 : 1
+                        )
+                }
+                // TODO: disable if there is not an active match
+                .disabled(
+                    !viewModel.isFocused
+                    || viewModel.findText.isEmpty
+                    || viewModel.matchCount == 0
+                )
+                .frame(maxWidth: .infinity)
+
+                Divider().overlay(Color(nsColor: .tertiaryLabelColor))
+
+                Button {
+                    viewModel.replace(all: true)
+                } label: {
+                    Text("All")
+                        .opacity(viewModel.findText.isEmpty || viewModel.matchCount == 0 ? 0.33 : 1)
+                }
+                .disabled(viewModel.findText.isEmpty || viewModel.matchCount == 0)
+                .frame(maxWidth: .infinity)
+            }
+            .controlGroupStyle(PanelControlGroupStyle())
+        }
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 

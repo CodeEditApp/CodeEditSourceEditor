@@ -18,7 +18,6 @@ extension FindPanelViewModel {
 
     private func moveMatch(forwards: Bool) {
         guard let target = target else { return }
-        let isFirstResponder = target.findPanelTargetView.window?.firstResponder === target.findPanelTargetView
 
         guard !findMatches.isEmpty else {
             showWrapNotification(forwards: forwards, error: true, targetView: target.findPanelTargetView)
@@ -26,7 +25,7 @@ extension FindPanelViewModel {
         }
 
         // From here on out we want to emphasize the result no matter what
-        defer { addMatchEmphases(flashCurrent: isFirstResponder) }
+        defer { addMatchEmphases(flashCurrent: isTargetFirstResponder) }
 
         guard let currentFindMatchIndex else {
             self.currentFindMatchIndex = 0

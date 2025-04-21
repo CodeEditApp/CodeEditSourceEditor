@@ -19,22 +19,29 @@ class FindPanelViewModel: ObservableObject {
 
     @Published var findText: String = ""
     @Published var replaceText: String = ""
-    @Published var mode: FindPanelMode = .find
+    @Published var mode: FindPanelMode = .find {
+        didSet {
+            self.target?.findPanelModeDidChange(to: mode)
+        }
+    }
 
     @Published var isFocused: Bool = false
 
     @Published var matchCase: Bool = false
     @Published var wrapAround: Bool = true
 
+    /// The height of the find panel.
     var panelHeight: CGFloat {
-        return mode == .replace ? 56 : 28
+        return mode == .replace ? 54 : 28
     }
 
     var matchCount: Int {
         findMatches.count
     }
 
-    private var cancellables: Set<AnyCancellable> = []
+    var isTargetFirstResponder: Bool {
+        target?.findPanelTargetView.window?.firstResponder === target?.findPanelTargetView
+    }
 
     init(target: FindPanelTarget) {
         self.target = target
@@ -48,12 +55,6 @@ class FindPanelViewModel: ObservableObject {
                 object: textViewController.textView
             )
         }
-
-        $mode
-            .sink { newMode in
-                self.target?.findPanelModeDidChange(to: newMode, panelHeight: self.panelHeight)
-            }
-            .store(in: &cancellables)
     }
 
     // MARK: - Update Matches

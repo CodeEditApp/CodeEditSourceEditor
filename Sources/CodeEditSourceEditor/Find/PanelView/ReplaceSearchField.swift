@@ -1,0 +1,35 @@
+//
+//  ReplaceSearchField.swift
+//  CodeEditSourceEditor
+//
+//  Created by Khan Winter on 4/18/25.
+//
+
+import SwiftUI
+
+struct ReplaceSearchField: View {
+    @ObservedObject var viewModel: FindPanelViewModel
+    @FocusState.Binding var focus: FindPanelView.FindPanelFocus?
+    @Binding var findModePickerWidth: CGFloat
+
+    var body: some View {
+        PanelTextField(
+            "Text",
+            text: $viewModel.replaceText,
+            leadingAccessories: {
+                HStack(spacing: 0) {
+                    Image(systemName: "pencil")
+                        .foregroundStyle(.secondary)
+                        .padding(.leading, 8)
+                        .padding(.trailing, 5)
+                    Text("With")
+                }
+                .frame(width: findModePickerWidth, alignment: .leading)
+                Divider()
+            },
+            clearable: true
+        )
+        .controlSize(.small)
+        .focused($focus, equals: .replace)
+    }
+}
