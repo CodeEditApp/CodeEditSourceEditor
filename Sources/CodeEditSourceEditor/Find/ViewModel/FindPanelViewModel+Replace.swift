@@ -9,6 +9,8 @@ import Foundation
 import CodeEditTextView
 
 extension FindPanelViewModel {
+    /// Replace one or all ``findMatches`` with the contents of ``replaceText``.
+    /// - Parameter all: If true, replaces all matches instead of just the selected one.
     func replace(all: Bool) {
         guard let target = target,
               let currentFindMatchIndex,
@@ -23,7 +25,7 @@ extension FindPanelViewModel {
 
             var sortedMatches = findMatches.sorted(by: { $0.location < $1.location })
             for (idx, _) in sortedMatches.enumerated().reversed() {
-                replaceMatch(index: idx, target: target, textView: textViewController.textView, matches: &sortedMatches)
+                replaceMatch(index: idx, textView: textViewController.textView, matches: &sortedMatches)
             }
 
             textViewController.textView.textStorage.endEditing()
@@ -38,20 +40,20 @@ extension FindPanelViewModel {
 
             updateMatches([])
         } else {
-            replaceMatch(
-                index: currentFindMatchIndex,
-                target: target,
-                textView: textViewController.textView,
-                matches: &findMatches
-            )
+            replaceMatch(index: currentFindMatchIndex, textView: textViewController.textView, matches: &findMatches)
             updateMatches(findMatches)
         }
 
         // Update the emphases
         addMatchEmphases(flashCurrent: true)
     }
-
-    private func replaceMatch(index: Int, target: FindPanelTarget, textView: TextView, matches: inout [NSRange]) {
+    
+    /// Replace a single match in the text view, updating all other find matches with any length changes.
+    /// - Parameters:
+    ///   - index: The index of the match to replace in the `matches` array.
+    ///   - textView: The text view to replace characters in.
+    ///   - matches: The array of matches to use and update.
+    private func replaceMatch(index: Int, textView: TextView, matches: inout [NSRange]) {
         let range = matches[index]
         // Set cursor positions to the match range
         textView.replaceCharacters(in: range, with: replaceText)

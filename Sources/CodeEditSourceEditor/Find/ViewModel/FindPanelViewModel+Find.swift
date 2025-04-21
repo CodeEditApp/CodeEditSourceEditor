@@ -9,7 +9,9 @@ import Foundation
 
 extension FindPanelViewModel {
     // MARK: - Find
-
+    
+    /// Performs a find operation on the find target and updates both the ``findMatches`` array and the emphasis
+    /// manager's emphases.
     func find() {
         // Don't find if target or emphasisManager isn't ready or the query is empty
         guard let target = target, isFocused, !findText.isEmpty else {

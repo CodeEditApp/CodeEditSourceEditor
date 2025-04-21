@@ -35,6 +35,7 @@ class FindPanelViewModel: ObservableObject {
         return mode == .replace ? 54 : 28
     }
 
+    /// The number of current find matches.
     var matchCount: Int {
         findMatches.count
     }
@@ -66,6 +67,7 @@ class FindPanelViewModel: ObservableObject {
 
     // MARK: - Text Listeners
 
+    /// Find target's text content changed, we need to re-search the contents and emphasize results.
     @objc private func textDidChange() {
         // Only update if we have find text
         if !findText.isEmpty {
@@ -73,6 +75,7 @@ class FindPanelViewModel: ObservableObject {
         }
     }
 
+    /// The contents of the find search field changed, trigger related events.
     func findTextDidChange() {
         // Check if this update was triggered by a return key without shift
         if let currentEvent = NSApp.currentEvent,
