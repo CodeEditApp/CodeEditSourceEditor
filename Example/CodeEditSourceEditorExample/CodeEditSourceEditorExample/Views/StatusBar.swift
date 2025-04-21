@@ -1,5 +1,5 @@
 //
-//  Toolbar.swift
+//  StatusBar.swift
 //  CodeEditSourceEditorExample
 //
 //  Created by Khan Winter on 4/17/25.
@@ -9,7 +9,7 @@ import SwiftUI
 import CodeEditSourceEditor
 import CodeEditLanguages
 
-struct Toolbar: View {
+struct StatusBar: View {
     let fileURL: URL?
 
     @Environment(\.colorScheme)

@@ -55,7 +55,7 @@ struct ContentView: View {
                 showMinimap: showMinimap
             )
             .overlay(alignment: .bottom) {
-                Toolbar(
+                StatusBar(
                     fileURL: fileURL,
                     document: $document,
                     wrapLines: $wrapLines,
