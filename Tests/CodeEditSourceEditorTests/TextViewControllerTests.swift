@@ -441,5 +441,18 @@ final class TextViewControllerTests: XCTestCase {
         let controller = Mock.textViewController(theme: Mock.theme())
         XCTAssertNotNil(controller.treeSitterClient)
     }
+
+    // MARK: - Minimap
+
+    func test_minimapToggle() {
+        controller.view.frame = NSRect(x: 0, y: 0, width: 1000, height: 1000)
+        XCTAssertFalse(controller.minimapView.isHidden)
+
+        controller.showMinimap = false
+        XCTAssertTrue(controller.minimapView.isHidden)
+
+        controller.showMinimap = true
+        XCTAssertFalse(controller.minimapView.isHidden)
+    }
 }
 // swiftlint:enable all
