@@ -36,6 +36,8 @@ final class TextViewControllerTests: XCTestCase {
         )
 
         controller.loadView()
+        controller.view.frame = NSRect(x: 0, y: 0, width: 1000, height: 1000)
+        controller.view.layoutSubtreeIfNeeded()
     }
 
     // MARK: Capture Names
@@ -445,14 +447,18 @@ final class TextViewControllerTests: XCTestCase {
     // MARK: - Minimap
 
     func test_minimapToggle() {
-        controller.view.frame = NSRect(x: 0, y: 0, width: 1000, height: 1000)
         XCTAssertFalse(controller.minimapView.isHidden)
+        XCTAssertEqual(controller.minimapView.frame.width, MinimapView.maxWidth)
+        XCTAssertEqual(controller.textViewInsets.right, MinimapView.maxWidth)
 
         controller.showMinimap = false
         XCTAssertTrue(controller.minimapView.isHidden)
+        XCTAssertEqual(controller.textViewInsets.right, 0)
 
         controller.showMinimap = true
         XCTAssertFalse(controller.minimapView.isHidden)
+        XCTAssertEqual(controller.minimapView.frame.width, MinimapView.maxWidth)
+        XCTAssertEqual(controller.textViewInsets.right, MinimapView.maxWidth)
     }
 }
 // swiftlint:enable all

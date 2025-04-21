@@ -69,7 +69,7 @@ extension TextViewController {
     func setUpConstraints() {
         guard let findViewController else { return }
 
-        let maxWidthConstraint = minimapView.widthAnchor.constraint(lessThanOrEqualToConstant: 140)
+        let maxWidthConstraint = minimapView.widthAnchor.constraint(lessThanOrEqualToConstant: MinimapView.maxWidth)
         let relativeWidthConstraint = minimapView.widthAnchor.constraint(
             equalTo: view.widthAnchor,
             multiplier: 0.17
