@@ -35,8 +35,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///   - cursorPositions: The cursor's position in the editor, measured in `(lineNum, columnNum)`
     ///   - useThemeBackground: Determines whether the editor uses the theme's background color, or a transparent
     ///                         background color
-    ///   - highlightProvider: A class you provide to perform syntax highlighting. Leave this as `nil` to use the
-    ///                        built-in `TreeSitterClient` highlighter.
+    ///   - highlightProviders: A set of classes you provide to perform syntax highlighting. Leave this as `nil` to use
+    ///                         the default `TreeSitterClient` highlighter.
     ///   - contentInsets: Insets to use to offset the content in the enclosing scroll view. Leave as `nil` to let the
     ///                    scroll view automatically adjust content insets.
     ///   - additionalTextInsets: An additional amount to inset the text of the editor by.
@@ -62,7 +62,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         editorOverscroll: CGFloat = 0,
         cursorPositions: Binding<[CursorPosition]>,
         useThemeBackground: Bool = true,
-        highlightProviders: [any HighlightProviding] = [TreeSitterClient()],
+        highlightProviders: [any HighlightProviding]? = nil,
         contentInsets: NSEdgeInsets? = nil,
         additionalTextInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
@@ -114,8 +114,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///   - cursorPositions: The cursor's position in the editor, measured in `(lineNum, columnNum)`
     ///   - useThemeBackground: Determines whether the editor uses the theme's background color, or a transparent
     ///                         background color
-    ///   - highlightProvider: A class you provide to perform syntax highlighting. Leave this as `nil` to use the
-    ///                        built-in `TreeSitterClient` highlighter.
+    ///   - highlightProviders: A set of classes you provide to perform syntax highlighting. Leave this as `nil` to use
+    ///                         the default `TreeSitterClient` highlighter.
     ///   - contentInsets: Insets to use to offset the content in the enclosing scroll view. Leave as `nil` to let the
     ///                    scroll view automatically adjust content insets.
     ///   - isEditable: A Boolean value that controls whether the text view allows the user to edit text.
@@ -139,7 +139,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         editorOverscroll: CGFloat = 0,
         cursorPositions: Binding<[CursorPosition]>,
         useThemeBackground: Bool = true,
-        highlightProviders: [any HighlightProviding] = [TreeSitterClient()],
+        highlightProviders: [any HighlightProviding]? = nil,
         contentInsets: NSEdgeInsets? = nil,
         additionalTextInsets: NSEdgeInsets? = nil,
         isEditable: Bool = true,
@@ -188,7 +188,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     private var editorOverscroll: CGFloat
     package var cursorPositions: Binding<[CursorPosition]>
     private var useThemeBackground: Bool
-    private var highlightProviders: [any HighlightProviding]
+    private var highlightProviders: [any HighlightProviding]?
     private var contentInsets: NSEdgeInsets?
     private var additionalTextInsets: NSEdgeInsets?
     private var isEditable: Bool
@@ -214,7 +214,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             cursorPositions: cursorPositions.wrappedValue,
             editorOverscroll: editorOverscroll,
             useThemeBackground: useThemeBackground,
-            highlightProviders: highlightProviders,
+            highlightProviders: context.coordinator.highlightProviders,
             contentInsets: contentInsets,
             additionalTextInsets: additionalTextInsets,
             isEditable: isEditable,
@@ -243,10 +243,12 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     }
 
     public func makeCoordinator() -> Coordinator {
-        Coordinator(text: text, cursorPositions: cursorPositions)
+        Coordinator(text: text, cursorPositions: cursorPositions, highlightProviders: highlightProviders)
     }
 
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
+        context.coordinator.updateHighlightProviders(highlightProviders)
+
         if !context.coordinator.isUpdateFromTextView {
             // Prevent infinite loop of update notifications
             context.coordinator.isUpdatingFromRepresentable = true
@@ -261,11 +263,11 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
 
         // Do manual diffing to reduce the amount of reloads.
         // This helps a lot in view performance, as it otherwise gets triggered on each environment change.
-        guard !paramsAreEqual(controller: controller) else {
+        guard !paramsAreEqual(controller: controller, coordinator: context.coordinator) else {
             return
         }
 
-        updateControllerParams(controller: controller)
+        updateControllerParams(controller: controller, coordinator: context.coordinator)
 
         controller.reloadUI()
         return
@@ -273,11 +275,11 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
 
     /// Update the parameters of the controller.
     /// - Parameter controller: The controller to update.
-    func updateControllerParams(controller: TextViewController) {
+    func updateControllerParams(controller: TextViewController, coordinator: Coordinator) {
         updateTextProperties(controller)
         updateEditorProperties(controller)
         updateThemeAndLanguage(controller)
-        updateHighlighting(controller)
+        updateHighlighting(controller, coordinator: coordinator)
     }
 
     private func updateTextProperties(_ controller: TextViewController) {
@@ -329,9 +331,9 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         }
     }
 
-    private func updateHighlighting(_ controller: TextViewController) {
-        if !areHighlightProvidersEqual(controller: controller) {
-            controller.setHighlightProviders(highlightProviders)
+    private func updateHighlighting(_ controller: TextViewController, coordinator: Coordinator) {
+        if !areHighlightProvidersEqual(controller: controller, coordinator: coordinator) {
+            controller.setHighlightProviders(coordinator.highlightProviders)
         }
 
         if controller.bracketPairEmphasis != bracketPairEmphasis {
@@ -342,7 +344,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     /// Checks if the controller needs updating.
     /// - Parameter controller: The controller to check.
     /// - Returns: True, if the controller's parameters should be updated.
-    func paramsAreEqual(controller: NSViewControllerType) -> Bool {
+    func paramsAreEqual(controller: NSViewControllerType, coordinator: Coordinator) -> Bool {
         controller.font == font &&
         controller.isEditable == isEditable &&
         controller.isSelectable == isSelectable &&
@@ -359,11 +361,12 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.letterSpacing == letterSpacing &&
         controller.bracketPairEmphasis == bracketPairEmphasis &&
         controller.useSystemCursor == useSystemCursor &&
-        areHighlightProvidersEqual(controller: controller)
+        areHighlightProvidersEqual(controller: controller, coordinator: coordinator)
     }
 
-    private func areHighlightProvidersEqual(controller: TextViewController) -> Bool {
-        controller.highlightProviders.map { ObjectIdentifier($0) } == highlightProviders.map { ObjectIdentifier($0) }
+    private func areHighlightProvidersEqual(controller: TextViewController, coordinator: Coordinator) -> Bool {
+        controller.highlightProviders.map { ObjectIdentifier($0) }
+        == coordinator.highlightProviders.map { ObjectIdentifier($0) }
     }
 }
 
