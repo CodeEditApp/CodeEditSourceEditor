@@ -122,7 +122,6 @@ extension TextViewController {
             object: textView,
             queue: .main
         ) { [weak self] _ in
-            guard let scrollView = self?.scrollView else { return }
             self?.gutterView.frame.size.height = max(
                 (self?.textView.frame.height ?? 0) + 10,
                 (self?.scrollView.documentVisibleRect.height ?? 0.0) + (self?.scrollView.contentInsets.vertical ?? 0.0)
