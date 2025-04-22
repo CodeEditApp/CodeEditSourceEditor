@@ -11,8 +11,6 @@ struct FindModePicker: NSViewRepresentable {
     @Binding var mode: FindPanelMode
     @Binding var wrapAround: Bool
     @Environment(\.controlActiveState) var activeState
-    let onToggleWrapAround: () -> Void
-    let onModeChange: () -> Void
 
     private func createSymbolButton(context: Context) -> NSButton {
         let button = NSButton(frame: .zero)
@@ -129,7 +127,7 @@ struct FindModePicker: NSViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(self)
+        Coordinator(mode: $mode, wrapAround: $wrapAround)
     }
 
     var body: some View {
@@ -143,10 +141,12 @@ struct FindModePicker: NSViewRepresentable {
     }
 
     class Coordinator: NSObject {
-        let parent: FindModePicker
+        @Binding var mode: FindPanelMode
+        @Binding var wrapAround: Bool
 
-        init(_ parent: FindModePicker) {
-            self.parent = parent
+        init(mode: Binding<FindPanelMode>, wrapAround: Binding<Bool>) {
+            self._mode = mode
+            self._wrapAround = wrapAround
         }
 
         @objc func openMenu(_ sender: NSButton) {
@@ -156,12 +156,11 @@ struct FindModePicker: NSViewRepresentable {
         }
 
         @objc func modeSelected(_ sender: NSMenuItem) {
-            parent.mode = sender.tag == 0 ? .find : .replace
-            parent.onModeChange()
+            mode = sender.tag == 0 ? .find : .replace
         }
 
         @objc func toggleWrapAround(_ sender: NSMenuItem) {
-            parent.onToggleWrapAround()
+            wrapAround.toggle()
         }
     }
 }
