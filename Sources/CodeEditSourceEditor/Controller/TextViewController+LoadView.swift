@@ -23,10 +23,7 @@ extension TextViewController {
             delegate: self
         )
         gutterView.updateWidthIfNeeded()
-        scrollView.addFloatingSubview(
-            gutterView,
-            for: .horizontal
-        )
+        scrollView.addFloatingSubview(gutterView, for: .horizontal)
 
         minimapView = MinimapView(textView: textView, theme: theme)
         scrollView.addFloatingSubview(minimapView, for: .vertical)
@@ -90,6 +87,8 @@ extension TextViewController {
             minimapXConstraint,
             maxWidthConstraint,
             relativeWidthConstraint,
+
+            gutterView.topAnchor.constraint(equalTo: textView.topAnchor)
         ])
     }
 
@@ -123,7 +122,11 @@ extension TextViewController {
             object: textView,
             queue: .main
         ) { [weak self] _ in
-            self?.gutterView.frame.size.height = (self?.textView.frame.height ?? 0) + 10
+            guard let scrollView = self?.scrollView else { return }
+            self?.gutterView.frame.size.height = max(
+                (self?.textView.frame.height ?? 0) + 10,
+                (self?.scrollView.documentVisibleRect.height ?? 0.0) + (self?.scrollView.contentInsets.vertical ?? 0.0)
+            )
             self?.gutterView.needsDisplay = true
         }
 
