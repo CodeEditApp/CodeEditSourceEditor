@@ -88,7 +88,8 @@ extension TextViewController {
             maxWidthConstraint,
             relativeWidthConstraint,
 
-            gutterView.topAnchor.constraint(equalTo: textView.topAnchor)
+            gutterView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            gutterView.leadingAnchor.constraint(equalTo: scrollView.contentView.leadingAnchor)
         ])
     }
 
