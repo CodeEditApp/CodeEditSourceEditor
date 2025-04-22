@@ -10,184 +10,133 @@ import AppKit
 import CodeEditSymbols
 
 struct FindPanelView: View {
+    enum FindPanelFocus: Equatable {
+        case find
+        case replace
+    }
+
     @Environment(\.controlActiveState) var activeState
     @ObservedObject var viewModel: FindPanelViewModel
-    @FocusState private var isFindFieldFocused: Bool
-    @FocusState private var isReplaceFieldFocused: Bool
+    @State private var findModePickerWidth: CGFloat = 1.0
+
+    @FocusState private var focus: FindPanelFocus?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 5) {
-                PanelTextField(
-                    "Text",
-                    text: $viewModel.findText,
-                    leadingAccessories: {
-                        FindModePicker(
-                            mode: $viewModel.mode,
-                            wrapAround: $viewModel.wrapAround,
-                            onToggleWrapAround: viewModel.toggleWrapAround,
-                            onModeChange: {
-                                isFindFieldFocused = true
-                                if let textField = NSApp.keyWindow?.firstResponder as? NSTextView {
-                                    textField.selectAll(nil)
-                                }
-                            }
-                        )
-                        .background(GeometryReader { geometry in
-                            Color.clear.onAppear {
-                                viewModel.findModePickerWidth = geometry.size.width
-                            }
-                            .onChange(of: geometry.size.width) { newWidth in
-                                viewModel.findModePickerWidth = newWidth
-                            }
-                        })
-                        Divider()
-                    },
-                    trailingAccessories: {
-                        Divider()
-                        Toggle(isOn: $viewModel.matchCase, label: {
-                            Image(systemName: "textformat")
-                                .font(.system(
-                                    size: 11,
-                                    weight: viewModel.matchCase ? .bold : .medium
-                                ))
-                                .foregroundStyle(
-                                    Color(nsColor: viewModel.matchCase
-                                       ? .controlAccentColor
-                                       : .labelColor
-                                    )
-                                )
-                                .frame(width: 30, height: 20)
-                        })
-                        .toggleStyle(.icon)
-                    },
-                    helperText: viewModel.findText.isEmpty
-                    ? nil
-                    : "\(viewModel.matchCount) \(viewModel.matchCount == 1 ? "match" : "matches")",
-                    clearable: true
-                )
-                .controlSize(.small)
-                .focused($isFindFieldFocused)
-                .onChange(of: isFindFieldFocused) { newValue in
-                    viewModel.setFocus(newValue || isReplaceFieldFocused)
+        HStack(spacing: 5) {
+            VStack(alignment: .leading, spacing: 4) {
+                FindSearchField(viewModel: viewModel, focus: $focus, findModePickerWidth: $findModePickerWidth)
+                if viewModel.mode == .replace {
+                    ReplaceSearchField(viewModel: viewModel, focus: $focus, findModePickerWidth: $findModePickerWidth)
                 }
-                .onSubmit {
-                    viewModel.onSubmit()
-                }
-                HStack(spacing: 4) {
-                    ControlGroup {
-                        Button(action: viewModel.prevButtonClicked) {
-                            Image(systemName: "chevron.left")
-                                .opacity(viewModel.matchCount == 0 ? 0.33 : 1)
-                                .padding(.horizontal, 5)
-                        }
-                        .disabled(viewModel.matchCount == 0)
-                        Divider()
-                            .overlay(Color(nsColor: .tertiaryLabelColor))
-                        Button(action: viewModel.nextButtonClicked) {
-                            Image(systemName: "chevron.right")
-                                .opacity(viewModel.matchCount == 0 ? 0.33 : 1)
-                                .padding(.horizontal, 5)
-                        }
-                        .disabled(viewModel.matchCount == 0)
-                    }
-                    .controlGroupStyle(PanelControlGroupStyle())
-                    .fixedSize()
-                    Button(action: viewModel.onDismiss) {
-                        Text("Done")
-                            .padding(.horizontal, 5)
-                    }
-                    .buttonStyle(PanelButtonStyle())
-                }
-                .background(GeometryReader { geometry in
-                    Color.clear.onAppear {
-                        viewModel.findControlsWidth = geometry.size.width
-                    }
-                    .onChange(of: geometry.size.width) { newWidth in
-                        viewModel.findControlsWidth = newWidth
-                    }
-                })
             }
-            .padding(.horizontal, 5)
-            if viewModel.mode == .replace {
-                HStack(spacing: 5) {
-                    PanelTextField(
-                        "Text",
-                        text: $viewModel.replaceText,
-                        leadingAccessories: {
-                            HStack(spacing: 0) {
-                                Image(systemName: "pencil")
-                                    .foregroundStyle(.secondary)
-                                    .padding(.leading, 8)
-                                    .padding(.trailing, 5)
-                                Text("With")
-                            }
-                            .frame(width: viewModel.findModePickerWidth, alignment: .leading)
-                            Divider()
-                        },
-                        clearable: true
-                    )
-                    .controlSize(.small)
-                    .focused($isReplaceFieldFocused)
-                    .onChange(of: isReplaceFieldFocused) { newValue in
-                        viewModel.setFocus(newValue || isFindFieldFocused)
-                    }
-                    HStack(spacing: 4) {
-                        ControlGroup {
-                            Button(action: viewModel.replaceButtonClicked) {
-                                Text("Replace")
-                                    .opacity(
-                                        !viewModel.isFocused
-                                        || viewModel.findText.isEmpty
-                                        || viewModel.matchCount == 0 ? 0.33 : 1
-                                    )
-                                    .frame(width: viewModel.findControlsWidth/2 - 12 - 0.5)
-                            }
-                            // TODO: disable if there is not an active match
-                            .disabled(
-                                !viewModel.isFocused
-                                || viewModel.findText.isEmpty
-                                || viewModel.matchCount == 0
-                            )
-                            Divider()
-                                .overlay(Color(nsColor: .tertiaryLabelColor))
-                            Button(action: viewModel.replaceAllButtonClicked) {
-                                Text("All")
-                                    .opacity(viewModel.findText.isEmpty || viewModel.matchCount == 0 ? 0.33 : 1)
-                                    .frame(width: viewModel.findControlsWidth/2 - 12 - 0.5)
-                            }
-                            .disabled(viewModel.findText.isEmpty || viewModel.matchCount == 0)
-                        }
-                        .controlGroupStyle(PanelControlGroupStyle())
-                        .fixedSize()
-                    }
+            VStack(alignment: .leading, spacing: 4) {
+                doneNextControls
+                if viewModel.mode == .replace {
+                    Spacer(minLength: 0)
+                    replaceControls
                 }
-                .padding(.horizontal, 5)
             }
+            .fixedSize()
         }
+        .padding(.horizontal, 5)
         .frame(height: viewModel.panelHeight)
         .background(.bar)
-        .onChange(of: viewModel.findText) { newValue in
-            viewModel.onFindTextChange(newValue)
+        .onChange(of: focus) { newValue in
+            viewModel.isFocused = newValue != nil
         }
-        .onChange(of: viewModel.replaceText) { newValue in
-            viewModel.onReplaceTextChange(newValue)
+        .onChange(of: viewModel.findText) { _ in
+            viewModel.findTextDidChange()
         }
-        .onChange(of: viewModel.mode) { newMode in
-            viewModel.onModeChange(newMode)
+        .onChange(of: viewModel.wrapAround) { _ in
+            viewModel.find()
         }
-        .onChange(of: viewModel.wrapAround) { newValue in
-            viewModel.onWrapAroundChange(newValue)
-        }
-        .onChange(of: viewModel.matchCase) { newValue in
-            viewModel.onMatchCaseChange(newValue)
+        .onChange(of: viewModel.matchCase) { _ in
+            viewModel.find()
         }
         .onChange(of: viewModel.isFocused) { newValue in
-            isFindFieldFocused = newValue
-            if !newValue {
-                viewModel.removeEmphasis()
+            if newValue {
+                if focus == nil {
+                    focus = .find
+                }
+                if !viewModel.findText.isEmpty {
+                    // Restore emphases when focus is regained and we have search text
+                    viewModel.addMatchEmphases(flashCurrent: false)
+                }
+            } else {
+                viewModel.clearMatchEmphases()
             }
         }
+    }
+
+    @ViewBuilder private var doneNextControls: some View {
+        HStack(spacing: 4) {
+            ControlGroup {
+                Button {
+                    viewModel.moveToPreviousMatch()
+                } label: {
+                    Image(systemName: "chevron.left")
+                        .opacity(viewModel.matchCount == 0 ? 0.33 : 1)
+                        .padding(.horizontal, 5)
+                }
+                .disabled(viewModel.matchCount == 0)
+                Divider()
+                    .overlay(Color(nsColor: .tertiaryLabelColor))
+                Button {
+                    viewModel.moveToNextMatch()
+                } label: {
+                    Image(systemName: "chevron.right")
+                        .opacity(viewModel.matchCount == 0 ? 0.33 : 1)
+                        .padding(.horizontal, 5)
+                }
+                .disabled(viewModel.matchCount == 0)
+            }
+            .controlGroupStyle(PanelControlGroupStyle())
+            .fixedSize()
+            Button {
+                viewModel.dismiss?()
+            } label: {
+                Text("Done")
+                    .padding(.horizontal, 5)
+            }
+            .buttonStyle(PanelButtonStyle())
+        }
+    }
+
+    @ViewBuilder private var replaceControls: some View {
+        HStack(spacing: 4) {
+            ControlGroup {
+                Button {
+                    viewModel.replace(all: false)
+                } label: {
+                    Text("Replace")
+                        .opacity(
+                            !viewModel.isFocused
+                            || viewModel.findText.isEmpty
+                            || viewModel.matchCount == 0 ? 0.33 : 1
+                        )
+                }
+                // TODO: disable if there is not an active match
+                .disabled(
+                    !viewModel.isFocused
+                    || viewModel.findText.isEmpty
+                    || viewModel.matchCount == 0
+                )
+                .frame(maxWidth: .infinity)
+
+                Divider().overlay(Color(nsColor: .tertiaryLabelColor))
+
+                Button {
+                    viewModel.replace(all: true)
+                } label: {
+                    Text("All")
+                        .opacity(viewModel.findText.isEmpty || viewModel.matchCount == 0 ? 0.33 : 1)
+                }
+                .disabled(viewModel.findText.isEmpty || viewModel.matchCount == 0)
+                .frame(maxWidth: .infinity)
+            }
+            .controlGroupStyle(PanelControlGroupStyle())
+        }
+        .fixedSize(horizontal: false, vertical: true)
     }
 }
 
