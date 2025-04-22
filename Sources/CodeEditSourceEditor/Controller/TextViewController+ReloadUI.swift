@@ -19,5 +19,10 @@ extension TextViewController {
         highlighter?.invalidate()
         minimapView.updateContentViewHeight()
         minimapView.updateDocumentVisibleViewPosition()
+        
+        // Update reformatting guide position
+        if let guideView = textView.subviews.first(where: { $0 is ReformattingGuideView }) as? ReformattingGuideView {
+            guideView.updatePosition(in: textView)
+        }
     }
 }

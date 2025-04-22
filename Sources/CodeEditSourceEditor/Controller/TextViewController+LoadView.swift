@@ -28,6 +28,10 @@ extension TextViewController {
         minimapView = MinimapView(textView: textView, theme: theme)
         scrollView.addFloatingSubview(minimapView, for: .vertical)
 
+        // Add reformatting guide view
+        let guideView = ReformattingGuideView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
+        textView.addSubview(guideView)
+
         let findViewController = FindViewController(target: self, childView: scrollView)
         addChild(findViewController)
         self.findViewController = findViewController
