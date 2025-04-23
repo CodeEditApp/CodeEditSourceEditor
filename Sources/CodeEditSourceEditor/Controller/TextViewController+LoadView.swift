@@ -121,7 +121,8 @@ extension TextViewController {
             queue: .main
         ) { [weak self] _ in
             self?.gutterView.frame.size.height = (self?.textView.frame.height ?? 0) + 10
-            self?.gutterView.frame.origin.y = (self?.textView.frame.origin.y ?? 0.0) - (self?.scrollView.contentInsets.top ?? 0)
+            self?.gutterView.frame.origin.y = (self?.textView.frame.origin.y ?? 0.0)
+            - (self?.scrollView.contentInsets.top ?? 0)
 
             self?.gutterView.needsDisplay = true
             self?.scrollView.needsLayout = true
