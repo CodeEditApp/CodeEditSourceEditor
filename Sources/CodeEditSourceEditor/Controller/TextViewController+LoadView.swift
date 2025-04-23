@@ -23,10 +23,7 @@ extension TextViewController {
             delegate: self
         )
         gutterView.updateWidthIfNeeded()
-        scrollView.addFloatingSubview(
-            gutterView,
-            for: .horizontal
-        )
+        scrollView.addFloatingSubview(gutterView, for: .horizontal)
 
         minimapView = MinimapView(textView: textView, theme: theme)
         scrollView.addFloatingSubview(minimapView, for: .vertical)
@@ -89,7 +86,7 @@ extension TextViewController {
             minimapView.bottomAnchor.constraint(equalTo: scrollView.contentView.bottomAnchor),
             minimapXConstraint,
             maxWidthConstraint,
-            relativeWidthConstraint,
+            relativeWidthConstraint
         ])
     }
 
@@ -124,7 +121,11 @@ extension TextViewController {
             queue: .main
         ) { [weak self] _ in
             self?.gutterView.frame.size.height = (self?.textView.frame.height ?? 0) + 10
+            self?.gutterView.frame.origin.y = (self?.textView.frame.origin.y ?? 0.0)
+            - (self?.scrollView.contentInsets.top ?? 0)
+
             self?.gutterView.needsDisplay = true
+            self?.scrollView.needsLayout = true
         }
 
         NotificationCenter.default.addObserver(
@@ -146,7 +147,7 @@ extension TextViewController {
 
                     // Reset content insets and gutter position when appearance changes
                     self.styleScrollView()
-                    self.gutterView.frame.origin.y = -self.scrollView.contentInsets.top
+                    self.gutterView.frame.origin.y = self.textView.frame.origin.y - self.scrollView.contentInsets.top
                 }
             }
             .store(in: &cancellables)
