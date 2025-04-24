@@ -28,16 +28,8 @@ struct ContentView: View {
     @State private var treeSitterClient = TreeSitterClient()
     @AppStorage("showMinimap") private var showMinimap: Bool = true
     @State private var indentOption: IndentOption = .spaces(count: 4)
-    @AppStorage("reformatAtColumn") private var reformatAtColumn: Int = 80 {
-        didSet {
-            print("reformatAtColumn changed to: \(reformatAtColumn)")
-        }
-    }
-    @AppStorage("showReformattingGuide") private var showReformattingGuide: Bool = false {
-        didSet {
-            print("showReformattingGuide changed to: \(showReformattingGuide)")
-        }
-    }
+    @AppStorage("reformatAtColumn") private var reformatAtColumn: Int = 80
+    @AppStorage("showReformattingGuide") private var showReformattingGuide: Bool = false
 
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
         self._document = document
@@ -100,12 +92,6 @@ struct ContentView: View {
                 } else {
                     theme = .light
                 }
-            }
-            .onChange(of: reformatAtColumn) { _, newValue in
-                print("ContentView: reformatAtColumn changed to \(newValue)")
-            }
-            .onChange(of: showReformattingGuide) { _, newValue in
-                print("ContentView: showReformattingGuide changed to \(newValue)")
             }
         }
     }
