@@ -2,12 +2,26 @@ import AppKit
 import CodeEditTextView
 
 class ReformattingGuideView: NSView {
-    private let column: Int = 80
+    private var column: Int
+    private var _isVisible: Bool
+    private var theme: EditorTheme
 
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
+    var isVisible: Bool {
+        get { _isVisible }
+        set {
+            _isVisible = newValue
+            isHidden = !newValue
+            needsDisplay = true
+        }
+    }
+
+    init(column: Int = 80, isVisible: Bool = false, theme: EditorTheme) {
+        self.column = column
+        self._isVisible = isVisible
+        self.theme = theme
+        super.init(frame: .zero)
         wantsLayer = true
-        print("ReformattingGuideView initialized with frame: \(frameRect)")
+        isHidden = !isVisible
     }
 
     required init?(coder: NSCoder) {
@@ -16,30 +30,22 @@ class ReformattingGuideView: NSView {
 
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        print("Drawing guide view with frame: \(frame)")
+        guard isVisible else {
+            return
+        }
 
-        // For debugging, make the guide more visible
-        NSColor.red.withAlphaComponent(0.3).setFill()
-        frame.fill()
-
-        // Draw a border around the guide for better visibility
-        NSColor.blue.setStroke()
-        let borderPath = NSBezierPath(rect: frame)
-        borderPath.lineWidth = 2.0
-        borderPath.stroke()
-
-        // Get the current theme's background color to determine if we're in light or dark mode
-        let isLightMode = NSApp.effectiveAppearance.name == .aqua
+        // Determine if we should use light or dark colors based on the theme's background color
+        let isLightMode = theme.background.brightnessComponent > 0.5
 
         // Set the line color based on the theme
         let lineColor = isLightMode ?
-            NSColor.black.withAlphaComponent(0.1) :
-            NSColor.white.withAlphaComponent(0.1)
+            NSColor.black.withAlphaComponent(0.075) :
+            NSColor.white.withAlphaComponent(0.175)
 
         // Set the shaded area color (slightly more transparent)
         let shadedColor = isLightMode ?
-            NSColor.black.withAlphaComponent(0.05) :
-            NSColor.white.withAlphaComponent(0.05)
+            NSColor.black.withAlphaComponent(0.025) :
+            NSColor.white.withAlphaComponent(0.025)
 
         // Draw the vertical line (accounting for inverted Y coordinate system)
         lineColor.setStroke()
@@ -61,35 +67,44 @@ class ReformattingGuideView: NSView {
     }
 
     func updatePosition(in textView: TextView) {
-        // Wait for the text view to have a valid width
-        guard textView.frame.width > 0 else {
-            print("Text view width is 0, skipping position update")
+        guard isVisible else {
             return
         }
 
         // Calculate the x position based on the font's character width and column number
         let charWidth = textView.font.boundingRectForFont.width
-        let xPosition = CGFloat(column) * charWidth
+        let xPosition = CGFloat(column) * charWidth / 2  // Divide by 2 to account for coordinate system
 
-        print("Updating guide position:")
-        print("- Character width: \(charWidth)")
-        print("- Target column: \(column)")
-        print("- Calculated x position: \(xPosition)")
-        print("- Text view width: \(textView.frame.width)")
+        // Get the scroll view's content size
+        guard let scrollView = textView.enclosingScrollView else { return }
+        let contentSize = scrollView.documentVisibleRect.size
 
         // Ensure we don't create an invalid frame
-        let maxWidth = max(0, textView.frame.width - xPosition/2)
+        let maxWidth = max(0, contentSize.width - xPosition)
 
-        // Update the frame to be a vertical line at column 80 with a shaded area to the right
+        // Update the frame to be a vertical line at the specified column with a shaded area to the right
         let newFrame = NSRect(
-            x: 200,
-            y: 0,
-            width: maxWidth,
-            height: textView.frame.height
-        )
-        print("Setting new frame: \(newFrame)")
+            x: xPosition,
+            y: 0,  // Start above the visible area
+            width: maxWidth + 1000,
+            height: contentSize.height  // Use extended height
+        ).pixelAligned
 
         frame = newFrame
+        needsDisplay = true
+    }
+
+    func setVisible(_ visible: Bool) {
+        isVisible = visible
+    }
+
+    func setColumn(_ newColumn: Int) {
+        column = newColumn
+        needsDisplay = true
+    }
+
+    func setTheme(_ newTheme: EditorTheme) {
+        theme = newTheme
         needsDisplay = true
     }
 }

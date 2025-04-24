@@ -12,9 +12,11 @@ extension TextViewController {
     override public func loadView() {
         super.loadView()
 
+        // Create scroll view
         scrollView = NSScrollView()
         scrollView.documentView = textView
 
+        // Create gutter view
         gutterView = GutterView(
             font: font.rulerFont,
             textColor: theme.text.color.withAlphaComponent(0.35),
@@ -25,13 +27,21 @@ extension TextViewController {
         gutterView.updateWidthIfNeeded()
         scrollView.addFloatingSubview(gutterView, for: .horizontal)
 
+        // Create reformatting guide view
+        guideView = ReformattingGuideView(
+            column: self.reformatAtColumn,
+            isVisible: self.showReformattingGuide,
+            theme: theme
+        )
+        guideView.wantsLayer = true
+        scrollView.addFloatingSubview(guideView, for: .vertical)
+        guideView.updatePosition(in: textView)
+
+        // Create minimap view
         minimapView = MinimapView(textView: textView, theme: theme)
         scrollView.addFloatingSubview(minimapView, for: .vertical)
 
-        // Add reformatting guide view
-        let guideView = ReformattingGuideView(frame: NSRect(x: 0, y: 0, width: 100, height: 100))
-        textView.addSubview(guideView)
-
+        // Create find view
         let findViewController = FindViewController(target: self, childView: scrollView)
         addChild(findViewController)
         self.findViewController = findViewController
@@ -43,10 +53,13 @@ extension TextViewController {
             textView.setUndoManager(_undoManager)
         }
 
+        // Style views
         styleTextView()
         styleScrollView()
         styleGutterView()
         styleMinimapView()
+        
+        // Set up
         setUpHighlighter()
         setUpTextFormation()
 
@@ -101,7 +114,8 @@ extension TextViewController {
             object: scrollView.contentView,
             queue: .main
         ) { [weak self] notification in
-            guard let clipView = notification.object as? NSClipView else { return }
+            guard let clipView = notification.object as? NSClipView,
+                  let textView = self?.textView else { return }
             self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
             self?.gutterView.needsDisplay = true
             self?.minimapXConstraint?.constant = clipView.bounds.origin.x
@@ -124,11 +138,13 @@ extension TextViewController {
             object: textView,
             queue: .main
         ) { [weak self] _ in
+            guard let textView = self?.textView else { return }
             self?.gutterView.frame.size.height = (self?.textView.frame.height ?? 0) + 10
             self?.gutterView.frame.origin.y = (self?.textView.frame.origin.y ?? 0.0)
             - (self?.scrollView.contentInsets.top ?? 0)
 
             self?.gutterView.needsDisplay = true
+            self?.guideView?.updatePosition(in: textView)
             self?.scrollView.needsLayout = true
         }
 

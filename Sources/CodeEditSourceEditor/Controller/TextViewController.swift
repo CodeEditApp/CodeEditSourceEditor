@@ -69,6 +69,7 @@ public class TextViewController: NSViewController {
             gutterView.textColor = theme.text.color.withAlphaComponent(0.35)
             gutterView.selectedLineTextColor = theme.text.color
             minimapView.setTheme(theme)
+            guideView?.setTheme(theme)
         }
     }
 
@@ -233,6 +234,37 @@ public class TextViewController: NSViewController {
         )
     }
 
+    /// The column at which to show the reformatting guide
+    public var reformatAtColumn: Int = 80 {
+        didSet {
+            if let guideView = textView.subviews.first(
+                where: { $0 is ReformattingGuideView }
+            ) as? ReformattingGuideView {
+                guideView.setColumn(reformatAtColumn)
+            }
+        }
+    }
+
+    /// Whether to show the reformatting guide
+    public var showReformattingGuide: Bool = false {
+        didSet {
+            if let guideView = self.guideView {
+                guideView.setVisible(showReformattingGuide)
+                guideView.updatePosition(in: textView)
+                guideView.needsDisplay = true
+            }
+        }
+    }
+
+    /// The reformatting guide view
+    var guideView: ReformattingGuideView! {
+        didSet {
+            if let oldValue = oldValue {
+                oldValue.removeFromSuperview()
+            }
+        }
+    }
+
     // MARK: Init
 
     init(
@@ -257,7 +289,9 @@ public class TextViewController: NSViewController {
         bracketPairEmphasis: BracketPairEmphasis?,
         undoManager: CEUndoManager? = nil,
         coordinators: [TextViewCoordinator] = [],
-        showMinimap: Bool
+        showMinimap: Bool,
+        reformatAtColumn: Int = 80,
+        showReformattingGuide: Bool = false
     ) {
         self.language = language
         self.font = font
@@ -278,6 +312,8 @@ public class TextViewController: NSViewController {
         self.bracketPairEmphasis = bracketPairEmphasis
         self._undoManager = undoManager
         self.showMinimap = showMinimap
+        self.reformatAtColumn = reformatAtColumn
+        self.showReformattingGuide = showReformattingGuide
 
         super.init(nibName: nil, bundle: nil)
 
@@ -305,6 +341,15 @@ public class TextViewController: NSViewController {
             useSystemCursor: platformGuardedSystemCursor,
             delegate: self
         )
+
+        // Initialize guide view
+        self.guideView = ReformattingGuideView(column: reformatAtColumn, isVisible: showReformattingGuide, theme: theme)
+        if let guideView = self.guideView {
+            guideView.wantsLayer = true
+            guideView.layer?.zPosition = 1
+            textView.addSubview(guideView)
+            guideView.updatePosition(in: textView)
+        }
 
         coordinators.forEach {
             $0.prepareCoordinator(controller: self)

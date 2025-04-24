@@ -24,12 +24,25 @@ struct StatusBar: View {
     @Binding var theme: EditorTheme
     @Binding var showMinimap: Bool
     @Binding var indentOption: IndentOption
+    @Binding var reformatAtColumn: Int
+    @Binding var showReformattingGuide: Bool
 
     var body: some View {
         HStack {
             Menu {
+                IndentPicker(indentOption: $indentOption, enabled: document.text.isEmpty)
+                    .buttonStyle(.borderless)
                 Toggle("Wrap Lines", isOn: $wrapLines)
                 Toggle("Show Minimap", isOn: $showMinimap)
+                Toggle("Show Reformatting Guide", isOn: $showReformattingGuide)
+                Picker("Reformat column at column", selection: $reformatAtColumn) {
+                    ForEach([40, 60, 80, 100, 120, 140, 160, 180, 200], id: \.self) { column in
+                        Text("\(column)").tag(column)
+                    }
+                }
+                .onChange(of: reformatAtColumn) { _, newValue in
+                    reformatAtColumn = max(1, min(200, newValue))
+                }
                 if #available(macOS 14, *) {
                     Toggle("Use System Cursor", isOn: $useSystemCursor)
                 } else {
@@ -64,8 +77,6 @@ struct StatusBar: View {
             Divider()
                 .frame(height: 12)
             LanguagePicker(language: $language)
-                .buttonStyle(.borderless)
-            IndentPicker(indentOption: $indentOption, enabled: document.text.isEmpty)
                 .buttonStyle(.borderless)
         }
         .font(.subheadline)
