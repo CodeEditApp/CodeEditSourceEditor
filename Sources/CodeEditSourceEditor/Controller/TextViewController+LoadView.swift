@@ -58,7 +58,7 @@ extension TextViewController {
         styleScrollView()
         styleGutterView()
         styleMinimapView()
-        
+
         // Set up
         setUpHighlighter()
         setUpTextFormation()
@@ -116,7 +116,7 @@ extension TextViewController {
         ) { [weak self] notification in
             guard let clipView = notification.object as? NSClipView,
                   let textView = self?.textView else { return }
-            self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
+            textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
             self?.gutterView.needsDisplay = true
             self?.minimapXConstraint?.constant = clipView.bounds.origin.x
         }

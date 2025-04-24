@@ -103,7 +103,7 @@ public class MinimapView: FlippedNSView {
         separatorView.layer?.backgroundColor = isLightMode
             ? NSColor.black.withAlphaComponent(0.1).cgColor
             : NSColor.white.withAlphaComponent(0.1).cgColor
-        
+
         super.init(frame: .zero)
 
         setUpPanGesture()
