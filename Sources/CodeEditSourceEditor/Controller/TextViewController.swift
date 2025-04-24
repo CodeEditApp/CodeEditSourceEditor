@@ -237,10 +237,10 @@ public class TextViewController: NSViewController {
     /// The column at which to show the reformatting guide
     public var reformatAtColumn: Int = 80 {
         didSet {
-            if let guideView = textView.subviews.first(
-                where: { $0 is ReformattingGuideView }
-            ) as? ReformattingGuideView {
+            if let guideView = self.guideView {
                 guideView.setColumn(reformatAtColumn)
+                guideView.updatePosition(in: textView)
+                guideView.needsDisplay = true
             }
         }
     }
