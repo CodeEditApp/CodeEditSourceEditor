@@ -8,4 +8,4 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: GitHub Action for SwiftLint with --strict
-        run: swiftlint --strict
+        run: swiftlint --reporter github-actions-logging --strict
