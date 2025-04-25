@@ -106,7 +106,7 @@ extension TextViewController {
 
         findViewController?.topPadding = contentInsets?.top
 
-        gutterView.frame.origin.y = -scrollView.contentInsets.top
+        gutterView.frame.origin.y = textView.frame.origin.y - scrollView.contentInsets.top
 
         // Update scrollview tiling
         scrollView.reflectScrolledClipView(scrollView.contentView)
