@@ -107,7 +107,7 @@ extension TextViewController {
         ])
     }
 
-    func setUpOberservers() {
+    func setUpOnScrollChangeObserver() {
         // Layout on scroll change
         NotificationCenter.default.addObserver(
             forName: NSView.boundsDidChangeNotification,
@@ -120,7 +120,9 @@ extension TextViewController {
             self?.gutterView.needsDisplay = true
             self?.minimapXConstraint?.constant = clipView.bounds.origin.x
         }
+    }
 
+    func setUpOnScrollViewFrameChangeObserver() {
         // Layout on frame change
         NotificationCenter.default.addObserver(
             forName: NSView.frameDidChangeNotification,
@@ -132,7 +134,9 @@ extension TextViewController {
             self?.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
             self?.updateTextInsets()
         }
+    }
 
+    func setUpTextViewFrameChangeObserver() {
         NotificationCenter.default.addObserver(
             forName: NSView.frameDidChangeNotification,
             object: textView,
@@ -147,7 +151,9 @@ extension TextViewController {
             self?.guideView?.updatePosition(in: textView)
             self?.scrollView.needsLayout = true
         }
+    }
 
+    func setUpSelectionChangedObserver() {
         NotificationCenter.default.addObserver(
             forName: TextSelectionManager.selectionChangedNotification,
             object: textView.selectionManager,
@@ -156,7 +162,9 @@ extension TextViewController {
             self?.updateCursorPosition()
             self?.emphasizeSelectionPairs()
         }
+    }
 
+    func setUpAppearanceChangedObserver() {
         NSApp.publisher(for: \.effectiveAppearance)
             .receive(on: RunLoop.main)
             .sink { [weak self] newValue in
@@ -171,6 +179,14 @@ extension TextViewController {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    func setUpOberservers() {
+        setUpOnScrollChangeObserver()
+        setUpOnScrollViewFrameChangeObserver()
+        setUpTextViewFrameChangeObserver()
+        setUpSelectionChangedObserver()
+        setUpAppearanceChangedObserver()
     }
 
     func setUpKeyBindings(eventMonitor: inout Any?) {
