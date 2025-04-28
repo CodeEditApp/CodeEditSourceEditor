@@ -28,6 +28,7 @@ class ReformattingGuideView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // Draw the reformatting guide line and shaded area
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
         guard isVisible else {
