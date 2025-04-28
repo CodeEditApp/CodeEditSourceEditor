@@ -28,6 +28,8 @@ struct ContentView: View {
     @State private var treeSitterClient = TreeSitterClient()
     @AppStorage("showMinimap") private var showMinimap: Bool = true
     @State private var indentOption: IndentOption = .spaces(count: 4)
+    @AppStorage("reformatAtColumn") private var reformatAtColumn: Int = 80
+    @AppStorage("showReformattingGuide") private var showReformattingGuide: Bool = false
 
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
         self._document = document
@@ -52,7 +54,9 @@ struct ContentView: View {
                 contentInsets: NSEdgeInsets(top: proxy.safeAreaInsets.top, left: 0, bottom: 28.0, right: 0),
                 additionalTextInsets: NSEdgeInsets(top: 1, left: 0, bottom: 1, right: 0),
                 useSystemCursor: useSystemCursor,
-                showMinimap: showMinimap
+                showMinimap: showMinimap,
+                reformatAtColumn: reformatAtColumn,
+                showReformattingGuide: showReformattingGuide
             )
             .overlay(alignment: .bottom) {
                 StatusBar(
@@ -65,7 +69,9 @@ struct ContentView: View {
                     language: $language,
                     theme: $theme,
                     showMinimap: $showMinimap,
-                    indentOption: $indentOption
+                    indentOption: $indentOption,
+                    reformatAtColumn: $reformatAtColumn,
+                    showReformattingGuide: $showReformattingGuide
                 )
             }
             .ignoresSafeArea()

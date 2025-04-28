@@ -25,6 +25,15 @@ extension TextViewController {
         gutterView.updateWidthIfNeeded()
         scrollView.addFloatingSubview(gutterView, for: .horizontal)
 
+        guideView = ReformattingGuideView(
+            column: self.reformatAtColumn,
+            isVisible: self.showReformattingGuide,
+            theme: theme
+        )
+        guideView.wantsLayer = true
+        scrollView.addFloatingSubview(guideView, for: .vertical)
+        guideView.updatePosition(in: textView)
+
         minimapView = MinimapView(textView: textView, theme: theme)
         scrollView.addFloatingSubview(minimapView, for: .vertical)
 
@@ -43,6 +52,7 @@ extension TextViewController {
         styleScrollView()
         styleGutterView()
         styleMinimapView()
+
         setUpHighlighter()
         setUpTextFormation()
 
@@ -51,7 +61,7 @@ extension TextViewController {
         }
 
         setUpConstraints()
-        setUpListeners()
+        setUpOberservers()
 
         textView.updateFrameIfNeeded()
 
@@ -90,20 +100,21 @@ extension TextViewController {
         ])
     }
 
-    func setUpListeners() {
-        // Layout on scroll change
+    func setUpOnScrollChangeObserver() {
         NotificationCenter.default.addObserver(
             forName: NSView.boundsDidChangeNotification,
             object: scrollView.contentView,
             queue: .main
         ) { [weak self] notification in
-            guard let clipView = notification.object as? NSClipView else { return }
-            self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
+            guard let clipView = notification.object as? NSClipView,
+                  let textView = self?.textView else { return }
+            textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
             self?.gutterView.needsDisplay = true
             self?.minimapXConstraint?.constant = clipView.bounds.origin.x
         }
+    }
 
-        // Layout on frame change
+    func setUpOnScrollViewFrameChangeObserver() {
         NotificationCenter.default.addObserver(
             forName: NSView.frameDidChangeNotification,
             object: scrollView.contentView,
@@ -114,20 +125,26 @@ extension TextViewController {
             self?.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
             self?.updateTextInsets()
         }
+    }
 
+    func setUpTextViewFrameChangeObserver() {
         NotificationCenter.default.addObserver(
             forName: NSView.frameDidChangeNotification,
             object: textView,
             queue: .main
         ) { [weak self] _ in
+            guard let textView = self?.textView else { return }
             self?.gutterView.frame.size.height = (self?.textView.frame.height ?? 0) + 10
             self?.gutterView.frame.origin.y = (self?.textView.frame.origin.y ?? 0.0)
             - (self?.scrollView.contentInsets.top ?? 0)
 
             self?.gutterView.needsDisplay = true
+            self?.guideView?.updatePosition(in: textView)
             self?.scrollView.needsLayout = true
         }
+    }
 
+    func setUpSelectionChangedObserver() {
         NotificationCenter.default.addObserver(
             forName: TextSelectionManager.selectionChangedNotification,
             object: textView.selectionManager,
@@ -136,7 +153,9 @@ extension TextViewController {
             self?.updateCursorPosition()
             self?.emphasizeSelectionPairs()
         }
+    }
 
+    func setUpAppearanceChangedObserver() {
         NSApp.publisher(for: \.effectiveAppearance)
             .receive(on: RunLoop.main)
             .sink { [weak self] newValue in
@@ -151,6 +170,14 @@ extension TextViewController {
                 }
             }
             .store(in: &cancellables)
+    }
+
+    func setUpOberservers() {
+        setUpOnScrollChangeObserver()
+        setUpOnScrollViewFrameChangeObserver()
+        setUpTextViewFrameChangeObserver()
+        setUpSelectionChangedObserver()
+        setUpAppearanceChangedObserver()
     }
 
     func setUpKeyBindings(eventMonitor: inout Any?) {
