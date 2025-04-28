@@ -12,11 +12,9 @@ extension TextViewController {
     override public func loadView() {
         super.loadView()
 
-        // Create scroll view
         scrollView = NSScrollView()
         scrollView.documentView = textView
 
-        // Create gutter view
         gutterView = GutterView(
             font: font.rulerFont,
             textColor: theme.text.color.withAlphaComponent(0.35),
@@ -27,7 +25,6 @@ extension TextViewController {
         gutterView.updateWidthIfNeeded()
         scrollView.addFloatingSubview(gutterView, for: .horizontal)
 
-        // Create reformatting guide view
         guideView = ReformattingGuideView(
             column: self.reformatAtColumn,
             isVisible: self.showReformattingGuide,
@@ -37,11 +34,9 @@ extension TextViewController {
         scrollView.addFloatingSubview(guideView, for: .vertical)
         guideView.updatePosition(in: textView)
 
-        // Create minimap view
         minimapView = MinimapView(textView: textView, theme: theme)
         scrollView.addFloatingSubview(minimapView, for: .vertical)
 
-        // Create find view
         let findViewController = FindViewController(target: self, childView: scrollView)
         addChild(findViewController)
         self.findViewController = findViewController
@@ -53,13 +48,11 @@ extension TextViewController {
             textView.setUndoManager(_undoManager)
         }
 
-        // Style views
         styleTextView()
         styleScrollView()
         styleGutterView()
         styleMinimapView()
 
-        // Set up
         setUpHighlighter()
         setUpTextFormation()
 
@@ -108,7 +101,6 @@ extension TextViewController {
     }
 
     func setUpOnScrollChangeObserver() {
-        // Layout on scroll change
         NotificationCenter.default.addObserver(
             forName: NSView.boundsDidChangeNotification,
             object: scrollView.contentView,
@@ -123,7 +115,6 @@ extension TextViewController {
     }
 
     func setUpOnScrollViewFrameChangeObserver() {
-        // Layout on frame change
         NotificationCenter.default.addObserver(
             forName: NSView.frameDidChangeNotification,
             object: scrollView.contentView,
