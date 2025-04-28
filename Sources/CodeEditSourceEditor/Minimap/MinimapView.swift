@@ -77,7 +77,7 @@ public class MinimapView: FlippedNSView {
     public init(textView: TextView, theme: EditorTheme) {
         self.textView = textView
         self.lineRenderer = MinimapLineRenderer(textView: textView)
-        let isLightMode = theme.background.brightnessComponent > 0.5
+        let isLightMode = (theme.background.usingColorSpace(.deviceRGB)?.brightnessComponent ?? 0.0) > 0.5
 
         self.scrollView = ForwardingScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
