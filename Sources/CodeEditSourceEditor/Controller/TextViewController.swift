@@ -344,12 +344,6 @@ public class TextViewController: NSViewController {
 
         // Initialize guide view
         self.guideView = ReformattingGuideView(column: reformatAtColumn, isVisible: showReformattingGuide, theme: theme)
-        if let guideView = self.guideView {
-            guideView.wantsLayer = true
-            guideView.layer?.zPosition = 1
-            textView.addSubview(guideView)
-            guideView.updatePosition(in: textView)
-        }
 
         coordinators.forEach {
             $0.prepareCoordinator(controller: self)
