@@ -68,7 +68,7 @@ extension TextViewController {
         }
 
         setUpConstraints()
-        setUpListeners()
+        setUpOberservers()
 
         textView.updateFrameIfNeeded()
 
@@ -107,7 +107,7 @@ extension TextViewController {
         ])
     }
 
-    func setUpListeners() {
+    func setUpOberservers() {
         // Layout on scroll change
         NotificationCenter.default.addObserver(
             forName: NSView.boundsDidChangeNotification,
