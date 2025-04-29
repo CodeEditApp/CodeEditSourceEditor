@@ -31,6 +31,33 @@ extension FindPanelViewModel {
         emphasisManager.addEmphases(emphases, for: EmphasisGroup.find)
     }
 
+    func flashCurrentMatch() {
+        guard let target = target,
+              let emphasisManager = target.emphasisManager,
+              let currentFindMatchIndex else {
+            return
+        }
+
+        let currentMatch = findMatches[currentFindMatchIndex]
+
+        // Clear existing emphases
+        emphasisManager.removeEmphases(for: EmphasisGroup.find)
+
+        // Create emphasis with the nearest match as active
+        let emphasis = (
+            Emphasis(
+                range: currentMatch,
+                style: .standard,
+                flash: true,
+                inactive: false,
+                selectInDocument: true
+            )
+        )
+
+        // Add the emphasis
+        emphasisManager.addEmphases([emphasis], for: EmphasisGroup.find)
+    }
+
     func clearMatchEmphases() {
         target?.emphasisManager?.removeEmphases(for: EmphasisGroup.find)
     }

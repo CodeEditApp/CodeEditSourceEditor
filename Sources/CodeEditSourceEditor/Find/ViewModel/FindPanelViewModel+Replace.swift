@@ -11,7 +11,7 @@ import CodeEditTextView
 extension FindPanelViewModel {
     /// Replace one or all ``findMatches`` with the contents of ``replaceText``.
     /// - Parameter all: If true, replaces all matches instead of just the selected one.
-    func replace(all: Bool) {
+    func replace() {
         guard let target = target,
               let currentFindMatchIndex,
               !findMatches.isEmpty,
@@ -19,30 +19,42 @@ extension FindPanelViewModel {
             return
         }
 
-        if all {
-            textViewController.textView.undoManager?.beginUndoGrouping()
-            textViewController.textView.textStorage.beginEditing()
+        replaceMatch(index: currentFindMatchIndex, textView: textViewController.textView, matches: &findMatches)
 
-            var sortedMatches = findMatches.sorted(by: { $0.location < $1.location })
-            for (idx, _) in sortedMatches.enumerated().reversed() {
-                replaceMatch(index: idx, textView: textViewController.textView, matches: &sortedMatches)
-            }
+        self.findMatches = findMatches.enumerated().filter({ $0.offset != currentFindMatchIndex }).map(\.element)
+        self.currentFindMatchIndex = findMatches.isEmpty ? nil : (currentFindMatchIndex) % findMatches.count
 
-            textViewController.textView.textStorage.endEditing()
-            textViewController.textView.undoManager?.endUndoGrouping()
+        // Update the emphases
+        addMatchEmphases(flashCurrent: true)
+    }
 
-            if let lastMatch = sortedMatches.last {
-                target.setCursorPositions(
-                    [CursorPosition(range: NSRange(location: lastMatch.location, length: 0))],
-                    scrollToVisible: true
-                )
-            }
-
-            updateMatches([])
-        } else {
-            replaceMatch(index: currentFindMatchIndex, textView: textViewController.textView, matches: &findMatches)
-            updateMatches(findMatches)
+    func replaceAll() {
+        guard let target = target,
+              !findMatches.isEmpty,
+              let textViewController = target as? TextViewController else {
+            return
         }
+
+        textViewController.textView.undoManager?.beginUndoGrouping()
+        textViewController.textView.textStorage.beginEditing()
+
+        var sortedMatches = findMatches.sorted(by: { $0.location < $1.location })
+        for (idx, _) in sortedMatches.enumerated().reversed() {
+            replaceMatch(index: idx, textView: textViewController.textView, matches: &sortedMatches)
+        }
+
+        textViewController.textView.textStorage.endEditing()
+        textViewController.textView.undoManager?.endUndoGrouping()
+
+        if let lastMatch = sortedMatches.last {
+            target.setCursorPositions(
+                [CursorPosition(range: NSRange(location: lastMatch.location, length: 0))],
+                scrollToVisible: true
+            )
+        }
+
+        self.findMatches = []
+        self.currentFindMatchIndex = nil
 
         // Update the emphases
         addMatchEmphases(flashCurrent: true)

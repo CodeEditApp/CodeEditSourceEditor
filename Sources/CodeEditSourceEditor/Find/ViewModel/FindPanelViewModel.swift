@@ -58,13 +58,6 @@ class FindPanelViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Update Matches
-
-    func updateMatches(_ newMatches: [NSRange]) {
-        findMatches = newMatches
-        currentFindMatchIndex = newMatches.isEmpty ? nil : 0
-    }
-
     // MARK: - Text Listeners
 
     /// Find target's text content changed, we need to re-search the contents and emphasize results.
