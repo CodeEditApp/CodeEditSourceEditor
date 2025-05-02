@@ -81,12 +81,12 @@ class FindPanelViewModel: ObservableObject {
         // If the textview is first responder, exit fast
         if target?.findPanelTargetView.window?.firstResponder === target?.findPanelTargetView {
             // If the text view has focus, just clear visual emphases but keep our find matches
-            target?.emphasisManager?.removeEmphases(for: EmphasisGroup.find)
+            target?.textView.emphasisManager?.removeEmphases(for: EmphasisGroup.find)
             return
         }
 
         // Clear existing emphases before performing new find
-        target?.emphasisManager?.removeEmphases(for: EmphasisGroup.find)
+        target?.textView.emphasisManager?.removeEmphases(for: EmphasisGroup.find)
         find()
     }
 }

@@ -9,8 +9,7 @@ import AppKit
 import CodeEditTextView
 
 protocol FindPanelTarget: AnyObject {
-    var emphasisManager: EmphasisManager? { get }
-    var text: String { get }
+    var textView: TextView! { get }
     var findPanelTargetView: NSView { get }
 
     var cursorPositions: [CursorPosition] { get }

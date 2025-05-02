@@ -29,7 +29,7 @@ extension FindPanelViewModel {
             return
         }
 
-        let text = target.text
+        let text = target.textView.string
         let matches = regex.matches(in: text, range: NSRange(location: 0, length: text.utf16.count))
 
         self.findMatches = matches.map(\.range)

@@ -30,6 +30,7 @@ struct ReplaceSearchField: View {
             clearable: true
         )
         .controlSize(.small)
+        .fixedSize(horizontal: false, vertical: true)
         .focused($focus, equals: .replace)
     }
 }

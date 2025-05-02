@@ -14,12 +14,11 @@ extension FindPanelViewModel {
     func replace() {
         guard let target = target,
               let currentFindMatchIndex,
-              !findMatches.isEmpty,
-              let textViewController = target as? TextViewController else {
+              !findMatches.isEmpty else {
             return
         }
 
-        replaceMatch(index: currentFindMatchIndex, textView: textViewController.textView, matches: &findMatches)
+        replaceMatch(index: currentFindMatchIndex, textView: target.textView, matches: &findMatches)
 
         self.findMatches = findMatches.enumerated().filter({ $0.offset != currentFindMatchIndex }).map(\.element)
         self.currentFindMatchIndex = findMatches.isEmpty ? nil : (currentFindMatchIndex) % findMatches.count
@@ -30,21 +29,20 @@ extension FindPanelViewModel {
 
     func replaceAll() {
         guard let target = target,
-              !findMatches.isEmpty,
-              let textViewController = target as? TextViewController else {
+              !findMatches.isEmpty else {
             return
         }
 
-        textViewController.textView.undoManager?.beginUndoGrouping()
-        textViewController.textView.textStorage.beginEditing()
+        target.textView.undoManager?.beginUndoGrouping()
+        target.textView.textStorage.beginEditing()
 
         var sortedMatches = findMatches.sorted(by: { $0.location < $1.location })
         for (idx, _) in sortedMatches.enumerated().reversed() {
-            replaceMatch(index: idx, textView: textViewController.textView, matches: &sortedMatches)
+            replaceMatch(index: idx, textView: target.textView, matches: &sortedMatches)
         }
 
-        textViewController.textView.textStorage.endEditing()
-        textViewController.textView.undoManager?.endUndoGrouping()
+        target.textView.textStorage.endEditing()
+        target.textView.undoManager?.endUndoGrouping()
 
         if let lastMatch = sortedMatches.last {
             target.setCursorPositions(
