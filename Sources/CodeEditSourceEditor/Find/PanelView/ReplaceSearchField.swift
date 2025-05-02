@@ -11,21 +11,30 @@ struct ReplaceSearchField: View {
     @ObservedObject var viewModel: FindPanelViewModel
     @FocusState.Binding var focus: FindPanelView.FindPanelFocus?
     @Binding var findModePickerWidth: CGFloat
+    var condensed: Bool
 
     var body: some View {
         PanelTextField(
             "Text",
             text: $viewModel.replaceText,
             leadingAccessories: {
-                HStack(spacing: 0) {
+                if condensed {
                     Image(systemName: "pencil")
                         .foregroundStyle(.secondary)
                         .padding(.leading, 8)
-                        .padding(.trailing, 5)
-                    Text("With")
+                } else {
+                    HStack(spacing: 0) {
+                        HStack(spacing: 0) {
+                            Image(systemName: "pencil")
+                                .foregroundStyle(.secondary)
+                                .padding(.leading, 8)
+                                .padding(.trailing, 5)
+                            Text("With")
+                        }
+                        .frame(width: findModePickerWidth, alignment: .leading)
+                        Divider()
+                    }
                 }
-                .frame(width: findModePickerWidth, alignment: .leading)
-                Divider()
             },
             clearable: true
         )

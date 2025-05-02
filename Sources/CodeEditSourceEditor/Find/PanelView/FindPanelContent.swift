@@ -1,3 +1,12 @@
+//
+//  FindPanelContent.swift
+//  CodeEditSourceEditor
+//
+//  Created by Austin Condiff on 5/2/25.
+//
+
+import SwiftUI
+
 struct FindPanelContent: View {
     @ObservedObject var viewModel: FindPanelViewModel
     @FocusState.Binding var focus: FindPanelView.FindPanelFocus?
