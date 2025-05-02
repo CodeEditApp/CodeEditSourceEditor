@@ -106,7 +106,7 @@ struct FindPanelView: View {
         HStack(spacing: 4) {
             ControlGroup {
                 Button {
-                    viewModel.replace(all: false)
+                    viewModel.replace()
                 } label: {
                     Text("Replace")
                         .opacity(
@@ -126,7 +126,7 @@ struct FindPanelView: View {
                 Divider().overlay(Color(nsColor: .tertiaryLabelColor))
 
                 Button {
-                    viewModel.replace(all: true)
+                    viewModel.replaceAll()
                 } label: {
                     Text("All")
                         .opacity(viewModel.findText.isEmpty || viewModel.matchCount == 0 ? 0.33 : 1)

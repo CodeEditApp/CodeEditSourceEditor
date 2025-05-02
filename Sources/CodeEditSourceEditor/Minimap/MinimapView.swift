@@ -77,6 +77,7 @@ public class MinimapView: FlippedNSView {
     public init(textView: TextView, theme: EditorTheme) {
         self.textView = textView
         self.lineRenderer = MinimapLineRenderer(textView: textView)
+        let isLightMode = (theme.background.usingColorSpace(.deviceRGB)?.brightnessComponent ?? 0.0) > 0.5
 
         self.scrollView = ForwardingScrollView()
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -92,12 +93,16 @@ public class MinimapView: FlippedNSView {
         self.documentVisibleView = NSView()
         documentVisibleView.translatesAutoresizingMaskIntoConstraints = false
         documentVisibleView.wantsLayer = true
-        documentVisibleView.layer?.backgroundColor = theme.text.color.withAlphaComponent(0.05).cgColor
+        documentVisibleView.layer?.backgroundColor = isLightMode
+            ? NSColor.black.withAlphaComponent(0.065).cgColor
+            : NSColor.white.withAlphaComponent(0.065).cgColor
 
         self.separatorView = NSView()
         separatorView.translatesAutoresizingMaskIntoConstraints = false
         separatorView.wantsLayer = true
-        separatorView.layer?.backgroundColor = NSColor.separatorColor.cgColor
+        separatorView.layer?.backgroundColor = isLightMode
+            ? NSColor.black.withAlphaComponent(0.1).cgColor
+            : NSColor.white.withAlphaComponent(0.1).cgColor
 
         super.init(frame: .zero)
 
@@ -171,16 +176,16 @@ public class MinimapView: FlippedNSView {
             // Constrain to all sides
             scrollView.topAnchor.constraint(equalTo: topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            scrollView.leadingAnchor.constraint(equalTo: separatorView.trailingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             // Scrolling, but match width
-            contentView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            contentView.trailingAnchor.constraint(equalTo: trailingAnchor),
+            contentView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
+            contentView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
             contentViewHeightConstraint,
 
             // Y position set manually
-            documentVisibleView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            documentVisibleView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
             documentVisibleView.trailingAnchor.constraint(equalTo: trailingAnchor),
 
             // Separator on leading side
@@ -310,7 +315,13 @@ public class MinimapView: FlippedNSView {
     ///
     /// - Parameter theme: The selected theme.
     public func setTheme(_ theme: EditorTheme) {
-        documentVisibleView.layer?.backgroundColor = theme.text.color.withAlphaComponent(0.05).cgColor
+        let isLightMode = theme.background.brightnessComponent > 0.5
+        documentVisibleView.layer?.backgroundColor = isLightMode
+            ? NSColor.black.withAlphaComponent(0.065).cgColor
+            : NSColor.white.withAlphaComponent(0.065).cgColor
+        separatorView.layer?.backgroundColor = isLightMode
+            ? NSColor.black.withAlphaComponent(0.1).cgColor
+            : NSColor.white.withAlphaComponent(0.1).cgColor
         layer?.backgroundColor = theme.background.cgColor
     }
 }

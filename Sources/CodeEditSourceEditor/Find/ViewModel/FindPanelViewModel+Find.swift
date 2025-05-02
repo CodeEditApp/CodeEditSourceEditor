@@ -15,7 +15,7 @@ extension FindPanelViewModel {
     func find() {
         // Don't find if target or emphasisManager isn't ready or the query is empty
         guard let target = target, isFocused, !findText.isEmpty else {
-            updateMatches([])
+            self.findMatches = []
             return
         }
 
@@ -24,14 +24,15 @@ extension FindPanelViewModel {
         let escapedQuery = NSRegularExpression.escapedPattern(for: findText)
 
         guard let regex = try? NSRegularExpression(pattern: escapedQuery, options: findOptions) else {
-            updateMatches([])
+            self.findMatches = []
+            self.currentFindMatchIndex = 0
             return
         }
 
         let text = target.text
         let matches = regex.matches(in: text, range: NSRange(location: 0, length: text.utf16.count))
 
-        updateMatches(matches.map(\.range))
+        self.findMatches = matches.map(\.range)
 
         // Find the nearest match to the current cursor position
         currentFindMatchIndex = getNearestEmphasisIndex(matchRanges: findMatches) ?? 0

@@ -25,7 +25,13 @@ extension FindPanelViewModel {
         }
 
         // From here on out we want to emphasize the result no matter what
-        defer { addMatchEmphases(flashCurrent: isTargetFirstResponder) }
+        defer {
+            if isTargetFirstResponder {
+                flashCurrentMatch()
+            } else {
+                addMatchEmphases(flashCurrent: isTargetFirstResponder)
+            }
+        }
 
         guard let currentFindMatchIndex else {
             self.currentFindMatchIndex = 0
@@ -54,7 +60,7 @@ extension FindPanelViewModel {
         }
         BezelNotification.show(
             symbolName: error ?
-            forwards ? "arrow.up.to.line" : "arrow.down.to.line"
+            forwards ? "arrow.down.to.line" : "arrow.up.to.line"
             : forwards
                 ? "arrow.trianglehead.topright.capsulepath.clockwise"
                 : "arrow.trianglehead.bottomleft.capsulepath.clockwise",

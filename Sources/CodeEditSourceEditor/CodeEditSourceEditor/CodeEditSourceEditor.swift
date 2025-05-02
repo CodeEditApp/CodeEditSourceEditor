@@ -50,6 +50,9 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///   - useSystemCursor: If true, uses the system cursor on `>=macOS 14`.
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
     ///   - coordinators: Any text coordinators for the view to use. See ``TextViewCoordinator`` for more information.
+    ///   - showMinimap: Whether to show the minimap
+    ///   - reformatAtColumn: The column to reformat at
+    ///   - showReformattingGuide: Whether to show the reformatting guide
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
@@ -72,7 +75,9 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         useSystemCursor: Bool = true,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = [],
-        showMinimap: Bool
+        showMinimap: Bool,
+        reformatAtColumn: Int,
+        showReformattingGuide: Bool
     ) {
         self.text = .binding(text)
         self.language = language
@@ -100,6 +105,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.undoManager = undoManager
         self.coordinators = coordinators
         self.showMinimap = showMinimap
+        self.reformatAtColumn = reformatAtColumn
+        self.showReformattingGuide = showReformattingGuide
     }
 
     /// Initializes a Text Editor
@@ -129,6 +136,9 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///                           See `BracketPairEmphasis` for more information. Defaults to `nil`
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
     ///   - coordinators: Any text coordinators for the view to use. See ``TextViewCoordinator`` for more information.
+    ///   - showMinimap: Whether to show the minimap
+    ///   - reformatAtColumn: The column to reformat at
+    ///   - showReformattingGuide: Whether to show the reformatting guide
     public init(
         _ text: NSTextStorage,
         language: CodeLanguage,
@@ -151,7 +161,9 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         useSystemCursor: Bool = true,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = [],
-        showMinimap: Bool
+        showMinimap: Bool,
+        reformatAtColumn: Int,
+        showReformattingGuide: Bool
     ) {
         self.text = .storage(text)
         self.language = language
@@ -179,6 +191,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.undoManager = undoManager
         self.coordinators = coordinators
         self.showMinimap = showMinimap
+        self.reformatAtColumn = reformatAtColumn
+        self.showReformattingGuide = showReformattingGuide
     }
 
     package var text: TextAPI
@@ -203,6 +217,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     private var undoManager: CEUndoManager?
     package var coordinators: [any TextViewCoordinator]
     package var showMinimap: Bool
+    private var reformatAtColumn: Int
+    private var showReformattingGuide: Bool
 
     public typealias NSViewControllerType = TextViewController
 
@@ -229,7 +245,9 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             bracketPairEmphasis: bracketPairEmphasis,
             undoManager: undoManager,
             coordinators: coordinators,
-            showMinimap: showMinimap
+            showMinimap: showMinimap,
+            reformatAtColumn: reformatAtColumn,
+            showReformattingGuide: showReformattingGuide
         )
         switch text {
         case .binding(let binding):
@@ -286,6 +304,14 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         updateEditorProperties(controller)
         updateThemeAndLanguage(controller)
         updateHighlighting(controller, coordinator: coordinator)
+
+        if controller.reformatAtColumn != reformatAtColumn {
+            controller.reformatAtColumn = reformatAtColumn
+        }
+
+        if controller.showReformattingGuide != showReformattingGuide {
+            controller.showReformattingGuide = showReformattingGuide
+        }
     }
 
     private func updateTextProperties(_ controller: TextViewController) {
@@ -369,6 +395,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.bracketPairEmphasis == bracketPairEmphasis &&
         controller.useSystemCursor == useSystemCursor &&
         controller.showMinimap == showMinimap &&
+        controller.reformatAtColumn == reformatAtColumn &&
+        controller.showReformattingGuide == showReformattingGuide &&
         areHighlightProvidersEqual(controller: controller, coordinator: coordinator)
     }
 
