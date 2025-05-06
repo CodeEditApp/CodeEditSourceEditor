@@ -1,3 +1,10 @@
+//
+//  FindViewController+Toggle.swift
+//  CodeEditSourceEditor
+//
+//  Created by Austin Condiff on 4/28/25.
+//
+
 import AppKit
 import CodeEditTextView
 
