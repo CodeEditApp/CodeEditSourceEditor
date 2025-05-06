@@ -17,9 +17,11 @@ struct FindPanelViewModelTests {
         var text: String = ""
         var findPanelTargetView: NSView
         var cursorPositions: [CursorPosition] = []
+        var textView: TextView!
 
         @MainActor init() {
             findPanelTargetView = NSView()
+            textView = TextView(string: text)
         }
 
         func setCursorPositions(_ positions: [CursorPosition], scrollToVisible: Bool) { }
