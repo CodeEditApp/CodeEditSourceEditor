@@ -21,7 +21,16 @@ extension FindPanelViewModel {
         replaceMatch(index: currentFindMatchIndex, textView: target.textView, matches: &findMatches)
 
         self.findMatches = findMatches.enumerated().filter({ $0.offset != currentFindMatchIndex }).map(\.element)
-        self.currentFindMatchIndex = findMatches.isEmpty ? nil : (currentFindMatchIndex) % findMatches.count
+
+        // Update currentFindMatchIndex based on wrapAround setting
+        if findMatches.isEmpty {
+            self.currentFindMatchIndex = nil
+        } else if wrapAround {
+            self.currentFindMatchIndex = currentFindMatchIndex % findMatches.count
+        } else {
+            // If we're at the end and not wrapping, stay at the end
+            self.currentFindMatchIndex = min(currentFindMatchIndex, findMatches.count - 1)
+        }
 
         // Update the emphases
         addMatchEmphases(flashCurrent: true)

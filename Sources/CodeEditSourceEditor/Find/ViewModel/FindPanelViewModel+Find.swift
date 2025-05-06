@@ -13,8 +13,8 @@ extension FindPanelViewModel {
     /// Performs a find operation on the find target and updates both the ``findMatches`` array and the emphasis
     /// manager's emphases.
     func find() {
-        // Don't find if target or emphasisManager isn't ready or the query is empty
-        guard let target = target, isFocused, !findText.isEmpty else {
+        // Don't find if target isn't ready or the query is empty
+        guard let target = target, !findText.isEmpty else {
             self.findMatches = []
             return
         }
@@ -36,7 +36,11 @@ extension FindPanelViewModel {
 
         // Find the nearest match to the current cursor position
         currentFindMatchIndex = getNearestEmphasisIndex(matchRanges: findMatches) ?? 0
-        addMatchEmphases(flashCurrent: false)
+
+        // Only add emphasis layers if the find panel is focused
+        if isFocused {
+            addMatchEmphases(flashCurrent: false)
+        }
     }
 
     // MARK: - Get Nearest Emphasis Index
