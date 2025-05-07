@@ -40,6 +40,10 @@ class FindPanelViewModel: ObservableObject {
         findMatches.count
     }
 
+    var matchesEmpty: Bool {
+        matchCount == 0
+    }
+
     var isTargetFirstResponder: Bool {
         target?.findPanelTargetView.window?.firstResponder === target?.findPanelTargetView
     }

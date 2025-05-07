@@ -13,6 +13,16 @@ struct FindSearchField: View {
     @Binding var findModePickerWidth: CGFloat
     var condensed: Bool
 
+    private var helperText: String? {
+        if viewModel.findText.isEmpty {
+            nil
+        } else if condensed {
+            "\(viewModel.matchCount)"
+        } else {
+            "\(viewModel.matchCount) \(viewModel.matchCount == 1 ? "match" : "matches")"
+        }
+    }
+
     var body: some View {
         PanelTextField(
             "Text",
@@ -74,11 +84,7 @@ struct FindSearchField: View {
                 })
                 .toggleStyle(.icon)
             },
-            helperText: viewModel.findText.isEmpty
-            ? nil
-            : condensed
-                ? "\(viewModel.matchCount)"
-                : "\(viewModel.matchCount) \(viewModel.matchCount == 1 ? "match" : "matches")",
+            helperText: helperText,
             clearable: true
         )
         .controlSize(.small)

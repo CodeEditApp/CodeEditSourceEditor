@@ -9,7 +9,7 @@ import SwiftUI
 import AppKit
 import Combine
 
-// NSView wrapper for using SwiftUI view in AppKit
+/// A subclass of `NSHostingView` that hosts a `FindPanelView` in an AppKit context.
 final class FindPanelHostingView: NSHostingView<FindPanelView> {
     private weak var viewModel: FindPanelViewModel?
 

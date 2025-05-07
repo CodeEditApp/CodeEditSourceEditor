@@ -11,6 +11,14 @@ struct ReplaceControls: View {
     @ObservedObject var viewModel: FindPanelViewModel
     var condensed: Bool
 
+    var shouldDisableSingle: Bool {
+        !viewModel.isFocused || viewModel.findText.isEmpty || viewModel.matchesEmpty
+    }
+
+    var shouldDisableAll: Bool {
+        viewModel.findText.isEmpty || viewModel.matchesEmpty
+    }
+
     var body: some View {
         HStack(spacing: 4) {
             ControlGroup {
@@ -24,18 +32,10 @@ struct ReplaceControls: View {
                             Text("Replace")
                         }
                     }
-                    .opacity(
-                        !viewModel.isFocused
-                        || viewModel.findText.isEmpty
-                        || viewModel.matchCount == 0 ? 0.33 : 1
-                    )
+                    .opacity(shouldDisableSingle ? 0.33 : 1)
                 }
-                .help(condensed ? "Replace" : "")
-                .disabled(
-                    !viewModel.isFocused
-                    || viewModel.findText.isEmpty
-                    || viewModel.matchCount == 0
-                )
+                .help("Replace")
+                .disabled(shouldDisableSingle)
                 .frame(maxWidth: .infinity)
 
                 Divider().overlay(Color(nsColor: .tertiaryLabelColor))
@@ -50,10 +50,10 @@ struct ReplaceControls: View {
                             Text("All")
                         }
                     }
-                    .opacity(viewModel.findText.isEmpty || viewModel.matchCount == 0 ? 0.33 : 1)
+                    .opacity(shouldDisableAll ? 0.33 : 1)
                 }
-                .help(condensed ? "Replace All" : "")
-                .disabled(viewModel.findText.isEmpty || viewModel.matchCount == 0)
+                .help("Replace All")
+                .disabled(shouldDisableAll)
                 .frame(maxWidth: .infinity)
             }
             .controlGroupStyle(PanelControlGroupStyle())

@@ -11,6 +11,14 @@ struct FindControls: View {
     @ObservedObject var viewModel: FindPanelViewModel
     var condensed: Bool
 
+    var imageOpacity: CGFloat {
+        viewModel.matchesEmpty ? 0.33 : 1
+    }
+
+    var dynamicPadding: CGFloat {
+        condensed ? 0 : 5
+    }
+
     var body: some View {
         HStack(spacing: 4) {
             ControlGroup {
@@ -18,25 +26,27 @@ struct FindControls: View {
                     viewModel.moveToPreviousMatch()
                 } label: {
                     Image(systemName: "chevron.left")
-                        .opacity(viewModel.matchCount == 0 ? 0.33 : 1)
-                        .padding(.horizontal, condensed ? 0 : 5)
+                        .opacity(imageOpacity)
+                        .padding(.horizontal, dynamicPadding)
                 }
                 .help("Previous Match")
-                .disabled(viewModel.matchCount == 0)
+                .disabled(viewModel.matchesEmpty)
+
                 Divider()
                     .overlay(Color(nsColor: .tertiaryLabelColor))
                 Button {
                     viewModel.moveToNextMatch()
                 } label: {
                     Image(systemName: "chevron.right")
-                        .opacity(viewModel.matchCount == 0 ? 0.33 : 1)
-                        .padding(.horizontal, condensed ? 0 : 5)
+                        .opacity(imageOpacity)
+                        .padding(.horizontal, dynamicPadding)
                 }
                 .help("Next Match")
-                .disabled(viewModel.matchCount == 0)
+                .disabled(viewModel.matchesEmpty)
             }
             .controlGroupStyle(PanelControlGroupStyle())
             .fixedSize()
+
             Button {
                 viewModel.dismiss?()
             } label: {
@@ -47,8 +57,8 @@ struct FindControls: View {
                         Text("Done")
                     }
                 }
-                .help(condensed ? "Done" : "")
-                .padding(.horizontal, condensed ? 0 : 5)
+                .help("Done")
+                .padding(.horizontal, dynamicPadding)
             }
             .buttonStyle(PanelButtonStyle())
         }
