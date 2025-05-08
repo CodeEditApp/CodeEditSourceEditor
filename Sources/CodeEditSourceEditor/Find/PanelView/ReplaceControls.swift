@@ -34,7 +34,7 @@ struct ReplaceControls: View {
                     }
                     .opacity(shouldDisableSingle ? 0.33 : 1)
                 }
-                .help("Replace")
+                .help(condensed ? "Replace" : "")
                 .disabled(shouldDisableSingle)
                 .frame(maxWidth: .infinity)
 
@@ -52,7 +52,7 @@ struct ReplaceControls: View {
                     }
                     .opacity(shouldDisableAll ? 0.33 : 1)
                 }
-                .help("Replace All")
+                .help(condensed ? "Replace All" : "")
                 .disabled(shouldDisableAll)
                 .frame(maxWidth: .infinity)
             }

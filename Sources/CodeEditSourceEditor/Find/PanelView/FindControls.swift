@@ -57,7 +57,7 @@ struct FindControls: View {
                         Text("Done")
                     }
                 }
-                .help("Done")
+                .help(condensed ? "Done" : "")
                 .padding(.horizontal, dynamicPadding)
             }
             .buttonStyle(PanelButtonStyle())
