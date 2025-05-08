@@ -9,6 +9,47 @@ import Foundation
 import AppKit
 import CodeEditTextView
 
+final class IndentationLineFoldProvider: LineFoldProvider {
+    func foldLevelAtLine(_ lineNumber: Int, layoutManager: TextLayoutManager, textStorage: NSTextStorage) -> Int? {
+        guard let linePosition = layoutManager.textLineForIndex(lineNumber),
+              let indentLevel = indentLevelForPosition(linePosition, textStorage: textStorage) else {
+            return nil
+        }
+
+        //        if let precedingLinePosition = layoutManager.textLineForIndex(lineNumber - 1),
+        //           let precedingIndentLevel = indentLevelForPosition(precedingLinePosition, textStorage: textStorage) {
+        //            if precedingIndentLevel > indentLevel {
+        //                return precedingIndentLevel
+        //            }
+        //        }
+        //
+        //        if let nextLinePosition = layoutManager.textLineForIndex(lineNumber + 1),
+        //           let nextIndentLevel = indentLevelForPosition(nextLinePosition, textStorage: textStorage) {
+        //            if nextIndentLevel > indentLevel {
+        //                return nextIndentLevel
+        //            }
+        //        }
+
+        return indentLevel
+    }
+
+    private func indentLevelForPosition(
+        _ position: TextLineStorage<TextLine>.TextLinePosition,
+        textStorage: NSTextStorage
+    ) -> Int? {
+        guard let substring = textStorage.substring(from: position.range) else {
+            return nil
+        }
+
+        return substring.utf16 // Keep NSString units
+            .enumerated()
+            .first(where: { UnicodeScalar($0.element)?.properties.isWhitespace != true })?
+            .offset
+    }
+}
+
+let buh = IndentationLineFoldProvider()
+
 /// Displays the code folding ribbon in the ``GutterView``.
 ///
 /// This view draws its contents
@@ -22,16 +63,37 @@ class FoldingRibbonView: NSView {
     var backgroundColor: NSColor = NSColor.controlBackgroundColor
 
     @Invalidating(.display)
-    var markerColor = CGColor(gray: 0.0, alpha: 0.1)
+    var markerColor = NSColor(name: nil) { appearance in
+        return switch appearance.name {
+        case .aqua:
+            NSColor(deviceWhite: 0.0, alpha: 0.1)
+        case .darkAqua:
+            NSColor(deviceWhite: 1.0, alpha: 0.1)
+        default:
+            NSColor()
+        }
+    }.cgColor
+
+    @Invalidating(.display)
+    var markerBorderColor = NSColor(name: nil) { appearance in
+        return switch appearance.name {
+        case .aqua:
+            NSColor(deviceWhite: 1.0, alpha: 0.4)
+        case .darkAqua:
+            NSColor(deviceWhite: 0.0, alpha: 0.4)
+        default:
+            NSColor()
+        }
+    }.cgColor
 
     override public var isFlipped: Bool {
         true
     }
 
-    init(textView: TextView, levelProvider: LineFoldProvider?) {
+    init(textView: TextView, foldProvider: LineFoldProvider?) {
         self.model = LineFoldingModel(
             textView: textView,
-            levelProvider: levelProvider
+            foldProvider: buh
         )
         super.init(frame: .zero)
         layerContentsRedrawPolicy = .onSetNeedsDisplay
@@ -95,7 +157,7 @@ class FoldingRibbonView: NSView {
         let lineRange = rangeStart.index...rangeEnd.index
 
         context.setFillColor(markerColor)
-        let folds = model.folds(in: lineRange)
+        let folds = model.getFolds(in: lineRange)
         for fold in folds {
             drawFoldMarker(
                 fold,
@@ -107,7 +169,7 @@ class FoldingRibbonView: NSView {
 
         context.restoreGState()
     }
-    
+
     /// Draw a single fold marker for a fold.
     ///
     /// Ensure the correct fill color is set on the drawing context before calling.
@@ -158,7 +220,7 @@ class FoldingRibbonView: NSView {
             drawFoldMarker(subFold, markerContext: markerContext.increment(), in: context, using: layoutManager)
         }
     }
-    
+
     /// Draws a rounded outline for a rectangle, creating the small, light, outline around each fold indicator.
     ///
     /// This function does not change fill colors for the given context.
@@ -185,7 +247,7 @@ class FoldingRibbonView: NSView {
 
         context.clip(to: CGRect(x: 0, y: minYPosition, width: 7, height: maxYPosition - minYPosition))
         context.addPath(combined)
-        context.setFillColor(CGColor(gray: 1.0, alpha: 0.4))
+        context.setFillColor(markerBorderColor)
         context.drawPath(using: .eoFill)
 
         context.restoreGState()

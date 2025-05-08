@@ -22,35 +22,40 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
     /// and ``FoldRange/subFolds``.
     private var foldCache: [FoldRange] = []
 
-    weak var levelProvider: LineFoldProvider?
+    weak var foldProvider: LineFoldProvider?
     weak var textView: TextView?
 
-    init(textView: TextView, levelProvider: LineFoldProvider?) {
+    init(textView: TextView, foldProvider: LineFoldProvider?) {
         self.textView = textView
-        self.levelProvider = levelProvider
+        self.foldProvider = foldProvider
         super.init()
         textView.addStorageDelegate(self)
         buildFoldsForDocument()
     }
 
-    func folds(in lineRange: ClosedRange<Int>) -> [FoldRange] {
+    func getFolds(in lineRange: ClosedRange<Int>) -> [FoldRange] {
         foldCache.filter({ $0.lineRange.overlaps(lineRange) })
     }
 
+    /// Build out the ``foldCache`` for the entire document.
+    ///
+    /// For each line in the document, find the indentation level using the ``levelProvider``. At each line, if the
+    /// indent increases from the previous line, we start a new fold. If it decreases we end the fold we were in.
     func buildFoldsForDocument() {
-        guard let textView, let levelProvider else { return }
+        guard let textView, let foldProvider else { return }
         foldCache.removeAll(keepingCapacity: true)
 
         var currentFold: FoldRange?
         var currentDepth: Int = 0
         for linePosition in textView.layoutManager.linesInRange(textView.documentRange) {
-            guard let foldDepth = levelProvider.foldLevelAtLine(
+            guard let foldDepth = foldProvider.foldLevelAtLine(
                 linePosition.index,
                 layoutManager: textView.layoutManager,
                 textStorage: textView.textStorage
             ) else {
                 continue
             }
+            print(foldDepth, linePosition.index)
             // Start a new fold
             if foldDepth > currentDepth {
                 let newFold = FoldRange(
@@ -59,7 +64,6 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
                     parent: currentFold,
                     subFolds: []
                 )
-
                 if currentDepth == 0 {
                     foldCache.append(newFold)
                 }

@@ -484,12 +484,12 @@ final class TextViewControllerTests: XCTestCase {
         controller.showFoldingRibbon = false
         XCTAssertFalse(controller.gutterView.showFoldingRibbon)
         controller.gutterView.updateWidthIfNeeded() // Would be called on a display pass
-        let noRibbonWidth = controller.gutterView.gutterWidth
+        let noRibbonWidth = controller.gutterView.frame.width
 
         controller.showFoldingRibbon = true
         XCTAssertTrue(controller.gutterView.showFoldingRibbon)
         controller.gutterView.updateWidthIfNeeded() // Would be called on a display pass
-        XCTAssertEqual(controller.gutterView.gutterWidth, noRibbonWidth + 7.0)
+        XCTAssertEqual(controller.gutterView.frame.width, noRibbonWidth + 7.0)
     }
 }
 

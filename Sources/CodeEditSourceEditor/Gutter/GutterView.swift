@@ -57,6 +57,10 @@ public class GutterView: NSView {
     @Invalidating(.display)
     var backgroundEdgeInsets: EdgeInsets = EdgeInsets(leading: 0, trailing: 8)
 
+    /// The leading padding for the folding ribbon from the line numbers.
+    @Invalidating(.display)
+    var foldingRibbonPadding: CGFloat = 4
+
     @Invalidating(.display)
     var backgroundColor: NSColor? = NSColor.controlBackgroundColor
 
@@ -101,7 +105,11 @@ public class GutterView: NSView {
 
     /// Syntax helper for determining the required space for the folding ribbon.
     private var foldingRibbonWidth: CGFloat {
-        if foldingRibbon.isHidden { 0.0 } else { FoldingRibbonView.width }
+        if foldingRibbon.isHidden {
+            0.0
+        } else {
+            FoldingRibbonView.width + foldingRibbonPadding
+        }
     }
 
     /// The gutter's y positions start at the top of the document and increase as it moves down the screen.
@@ -117,7 +125,7 @@ public class GutterView: NSView {
         set {
             super.frame = newValue
             foldingRibbon.frame = NSRect(
-                x: newValue.width - edgeInsets.trailing - foldingRibbonWidth,
+                x: newValue.width - edgeInsets.trailing - foldingRibbonWidth + foldingRibbonPadding,
                 y: 0.0,
                 width: foldingRibbonWidth,
                 height: newValue.height
@@ -138,7 +146,7 @@ public class GutterView: NSView {
         self.textView = textView
         self.delegate = delegate
 
-        foldingRibbon = FoldingRibbonView(textView: textView, levelProvider: nil)
+        foldingRibbon = FoldingRibbonView(textView: textView, foldProvider: nil)
 
         super.init(frame: .zero)
         clipsToBounds = true
@@ -196,7 +204,7 @@ public class GutterView: NSView {
     private func drawBackground(_ context: CGContext, dirtyRect: NSRect) {
         guard let backgroundColor else { return }
         let minX = max(backgroundEdgeInsets.leading, dirtyRect.minX)
-        let maxX = min(frame.width - backgroundEdgeInsets.trailing, dirtyRect.maxX)
+        let maxX = min(frame.width - backgroundEdgeInsets.trailing - foldingRibbonWidth, dirtyRect.maxX)
         let width = maxX - minX
 
         context.saveGState()
