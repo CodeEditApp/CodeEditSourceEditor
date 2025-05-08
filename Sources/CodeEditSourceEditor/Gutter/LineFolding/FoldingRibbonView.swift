@@ -9,47 +9,6 @@ import Foundation
 import AppKit
 import CodeEditTextView
 
-final class IndentationLineFoldProvider: LineFoldProvider {
-    func foldLevelAtLine(_ lineNumber: Int, layoutManager: TextLayoutManager, textStorage: NSTextStorage) -> Int? {
-        guard let linePosition = layoutManager.textLineForIndex(lineNumber),
-              let indentLevel = indentLevelForPosition(linePosition, textStorage: textStorage) else {
-            return nil
-        }
-
-        //        if let precedingLinePosition = layoutManager.textLineForIndex(lineNumber - 1),
-        //           let precedingIndentLevel = indentLevelForPosition(precedingLinePosition, textStorage: textStorage) {
-        //            if precedingIndentLevel > indentLevel {
-        //                return precedingIndentLevel
-        //            }
-        //        }
-        //
-        //        if let nextLinePosition = layoutManager.textLineForIndex(lineNumber + 1),
-        //           let nextIndentLevel = indentLevelForPosition(nextLinePosition, textStorage: textStorage) {
-        //            if nextIndentLevel > indentLevel {
-        //                return nextIndentLevel
-        //            }
-        //        }
-
-        return indentLevel
-    }
-
-    private func indentLevelForPosition(
-        _ position: TextLineStorage<TextLine>.TextLinePosition,
-        textStorage: NSTextStorage
-    ) -> Int? {
-        guard let substring = textStorage.substring(from: position.range) else {
-            return nil
-        }
-
-        return substring.utf16 // Keep NSString units
-            .enumerated()
-            .first(where: { UnicodeScalar($0.element)?.properties.isWhitespace != true })?
-            .offset
-    }
-}
-
-let buh = IndentationLineFoldProvider()
-
 /// Displays the code folding ribbon in the ``GutterView``.
 ///
 /// This view draws its contents
@@ -93,7 +52,7 @@ class FoldingRibbonView: NSView {
     init(textView: TextView, foldProvider: LineFoldProvider?) {
         self.model = LineFoldingModel(
             textView: textView,
-            foldProvider: buh
+            foldProvider: foldProvider
         )
         super.init(frame: .zero)
         layerContentsRedrawPolicy = .onSetNeedsDisplay
