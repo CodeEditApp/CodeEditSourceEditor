@@ -9,6 +9,20 @@ import AppKit
 import CodeEditTextView
 
 extension FoldingRibbonView {
+    /// The context in which the fold is being drawn, including the depth and fold range.
+    struct FoldMarkerDrawingContext {
+        let range: ClosedRange<Int>
+        let depth: UInt
+
+        /// Increment the depth
+        func incrementDepth() -> FoldMarkerDrawingContext {
+            FoldMarkerDrawingContext(
+                range: range,
+                depth: depth + 1
+            )
+        }
+    }
+
     override func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext,
               let layoutManager = model.textView?.layoutManager else {

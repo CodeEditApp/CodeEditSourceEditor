@@ -158,18 +158,4 @@ class FoldingRibbonView: NSView {
         hoverAnimationProgress = 0.0
         hoveringFold = nil
     }
-
-    /// The context in which the fold is being drawn, including the depth and fold range.
-    struct FoldMarkerDrawingContext {
-        let range: ClosedRange<Int>
-        let depth: UInt
-
-        /// Increment the depth
-        func incrementDepth() -> FoldMarkerDrawingContext {
-            FoldMarkerDrawingContext(
-                range: range,
-                depth: depth + 1
-            )
-        }
-    }
 }
