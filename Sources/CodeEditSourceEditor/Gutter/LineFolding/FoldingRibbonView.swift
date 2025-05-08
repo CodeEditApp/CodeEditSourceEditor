@@ -16,10 +16,21 @@ fileprivate let demoFoldProvider = IndentationLineFoldProvider()
 ///
 /// This view draws its contents
 class FoldingRibbonView: NSView {
+    struct HoveringFold: Equatable {
+        let range: ClosedRange<Int>
+        let depth: Int
+    }
+
     static let width: CGFloat = 7.0
 
-    private var model: LineFoldingModel
-    private var hoveringLine: Int?
+    var model: LineFoldingModel
+
+    // Disabling this lint rule because this initial value is required for @Invalidating
+    @Invalidating(.display)
+    var hoveringFold: HoveringFold? = nil // swiftlint:disable:this redundant_optional_initialization
+    var hoverAnimationTimer: Timer?
+    @Invalidating(.display)
+    var hoverAnimationProgress: CGFloat = 0.0
 
     @Invalidating(.display)
     var backgroundColor: NSColor = NSColor.controlBackgroundColor
@@ -30,7 +41,7 @@ class FoldingRibbonView: NSView {
         case .aqua:
             NSColor(deviceWhite: 0.0, alpha: 0.1)
         case .darkAqua:
-            NSColor(deviceWhite: 1.0, alpha: 0.1)
+            NSColor(deviceWhite: 1.0, alpha: 0.2)
         default:
             NSColor()
         }
@@ -48,6 +59,30 @@ class FoldingRibbonView: NSView {
         }
     }.cgColor
 
+    @Invalidating(.display)
+    var hoverFillColor = NSColor(name: nil) { appearance in
+        return switch appearance.name {
+        case .aqua:
+            NSColor(deviceWhite: 1.0, alpha: 1.0)
+        case .darkAqua:
+            NSColor(deviceWhite: 0.17, alpha: 1.0)
+        default:
+            NSColor()
+        }
+    }.cgColor
+
+    @Invalidating(.display)
+    var hoverBorderColor = NSColor(name: nil) { appearance in
+        return switch appearance.name {
+        case .aqua:
+            NSColor(deviceWhite: 0.8, alpha: 1.0)
+        case .darkAqua:
+            NSColor(deviceWhite: 0.4, alpha: 1.0)
+        default:
+            NSColor()
+        }
+    }.cgColor
+
     override public var isFlipped: Bool {
         true
     }
@@ -60,17 +95,20 @@ class FoldingRibbonView: NSView {
         )
         super.init(frame: .zero)
         layerContentsRedrawPolicy = .onSetNeedsDisplay
+        clipsToBounds = false
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // MARK: - Hover
+
     override func updateTrackingAreas() {
         trackingAreas.forEach(removeTrackingArea)
         let area = NSTrackingArea(
             rect: bounds,
-            options: [.mouseMoved, .activeInKeyWindow],
+            options: [.mouseMoved, .activeInKeyWindow, .mouseEnteredAndExited],
             owner: self,
             userInfo: nil
         )
@@ -79,7 +117,46 @@ class FoldingRibbonView: NSView {
 
     override func mouseMoved(with event: NSEvent) {
         let pointInView = convert(event.locationInWindow, from: nil)
-        hoveringLine = model.textView?.layoutManager.textLineForPosition(pointInView.y)?.index
+        guard let lineNumber = model.textView?.layoutManager.textLineForPosition(pointInView.y)?.index,
+              let fold = model.getCachedFoldAt(lineNumber: lineNumber) else {
+            hoverAnimationProgress = 0.0
+            hoveringFold = nil
+            return
+        }
+
+        let newHoverRange = HoveringFold(range: fold.range.lineRange, depth: fold.depth)
+        guard newHoverRange != hoveringFold else {
+            return
+        }
+        hoverAnimationTimer?.invalidate()
+        // We only animate the first hovered fold. If the user moves the mouse vertically into other folds we just
+        // show it immediately.
+        if hoveringFold == nil {
+            hoverAnimationProgress = 0.0
+            hoveringFold = newHoverRange
+
+            let duration: TimeInterval = 0.2
+            let startTime = CACurrentMediaTime()
+            hoverAnimationTimer = Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { [weak self] timer in
+                guard let self = self else { return }
+                let now = CACurrentMediaTime()
+                let time = CGFloat((now - startTime) / duration)
+                self.hoverAnimationProgress = min(1.0, time)
+                if self.hoverAnimationProgress >= 1.0 {
+                    timer.invalidate()
+                }
+            }
+            return
+        }
+
+        // Don't animate these
+        hoverAnimationProgress = 1.0
+        hoveringFold = newHoverRange
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        hoverAnimationProgress = 0.0
+        hoveringFold = nil
     }
 
     /// The context in which the fold is being drawn, including the depth and fold range.
@@ -94,117 +171,5 @@ class FoldingRibbonView: NSView {
                 depth: depth + 1
             )
         }
-    }
-
-    override func draw(_ dirtyRect: NSRect) {
-        guard let context = NSGraphicsContext.current?.cgContext,
-                let layoutManager = model.textView?.layoutManager else {
-            return
-        }
-
-        context.saveGState()
-        context.clip(to: dirtyRect)
-
-        // Find the visible lines in the rect AppKit is asking us to draw.
-        guard let rangeStart = layoutManager.textLineForPosition(dirtyRect.minY),
-              let rangeEnd = layoutManager.textLineForPosition(dirtyRect.maxY) else {
-            return
-        }
-        let lineRange = rangeStart.index...rangeEnd.index
-
-        context.setFillColor(markerColor)
-        let folds = model.getFolds(in: lineRange)
-        for fold in folds {
-            drawFoldMarker(
-                fold,
-                markerContext: FoldMarkerDrawingContext(range: lineRange, depth: 0),
-                in: context,
-                using: layoutManager
-            )
-        }
-
-        context.restoreGState()
-    }
-
-    /// Draw a single fold marker for a fold.
-    ///
-    /// Ensure the correct fill color is set on the drawing context before calling.
-    ///
-    /// - Parameters:
-    ///   - fold: The fold to draw.
-    ///   - markerContext: The context in which the fold is being drawn, including the depth and if a line is
-    ///                    being hovered.
-    ///   - context: The drawing context to use.
-    ///   - layoutManager: A layout manager used to retrieve position information for lines.
-    private func drawFoldMarker(
-        _ fold: FoldRange,
-        markerContext: FoldMarkerDrawingContext,
-        in context: CGContext,
-        using layoutManager: TextLayoutManager
-    ) {
-        guard let minYPosition = layoutManager.textLineForIndex(fold.lineRange.lowerBound)?.yPos,
-              let maxPosition = layoutManager.textLineForIndex(fold.lineRange.upperBound) else {
-            return
-        }
-
-        let maxYPosition = maxPosition.yPos + maxPosition.height
-
-        if false /*model.getCachedDepthAt(lineNumber: hoveringLine ?? -1)*/ {
-            // TODO: Handle hover state
-        } else {
-            let plainRect = NSRect(x: 0, y: minYPosition + 1, width: 7, height: maxYPosition - minYPosition - 2)
-            // TODO: Draw a single horizontal line when folds are adjacent
-            let roundedRect = NSBezierPath(roundedRect: plainRect, xRadius: 3.5, yRadius: 3.5)
-
-            context.addPath(roundedRect.cgPathFallback)
-            context.drawPath(using: .fill)
-
-            // Add small white line if we're overlapping with other markers
-            if markerContext.depth != 0 {
-                drawOutline(
-                    minYPosition: minYPosition,
-                    maxYPosition: maxYPosition,
-                    originalPath: roundedRect,
-                    in: context
-                )
-            }
-        }
-
-        // Draw subfolds
-        for subFold in fold.subFolds.filter({ $0.lineRange.overlaps(markerContext.range) }) {
-            drawFoldMarker(subFold, markerContext: markerContext.incrementDepth(), in: context, using: layoutManager)
-        }
-    }
-
-    /// Draws a rounded outline for a rectangle, creating the small, light, outline around each fold indicator.
-    ///
-    /// This function does not change fill colors for the given context.
-    ///
-    /// - Parameters:
-    ///   - minYPosition: The minimum y position of the rectangle to outline.
-    ///   - maxYPosition: The maximum y position of the rectangle to outline.
-    ///   - originalPath: The original bezier path for the rounded rectangle.
-    ///   - context: The context to draw in.
-    private func drawOutline(
-        minYPosition: CGFloat,
-        maxYPosition: CGFloat,
-        originalPath: NSBezierPath,
-        in context: CGContext
-    ) {
-        context.saveGState()
-
-        let plainRect = NSRect(x: -0.5, y: minYPosition, width: 8, height: maxYPosition - minYPosition)
-        let roundedRect = NSBezierPath(roundedRect: plainRect, xRadius: 4, yRadius: 4)
-
-        let combined = CGMutablePath()
-        combined.addPath(roundedRect.cgPathFallback)
-        combined.addPath(originalPath.cgPathFallback)
-
-        context.clip(to: CGRect(x: 0, y: minYPosition, width: 7, height: maxYPosition - minYPosition))
-        context.addPath(combined)
-        context.setFillColor(markerBorderColor)
-        context.drawPath(using: .eoFill)
-
-        context.restoreGState()
     }
 }

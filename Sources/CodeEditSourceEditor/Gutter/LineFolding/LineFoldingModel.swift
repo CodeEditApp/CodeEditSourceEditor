@@ -55,7 +55,7 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
             ) else {
                 continue
             }
-            print(foldDepth, linePosition.index)
+
             // Start a new fold
             if foldDepth > currentDepth {
                 let newFold = FoldRange(
@@ -109,19 +109,20 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
     /// - Parameter lineNumber: The line number to query, zero-indexed.
     /// - Returns: The deepest cached depth of the fold if it was found.
     func getCachedDepthAt(lineNumber: Int) -> Int? {
-        return findCachedFoldAt(lineNumber: lineNumber)?.depth
+        return getCachedFoldAt(lineNumber: lineNumber)?.depth
+    }
+
+    /// Finds the deepest cached fold and depth of the fold for a line number.
+    /// - Parameter lineNumber: The line number to query, zero-indexed.
+    /// - Returns: The deepest cached fold and depth of the fold if it was found.
+    func getCachedFoldAt(lineNumber: Int) -> (range: FoldRange, depth: Int)? {
+        binarySearchFoldsArray(lineNumber: lineNumber, folds: foldCache, currentDepth: 0)
     }
 }
 
 // MARK: - Search Folds
 
 private extension LineFoldingModel {
-    /// Finds the deepest cached fold and depth of the fold for a line number.
-    /// - Parameter lineNumber: The line number to query, zero-indexed.
-    /// - Returns: The deepest cached fold and depth of the fold if it was found.
-    func findCachedFoldAt(lineNumber: Int) -> (range: FoldRange, depth: Int)? {
-        binarySearchFoldsArray(lineNumber: lineNumber, folds: foldCache, currentDepth: 0)
-    }
 
     /// A generic function for searching an ordered array of fold ranges.
     /// - Returns: The found range and depth it was found at, if it exists.
