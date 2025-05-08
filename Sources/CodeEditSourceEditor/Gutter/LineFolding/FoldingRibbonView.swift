@@ -11,7 +11,7 @@ import CodeEditTextView
 import Combine
 
 #warning("Replace before release")
-fileprivate let demoFoldProvider = IndentationLineFoldProvider()
+private let demoFoldProvider = IndentationLineFoldProvider()
 
 /// Displays the code folding ribbon in the ``GutterView``.
 ///
@@ -100,7 +100,7 @@ class FoldingRibbonView: NSView {
         layerContentsRedrawPolicy = .onSetNeedsDisplay
         clipsToBounds = false
 
-        foldUpdateCancellable = model.foldsUpdatedPublisher.sink {
+        foldUpdateCancellable = model.$foldCache.receive(on: RunLoop.main).sink { _ in
             self.needsDisplay = true
         }
     }

@@ -9,5 +9,5 @@ import AppKit
 import CodeEditTextView
 
 protocol LineFoldProvider: AnyObject {
-    func foldLevelAtLine(_ lineNumber: Int, layoutManager: TextLayoutManager, textStorage: NSTextStorage) -> Int?
+    func foldLevelAtLine(_ lineNumber: Int, substring: NSString) -> Int?
 }

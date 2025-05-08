@@ -27,13 +27,11 @@ extension DispatchQueue {
     /// executed if not already on the main thread.
     /// - Parameter item: The work item to execute.
     /// - Returns: The value of the work item.
-    static func syncMainIfNot<T>(_ item: @escaping () -> T) -> T {
+    static func syncMainIfNot<T>(_ item: () -> T) -> T {
         if Thread.isMainThread {
             return item()
         } else {
-            return DispatchQueue.main.sync {
-                return item()
-            }
+            return DispatchQueue.main.sync(execute: item)
         }
     }
 }
