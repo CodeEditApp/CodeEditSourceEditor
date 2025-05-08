@@ -104,18 +104,18 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
         }
         invalidateLine(lineNumber: lineNumber)
     }
-}
 
-// MARK: - Search Folds
-
-private extension LineFoldingModel {
     /// Finds the deepest cached depth of the fold for a line number.
     /// - Parameter lineNumber: The line number to query, zero-indexed.
     /// - Returns: The deepest cached depth of the fold if it was found.
     func getCachedDepthAt(lineNumber: Int) -> Int? {
         return findCachedFoldAt(lineNumber: lineNumber)?.depth
     }
+}
 
+// MARK: - Search Folds
+
+private extension LineFoldingModel {
     /// Finds the deepest cached fold and depth of the fold for a line number.
     /// - Parameter lineNumber: The line number to query, zero-indexed.
     /// - Returns: The deepest cached fold and depth of the fold if it was found.

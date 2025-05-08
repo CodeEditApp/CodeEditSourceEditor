@@ -82,24 +82,17 @@ class FoldingRibbonView: NSView {
         hoveringLine = model.textView?.layoutManager.textLineForPosition(pointInView.y)?.index
     }
 
+    /// The context in which the fold is being drawn, including the depth and fold range.
     struct FoldMarkerDrawingContext {
         let range: ClosedRange<Int>
         let depth: UInt
-        let hoveringLine: Int?
 
-        func increment() -> FoldMarkerDrawingContext {
+        /// Increment the depth
+        func incrementDepth() -> FoldMarkerDrawingContext {
             FoldMarkerDrawingContext(
                 range: range,
-                depth: depth + 1,
-                hoveringLine: isHovering() ? nil : hoveringLine
+                depth: depth + 1
             )
-        }
-
-        func isHovering() -> Bool {
-            guard let hoveringLine else {
-                return false
-            }
-            return range.contains(hoveringLine)
         }
     }
 
@@ -124,7 +117,7 @@ class FoldingRibbonView: NSView {
         for fold in folds {
             drawFoldMarker(
                 fold,
-                markerContext: FoldMarkerDrawingContext(range: lineRange, depth: 0, hoveringLine: hoveringLine),
+                markerContext: FoldMarkerDrawingContext(range: lineRange, depth: 0),
                 in: context,
                 using: layoutManager
             )
@@ -156,12 +149,11 @@ class FoldingRibbonView: NSView {
 
         let maxYPosition = maxPosition.yPos + maxPosition.height
 
-        // TODO: Draw a single line when folds are adjacent
-
-        if markerContext.isHovering() {
+        if false /*model.getCachedDepthAt(lineNumber: hoveringLine ?? -1)*/ {
             // TODO: Handle hover state
         } else {
             let plainRect = NSRect(x: 0, y: minYPosition + 1, width: 7, height: maxYPosition - minYPosition - 2)
+            // TODO: Draw a single horizontal line when folds are adjacent
             let roundedRect = NSBezierPath(roundedRect: plainRect, xRadius: 3.5, yRadius: 3.5)
 
             context.addPath(roundedRect.cgPathFallback)
@@ -180,7 +172,7 @@ class FoldingRibbonView: NSView {
 
         // Draw subfolds
         for subFold in fold.subFolds.filter({ $0.lineRange.overlaps(markerContext.range) }) {
-            drawFoldMarker(subFold, markerContext: markerContext.increment(), in: context, using: layoutManager)
+            drawFoldMarker(subFold, markerContext: markerContext.incrementDepth(), in: context, using: layoutManager)
         }
     }
 
