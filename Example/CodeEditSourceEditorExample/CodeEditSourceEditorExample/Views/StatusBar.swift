@@ -26,6 +26,7 @@ struct StatusBar: View {
     @Binding var indentOption: IndentOption
     @Binding var reformatAtColumn: Int
     @Binding var showReformattingGuide: Bool
+    @Binding var showFoldingRibbon: Bool
 
     var body: some View {
         HStack {
@@ -43,6 +44,7 @@ struct StatusBar: View {
                 .onChange(of: reformatAtColumn) { _, newValue in
                     reformatAtColumn = max(1, min(200, newValue))
                 }
+                Toggle("Show Folding Ribbon", isOn: $showFoldingRibbon)
                 if #available(macOS 14, *) {
                     Toggle("Use System Cursor", isOn: $useSystemCursor)
                 } else {

@@ -64,7 +64,8 @@ enum Mock {
             letterSpacing: 1.0,
             useSystemCursor: false,
             bracketPairEmphasis: .flash,
-            showMinimap: true
+            showMinimap: true,
+            showFoldingRibbon: true
         )
     }
 

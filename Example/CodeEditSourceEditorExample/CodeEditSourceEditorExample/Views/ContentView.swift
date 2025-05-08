@@ -27,6 +27,7 @@ struct ContentView: View {
     @State private var settingsIsPresented: Bool = false
     @State private var treeSitterClient = TreeSitterClient()
     @AppStorage("showMinimap") private var showMinimap: Bool = true
+    @AppStorage("showFoldingRibbon") private var showFoldingRibbon: Bool = true
     @State private var indentOption: IndentOption = .spaces(count: 4)
     @AppStorage("reformatAtColumn") private var reformatAtColumn: Int = 80
     @AppStorage("showReformattingGuide") private var showReformattingGuide: Bool = false
@@ -56,7 +57,8 @@ struct ContentView: View {
                 useSystemCursor: useSystemCursor,
                 showMinimap: showMinimap,
                 reformatAtColumn: reformatAtColumn,
-                showReformattingGuide: showReformattingGuide
+                showReformattingGuide: showReformattingGuide,
+                showFoldingRibbon: showFoldingRibbon
             )
             .overlay(alignment: .bottom) {
                 StatusBar(
@@ -71,7 +73,8 @@ struct ContentView: View {
                     showMinimap: $showMinimap,
                     indentOption: $indentOption,
                     reformatAtColumn: $reformatAtColumn,
-                    showReformattingGuide: $showReformattingGuide
+                    showReformattingGuide: $showReformattingGuide,
+                    showFoldingRibbon: $showFoldingRibbon
                 )
             }
             .ignoresSafeArea()
