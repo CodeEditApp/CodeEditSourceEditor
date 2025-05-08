@@ -7,6 +7,7 @@
 
 import AppKit
 import CodeEditTextView
+import Combine
 
 /// # Basic Premise
 ///
@@ -24,6 +25,8 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
 
     weak var foldProvider: LineFoldProvider?
     weak var textView: TextView?
+
+    lazy var foldsUpdatedPublisher = PassthroughSubject<Void, Never>()
 
     init(textView: TextView, foldProvider: LineFoldProvider?) {
         self.textView = textView
@@ -64,25 +67,25 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
                     parent: currentFold,
                     subFolds: []
                 )
-                if currentDepth == 0 {
+
+                if currentFold == nil {
                     foldCache.append(newFold)
+                } else {
+                    currentFold?.subFolds.append(newFold)
                 }
-                currentFold?.subFolds.append(newFold)
                 currentFold = newFold
             } else if foldDepth < currentDepth {
                 // End this fold
                 if let fold = currentFold {
                     fold.lineRange = fold.lineRange.lowerBound...linePosition.index
-
-                    if foldDepth == 0 {
-                        currentFold = nil
-                    }
                 }
                 currentFold = currentFold?.parent
             }
 
             currentDepth = foldDepth
         }
+
+        foldsUpdatedPublisher.send()
     }
 
     func invalidateLine(lineNumber: Int) {

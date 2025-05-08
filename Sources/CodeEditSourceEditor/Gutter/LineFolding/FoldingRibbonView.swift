@@ -8,6 +8,7 @@
 import Foundation
 import AppKit
 import CodeEditTextView
+import Combine
 
 #warning("Replace before release")
 fileprivate let demoFoldProvider = IndentationLineFoldProvider()
@@ -83,6 +84,8 @@ class FoldingRibbonView: NSView {
         }
     }.cgColor
 
+    private var foldUpdateCancellable: AnyCancellable?
+
     override public var isFlipped: Bool {
         true
     }
@@ -96,10 +99,18 @@ class FoldingRibbonView: NSView {
         super.init(frame: .zero)
         layerContentsRedrawPolicy = .onSetNeedsDisplay
         clipsToBounds = false
+
+        foldUpdateCancellable = model.foldsUpdatedPublisher.sink {
+            self.needsDisplay = true
+        }
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        foldUpdateCancellable?.cancel()
     }
 
     // MARK: - Hover
