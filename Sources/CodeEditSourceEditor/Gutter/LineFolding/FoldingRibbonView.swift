@@ -9,6 +9,9 @@ import Foundation
 import AppKit
 import CodeEditTextView
 
+#warning("Replace before release")
+fileprivate let demoFoldProvider = IndentationLineFoldProvider()
+
 /// Displays the code folding ribbon in the ``GutterView``.
 ///
 /// This view draws its contents
@@ -50,9 +53,10 @@ class FoldingRibbonView: NSView {
     }
 
     init(textView: TextView, foldProvider: LineFoldProvider?) {
+        #warning("Replace before release")
         self.model = LineFoldingModel(
             textView: textView,
-            foldProvider: foldProvider
+            foldProvider: foldProvider ?? demoFoldProvider
         )
         super.init(frame: .zero)
         layerContentsRedrawPolicy = .onSetNeedsDisplay
