@@ -39,7 +39,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///                         the default `TreeSitterClient` highlighter.
     ///   - contentInsets: Insets to use to offset the content in the enclosing scroll view. Leave as `nil` to let the
     ///                    scroll view automatically adjust content insets.
-    ///   - additionalTextInsets: An additional amount to inset the text of the editor by.
+    ///   - additionalTextInsets: A set of extra text insets to indent only *text* content. Does not effect
+    ///                           decorations like the find panel.
     ///   - isEditable: A Boolean value that controls whether the text view allows the user to edit text.
     ///   - isSelectable: A Boolean value that controls whether the text view allows the user to select text. If this
     ///                   value is true, and `isEditable` is false, the editor is selectable but not editable.
@@ -47,12 +48,13 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///                    character's width between characters, etc. Defaults to `1.0`
     ///   - bracketPairEmphasis: The type of highlight to use to highlight bracket pairs.
     ///                           See `BracketPairHighlight` for more information. Defaults to `nil`
-    ///   - useSystemCursor: If true, uses the system cursor on `>=macOS 14`.
+    ///   - useSystemCursor: Use the system cursor instead of the default line cursor. Only available after macOS 14.
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
     ///   - coordinators: Any text coordinators for the view to use. See ``TextViewCoordinator`` for more information.
-    ///   - showMinimap: Whether to show the minimap
+    ///   - showMinimap: Toggle the visibility of the minimap.
     ///   - reformatAtColumn: The column to reformat at
     ///   - showReformattingGuide: Whether to show the reformatting guide
+    ///   - showFoldingRibbon: Toggle the visibility of the line folding ribbon.
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
@@ -77,7 +79,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         coordinators: [any TextViewCoordinator] = [],
         showMinimap: Bool,
         reformatAtColumn: Int,
-        showReformattingGuide: Bool
+        showReformattingGuide: Bool,
+        showFoldingRibbon: Bool
     ) {
         self.text = .binding(text)
         self.language = language
@@ -107,6 +110,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.showMinimap = showMinimap
         self.reformatAtColumn = reformatAtColumn
         self.showReformattingGuide = showReformattingGuide
+        self.showFoldingRibbon = showFoldingRibbon
     }
 
     /// Initializes a Text Editor
@@ -127,6 +131,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///                         the default `TreeSitterClient` highlighter.
     ///   - contentInsets: Insets to use to offset the content in the enclosing scroll view. Leave as `nil` to let the
     ///                    scroll view automatically adjust content insets.
+    ///   - additionalTextInsets: A set of extra text insets to indent only *text* content. Does not effect
+    ///                           decorations like the find panel.
     ///   - isEditable: A Boolean value that controls whether the text view allows the user to edit text.
     ///   - isSelectable: A Boolean value that controls whether the text view allows the user to select text. If this
     ///                   value is true, and `isEditable` is false, the editor is selectable but not editable.
@@ -134,11 +140,13 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///                    character's width between characters, etc. Defaults to `1.0`
     ///   - bracketPairEmphasis: The type of highlight to use to highlight bracket pairs.
     ///                           See `BracketPairEmphasis` for more information. Defaults to `nil`
+    ///   - useSystemCursor: Use the system cursor instead of the default line cursor. Only available after macOS 14.
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
     ///   - coordinators: Any text coordinators for the view to use. See ``TextViewCoordinator`` for more information.
-    ///   - showMinimap: Whether to show the minimap
+    ///   - showMinimap: Toggle the visibility of the minimap.
     ///   - reformatAtColumn: The column to reformat at
     ///   - showReformattingGuide: Whether to show the reformatting guide
+    ///   - showFoldingRibbon: Toggle the visibility of the line folding ribbon.
     public init(
         _ text: NSTextStorage,
         language: CodeLanguage,
@@ -163,7 +171,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         coordinators: [any TextViewCoordinator] = [],
         showMinimap: Bool,
         reformatAtColumn: Int,
-        showReformattingGuide: Bool
+        showReformattingGuide: Bool,
+        showFoldingRibbon: Bool
     ) {
         self.text = .storage(text)
         self.language = language
@@ -193,6 +202,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.showMinimap = showMinimap
         self.reformatAtColumn = reformatAtColumn
         self.showReformattingGuide = showReformattingGuide
+        self.showFoldingRibbon = showFoldingRibbon
     }
 
     package var text: TextAPI
@@ -219,6 +229,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     package var showMinimap: Bool
     private var reformatAtColumn: Int
     private var showReformattingGuide: Bool
+    package var showFoldingRibbon: Bool
 
     public typealias NSViewControllerType = TextViewController
 
@@ -247,7 +258,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             coordinators: coordinators,
             showMinimap: showMinimap,
             reformatAtColumn: reformatAtColumn,
-            showReformattingGuide: showReformattingGuide
+            showReformattingGuide: showReformattingGuide,
+            showFoldingRibbon: showFoldingRibbon
         )
         switch text {
         case .binding(let binding):
@@ -336,6 +348,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.contentInsets = contentInsets
         controller.additionalTextInsets = additionalTextInsets
         controller.showMinimap = showMinimap
+        controller.showFoldingRibbon = showFoldingRibbon
 
         if controller.indentOption != indentOption {
             controller.indentOption = indentOption
@@ -397,6 +410,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.showMinimap == showMinimap &&
         controller.reformatAtColumn == reformatAtColumn &&
         controller.showReformattingGuide == showReformattingGuide &&
+        controller.showFoldingRibbon == showFoldingRibbon &&
         areHighlightProvidersEqual(controller: controller, coordinator: coordinator)
     }
 

@@ -56,6 +56,7 @@ extension TextViewController {
             gutterView.selectedLineTextColor = nil
             gutterView.selectedLineColor = .clear
         }
+        gutterView.showFoldingRibbon = showFoldingRibbon
     }
 
     /// Style the scroll view.
