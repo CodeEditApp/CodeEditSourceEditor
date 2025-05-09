@@ -1,5 +1,5 @@
 //
-//  FindViewController+Toggle.swift
+//  ReformattingGuideView.swift
 //  CodeEditSourceEditor
 //
 //  Created by Austin Condiff on 4/28/25.
