@@ -24,7 +24,7 @@ extension MinimapView {
     /// The ``scrollView`` uses the scroll percentage calculated for the first case, and scrolls its content to that
     /// percentage. The ``scrollView`` is only modified if the minimap is longer than the container view.
     func updateDocumentVisibleViewPosition() {
-        guard let textView = textView, let editorScrollView = textView.enclosingScrollView, let layoutManager else {
+        guard let textView = textView, let editorScrollView = textView.enclosingScrollView else {
             return
         }
 

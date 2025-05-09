@@ -10,6 +10,15 @@
       }
     },
     {
+      "identity" : "codeeditsymbols",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/CodeEditApp/CodeEditSymbols.git",
+      "state" : {
+        "revision" : "ae69712b08571c4469c2ed5cd38ad9f19439793e",
+        "version" : "0.2.3"
+      }
+    },
+    {
       "identity" : "codeedittextview",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/CodeEditApp/CodeEditTextView.git",

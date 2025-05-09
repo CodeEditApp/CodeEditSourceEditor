@@ -11,7 +11,7 @@ import AppKit
 extension TextViewController {
     /// Sets new cursor positions.
     /// - Parameter positions: The positions to set. Lines and columns are 1-indexed.
-    public func setCursorPositions(_ positions: [CursorPosition]) {
+    public func setCursorPositions(_ positions: [CursorPosition], scrollToVisible: Bool = false) {
         if isPostingCursorNotification { return }
         var newSelectedRanges: [NSRange] = []
         for position in positions {
@@ -33,6 +33,10 @@ extension TextViewController {
             }
         }
         textView.selectionManager.setSelectedRanges(newSelectedRanges)
+
+        if scrollToVisible {
+            textView.scrollSelectionToVisible()
+        }
     }
 
     /// Update the ``TextViewController/cursorPositions`` variable with new text selections from the text view.
