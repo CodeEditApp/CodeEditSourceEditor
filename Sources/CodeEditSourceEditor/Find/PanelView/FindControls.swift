@@ -75,3 +75,43 @@ struct FindControls: View {
         }
     }
 }
+
+#Preview("Find Controls - Full") {
+    FindControls(
+        viewModel: {
+            let vm = FindPanelViewModel(target: MockFindPanelTarget())
+            vm.findText = "example"
+            vm.findMatches = [NSRange(location: 0, length: 7)]
+            vm.currentFindMatchIndex = 0
+            return vm
+        }(),
+        condensed: false
+    )
+    .padding()
+}
+
+#Preview("Find Controls - Condensed") {
+    FindControls(
+        viewModel: {
+            let vm = FindPanelViewModel(target: MockFindPanelTarget())
+            vm.findText = "example"
+            vm.findMatches = [NSRange(location: 0, length: 7)]
+            vm.currentFindMatchIndex = 0
+            return vm
+        }(),
+        condensed: true
+    )
+    .padding()
+}
+
+#Preview("Find Controls - No Matches") {
+    FindControls(
+        viewModel: {
+            let vm = FindPanelViewModel(target: MockFindPanelTarget())
+            vm.findText = "example"
+            return vm
+        }(),
+        condensed: false
+    )
+    .padding()
+}

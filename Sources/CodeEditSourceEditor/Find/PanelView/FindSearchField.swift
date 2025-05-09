@@ -106,3 +106,51 @@ struct FindSearchField: View {
         }
     }
 }
+
+#Preview("Find Search Field - Full") {
+    @FocusState var focus: FindPanelView.FindPanelFocus?
+    FindSearchField(
+        viewModel: {
+            let vm = FindPanelViewModel(target: MockFindPanelTarget())
+            vm.findText = "example"
+            vm.findMatches = [NSRange(location: 0, length: 7)]
+            vm.currentFindMatchIndex = 0
+            return vm
+        }(),
+        focus: $focus,
+        findModePickerWidth: .constant(100),
+        condensed: false
+    )
+    .frame(width: 300)
+    .padding()
+}
+
+#Preview("Find Search Field - Condensed") {
+    @FocusState var focus: FindPanelView.FindPanelFocus?
+    FindSearchField(
+        viewModel: {
+            let vm = FindPanelViewModel(target: MockFindPanelTarget())
+            vm.findText = "example"
+            vm.findMatches = [NSRange(location: 0, length: 7)]
+            vm.currentFindMatchIndex = 0
+            return vm
+        }(),
+        focus: $focus,
+        findModePickerWidth: .constant(100),
+        condensed: true
+    )
+    .frame(width: 200)
+    .padding()
+}
+
+#Preview("Find Search Field - Empty") {
+    @FocusState var focus: FindPanelView.FindPanelFocus?
+    FindSearchField(
+        viewModel: FindPanelViewModel(target: MockFindPanelTarget()),
+        focus: $focus,
+        findModePickerWidth: .constant(100),
+        condensed: false
+    )
+    .frame(width: 300)
+    .padding()
+}

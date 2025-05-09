@@ -53,3 +53,47 @@ struct ReplaceSearchField: View {
         .focused($focus, equals: .replace)
     }
 }
+
+#Preview("Replace Search Field - Full") {
+    @FocusState var focus: FindPanelView.FindPanelFocus?
+    ReplaceSearchField(
+        viewModel: {
+            let vm = FindPanelViewModel(target: MockFindPanelTarget())
+            vm.replaceText = "replacement"
+            return vm
+        }(),
+        focus: $focus,
+        findModePickerWidth: .constant(100),
+        condensed: false
+    )
+    .frame(width: 300)
+    .padding()
+}
+
+#Preview("Replace Search Field - Condensed") {
+    @FocusState var focus: FindPanelView.FindPanelFocus?
+    ReplaceSearchField(
+        viewModel: {
+            let vm = FindPanelViewModel(target: MockFindPanelTarget())
+            vm.replaceText = "replacement"
+            return vm
+        }(),
+        focus: $focus,
+        findModePickerWidth: .constant(100),
+        condensed: true
+    )
+    .frame(width: 200)
+    .padding()
+}
+
+#Preview("Replace Search Field - Empty") {
+    @FocusState var focus: FindPanelView.FindPanelFocus?
+    ReplaceSearchField(
+        viewModel: FindPanelViewModel(target: MockFindPanelTarget()),
+        focus: $focus,
+        findModePickerWidth: .constant(100),
+        condensed: false
+    )
+    .frame(width: 300)
+    .padding()
+}

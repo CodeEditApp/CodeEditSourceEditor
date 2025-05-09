@@ -72,3 +72,46 @@ struct ReplaceControls: View {
         .fixedSize(horizontal: false, vertical: true)
     }
 }
+
+#Preview("Replace Controls - Full") {
+    ReplaceControls(
+        viewModel: {
+            let vm = FindPanelViewModel(target: MockFindPanelTarget())
+            vm.findText = "example"
+            vm.replaceText = "replacement"
+            vm.findMatches = [NSRange(location: 0, length: 7)]
+            vm.currentFindMatchIndex = 0
+            return vm
+        }(),
+        condensed: false
+    )
+    .padding()
+}
+
+#Preview("Replace Controls - Condensed") {
+    ReplaceControls(
+        viewModel: {
+            let vm = FindPanelViewModel(target: MockFindPanelTarget())
+            vm.findText = "example"
+            vm.replaceText = "replacement"
+            vm.findMatches = [NSRange(location: 0, length: 7)]
+            vm.currentFindMatchIndex = 0
+            return vm
+        }(),
+        condensed: true
+    )
+    .padding()
+}
+
+#Preview("Replace Controls - No Matches") {
+    ReplaceControls(
+        viewModel: {
+            let vm = FindPanelViewModel(target: MockFindPanelTarget())
+            vm.findText = "example"
+            vm.replaceText = "replacement"
+            return vm
+        }(),
+        condensed: false
+    )
+    .padding()
+}

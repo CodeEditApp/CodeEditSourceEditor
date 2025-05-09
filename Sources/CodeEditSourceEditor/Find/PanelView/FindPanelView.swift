@@ -8,6 +8,7 @@
 import SwiftUI
 import AppKit
 import CodeEditSymbols
+import CodeEditTextView
 
 /// A SwiftUI view that provides a find and replace interface for the text editor.
 ///
@@ -87,4 +88,55 @@ private struct FindModePickerWidthPreferenceKey: PreferenceKey {
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = nextValue()
     }
+}
+
+/// A mock target for previews that implements the FindPanelTarget protocol
+class MockFindPanelTarget: FindPanelTarget {
+    var textView: TextView!
+    var findPanelTargetView: NSView = NSView()
+    var cursorPositions: [CursorPosition] = []
+
+    func setCursorPositions(_ positions: [CursorPosition], scrollToVisible: Bool) {}
+    func updateCursorPosition() {}
+    func findPanelWillShow(panelHeight: CGFloat) {}
+    func findPanelWillHide(panelHeight: CGFloat) {}
+    func findPanelModeDidChange(to mode: FindPanelMode) {}
+}
+
+#Preview("Find Mode") {
+    FindPanelView(viewModel: {
+        let vm = FindPanelViewModel(target: MockFindPanelTarget())
+        vm.findText = "example"
+        vm.findMatches = [NSRange(location: 0, length: 7)]
+        vm.currentFindMatchIndex = 0
+        return vm
+    }())
+    .frame(width: 400)
+    .padding()
+}
+
+#Preview("Replace Mode") {
+    FindPanelView(viewModel: {
+        let vm = FindPanelViewModel(target: MockFindPanelTarget())
+        vm.mode = .replace
+        vm.findText = "example"
+        vm.replaceText = "test"
+        vm.findMatches = [NSRange(location: 0, length: 7)]
+        vm.currentFindMatchIndex = 0
+        return vm
+    }())
+    .frame(width: 400)
+    .padding()
+}
+
+#Preview("Condensed Layout") {
+    FindPanelView(viewModel: {
+        let vm = FindPanelViewModel(target: MockFindPanelTarget())
+        vm.findText = "example"
+        vm.findMatches = [NSRange(location: 0, length: 7)]
+        vm.currentFindMatchIndex = 0
+        return vm
+    }())
+    .frame(width: 300)
+    .padding()
 }
