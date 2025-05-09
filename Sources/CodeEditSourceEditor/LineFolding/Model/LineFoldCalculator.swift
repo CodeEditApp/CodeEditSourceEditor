@@ -101,7 +101,8 @@ class LineFoldCalculator {
             var results: [(index: Int, foldDepth: Int)] = []
             var count = 0
             while count < 50, let linePosition = iterator.next() {
-                guard let substring = textView.textStorage.substring(from: linePosition.range) as NSString?,
+                guard textView.textStorage.length <= linePosition.range.max,
+                      let substring = textView.textStorage.substring(from: linePosition.range) as NSString?,
                       let foldDepth = foldProvider.foldLevelAtLine(
                         linePosition.index,
                         substring: substring
