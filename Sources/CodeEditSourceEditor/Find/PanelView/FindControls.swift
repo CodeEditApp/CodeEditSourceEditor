@@ -7,6 +7,17 @@
 
 import SwiftUI
 
+/// A SwiftUI view that provides the navigation controls for the find panel.
+///
+/// The `FindControls` view is responsible for:
+/// - Displaying previous/next match navigation buttons
+/// - Showing a done button to dismiss the find panel
+/// - Adapting button appearance based on match count
+/// - Supporting both condensed and full layouts
+/// - Providing tooltips for button actions
+///
+/// The view is part of the find panel's control section and works in conjunction with
+/// the find text field to provide navigation through search results.
 struct FindControls: View {
     @ObservedObject var viewModel: FindPanelViewModel
     var condensed: Bool

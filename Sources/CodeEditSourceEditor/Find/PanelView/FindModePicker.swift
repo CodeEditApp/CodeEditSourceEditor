@@ -7,6 +7,17 @@
 
 import SwiftUI
 
+/// A SwiftUI view that provides a mode picker for the find panel.
+///
+/// The `FindModePicker` view is responsible for:
+/// - Displaying a dropdown menu to switch between find and replace modes
+/// - Managing the wrap around option for search
+/// - Providing a visual indicator (magnifying glass icon) for the mode picker
+/// - Adapting its appearance based on the control's active state
+/// - Handling mode selection and wrap around toggling
+///
+/// The view works in conjunction with the find panel to manage the current search mode
+/// and wrap around settings.
 struct FindModePicker: NSViewRepresentable {
     @Binding var mode: FindPanelMode
     @Binding var wrapAround: Bool

@@ -7,6 +7,17 @@
 
 import SwiftUI
 
+/// A SwiftUI view that provides the search text field for the find panel.
+///
+/// The `FindSearchField` view is responsible for:
+/// - Displaying and managing the find text input field
+/// - Showing the find mode picker (find/replace) in both condensed and full layouts
+/// - Providing case sensitivity toggle
+/// - Displaying match count information
+/// - Handling keyboard navigation (Enter to find next)
+///
+/// The view adapts its layout based on the `condensed` parameter, providing a more compact
+/// interface when space is limited.
 struct FindSearchField: View {
     @ObservedObject var viewModel: FindPanelViewModel
     @FocusState.Binding var focus: FindPanelView.FindPanelFocus?

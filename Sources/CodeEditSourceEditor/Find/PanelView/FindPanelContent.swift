@@ -7,6 +7,16 @@
 
 import SwiftUI
 
+/// A SwiftUI view that provides the main content layout for the find and replace panel.
+///
+/// The `FindPanelContent` view is responsible for:
+/// - Arranging the find and replace text fields in a vertical stack
+/// - Arranging the control buttons in a vertical stack
+/// - Handling the layout differences between find and replace modes
+/// - Supporting both full and condensed layouts
+///
+/// The view is designed to be used within `FindPanelView` and adapts its layout based on the
+/// available space and current mode (find or replace).
 struct FindPanelContent: View {
     @ObservedObject var viewModel: FindPanelViewModel
     @FocusState.Binding var focus: FindPanelView.FindPanelFocus?

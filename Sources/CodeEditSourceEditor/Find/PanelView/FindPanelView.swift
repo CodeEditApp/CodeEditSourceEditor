@@ -9,9 +9,23 @@ import SwiftUI
 import AppKit
 import CodeEditSymbols
 
+/// A SwiftUI view that provides a find and replace interface for the text editor.
+///
+/// The `FindPanelView` is the main container view for the find and replace functionality. It manages:
+/// - The find/replace mode switching
+/// - Focus management between find and replace fields
+/// - Panel height adjustments based on mode
+/// - Search text changes and match highlighting
+/// - Case sensitivity and wrap-around settings
+///
+/// The view automatically adapts its layout based on available space using `ViewThatFits`, providing
+/// both a full and condensed layout option.
 struct FindPanelView: View {
+    /// Represents the current focus state of the find panel
     enum FindPanelFocus: Equatable {
+        /// The find text field is focused
         case find
+        /// The replace text field is focused
         case replace
     }
 
@@ -67,6 +81,7 @@ struct FindPanelView: View {
     }
 }
 
+/// A preference key used to track the width of the find mode picker
 private struct FindModePickerWidthPreferenceKey: PreferenceKey {
     static var defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {

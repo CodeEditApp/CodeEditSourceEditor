@@ -7,6 +7,17 @@
 
 import SwiftUI
 
+/// A SwiftUI view that provides the replace controls for the find panel.
+///
+/// The `ReplaceControls` view is responsible for:
+/// - Displaying replace and replace all buttons
+/// - Managing button states based on find text and match count
+/// - Adapting button appearance between condensed and full layouts
+/// - Providing tooltips for button actions
+/// - Handling replace operations through the view model
+///
+/// The view is only shown when the find panel is in replace mode and works in conjunction
+/// with the replace text field to perform text replacements.
 struct ReplaceControls: View {
     @ObservedObject var viewModel: FindPanelViewModel
     var condensed: Bool
