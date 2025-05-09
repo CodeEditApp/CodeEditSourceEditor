@@ -113,6 +113,11 @@ class FoldingRibbonView: NSView {
         foldUpdateCancellable?.cancel()
     }
 
+    override public func resetCursorRects() {
+        // Don't use an iBeam in this view
+        addCursorRect(bounds, cursor: .arrow)
+    }
+
     // MARK: - Hover
 
     override func updateTrackingAreas() {
@@ -124,6 +129,30 @@ class FoldingRibbonView: NSView {
             userInfo: nil
         )
         addTrackingArea(area)
+    }
+
+    var attachments: [LineFoldPlaceholder] = []
+
+    override func mouseDown(with event: NSEvent) {
+        let clickPoint = convert(event.locationInWindow, from: nil)
+        guard event.type == .leftMouseDown,
+              let lineNumber = model.textView?.layoutManager.textLineForPosition(clickPoint.y)?.index,
+              let fold = model.getCachedFoldAt(lineNumber: lineNumber) else {
+            super.mouseDown(with: event)
+            return
+        }
+        if let attachment = model.textView?.layoutManager.attachments.getAttachmentsStartingIn(fold.range.range).first {
+            model.textView?.layoutManager.attachments.remove(atOffset: attachment.range.location)
+            fold.range.collapsed = false
+            attachments.removeAll(where: { $0 === attachment.attachment })
+        } else {
+            let placeholder = LineFoldPlaceholder()
+            model.textView?.layoutManager.attachments.add(placeholder, for: fold.range.range)
+            attachments.append(placeholder)
+            fold.range.collapsed = true
+        }
+
+        model.textView?.needsLayout = true
     }
 
     override func mouseMoved(with event: NSEvent) {

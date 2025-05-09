@@ -76,7 +76,9 @@ extension FoldingRibbonView {
 
         let maxYPosition = maxPosition.yPos + maxPosition.height
 
-        if let hoveringFold,
+        if fold.collapsed {
+            drawCollapsedFold(minYPosition: minYPosition, maxYPosition: maxYPosition, in: context)
+        } else if let hoveringFold,
            hoveringFold.depth == markerContext.depth,
            fold.lineRange == hoveringFold.range {
             drawHoveredFold(
@@ -98,6 +100,39 @@ extension FoldingRibbonView {
         for subFold in fold.subFolds.filter({ $0.lineRange.overlaps(markerContext.range) }) {
             drawFoldMarker(subFold, markerContext: markerContext.incrementDepth(), in: context, using: layoutManager)
         }
+    }
+
+    private func drawCollapsedFold(
+        minYPosition: CGFloat,
+        maxYPosition: CGFloat,
+        in context: CGContext
+    ) {
+        context.saveGState()
+
+        let fillRect = CGRect(x: 0, y: minYPosition, width: Self.width, height: maxYPosition - minYPosition)
+
+        let height = 5.0
+        let minX = 2.0
+        let maxX = Self.width - 2.0
+        let centerY = minYPosition + (maxYPosition - minYPosition)/2
+        let minY = centerY - (height/2)
+        let maxY = centerY + (height/2)
+        let chevron = CGMutablePath()
+
+        chevron.move(to: CGPoint(x: minX, y: minY))
+        chevron.addLine(to: CGPoint(x: maxX, y: centerY))
+        chevron.addLine(to: CGPoint(x: minX, y: maxY))
+
+        context.setStrokeColor(NSColor.secondaryLabelColor.cgColor)
+        context.setLineCap(.round)
+        context.setLineJoin(.round)
+        context.setLineWidth(1.3)
+
+        context.fill(fillRect)
+        context.addPath(chevron)
+        context.strokePath()
+
+        context.restoreGState()
     }
 
     private func drawHoveredFold(

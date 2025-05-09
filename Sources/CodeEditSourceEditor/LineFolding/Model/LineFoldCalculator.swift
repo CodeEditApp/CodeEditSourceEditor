@@ -15,6 +15,12 @@ import Combine
 /// Fold information is emitted via `rangesPublisher`.
 /// Notify the calculator it should re-calculate
 class LineFoldCalculator {
+    private struct LineInfo {
+        let lineNumber: Int
+        let providerInfo: LineFoldProviderLineInfo
+        let collapsed: Bool
+    }
+
     weak var foldProvider: LineFoldProvider?
     weak var textView: TextView?
 
@@ -48,15 +54,21 @@ class LineFoldCalculator {
             var currentDepth: Int = 0
             var iterator = textView.layoutManager.linesInRange(textView.documentRange)
 
-            var lines = self.getMoreLines(textView: textView, iterator: &iterator, foldProvider: foldProvider)
+            var lines = self.getMoreLines(
+                textView: textView,
+                iterator: &iterator,
+                lastDepth: currentDepth,
+                foldProvider: foldProvider
+            )
             while let lineChunk = lines {
-                for (lineNumber, foldDepth) in lineChunk {
+                for lineInfo in lineChunk {
                     // Start a new fold, going deeper to a new depth.
-                    if foldDepth > currentDepth {
+                    if lineInfo.providerInfo.depth > currentDepth {
                         let newFold = FoldRange(
-                            lineRange: (lineNumber - 1)...(lineNumber - 1),
-                            range: .zero,
-                            depth: foldDepth,
+                            lineRange: lineInfo.lineNumber...lineInfo.lineNumber,
+                            range: NSRange(location: lineInfo.providerInfo.rangeIndice, length: 0),
+                            depth: lineInfo.providerInfo.depth,
+                            collapsed: lineInfo.collapsed,
                             parent: currentFold,
                             subFolds: []
                         )
@@ -67,24 +79,31 @@ class LineFoldCalculator {
                             currentFold?.subFolds.append(newFold)
                         }
                         currentFold = newFold
-                    } else if foldDepth < currentDepth {
+                    } else if lineInfo.providerInfo.depth < currentDepth {
                         // End this fold, go shallower "popping" folds deeper than the new depth
-                        while let fold = currentFold, fold.depth > foldDepth {
+                        while let fold = currentFold, fold.depth > lineInfo.providerInfo.depth {
                             // close this fold at the current line
-                            fold.lineRange = fold.lineRange.lowerBound...lineNumber
+                            fold.lineRange = fold.lineRange.lowerBound...lineInfo.lineNumber
+                            fold.range = NSRange(start: fold.range.location, end: lineInfo.providerInfo.rangeIndice)
                             // move up
                             currentFold = fold.parent
                         }
                     }
 
-                    currentDepth = foldDepth
+                    currentDepth = lineInfo.providerInfo.depth
                 }
-                lines = self.getMoreLines(textView: textView, iterator: &iterator, foldProvider: foldProvider)
+                lines = self.getMoreLines(
+                    textView: textView,
+                    iterator: &iterator,
+                    lastDepth: currentDepth,
+                    foldProvider: foldProvider
+                )
             }
 
             // Clean up any hanging folds.
             while let fold = currentFold {
-                fold.lineRange = fold.lineRange.lowerBound...textView.layoutManager.lineCount
+                fold.lineRange = fold.lineRange.lowerBound...textView.layoutManager.lineCount - 1
+                fold.range = NSRange(start: fold.range.location, end: textView.documentRange.length)
                 currentFold = fold.parent
             }
 
@@ -95,24 +114,36 @@ class LineFoldCalculator {
     private func getMoreLines(
         textView: TextView,
         iterator: inout TextLayoutManager.RangeIterator,
+        lastDepth: Int,
         foldProvider: LineFoldProvider
-    ) -> [(index: Int, foldDepth: Int)]? {
+    ) -> [LineInfo]? {
         DispatchQueue.main.asyncAndWait {
-            var results: [(index: Int, foldDepth: Int)] = []
+            var results: [LineInfo] = []
             var count = 0
+            var lastDepth = lastDepth
             while count < 50, let linePosition = iterator.next() {
-                guard textView.textStorage.length <= linePosition.range.max,
-                      let substring = textView.textStorage.substring(from: linePosition.range) as NSString?,
-                      let foldDepth = foldProvider.foldLevelAtLine(
-                        linePosition.index,
-                        substring: substring
-                      ) else {
+                guard let foldInfo = foldProvider.foldLevelAtLine(
+                    lineNumber: linePosition.index,
+                    lineRange: linePosition.range,
+                    currentDepth: lastDepth,
+                    text: textView.textStorage
+                ) else {
                     count += 1
                     continue
                 }
+                let attachments = textView.layoutManager.attachments
+                    .getAttachmentsOverlapping(linePosition.range)
+                    .compactMap({ $0.attachment as? LineFoldPlaceholder })
 
-                results.append((linePosition.index, foldDepth))
+                results.append(
+                    LineInfo(
+                        lineNumber: linePosition.index,
+                        providerInfo: foldInfo,
+                        collapsed: !attachments.isEmpty
+                    )
+                )
                 count += 1
+                lastDepth = foldInfo.depth
             }
             if results.isEmpty && count == 0 {
                 return nil
