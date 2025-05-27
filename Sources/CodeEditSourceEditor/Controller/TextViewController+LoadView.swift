@@ -106,9 +106,7 @@ extension TextViewController {
             object: scrollView.contentView,
             queue: .main
         ) { [weak self] notification in
-            guard let clipView = notification.object as? NSClipView,
-                  let textView = self?.textView else { return }
-            textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
+            guard let clipView = notification.object as? NSClipView else { return }
             self?.gutterView.needsDisplay = true
             self?.minimapXConstraint?.constant = clipView.bounds.origin.x
         }
@@ -120,7 +118,6 @@ extension TextViewController {
             object: scrollView.contentView,
             queue: .main
         ) { [weak self] _ in
-            self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
             self?.gutterView.needsDisplay = true
             self?.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
             self?.updateTextInsets()

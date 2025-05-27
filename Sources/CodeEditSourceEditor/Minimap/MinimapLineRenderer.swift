@@ -21,7 +21,7 @@ final class MinimapLineRenderer: TextLayoutManagerRenderDelegate {
         range: NSRange,
         stringRef: NSTextStorage,
         markedRanges: MarkedRanges?,
-        breakStrategy: LineBreakStrategy
+        lineBreakStrategy: LineBreakStrategy
     ) {
         let maxWidth: CGFloat = if let textView, textView.wrapLines {
             textView.layoutManager.maxLineLayoutWidth
@@ -34,7 +34,7 @@ final class MinimapLineRenderer: TextLayoutManagerRenderDelegate {
             range: range,
             stringRef: stringRef,
             markedRanges: markedRanges,
-            breakStrategy: breakStrategy
+            attachments: []
         )
 
         // Make all fragments 2px tall
@@ -62,6 +62,12 @@ final class MinimapLineRenderer: TextLayoutManagerRenderDelegate {
 
     func characterXPosition(in lineFragment: LineFragment, for offset: Int) -> CGFloat {
         // Offset is relative to the whole line, the CTLine is too.
-        return 8 + (CGFloat(offset - CTLineGetStringRange(lineFragment.ctLine).location) * 1.5)
+        guard let content = lineFragment.contents.first else { return 0.0 }
+        switch content.data {
+        case .text(let ctLine):
+            return 8 + (CGFloat(offset - CTLineGetStringRange(ctLine).location) * 1.5)
+        case .attachment:
+            return 0.0
+        }
     }
 }
