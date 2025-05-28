@@ -16,7 +16,7 @@ extension StyledRangeStore {
     /// rather than the queried one.
     ///
     /// - Parameter range: The range of the item to coalesce around.
-    func coalesceNearby(range: Range<Int>) {
+    mutating func coalesceNearby(range: Range<Int>) {
         var index = findIndex(at: range.lastIndex).index
         if index < _guts.endIndex && _guts.index(after: index) != _guts.endIndex {
             coalesceRunAfter(index: &index)
@@ -30,11 +30,11 @@ extension StyledRangeStore {
     }
 
     /// Check if the run and the run after it are equal, and if so remove the next one and concatenate the two.
-    private func coalesceRunAfter(index: inout Index) {
+    private mutating func coalesceRunAfter(index: inout Index) {
         let thisRun = _guts[index]
         let nextRun = _guts[_guts.index(after: index)]
 
-        if thisRun.styleCompare(nextRun) {
+        if thisRun.compareValue(nextRun) {
             _guts.update(at: &index, by: { $0.length += nextRun.length })
 
             var nextIndex = index

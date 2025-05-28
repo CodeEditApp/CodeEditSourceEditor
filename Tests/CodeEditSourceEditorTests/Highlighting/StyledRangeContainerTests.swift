@@ -2,7 +2,7 @@ import XCTest
 @testable import CodeEditSourceEditor
 
 final class StyledRangeContainerTests: XCTestCase {
-    typealias Run = StyledRangeStoreRun
+    typealias Run = StyledRangeStoreRun<StyledRangeContainer.StyleElement>
 
     @MainActor
     func test_init() {
@@ -27,16 +27,16 @@ final class StyledRangeContainerTests: XCTestCase {
 
         XCTAssertNotNil(store._storage[providers[0]])
         XCTAssertEqual(store._storage[providers[0]]!.count, 3)
-        XCTAssertNil(store._storage[providers[0]]!.runs(in: 0..<100)[0].capture)
-        XCTAssertEqual(store._storage[providers[0]]!.runs(in: 0..<100)[1].capture, .comment)
-        XCTAssertNil(store._storage[providers[0]]!.runs(in: 0..<100)[2].capture)
+        XCTAssertNil(store._storage[providers[0]]!.runs(in: 0..<100)[0].value?.capture)
+        XCTAssertEqual(store._storage[providers[0]]!.runs(in: 0..<100)[1].value?.capture, .comment)
+        XCTAssertNil(store._storage[providers[0]]!.runs(in: 0..<100)[2].value?.capture)
 
         XCTAssertEqual(
             store.runsIn(range: NSRange(location: 0, length: 100)),
             [
-                Run(length: 40, capture: nil, modifiers: []),
-                Run(length: 10, capture: .comment, modifiers: []),
-                Run(length: 50, capture: nil, modifiers: [])
+                Run(length: 40, value: nil),
+                Run(length: 10, value: .init(capture: .comment, modifiers: [])),
+                Run(length: 50, value: nil)
             ]
         )
     }
@@ -63,10 +63,10 @@ final class StyledRangeContainerTests: XCTestCase {
         XCTAssertEqual(
             store.runsIn(range: NSRange(location: 0, length: 100)),
             [
-                Run(length: 40, capture: nil, modifiers: []),
-                Run(length: 5, capture: .comment, modifiers: []),
-                Run(length: 5, capture: .comment, modifiers: [.declaration]),
-                Run(length: 50, capture: nil, modifiers: [])
+                Run(length: 40, value: nil),
+                Run(length: 5, value: .init(capture: .comment, modifiers: [])),
+                Run(length: 5, value: .init(capture: .comment, modifiers: [.declaration])),
+                Run(length: 50, value: nil)
             ]
         )
     }
@@ -107,16 +107,16 @@ final class StyledRangeContainerTests: XCTestCase {
 
         XCTAssertEqual(runs.reduce(0, { $0 + $1.length}), 200)
 
-        XCTAssertEqual(runs[0], Run(length: 30, capture: nil, modifiers: []))
-        XCTAssertEqual(runs[1], Run(length: 5, capture: .comment, modifiers: []))
-        XCTAssertEqual(runs[2], Run(length: 5, capture: .comment, modifiers: [.declaration]))
-        XCTAssertEqual(runs[3], Run(length: 5, capture: .comment, modifiers: [.abstract, .declaration]))
-        XCTAssertEqual(runs[4], Run(length: 5, capture: .comment, modifiers: []))
-        XCTAssertEqual(runs[5], Run(length: 30, capture: nil, modifiers: []))
-        XCTAssertEqual(runs[6], Run(length: 10, capture: .string, modifiers: []))
-        XCTAssertEqual(runs[7], Run(length: 10, capture: .string, modifiers: [.static]))
-        XCTAssertEqual(runs[8], Run(length: 5, capture: .string, modifiers: [.static, .modification]))
-        XCTAssertEqual(runs[9], Run(length: 5, capture: .string, modifiers: [.modification]))
-        XCTAssertEqual(runs[10], Run(length: 90, capture: nil, modifiers: []))
+        XCTAssertEqual(runs[0], Run(length: 30, value: nil))
+        XCTAssertEqual(runs[1], Run(length: 5, value: .init(capture: .comment, modifiers: [])))
+        XCTAssertEqual(runs[2], Run(length: 5, value: .init(capture: .comment, modifiers: [.declaration])))
+        XCTAssertEqual(runs[3], Run(length: 5, value: .init(capture: .comment, modifiers: [.abstract, .declaration])))
+        XCTAssertEqual(runs[4], Run(length: 5, value: .init(capture: .comment, modifiers: [])))
+        XCTAssertEqual(runs[5], Run(length: 30, value: nil))
+        XCTAssertEqual(runs[6], Run(length: 10, value: .init(capture: .string, modifiers: [])))
+        XCTAssertEqual(runs[7], Run(length: 10, value: .init(capture: .string, modifiers: [.static])))
+        XCTAssertEqual(runs[8], Run(length: 5, value: .init(capture: .string, modifiers: [.static, .modification])))
+        XCTAssertEqual(runs[9], Run(length: 5, value: .init(capture: .string, modifiers: [.modification])))
+        XCTAssertEqual(runs[10], Run(length: 90, value: nil))
     }
 }

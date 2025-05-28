@@ -276,7 +276,7 @@ extension Highlighter: StyledRangeContainerDelegate {
             guard let range = NSRange(location: offset, length: run.length).intersection(range) else {
                 continue
             }
-            storage?.setAttributes(attributeProvider.attributesFor(run.capture), range: range)
+            storage?.setAttributes(attributeProvider.attributesFor(run.value?.capture), range: range)
             offset += range.length
         }
 

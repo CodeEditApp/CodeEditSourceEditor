@@ -12,10 +12,11 @@ import _RopeModule
 ///
 /// Internally this class uses a `Rope` from the swift-collections package, allowing for efficient updates and
 /// retrievals.
-final class StyledRangeStore {
-    typealias Run = StyledRangeStoreRun
-    typealias Index = Rope<StyledRun>.Index
-    var _guts = Rope<StyledRun>()
+struct StyledRangeStore<Element: StyledRangeStoreElement>: Sendable {
+    typealias Run = StyledRangeStoreRun<Element>
+    typealias RopeType = Rope<StyledRun>
+    typealias Index = RopeType.Index
+    var _guts = RopeType()
 
     var length: Int {
         _guts.count(in: OffsetMetric())
@@ -26,7 +27,7 @@ final class StyledRangeStore {
     private var cache: (range: Range<Int>, runs: [Run])?
 
     init(documentLength: Int) {
-        self._guts = Rope([StyledRun(length: documentLength, capture: nil, modifiers: [])])
+        self._guts = RopeType([StyledRun(length: documentLength, value: nil)])
     }
 
     // MARK: - Core
@@ -48,7 +49,7 @@ final class StyledRangeStore {
 
         while index < _guts.endIndex {
             let run = _guts[index]
-            runs.append(Run(length: run.length - (offset ?? 0), capture: run.capture, modifiers: run.modifiers))
+            runs.append(Run(length: run.length - (offset ?? 0), value: run.value))
 
             index = _guts.index(after: index)
             offset = nil
@@ -57,22 +58,21 @@ final class StyledRangeStore {
         return runs
     }
 
-    /// Sets a capture and modifiers for a range.
+    /// Sets a value for a range.
     /// - Parameters:
-    ///   - capture: The capture to set.
-    ///   - modifiers: The modifiers to set.
+    ///   - value: The value to set for the given range.
     ///   - range: The range to write to.
-    func set(capture: CaptureName, modifiers: CaptureModifierSet, for range: Range<Int>) {
+    mutating func set(value: Element, for range: Range<Int>) {
         assert(range.lowerBound >= 0, "Negative lowerBound")
         assert(range.upperBound <= _guts.count(in: OffsetMetric()), "upperBound outside valid range")
-        set(runs: [Run(length: range.length, capture: capture, modifiers: modifiers)], for: range)
+        set(runs: [Run(length: range.length, value: value)], for: range)
     }
 
     /// Replaces a range in the document with an array of runs.
     /// - Parameters:
     ///   - runs: The runs to insert.
     ///   - range: The range to replace.
-    func set(runs: [Run], for range: Range<Int>) {
+    mutating func set(runs: [Run], for range: Range<Int>) {
         let gutsRange = 0..<_guts.count(in: OffsetMetric())
         if range.clamped(to: gutsRange) != range {
             let upperBound = range.clamped(to: gutsRange).upperBound
@@ -83,7 +83,7 @@ final class StyledRangeStore {
         _guts.replaceSubrange(
             range,
             in: OffsetMetric(),
-            with: runs.map { StyledRun(length: $0.length, capture: $0.capture, modifiers: $0.modifiers) }
+            with: runs.map { StyledRun(length: $0.length, value: $0.value) }
         )
 
         coalesceNearby(range: range)
@@ -95,7 +95,7 @@ final class StyledRangeStore {
 
 extension StyledRangeStore {
     /// Handles keeping the internal storage in sync with the document.
-    func storageUpdated(replacedCharactersIn range: Range<Int>, withCount newLength: Int) {
+    mutating func storageUpdated(replacedCharactersIn range: Range<Int>, withCount newLength: Int) {
         assert(range.lowerBound >= 0, "Negative lowerBound")
         assert(range.upperBound <= _guts.count(in: OffsetMetric()), "upperBound outside valid range")
 

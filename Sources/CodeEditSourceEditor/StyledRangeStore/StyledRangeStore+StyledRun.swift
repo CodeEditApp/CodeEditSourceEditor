@@ -9,18 +9,25 @@ import _RopeModule
 extension StyledRangeStore {
     struct StyledRun {
         var length: Int
-        let capture: CaptureName?
-        let modifiers: CaptureModifierSet
+        let value: Element?
 
         static func empty(length: Int) -> Self {
-            StyledRun(length: length, capture: nil, modifiers: [])
+            StyledRun(length: length, value: nil)
         }
 
         /// Compare two styled ranges by their stored styles.
         /// - Parameter other: The range to compare to.
         /// - Returns: The result of the comparison.
-        func styleCompare(_ other: Self) -> Bool {
-            capture == other.capture && modifiers == other.modifiers
+        func compareValue(_ other: Self) -> Bool {
+            return if let lhs = value, let rhs = other.value {
+                lhs == rhs
+            } else if let lhs = value {
+                lhs.isEmpty
+            } else if let rhs = other.value {
+                rhs.isEmpty
+            } else {
+                true
+            }
         }
     }
 }
@@ -50,7 +57,7 @@ extension StyledRangeStore.StyledRun: RopeElement {
 
     mutating func split(at index: Self.Index) -> Self {
         assert(index >= 0 && index <= length)
-        let tail = Self(length: length - index, capture: capture, modifiers: modifiers)
+        let tail = Self(length: length - index, value: value)
         length = index
         return tail
     }
