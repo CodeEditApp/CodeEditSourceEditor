@@ -6,7 +6,7 @@ extension RangeStore {
     var count: Int { _guts.count }
 }
 
-final class StyledRangeStoreTests: XCTestCase {
+final class RangeStoreTests: XCTestCase {
     typealias Store = RangeStore<StyledRangeContainer.StyleElement>
 
     override var continueAfterFailure: Bool {
