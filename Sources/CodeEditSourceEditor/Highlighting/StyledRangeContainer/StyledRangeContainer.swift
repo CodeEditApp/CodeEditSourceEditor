@@ -83,6 +83,14 @@ class StyledRangeContainer {
     /// - Parameter range: The range to query.
     /// - Returns: An array of continuous styled runs.
     func runsIn(range: NSRange) -> [RangeStoreRun<StyleElement>] {
+        func combineLowerPriority(_ lhs: inout RangeStoreRun<StyleElement>, _ rhs: RangeStoreRun<StyleElement>) {
+            lhs.value = lhs.value?.combineLowerPriority(rhs.value) ?? rhs.value
+        }
+
+        func combineHigherPriority(_ lhs: inout RangeStoreRun<StyleElement>, _ rhs: RangeStoreRun<StyleElement>) {
+            lhs.value = lhs.value?.combineHigherPriority(rhs.value) ?? rhs.value
+        }
+
         // Ordered by priority, lower = higher priority.
         var allRuns = _storage.sorted(by: { $0.key < $1.key }).map { $0.value.runs(in: range.intRange) }
         var runs: [RangeStoreRun<StyleElement>] = []
@@ -97,9 +105,9 @@ class StyledRangeContainer {
             for idx in (0..<allRuns.count).reversed() where idx != minRunIdx {
                 guard let last = allRuns[idx].last else { continue }
                 if idx < minRunIdx {
-                    minRun.combineHigherPriority(last)
+                    combineHigherPriority(&minRun, last)
                 } else {
-                    minRun.combineLowerPriority(last)
+                    combineLowerPriority(&minRun, last)
                 }
 
                 if last.length == minRun.length {
@@ -120,7 +128,7 @@ class StyledRangeContainer {
     }
 
     func storageUpdated(replacedContentIn range: Range<Int>, withCount newLength: Int) {
-        for (key, value) in _storage {
+        for key in _storage.keys {
             _storage[key]?.storageUpdated(replacedCharactersIn: range, withCount: newLength)
         }
     }

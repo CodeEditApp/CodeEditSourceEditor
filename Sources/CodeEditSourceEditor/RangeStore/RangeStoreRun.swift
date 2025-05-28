@@ -18,14 +18,6 @@ struct RangeStoreRun<Element: RangeStoreElement>: Equatable, Hashable {
         value?.isEmpty ?? true
     }
 
-    mutating func combineLowerPriority(_ other: RangeStoreRun) {
-        value = value?.combineLowerPriority(other.value) ?? other.value
-    }
-
-    mutating func combineHigherPriority(_ other: RangeStoreRun) {
-        value = value?.combineHigherPriority(other.value) ?? other.value
-    }
-
     mutating func subtractLength(_ other: borrowing RangeStoreRun) {
         self.length -= other.length
     }
