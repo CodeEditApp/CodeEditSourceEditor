@@ -225,7 +225,7 @@ extension TextViewController {
             self.findViewController?.showFindPanel()
             return nil
         case (0, "\u{1b}"): // Escape key
-            self.findViewController?.findPanel.dismiss()
+            self.findViewController?.hideFindPanel()
             return nil
         case (_, _):
             return event
