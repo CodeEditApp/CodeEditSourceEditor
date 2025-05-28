@@ -7,14 +7,16 @@
 
 import _RopeModule
 
-/// RangeStore is a container type that allows for setting and querying captures and modifiers for syntax
-/// highlighting. The container reflects a text document in that its length needs to be kept up-to-date.
+/// RangeStore is a container type that allows for setting and querying values for relative ranges in text. The
+/// container reflects a text document in that its length needs to be kept up-to-date. It can efficiently remove and
+/// replace subranges even for large documents. Provides helper methods for keeping some state in-sync with a text
+/// document's content.
 ///
 /// Internally this class uses a `Rope` from the swift-collections package, allowing for efficient updates and
 /// retrievals.
-struct RangeStore<Element: StyledRangeStoreElement>: Sendable {
-    typealias Run = StyledRangeStoreRun<Element>
-    typealias RopeType = Rope<StyledRun>
+struct RangeStore<Element: RangeStoreElement>: Sendable {
+    typealias Run = RangeStoreRun<Element>
+    typealias RopeType = Rope<StoredRun>
     typealias Index = RopeType.Index
     var _guts = RopeType()
 
@@ -27,7 +29,7 @@ struct RangeStore<Element: StyledRangeStoreElement>: Sendable {
     private var cache: (range: Range<Int>, runs: [Run])?
 
     init(documentLength: Int) {
-        self._guts = RopeType([StyledRun(length: documentLength, value: nil)])
+        self._guts = RopeType([StoredRun(length: documentLength, value: nil)])
     }
 
     // MARK: - Core
@@ -83,7 +85,7 @@ struct RangeStore<Element: StyledRangeStoreElement>: Sendable {
         _guts.replaceSubrange(
             range,
             in: OffsetMetric(),
-            with: runs.map { StyledRun(length: $0.length, value: $0.value) }
+            with: runs.map { StoredRun(length: $0.length, value: $0.value) }
         )
 
         coalesceNearby(range: range)

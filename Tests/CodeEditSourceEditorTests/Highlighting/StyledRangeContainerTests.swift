@@ -2,7 +2,7 @@ import XCTest
 @testable import CodeEditSourceEditor
 
 final class StyledRangeContainerTests: XCTestCase {
-    typealias Run = StyledRangeStoreRun<StyledRangeContainer.StyleElement>
+    typealias Run = RangeStoreRun<StyledRangeContainer.StyleElement>
 
     @MainActor
     func test_init() {

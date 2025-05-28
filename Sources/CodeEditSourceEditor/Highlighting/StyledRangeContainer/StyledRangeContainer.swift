@@ -18,7 +18,7 @@ protocol StyledRangeContainerDelegate: AnyObject {
 /// See ``runsIn(range:)`` for more details on how conflicting highlights are handled.
 @MainActor
 class StyledRangeContainer {
-    struct StyleElement: StyledRangeStoreElement, CustomDebugStringConvertible {
+    struct StyleElement: RangeStoreElement, CustomDebugStringConvertible {
         var capture: CaptureName?
         var modifiers: CaptureModifierSet
 
@@ -82,10 +82,10 @@ class StyledRangeContainer {
     ///
     /// - Parameter range: The range to query.
     /// - Returns: An array of continuous styled runs.
-    func runsIn(range: NSRange) -> [StyledRangeStoreRun<StyleElement>] {
+    func runsIn(range: NSRange) -> [RangeStoreRun<StyleElement>] {
         // Ordered by priority, lower = higher priority.
         var allRuns = _storage.sorted(by: { $0.key < $1.key }).map { $0.value.runs(in: range.intRange) }
-        var runs: [StyledRangeStoreRun<StyleElement>] = []
+        var runs: [RangeStoreRun<StyleElement>] = []
 
         var minValue = allRuns.compactMap { $0.last }.enumerated().min(by: { $0.1.length < $1.1.length })
 
@@ -140,7 +140,7 @@ extension StyledRangeContainer: HighlightProviderStateDelegate {
             assertionFailure("No storage found for the given provider: \(provider)")
             return
         }
-        var runs: [StyledRangeStoreRun<StyleElement>] = []
+        var runs: [RangeStoreRun<StyleElement>] = []
         var lastIndex = rangeToHighlight.lowerBound
 
         for highlight in highlights {
@@ -150,7 +150,7 @@ extension StyledRangeContainer: HighlightProviderStateDelegate {
                 continue // Skip! Overlapping
             }
             runs.append(
-                StyledRangeStoreRun<StyleElement>(
+                RangeStoreRun<StyleElement>(
                     length: highlight.range.length,
                     value: StyleElement(capture: highlight.capture, modifiers: highlight.modifiers)
                 )
