@@ -21,7 +21,7 @@ final class MinimapLineRenderer: TextLayoutManagerRenderDelegate {
         range: NSRange,
         stringRef: NSTextStorage,
         markedRanges: MarkedRanges?,
-        lineBreakStrategy: LineBreakStrategy
+        attachments: [AnyTextAttachment]
     ) {
         let maxWidth: CGFloat = if let textView, textView.wrapLines {
             textView.layoutManager.maxLineLayoutWidth
