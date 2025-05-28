@@ -20,17 +20,48 @@ extension FindPanelViewModel {
         }
 
         // Set case sensitivity based on matchCase property
-        let findOptions: NSRegularExpression.Options = matchCase ? [] : [.caseInsensitive]
-        let escapedQuery = NSRegularExpression.escapedPattern(for: findText)
+        var findOptions: NSRegularExpression.Options = matchCase ? [] : [.caseInsensitive]
 
-        guard let regex = try? NSRegularExpression(pattern: escapedQuery, options: findOptions) else {
+        // Add multiline options for regular expressions
+        if findMethod == .regularExpression {
+            findOptions.insert(.dotMatchesLineSeparators)
+            findOptions.insert(.anchorsMatchLines)
+        }
+
+        let pattern: String
+
+        switch findMethod {
+        case .contains:
+            // Simple substring match, escape special characters
+            pattern = NSRegularExpression.escapedPattern(for: findText)
+
+        case .matchesWord:
+            // Match whole words only using word boundaries
+            pattern = "\\b" + NSRegularExpression.escapedPattern(for: findText) + "\\b"
+
+        case .startsWith:
+            // Match at the start of a line or after a word boundary
+            pattern = "(?:^|\\b)" + NSRegularExpression.escapedPattern(for: findText)
+
+        case .endsWith:
+            // Match at the end of a line or before a word boundary
+            pattern = NSRegularExpression.escapedPattern(for: findText) + "(?:$|\\b)"
+
+        case .regularExpression:
+            // Use the pattern directly without additional escaping
+            pattern = findText
+        }
+
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: findOptions) else {
             self.findMatches = []
             self.currentFindMatchIndex = 0
             return
         }
 
         let text = target.textView.string
-        let matches = regex.matches(in: text, range: NSRange(location: 0, length: text.utf16.count))
+        let nsText = text as NSString
+        let range = NSRange(location: 0, length: nsText.length)
+        let matches = regex.matches(in: text, range: range)
 
         self.findMatches = matches.map(\.range)
 

@@ -24,6 +24,13 @@ class FindPanelViewModel: ObservableObject {
             self.target?.findPanelModeDidChange(to: mode)
         }
     }
+    @Published var findMethod: FindMethod = .contains {
+        didSet {
+            if !findText.isEmpty {
+                find()
+            }
+        }
+    }
 
     @Published var isFocused: Bool = false
 
