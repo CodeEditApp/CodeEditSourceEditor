@@ -33,8 +33,6 @@ struct PanelTextField<LeadingAccessories: View, TrailingAccessories: View>: View
 
     var onClear: (() -> Void)
 
-    var hasValue: Bool
-
     init(
         _ label: String,
         text: Binding<String>,
@@ -43,8 +41,7 @@ struct PanelTextField<LeadingAccessories: View, TrailingAccessories: View>: View
         @ViewBuilder trailingAccessories: () -> TrailingAccessories? = { EmptyView() },
         helperText: String? = nil,
         clearable: Bool? = false,
-        onClear: (() -> Void)? = {},
-        hasValue: Bool? = false
+        onClear: (() -> Void)? = {}
     ) {
         self.label = label
         _text = text
@@ -54,28 +51,35 @@ struct PanelTextField<LeadingAccessories: View, TrailingAccessories: View>: View
         self.helperText = helperText ?? nil
         self.clearable = clearable ?? false
         self.onClear = onClear ?? {}
-        self.hasValue = hasValue ?? false
     }
 
     @ViewBuilder
     public func selectionBackground(
         _ isFocused: Bool = false
     ) -> some View {
-        if self.controlActive != .inactive || !text.isEmpty || hasValue {
-            if isFocused || !text.isEmpty || hasValue {
+        if self.controlActive != .inactive || !text.isEmpty {
+            if isFocused || !text.isEmpty {
                 Color(.textBackgroundColor)
             } else {
                 if colorScheme == .light {
-                    Color.black.opacity(0.06)
+                    // TODO: if over sidebar 0.06 else 0.085
+//                    Color.black.opacity(0.06)
+                    Color.black.opacity(0.085)
                 } else {
-                    Color.white.opacity(0.24)
+                    // TODO: if over sidebar 0.24 else 0.06
+//                    Color.white.opacity(0.24)
+                    Color.white.opacity(0.06)
                 }
             }
         } else {
             if colorScheme == .light {
-                Color.clear
+                // TODO: if over sidebar 0.0 else 0.06
+//                Color.clear
+                Color.black.opacity(0.06)
             } else {
-                Color.white.opacity(0.14)
+                // TODO: if over sidebar 0.14 else 0.045
+//                Color.white.opacity(0.14)
+                Color.white.opacity(0.045)
             }
         }
     }
@@ -98,6 +102,7 @@ struct PanelTextField<LeadingAccessories: View, TrailingAccessories: View>: View
                     Text(helperText)
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                        .lineLimit(1)
                 }
             }
             if clearable == true {
@@ -126,7 +131,7 @@ struct PanelTextField<LeadingAccessories: View, TrailingAccessories: View>: View
         )
         .overlay(
             RoundedRectangle(cornerRadius: 6)
-                .stroke(isFocused || !text.isEmpty || hasValue ? .tertiary : .quaternary, lineWidth: 1.25)
+                .stroke(isFocused || !text.isEmpty ? .tertiary : .quaternary, lineWidth: 1.25)
                 .clipShape(RoundedRectangle(cornerRadius: 6))
                 .disabled(true)
                 .edgesIgnoringSafeArea(.all)
