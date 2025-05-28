@@ -39,7 +39,7 @@ struct FindMethodPicker: NSViewRepresentable {
 
     private func createIconLabel() -> NSImageView {
         let imageView = NSImageView()
-        let symbolName = method == .contains 
+        let symbolName = method == .contains
             ? "line.horizontal.3.decrease.circle"
             : "line.horizontal.3.decrease.circle.fill"
         imageView.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)?
@@ -180,12 +180,12 @@ struct FindMethodPicker: NSViewRepresentable {
         // Update icon and chevron colors
         if condensed {
             if let iconLabel = container.subviews[1] as? NSImageView {
-                let symbolName = method == .contains 
+                let symbolName = method == .contains
                     ? "line.horizontal.3.decrease.circle"
                     : "line.horizontal.3.decrease.circle.fill"
                 iconLabel.image = NSImage(systemSymbolName: symbolName, accessibilityDescription: nil)?
                     .withSymbolConfiguration(.init(pointSize: 14, weight: .regular))
-                iconLabel.contentTintColor = method == .contains 
+                iconLabel.contentTintColor = method == .contains
                     ? (activeState == .inactive ? .tertiaryLabelColor : .labelColor)
                     : (activeState == .inactive ? .tertiaryLabelColor : .controlAccentColor)
             }
