@@ -1,5 +1,5 @@
 //
-//  StyledRangeStore+Internals.swift
+//  RangeStore+Internals.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 10/25/24
@@ -7,7 +7,7 @@
 
 import _RopeModule
 
-extension StyledRangeStore {
+extension RangeStore {
     /// Coalesce items before and after the given range.
     ///
     /// Compares the next run with the run at the given range. If they're the same, removes the next run and grows the

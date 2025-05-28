@@ -17,7 +17,7 @@ import OSLog
 ///
 /// This class manages multiple objects that help perform this task:
 /// - ``StyledRangeContainer``
-/// - ``StyledRangeStore``
+/// - ``RangeStore``
 /// - ``VisibleRangeProvider``
 /// - ``HighlightProviderState``
 ///
@@ -35,7 +35,7 @@ import OSLog
 /// | Queries coalesced styles
 /// v
 /// +-------------------------------+             +-----------------------------+
-/// |    StyledRangeContainer       |   ------>   |      StyledRangeStore[]     |
+/// |    StyledRangeContainer       |   ------>   |      RangeStore[]     |
 /// |                               |             |                             | Stores styles for one provider
 /// |  - manages combined ranges    |             |  - stores raw ranges &      |
 /// |  - layers highlight styles    |             |    captures                 |

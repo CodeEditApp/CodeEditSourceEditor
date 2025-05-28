@@ -45,7 +45,7 @@ class StyledRangeContainer {
         }
     }
 
-    var _storage: [ProviderID: StyledRangeStore<StyleElement>] = [:]
+    var _storage: [ProviderID: RangeStore<StyleElement>] = [:]
     weak var delegate: StyledRangeContainerDelegate?
 
     /// Initialize the container with a list of provider identifiers. Each provider is given an id, they should be
@@ -55,13 +55,13 @@ class StyledRangeContainer {
     ///   - providers: An array of identifiers given to providers.
     init(documentLength: Int, providers: [ProviderID]) {
         for provider in providers {
-            _storage[provider] = StyledRangeStore<StyleElement>(documentLength: documentLength)
+            _storage[provider] = RangeStore<StyleElement>(documentLength: documentLength)
         }
     }
 
     func addProvider(_ id: ProviderID, documentLength: Int) {
         assert(!_storage.keys.contains(id), "Provider already exists")
-        _storage[id] = StyledRangeStore<StyleElement>(documentLength: documentLength)
+        _storage[id] = RangeStore<StyleElement>(documentLength: documentLength)
     }
 
     func removeProvider(_ id: ProviderID) {

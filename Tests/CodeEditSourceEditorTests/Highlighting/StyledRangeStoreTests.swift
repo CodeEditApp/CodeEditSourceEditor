@@ -1,13 +1,13 @@
 import XCTest
 @testable import CodeEditSourceEditor
 
-extension StyledRangeStore {
+extension RangeStore {
     var length: Int { _guts.summary.length }
     var count: Int { _guts.count }
 }
 
 final class StyledRangeStoreTests: XCTestCase {
-    typealias Store = StyledRangeStore<StyledRangeContainer.StyleElement>
+    typealias Store = RangeStore<StyledRangeContainer.StyleElement>
 
     override var continueAfterFailure: Bool {
         get { false }

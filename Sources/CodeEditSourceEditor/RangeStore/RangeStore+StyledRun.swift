@@ -1,12 +1,12 @@
 //
-//  StyledRangeStore+StyledRun.swift
+//  RangeStore+StyledRun.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 10/25/24
 
 import _RopeModule
 
-extension StyledRangeStore {
+extension RangeStore {
     struct StyledRun {
         var length: Int
         let value: Element?
@@ -32,7 +32,7 @@ extension StyledRangeStore {
     }
 }
 
-extension StyledRangeStore.StyledRun: RopeElement {
+extension RangeStore.StyledRun: RopeElement {
     typealias Index = Int
 
     var summary: Summary { Summary(length: length) }
@@ -63,28 +63,28 @@ extension StyledRangeStore.StyledRun: RopeElement {
     }
 }
 
-extension StyledRangeStore.StyledRun {
+extension RangeStore.StyledRun {
     struct Summary {
         var length: Int
     }
 }
 
-extension StyledRangeStore.StyledRun.Summary: RopeSummary {
+extension RangeStore.StyledRun.Summary: RopeSummary {
     // FIXME: This is entirely arbitrary. Benchmark this.
     @inline(__always)
     static var maxNodeSize: Int { 10 }
 
     @inline(__always)
-    static var zero: StyledRangeStore.StyledRun.Summary { Self(length: 0) }
+    static var zero: RangeStore.StyledRun.Summary { Self(length: 0) }
 
     @inline(__always)
     var isZero: Bool { length == 0 }
 
-    mutating func add(_ other: StyledRangeStore.StyledRun.Summary) {
+    mutating func add(_ other: RangeStore.StyledRun.Summary) {
         length += other.length
     }
 
-    mutating func subtract(_ other: StyledRangeStore.StyledRun.Summary) {
+    mutating func subtract(_ other: RangeStore.StyledRun.Summary) {
         length -= other.length
     }
 }

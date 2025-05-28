@@ -1,5 +1,5 @@
 //
-//  StyledRangeStore.swift
+//  RangeStore.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 10/24/24
@@ -7,12 +7,12 @@
 
 import _RopeModule
 
-/// StyledRangeStore is a container type that allows for setting and querying captures and modifiers for syntax
+/// RangeStore is a container type that allows for setting and querying captures and modifiers for syntax
 /// highlighting. The container reflects a text document in that its length needs to be kept up-to-date.
 ///
 /// Internally this class uses a `Rope` from the swift-collections package, allowing for efficient updates and
 /// retrievals.
-struct StyledRangeStore<Element: StyledRangeStoreElement>: Sendable {
+struct RangeStore<Element: StyledRangeStoreElement>: Sendable {
     typealias Run = StyledRangeStoreRun<Element>
     typealias RopeType = Rope<StyledRun>
     typealias Index = RopeType.Index
@@ -93,7 +93,7 @@ struct StyledRangeStore<Element: StyledRangeStoreElement>: Sendable {
 
 // MARK: - Storage Sync
 
-extension StyledRangeStore {
+extension RangeStore {
     /// Handles keeping the internal storage in sync with the document.
     mutating func storageUpdated(replacedCharactersIn range: Range<Int>, withCount newLength: Int) {
         assert(range.lowerBound >= 0, "Negative lowerBound")
