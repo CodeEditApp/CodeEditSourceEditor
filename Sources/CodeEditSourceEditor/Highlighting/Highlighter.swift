@@ -34,12 +34,12 @@ import OSLog
 /// |
 /// | Queries coalesced styles
 /// v
-/// +-------------------------------+             +-----------------------------+
-/// |    StyledRangeContainer       |   ------>   |      RangeStore[]     |
-/// |                               |             |                             | Stores styles for one provider
-/// |  - manages combined ranges    |             |  - stores raw ranges &      |
-/// |  - layers highlight styles    |             |    captures                 |
-/// |  + getAttributesForRange()    |             +-----------------------------+
+/// +-------------------------------+             +-------------------------+
+/// |    StyledRangeContainer       |   ------>   |      RangeStore[]       |
+/// |                               |             |                         | Stores styles for one provider
+/// |  - manages combined ranges    |             |  - stores raw ranges &  |
+/// |  - layers highlight styles    |             |    captures             |
+/// |  + getAttributesForRange()    |             +-------------------------+
 /// +-------------------------------+
 /// ^
 /// | Sends highlighted runs
