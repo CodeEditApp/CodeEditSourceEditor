@@ -163,12 +163,13 @@ final class TextViewControllerTests: XCTestCase {
         controller.findViewController?.showFindPanel(animated: false)
 
         // Extra insets do not effect find panel's insets
+        let findModel = try XCTUnwrap(controller.findViewController)
         try assertInsetsEqual(
             scrollView.contentInsets,
-            NSEdgeInsets(top: 10 + FindPanel.height, left: 0, bottom: 10, right: 0)
+            NSEdgeInsets(top: 10 + findModel.viewModel.panelHeight, left: 0, bottom: 10, right: 0)
         )
         XCTAssertEqual(controller.findViewController?.findPanelVerticalConstraint.constant, 0)
-        XCTAssertEqual(controller.gutterView.frame.origin.y, -10 - FindPanel.height)
+        XCTAssertEqual(controller.gutterView.frame.origin.y, -10 - findModel.viewModel.panelHeight)
     }
 
     func test_editorOverScroll_ZeroCondition() throws {

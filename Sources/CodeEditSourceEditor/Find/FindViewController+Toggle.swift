@@ -16,29 +16,34 @@ extension FindViewController {
     /// - Animates the find panel into position (resolvedTopPadding).
     /// - Makes the find panel the first responder.
     func showFindPanel(animated: Bool = true) {
-        if isShowingFindPanel {
+        if viewModel.isShowingFindPanel {
             // If panel is already showing, just focus the text field
-            _ = findPanel?.becomeFirstResponder()
+            viewModel.isFocused = true
             return
         }
 
-        isShowingFindPanel = true
+        if viewModel.mode == .replace {
+            viewModel.mode = .find
+        }
+
+        viewModel.isShowingFindPanel = true
 
         // Smooth out the animation by placing the find panel just outside the correct position before animating.
         findPanel.isHidden = false
-        findPanelVerticalConstraint.constant = resolvedTopPadding - FindPanel.height
+        findPanelVerticalConstraint.constant = resolvedTopPadding - viewModel.panelHeight
+
         view.layoutSubtreeIfNeeded()
 
         // Perform the animation
         conditionalAnimated(animated) {
             // SwiftUI breaks things here, and refuses to return the correct `findPanel.fittingSize` so we
             // are forced to use a constant number.
-            target?.findPanelWillShow(panelHeight: FindPanel.height)
+            viewModel.target?.findPanelWillShow(panelHeight: viewModel.panelHeight)
             setFindPanelConstraintShow()
         } onComplete: { }
 
-        _ = findPanel?.becomeFirstResponder()
-        findPanel?.addEventMonitor()
+        viewModel.isFocused = true
+        findPanel.addEventMonitor()
     }
 
     /// Hide the find panel
@@ -49,20 +54,21 @@ extension FindViewController {
     /// - Hides the find panel.
     /// - Sets the text view to be the first responder.
     func hideFindPanel(animated: Bool = true) {
-        isShowingFindPanel = false
-        _ = findPanel?.resignFirstResponder()
-        findPanel?.removeEventMonitor()
+        viewModel.isShowingFindPanel = false
+        _ = findPanel.resignFirstResponder()
+        findPanel.removeEventMonitor()
 
         conditionalAnimated(animated) {
-            target?.findPanelWillHide(panelHeight: FindPanel.height)
+            viewModel.target?.findPanelWillHide(panelHeight: viewModel.panelHeight)
             setFindPanelConstraintHide()
         } onComplete: { [weak self] in
             self?.findPanel.isHidden = true
+            self?.viewModel.isFocused = false
         }
 
         // Set first responder back to text view
-        if let textViewController = target as? TextViewController {
-            _ = textViewController.textView.window?.makeFirstResponder(textViewController.textView)
+        if let target = viewModel.target {
+            _ = target.findPanelTargetView.window?.makeFirstResponder(target.findPanelTargetView)
         }
     }
 
@@ -113,7 +119,7 @@ extension FindViewController {
         // SwiftUI hates us. It refuses to move views outside of the safe are if they don't have the `.ignoresSafeArea`
         // modifier, but with that modifier on it refuses to allow it to be animated outside the safe area.
         // The only way I found to fix it was to multiply the height by 3 here.
-        findPanelVerticalConstraint.constant = resolvedTopPadding - (FindPanel.height * 3)
+        findPanelVerticalConstraint.constant = resolvedTopPadding - (viewModel.panelHeight * 3)
         findPanelVerticalConstraint.isActive = true
     }
 }
