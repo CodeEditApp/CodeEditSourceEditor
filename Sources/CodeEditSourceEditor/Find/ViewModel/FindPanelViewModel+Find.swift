@@ -65,7 +65,7 @@ extension FindPanelViewModel {
         self.findMatches = matches.map(\.range)
 
         // Find the nearest match to the current cursor position
-        currentFindMatchIndex = getNearestEmphasisIndex(matchRanges: findMatches) ?? 0
+        currentFindMatchIndex = getNearestEmphasisIndex(matchRanges: findMatches)
 
         // Only add emphasis layers if the find panel is focused
         if isFocused {

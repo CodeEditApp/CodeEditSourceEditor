@@ -34,11 +34,26 @@ struct FindPanelTests {
         }
     }
 
-    @Test func findPanelShowsOnCommandF() async throws {
-        let target = MockPanelTarget()
-        let viewModel = FindPanelViewModel(target: target)
-        let viewController = FindViewController(target: target, childView: NSView())
+    let target = MockPanelTarget()
+    let viewModel: FindPanelViewModel
+    let viewController: FindViewController
 
+    init() {
+        viewController = FindViewController(target: target, childView: NSView())
+        viewModel = viewController.viewModel
+        viewController.loadView()
+    }
+
+    @Test func viewModelHeightUpdates() async throws {
+        let model = FindPanelViewModel(target: MockPanelTarget())
+        model.mode = .find
+        #expect(model.panelHeight == 28)
+
+        model.mode = .replace
+        #expect(model.panelHeight == 54)
+    }
+
+    @Test func findPanelShowsOnCommandF() async throws {
         // Show find panel
         viewController.showFindPanel()
 
@@ -55,9 +70,6 @@ struct FindPanelTests {
     }
 
     @Test func replaceFieldShowsWhenReplaceModeSelected() async throws {
-        let target = MockPanelTarget()
-        let viewModel = FindPanelViewModel(target: target)
-
         // Switch to replace mode
         viewModel.mode = .replace
 
@@ -76,8 +88,7 @@ struct FindPanelTests {
     }
 
     @Test func wrapAroundEnabled() async throws {
-        let target = MockPanelTarget(text: "test1\ntest2\ntest3")
-        let viewModel = FindPanelViewModel(target: target)
+        target.textView.string = "test1\ntest2\ntest3"
         viewModel.findText = "test"
         viewModel.wrapAround = true
 
@@ -98,8 +109,7 @@ struct FindPanelTests {
     }
 
     @Test func wrapAroundDisabled() async throws {
-        let target = MockPanelTarget(text: "test1\ntest2\ntest3")
-        let viewModel = FindPanelViewModel(target: target)
+        target.textView.string = "test1\ntest2\ntest3"
         viewModel.findText = "test"
         viewModel.wrapAround = false
 
@@ -123,8 +133,7 @@ struct FindPanelTests {
     }
 
     @Test func findMatches() async throws {
-        let target = MockPanelTarget(text: "test1\ntest2\ntest3")
-        let viewModel = FindPanelViewModel(target: target)
+        target.textView.string = "test1\ntest2\ntest3"
         viewModel.findText = "test"
 
         viewModel.find()
@@ -136,8 +145,7 @@ struct FindPanelTests {
     }
 
     @Test func noMatchesFound() async throws {
-        let target = MockPanelTarget(text: "test1\ntest2\ntest3")
-        let viewModel = FindPanelViewModel(target: target)
+        target.textView.string = "test1\ntest2\ntest3"
         viewModel.findText = "nonexistent"
 
         viewModel.find()
@@ -147,8 +155,7 @@ struct FindPanelTests {
     }
 
     @Test func matchCaseToggle() async throws {
-        let target = MockPanelTarget(text: "Test1\ntest2\nTEST3")
-        let viewModel = FindPanelViewModel(target: target)
+        target.textView.string = "Test1\ntest2\nTEST3"
 
         // Test case-sensitive
         viewModel.matchCase = true
@@ -163,8 +170,7 @@ struct FindPanelTests {
     }
 
     @Test func findMethodPickerOptions() async throws {
-        let target = MockPanelTarget(text: "test1 test2 test3")
-        let viewModel = FindPanelViewModel(target: target)
+        target.textView.string = "test1 test2 test3"
 
         // Test contains
         viewModel.findMethod = .contains
@@ -197,8 +203,7 @@ struct FindPanelTests {
     }
 
     @Test func findMethodPickerOptionsWithComplexText() async throws {
-        let target = MockPanelTarget(text: "test1 test2 test3\nprefix_test suffix_test\nword_test_word")
-        let viewModel = FindPanelViewModel(target: target)
+        target.textView.string = "test1 test2 test3\nprefix_test suffix_test\nword_test_word"
 
         // Test contains with partial matches
         viewModel.findMethod = .contains
