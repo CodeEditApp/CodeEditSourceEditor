@@ -14,8 +14,6 @@ import Combine
 fileprivate let demoFoldProvider = IndentationLineFoldProvider()
 
 /// Displays the code folding ribbon in the ``GutterView``.
-///
-/// This view draws its contents
 class FoldingRibbonView: NSView {
     struct HoveringFold: Equatable {
         let range: ClosedRange<Int>
