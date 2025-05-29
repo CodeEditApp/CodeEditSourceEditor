@@ -1,3 +1,10 @@
+//
+//  ReformattingGuideView.swift
+//  CodeEditSourceEditor
+//
+//  Created by Austin Condiff on 4/28/25.
+//
+
 import AppKit
 import CodeEditTextView
 
@@ -26,6 +33,10 @@ class ReformattingGuideView: NSView {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func hitTest(_ point: NSPoint) -> NSView? {
+        return nil
     }
 
     // Draw the reformatting guide line and shaded area

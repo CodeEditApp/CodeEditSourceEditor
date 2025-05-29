@@ -9,6 +9,13 @@ import CodeEditTextView
 import AppKit
 
 extension TextViewController {
+    override public func viewWillAppear() {
+        super.viewWillAppear()
+        // The calculation this causes cannot be done until the view knows it's final position
+        updateTextInsets()
+        minimapView.layout()
+    }
+
     override public func loadView() {
         super.loadView()
 
@@ -106,9 +113,7 @@ extension TextViewController {
             object: scrollView.contentView,
             queue: .main
         ) { [weak self] notification in
-            guard let clipView = notification.object as? NSClipView,
-                  let textView = self?.textView else { return }
-            textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
+            guard let clipView = notification.object as? NSClipView else { return }
             self?.gutterView.needsDisplay = true
             self?.minimapXConstraint?.constant = clipView.bounds.origin.x
         }
@@ -120,7 +125,6 @@ extension TextViewController {
             object: scrollView.contentView,
             queue: .main
         ) { [weak self] _ in
-            self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
             self?.gutterView.needsDisplay = true
             self?.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
             self?.updateTextInsets()
@@ -220,7 +224,7 @@ extension TextViewController {
             self.findViewController?.showFindPanel()
             return nil
         case (0, "\u{1b}"): // Escape key
-            self.findViewController?.findPanel.dismiss()
+            self.findViewController?.hideFindPanel()
             return nil
         case (_, _):
             return event

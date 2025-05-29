@@ -204,6 +204,13 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         }
     }
 
+    /// Toggles the line folding ribbon in the gutter view.
+    public var showFoldingRibbon: Bool {
+        didSet {
+            gutterView?.showFoldingRibbon = showFoldingRibbon
+        }
+    }
+
     var textCoordinators: [WeakCoordinator] = []
 
     var highlighter: Highlighter?
@@ -229,7 +236,7 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
 
     package var textViewInsets: HorizontalEdgeInsets {
         HorizontalEdgeInsets(
-            left: gutterView.gutterWidth,
+            left: gutterView?.frame.width ?? 0.0,
             right: textViewTrailingInset
         )
     }
@@ -265,6 +272,9 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         }
     }
 
+    /// A default `NSParagraphStyle` with a set `lineHeight`
+    package lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
+
     // MARK: Init
 
     init(
@@ -291,7 +301,8 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         coordinators: [TextViewCoordinator] = [],
         showMinimap: Bool,
         reformatAtColumn: Int = 80,
-        showReformattingGuide: Bool = false
+        showReformattingGuide: Bool = false,
+        showFoldingRibbon: Bool
     ) {
         self.language = language
         self.font = font
@@ -314,6 +325,7 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         self.showMinimap = showMinimap
         self.reformatAtColumn = reformatAtColumn
         self.showReformattingGuide = showReformattingGuide
+        self.showFoldingRibbon = showFoldingRibbon
 
         super.init(nibName: nil, bundle: nil)
 
@@ -360,18 +372,6 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         self.textView.setText(text)
         self.setUpHighlighter()
         self.gutterView.setNeedsDisplay(self.gutterView.frame)
-    }
-
-    // MARK: Paragraph Style
-
-    /// A default `NSParagraphStyle` with a set `lineHeight`
-    package lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
-
-    override public func viewWillAppear() {
-        super.viewWillAppear()
-        // The calculation this causes cannot be done until the view knows it's final position
-        updateTextInsets()
-        minimapView.layout()
     }
 
     deinit {
