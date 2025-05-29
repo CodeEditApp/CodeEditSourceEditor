@@ -54,14 +54,13 @@ extension FindPanelViewModel {
 
         guard let regex = try? NSRegularExpression(pattern: pattern, options: findOptions) else {
             self.findMatches = []
-            self.currentFindMatchIndex = 0
+            self.currentFindMatchIndex = nil
             return
         }
 
         let text = target.textView.string
-        let nsText = text as NSString
-        let range = NSRange(location: 0, length: nsText.length)
-        let matches = regex.matches(in: text, range: range)
+        let range = target.textView.documentRange
+        let matches = regex.matches(in: text, range: range).filter { !$0.range.isEmpty }
 
         self.findMatches = matches.map(\.range)
 
