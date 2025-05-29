@@ -180,8 +180,9 @@ struct FindPanelTests {
 
         // Test matchesWord
         viewModel.findMethod = .matchesWord
+        viewModel.findText = "test1"
         viewModel.find()
-        #expect(viewModel.findMatches.count == 3)
+        #expect(viewModel.findMatches.count == 1)
 
         // Test startsWith
         viewModel.findMethod = .startsWith
@@ -191,7 +192,7 @@ struct FindPanelTests {
 
         // Test endsWith
         viewModel.findMethod = .endsWith
-        viewModel.findText = "test3"
+        viewModel.findText = "3"
         viewModel.find()
         #expect(viewModel.findMatches.count == 1)
 
@@ -203,7 +204,7 @@ struct FindPanelTests {
     }
 
     @Test func findMethodPickerOptionsWithComplexText() async throws {
-        target.textView.string = "test1 test2 test3\nprefix_test suffix_test\nword_test_word"
+        target.textView.string = "test1 test2 test3\nprefix_test test_suffix\nword_test_word"
 
         // Test contains with partial matches
         viewModel.findMethod = .contains
@@ -213,8 +214,9 @@ struct FindPanelTests {
 
         // Test matchesWord with word boundaries
         viewModel.findMethod = .matchesWord
+        viewModel.findText = "test1"
         viewModel.find()
-        #expect(viewModel.findMatches.count == 3)
+        #expect(viewModel.findMatches.count == 1)
 
         // Test startsWith with prefixes
         viewModel.findMethod = .startsWith
