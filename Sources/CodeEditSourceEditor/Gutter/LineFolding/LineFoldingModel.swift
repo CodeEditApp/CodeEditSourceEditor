@@ -73,6 +73,7 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
                 } else {
                     currentFold?.subFolds.append(newFold)
                 }
+
                 currentFold = newFold
             } else if foldDepth < currentDepth {
                 // End this fold
@@ -126,7 +127,6 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
 // MARK: - Search Folds
 
 private extension LineFoldingModel {
-
     /// A generic function for searching an ordered array of fold ranges.
     /// - Returns: The found range and depth it was found at, if it exists.
     func binarySearchFoldsArray(
