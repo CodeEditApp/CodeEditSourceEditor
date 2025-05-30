@@ -39,7 +39,7 @@ struct ContentView: View {
     var body: some View {
         GeometryReader { proxy in
             CodeEditSourceEditor(
-                $document.text,
+                document.text,
                 language: language,
                 theme: theme,
                 font: font,
