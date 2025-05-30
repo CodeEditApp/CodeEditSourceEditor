@@ -141,57 +141,57 @@ class FoldingRibbonView: NSView {
             super.mouseDown(with: event)
             return
         }
-        if let attachment = model.textView?.layoutManager.attachments.getAttachmentsStartingIn(fold.range.range).first {
-            model.textView?.layoutManager.attachments.remove(atOffset: attachment.range.location)
-            fold.range.collapsed = false
-            attachments.removeAll(where: { $0 === attachment.attachment })
-        } else {
-            let placeholder = LineFoldPlaceholder()
-            model.textView?.layoutManager.attachments.add(placeholder, for: fold.range.range)
-            attachments.append(placeholder)
-            fold.range.collapsed = true
-        }
+//        if let attachment = model.textView?.layoutManager.attachments.getAttachmentsStartingIn(fold.range.range).first {
+//            model.textView?.layoutManager.attachments.remove(atOffset: attachment.range.location)
+//            fold.range.collapsed = false
+//            attachments.removeAll(where: { $0 === attachment.attachment })
+//        } else {
+//            let placeholder = LineFoldPlaceholder()
+//            model.textView?.layoutManager.attachments.add(placeholder, for: fold.range.range)
+//            attachments.append(placeholder)
+//            fold.range.collapsed = true
+//        }
 
         model.textView?.needsLayout = true
     }
 
     override func mouseMoved(with event: NSEvent) {
-        let pointInView = convert(event.locationInWindow, from: nil)
-        guard let lineNumber = model.textView?.layoutManager.textLineForPosition(pointInView.y)?.index,
-              let fold = model.getCachedFoldAt(lineNumber: lineNumber) else {
-            hoverAnimationProgress = 0.0
-            hoveringFold = nil
-            return
-        }
-
-        let newHoverRange = HoveringFold(range: fold.range.lineRange, depth: fold.depth)
-        guard newHoverRange != hoveringFold else {
-            return
-        }
-        hoverAnimationTimer?.invalidate()
-        // We only animate the first hovered fold. If the user moves the mouse vertically into other folds we just
-        // show it immediately.
-        if hoveringFold == nil {
-            hoverAnimationProgress = 0.0
-            hoveringFold = newHoverRange
-
-            let duration: TimeInterval = 0.2
-            let startTime = CACurrentMediaTime()
-            hoverAnimationTimer = Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { [weak self] timer in
-                guard let self = self else { return }
-                let now = CACurrentMediaTime()
-                let time = CGFloat((now - startTime) / duration)
-                self.hoverAnimationProgress = min(1.0, time)
-                if self.hoverAnimationProgress >= 1.0 {
-                    timer.invalidate()
-                }
-            }
-            return
-        }
-
-        // Don't animate these
-        hoverAnimationProgress = 1.0
-        hoveringFold = newHoverRange
+//        let pointInView = convert(event.locationInWindow, from: nil)
+//        guard let lineNumber = model.textView?.layoutManager.textLineForPosition(pointInView.y)?.index,
+//              let fold = model.getCachedFoldAt(lineNumber: lineNumber) else {
+//            hoverAnimationProgress = 0.0
+//            hoveringFold = nil
+//            return
+//        }
+//
+//        let newHoverRange = HoveringFold(range: fold.range.lineRange, depth: fold.depth)
+//        guard newHoverRange != hoveringFold else {
+//            return
+//        }
+//        hoverAnimationTimer?.invalidate()
+//        // We only animate the first hovered fold. If the user moves the mouse vertically into other folds we just
+//        // show it immediately.
+//        if hoveringFold == nil {
+//            hoverAnimationProgress = 0.0
+//            hoveringFold = newHoverRange
+//
+//            let duration: TimeInterval = 0.2
+//            let startTime = CACurrentMediaTime()
+//            hoverAnimationTimer = Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { [weak self] timer in
+//                guard let self = self else { return }
+//                let now = CACurrentMediaTime()
+//                let time = CGFloat((now - startTime) / duration)
+//                self.hoverAnimationProgress = min(1.0, time)
+//                if self.hoverAnimationProgress >= 1.0 {
+//                    timer.invalidate()
+//                }
+//            }
+//            return
+//        }
+//
+//        // Don't animate these
+//        hoverAnimationProgress = 1.0
+//        hoveringFold = newHoverRange
     }
 
     override func mouseExited(with event: NSEvent) {

@@ -69,37 +69,37 @@ extension FoldingRibbonView {
         in context: CGContext,
         using layoutManager: TextLayoutManager
     ) {
-        guard let minYPosition = layoutManager.textLineForIndex(fold.lineRange.lowerBound)?.yPos,
-              let maxPosition = layoutManager.textLineForIndex(fold.lineRange.upperBound) else {
-            return
-        }
-
-        let maxYPosition = maxPosition.yPos + maxPosition.height
-
-        if fold.collapsed {
-            drawCollapsedFold(minYPosition: minYPosition, maxYPosition: maxYPosition, in: context)
-        } else if let hoveringFold,
-           hoveringFold.depth == markerContext.depth,
-           fold.lineRange == hoveringFold.range {
-            drawHoveredFold(
-                markerContext: markerContext,
-                minYPosition: minYPosition,
-                maxYPosition: maxYPosition,
-                in: context
-            )
-        } else {
-            drawNestedFold(
-                markerContext: markerContext,
-                minYPosition: minYPosition,
-                maxYPosition: maxYPosition,
-                in: context
-            )
-        }
-
-        // Draw subfolds
-        for subFold in fold.subFolds.filter({ $0.lineRange.overlaps(markerContext.range) }) {
-            drawFoldMarker(subFold, markerContext: markerContext.incrementDepth(), in: context, using: layoutManager)
-        }
+//        guard let minYPosition = layoutManager.textLineForIndex(fold.lineRange.lowerBound)?.yPos,
+//              let maxPosition = layoutManager.textLineForIndex(fold.lineRange.upperBound) else {
+//            return
+//        }
+//
+//        let maxYPosition = maxPosition.yPos + maxPosition.height
+//
+//        if fold.collapsed {
+//            drawCollapsedFold(minYPosition: minYPosition, maxYPosition: maxYPosition, in: context)
+//        } else if let hoveringFold,
+//           hoveringFold.depth == markerContext.depth,
+//           fold.lineRange == hoveringFold.range {
+//            drawHoveredFold(
+//                markerContext: markerContext,
+//                minYPosition: minYPosition,
+//                maxYPosition: maxYPosition,
+//                in: context
+//            )
+//        } else {
+//            drawNestedFold(
+//                markerContext: markerContext,
+//                minYPosition: minYPosition,
+//                maxYPosition: maxYPosition,
+//                in: context
+//            )
+//        }
+//
+//        // Draw subfolds
+//        for subFold in fold.subFolds.filter({ $0.lineRange.overlaps(markerContext.range) }) {
+//            drawFoldMarker(subFold, markerContext: markerContext.incrementDepth(), in: context, using: layoutManager)
+//        }
     }
 
     private func drawCollapsedFold(
