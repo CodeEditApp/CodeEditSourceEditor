@@ -67,7 +67,7 @@ extension TextViewController {
         var selectionIndex = 0
         textView.editSelections { textView, selection in
             // get lineindex, i.e line-numbers+1
-            guard let lineIndexes = getHighlightedLines(for: selection.range) else { return }
+            guard let lineIndexes = getOverlappingLines(for: selection.range) else { return }
 
             adjustIndentation(lineIndexes: lineIndexes, inwards: inwards)
 
@@ -128,8 +128,25 @@ extension TextViewController {
         }
         return false
     }
-
-    private func getHighlightedLines(for range: NSRange) -> ClosedRange<Int>? {
+    
+    /// Find the range of lines overlapping a text range.
+    ///
+    /// Use this method to determine what lines to apply a text transformation on using a text selection. For instance,
+    /// when indenting a selected line.
+    ///
+    /// Does not determine the *visible* lines, which is a very slight change from most
+    /// ``CodeEditTextView/TextLayoutManager`` APIs.
+    /// Given the text:
+    /// ```
+    /// A
+    /// B
+    /// ```
+    /// This method will return lines `0...0` for the text range `0..<2`. The layout manager might return lines
+    /// `0...1`, as the text range contains the newline, which appears *visually* in line index `1`.
+    ///
+    /// - Parameter range: The text range in the document to find contained lines for.
+    /// - Returns: A closed range of line indexes (0-indexed) where each line is overlapping the given text range.
+    func getOverlappingLines(for range: NSRange) -> ClosedRange<Int>? {
         guard let startLineInfo = textView.layoutManager.textLineForOffset(range.lowerBound) else {
             return nil
         }
@@ -139,7 +156,16 @@ extension TextViewController {
             return startLineInfo.index...startLineInfo.index
         }
 
-        return startLineInfo.index...endLineInfo.index
+        // If we've selected up to the start of a line (just over the newline character), the layout manager tells us
+        // we've selected the next line. However, we aren't overlapping the *text line* with that range, so we
+        // decrement it if it's not the end of the document
+        var endLineIndex = endLineInfo.index
+        if endLineInfo.range.lowerBound == range.upperBound
+            && endLineInfo.index != textView.layoutManager.lineCount - 1 {
+            endLineIndex -= 1
+        }
+
+        return startLineInfo.index...endLineIndex
     }
 
     private func adjustIndentation(lineIndexes: ClosedRange<Int>, inwards: Bool) {
