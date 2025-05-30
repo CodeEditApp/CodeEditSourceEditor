@@ -1,11 +1,11 @@
 //
-//  StyledRangeStore+FindIndex.swift
+//  RangeStore+FindIndex.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 1/6/25.
 //
 
-extension StyledRangeStore {
+extension RangeStore {
     /// Finds a Rope index, given a string offset.
     /// - Parameter offset: The offset to query for.
     /// - Returns: The index of the containing element in the rope.
