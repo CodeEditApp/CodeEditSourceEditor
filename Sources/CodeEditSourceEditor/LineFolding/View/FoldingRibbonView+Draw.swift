@@ -37,14 +37,13 @@ extension FoldingRibbonView {
               let rangeEnd = layoutManager.textLineForPosition(dirtyRect.maxY) else {
             return
         }
-        let lineRange = rangeStart.index...rangeEnd.index
+        let textRange = rangeStart.range.location..<rangeEnd.range.upperBound
 
         context.setFillColor(markerColor)
-        let folds = model.getFolds(in: lineRange)
+        let folds = model.getFolds(in: textRange)
         for fold in folds {
             drawFoldMarker(
                 fold,
-                markerContext: FoldMarkerDrawingContext(range: lineRange, depth: 0),
                 in: context,
                 using: layoutManager
             )
@@ -65,41 +64,32 @@ extension FoldingRibbonView {
     ///   - layoutManager: A layout manager used to retrieve position information for lines.
     private func drawFoldMarker(
         _ fold: FoldRange,
-        markerContext: FoldMarkerDrawingContext,
         in context: CGContext,
         using layoutManager: TextLayoutManager
     ) {
-//        guard let minYPosition = layoutManager.textLineForIndex(fold.lineRange.lowerBound)?.yPos,
-//              let maxPosition = layoutManager.textLineForIndex(fold.lineRange.upperBound) else {
-//            return
-//        }
-//
-//        let maxYPosition = maxPosition.yPos + maxPosition.height
-//
-//        if fold.collapsed {
-//            drawCollapsedFold(minYPosition: minYPosition, maxYPosition: maxYPosition, in: context)
-//        } else if let hoveringFold,
-//           hoveringFold.depth == markerContext.depth,
-//           fold.lineRange == hoveringFold.range {
-//            drawHoveredFold(
-//                markerContext: markerContext,
-//                minYPosition: minYPosition,
-//                maxYPosition: maxYPosition,
-//                in: context
-//            )
-//        } else {
-//            drawNestedFold(
-//                markerContext: markerContext,
-//                minYPosition: minYPosition,
-//                maxYPosition: maxYPosition,
-//                in: context
-//            )
-//        }
-//
-//        // Draw subfolds
-//        for subFold in fold.subFolds.filter({ $0.lineRange.overlaps(markerContext.range) }) {
-//            drawFoldMarker(subFold, markerContext: markerContext.incrementDepth(), in: context, using: layoutManager)
-//        }
+        guard let minYPosition = layoutManager.textLineForOffset(fold.range.lowerBound)?.yPos,
+              let maxPosition = layoutManager.textLineForOffset(fold.range.upperBound) else {
+            return
+        }
+
+        let maxYPosition = maxPosition.yPos + maxPosition.height
+
+        if fold.isCollapsed {
+            drawCollapsedFold(minYPosition: minYPosition, maxYPosition: maxYPosition, in: context)
+        } else if let hoveringFold, fold.id == hoveringFold {
+            drawHoveredFold(
+                minYPosition: minYPosition,
+                maxYPosition: maxYPosition,
+                in: context
+            )
+        } else {
+            drawNestedFold(
+                fold: fold,
+                minYPosition: minYPosition,
+                maxYPosition: maxYPosition,
+                in: context
+            )
+        }
     }
 
     private func drawCollapsedFold(
@@ -136,7 +126,6 @@ extension FoldingRibbonView {
     }
 
     private func drawHoveredFold(
-        markerContext: FoldMarkerDrawingContext,
         minYPosition: CGFloat,
         maxYPosition: CGFloat,
         in context: CGContext
@@ -183,7 +172,7 @@ extension FoldingRibbonView {
     }
 
     private func drawNestedFold(
-        markerContext: FoldMarkerDrawingContext,
+        fold: FoldRange,
         minYPosition: CGFloat,
         maxYPosition: CGFloat,
         in context: CGContext
@@ -196,7 +185,7 @@ extension FoldingRibbonView {
         context.drawPath(using: .fill)
 
         // Add small white line if we're overlapping with other markers
-        if markerContext.depth != 0 {
+        if fold.depth != 0 {
             drawOutline(
                 minYPosition: minYPosition,
                 maxYPosition: maxYPosition,

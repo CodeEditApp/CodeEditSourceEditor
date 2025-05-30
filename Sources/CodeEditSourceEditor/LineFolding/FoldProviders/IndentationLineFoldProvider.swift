@@ -22,30 +22,32 @@ final class IndentationLineFoldProvider: LineFoldProvider {
     func foldLevelAtLine(
         lineNumber: Int,
         lineRange: NSRange,
-        currentDepth: Int,
+        previousDepth: Int,
         text: NSTextStorage
-    ) -> LineFoldProviderLineInfo? {
+    ) -> [LineFoldProviderLineInfo] {
         guard let leadingIndent = text.leadingRange(in: lineRange, within: .whitespacesWithoutNewlines)?.length,
-              leadingIndent > 0 else {
-            return nil
+              leadingIndent != lineRange.length else {
+            return []
         }
 
-        if leadingIndent < currentDepth {
+        var foldIndicators: [LineFoldProviderLineInfo] = []
+
+        if leadingIndent < previousDepth {
             // End the fold at the start of whitespace
-            return .endFold(rangeEnd: lineRange.location + leadingIndent, newDepth: leadingIndent)
+            foldIndicators.append(.endFold(rangeEnd: lineRange.location + leadingIndent, newDepth: leadingIndent))
         }
 
         // Check if the next line has more indent
         let maxRange = NSRange(start: lineRange.max, end: text.length)
         guard let nextIndent = text.leadingRange(in: maxRange, within: .whitespacesWithoutNewlines)?.length,
               nextIndent > 0 else {
-            return nil
+            return foldIndicators
         }
 
-        if nextIndent > currentDepth, let trailingWhitespace = text.trailingWhitespaceRange(in: lineRange) {
-            return .startFold(rangeStart: trailingWhitespace.location, newDepth: nextIndent)
+        if nextIndent > leadingIndent, let trailingWhitespace = text.trailingWhitespaceRange(in: lineRange) {
+            foldIndicators.append(.startFold(rangeStart: trailingWhitespace.location, newDepth: nextIndent))
         }
 
-        return nil
+        return foldIndicators
     }
 }

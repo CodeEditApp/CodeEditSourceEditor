@@ -17,18 +17,13 @@ private let demoFoldProvider = IndentationLineFoldProvider()
 ///
 /// This view draws its contents
 class FoldingRibbonView: NSView {
-    struct HoveringFold: Equatable {
-        let range: ClosedRange<Int>
-        let depth: Int
-    }
-
     static let width: CGFloat = 7.0
 
     var model: LineFoldingModel
 
     // Disabling this lint rule because this initial value is required for @Invalidating
     @Invalidating(.display)
-    var hoveringFold: HoveringFold? = nil // swiftlint:disable:this redundant_optional_initialization
+    var hoveringFold: FoldRange.FoldIdentifier? = nil // swiftlint:disable:this redundant_optional_initialization
     var hoverAnimationTimer: Timer?
     @Invalidating(.display)
     var hoverAnimationProgress: CGFloat = 0.0
@@ -141,57 +136,59 @@ class FoldingRibbonView: NSView {
             super.mouseDown(with: event)
             return
         }
-//        if let attachment = model.textView?.layoutManager.attachments.getAttachmentsStartingIn(fold.range.range).first {
-//            model.textView?.layoutManager.attachments.remove(atOffset: attachment.range.location)
-//            fold.range.collapsed = false
-//            attachments.removeAll(where: { $0 === attachment.attachment })
-//        } else {
-//            let placeholder = LineFoldPlaceholder()
-//            model.textView?.layoutManager.attachments.add(placeholder, for: fold.range.range)
-//            attachments.append(placeholder)
+        if let attachment = model.textView?.layoutManager.attachments
+            .getAttachmentsStartingIn(NSRange(fold.range.range))
+            .filter({ $0.attachment is LineFoldPlaceholder })
+            .first {
+            model.textView?.layoutManager.attachments.remove(atOffset: attachment.range.location)
+//            fold.range.isCollapsed = false
+            attachments.removeAll(where: { $0 === attachment.attachment })
+        } else {
+            let placeholder = LineFoldPlaceholder(fold: fold.range)
+            model.textView?.layoutManager.attachments.add(placeholder, for: NSRange(fold.range.range))
+            attachments.append(placeholder)
 //            fold.range.collapsed = true
-//        }
+        }
 
         model.textView?.needsLayout = true
     }
 
     override func mouseMoved(with event: NSEvent) {
-//        let pointInView = convert(event.locationInWindow, from: nil)
-//        guard let lineNumber = model.textView?.layoutManager.textLineForPosition(pointInView.y)?.index,
-//              let fold = model.getCachedFoldAt(lineNumber: lineNumber) else {
-//            hoverAnimationProgress = 0.0
-//            hoveringFold = nil
-//            return
-//        }
-//
-//        let newHoverRange = HoveringFold(range: fold.range.lineRange, depth: fold.depth)
-//        guard newHoverRange != hoveringFold else {
-//            return
-//        }
-//        hoverAnimationTimer?.invalidate()
-//        // We only animate the first hovered fold. If the user moves the mouse vertically into other folds we just
-//        // show it immediately.
-//        if hoveringFold == nil {
-//            hoverAnimationProgress = 0.0
-//            hoveringFold = newHoverRange
-//
-//            let duration: TimeInterval = 0.2
-//            let startTime = CACurrentMediaTime()
-//            hoverAnimationTimer = Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { [weak self] timer in
-//                guard let self = self else { return }
-//                let now = CACurrentMediaTime()
-//                let time = CGFloat((now - startTime) / duration)
-//                self.hoverAnimationProgress = min(1.0, time)
-//                if self.hoverAnimationProgress >= 1.0 {
-//                    timer.invalidate()
-//                }
-//            }
-//            return
-//        }
-//
-//        // Don't animate these
-//        hoverAnimationProgress = 1.0
-//        hoveringFold = newHoverRange
+        let pointInView = convert(event.locationInWindow, from: nil)
+        guard let lineNumber = model.textView?.layoutManager.textLineForPosition(pointInView.y)?.index,
+              let fold = model.getCachedFoldAt(lineNumber: lineNumber) else {
+            hoverAnimationProgress = 0.0
+            hoveringFold = nil
+            return
+        }
+
+        guard fold.range.id != hoveringFold else {
+            return
+        }
+        hoverAnimationTimer?.invalidate()
+        // We only animate the first hovered fold. If the user moves the mouse vertically into other folds we just
+        // show it immediately.
+        if hoveringFold == nil {
+            hoverAnimationProgress = 0.0
+            hoveringFold = fold.range.id
+
+            let duration: TimeInterval = 0.2
+            let startTime = CACurrentMediaTime()
+            hoverAnimationTimer = Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { [weak self] timer in
+                guard let self = self else { return }
+                let now = CACurrentMediaTime()
+                let time = CGFloat((now - startTime) / duration)
+                self.hoverAnimationProgress = min(1.0, time)
+                if self.hoverAnimationProgress >= 1.0 {
+                    timer.invalidate()
+                }
+            }
+            return
+        }
+
+        // Don't animate these
+        hoverAnimationProgress = 1.0
+        hoveringFold = fold.range.id
     }
 
     override func mouseExited(with event: NSEvent) {

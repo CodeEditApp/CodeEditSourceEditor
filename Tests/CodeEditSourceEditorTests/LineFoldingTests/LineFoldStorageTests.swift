@@ -9,51 +9,62 @@ import Testing
 @testable import CodeEditSourceEditor
 
 struct LineFoldStorageTests {
-    var storage = LineFoldStorage(
-        foldDepths: [
-            (1..<9, 1),
-            (2..<8, 2),
-            (5..<6, 3)
-        ],
-        documentLength: 10
-    )
-
-    @Test
-    func findDepthAtIndexes() {
-        #expect(storage.depth(at: 0) == nil)
-        #expect(storage.depth(at: 1) == 1)
-        #expect(storage.depth(at: 2) == 2)
-        #expect(storage.depth(at: 5) == 3)
-        #expect(storage.depth(at: 6) == 2)
-        #expect(storage.depth(at: 8) == 1)
-        #expect(storage.depth(at: 9) == nil)
+    // Helper to create a collapsed provider set
+    private func collapsedSet(_ items: (Int, Int)...) -> Set<LineFoldStorage.DepthStartPair> {
+        Set(items.map { (depth, start) in
+            LineFoldStorage.DepthStartPair(depth: depth, start: start)
+        })
     }
 
-    @Test
-    func getDijointRunsForDepth() {
-        #expect(
-            storage.collectRuns(forDeepestFoldAt: 5)
-            == LineFoldStorage.FoldRunInfo(depth: 3, collapsed: false, runs: [5..<6])
-        )
-
-        #expect(
-            storage.collectRuns(forDeepestFoldAt: 2)
-            == LineFoldStorage.FoldRunInfo(depth: 2, collapsed: false, runs: [2..<5, 6..<9])
-        )
-
-        #expect(
-            storage.collectRuns(forDeepestFoldAt: 1)
-            == LineFoldStorage.FoldRunInfo(depth: 1, collapsed: false, runs: [1..<2, 8..<9])
-        )
+    @Test("Empty storage has no folds")
+    func emptyStorage() {
+        let storage = LineFoldStorage(documentLength: 50)
+        let folds = storage.folds(in: 0..<50)
+        #expect(folds.isEmpty)
     }
 
-    @Test
-    mutating func toggleCollapse() {
-        storage.toggleCollapse(at: 1)
+    @Test("updateFolds populates folds with correct depth and range")
+    func updateFoldsBasic() {
+        var storage = LineFoldStorage(documentLength: 20)
+        let raw: [LineFoldStorage.RawFold] = [
+            LineFoldStorage.RawFold(depth: 1, range: 0..<5),
+            LineFoldStorage.RawFold(depth: 2, range: 5..<10)
+        ]
+        storage.updateFolds(from: raw) { [] }
 
-        #expect(
-            storage.collectRuns(forDeepestFoldAt: 1)
-            == LineFoldStorage.FoldRunInfo(depth: 1, collapsed: true, runs: [1..<2, 8..<9])
-        )
+        let folds = storage.folds(in: 0..<20)
+        #expect(folds.count == 2)
+        #expect(folds[0].depth == 1 && folds[0].range == 0..<5 && folds[0].collapsed == false)
+        #expect(folds[1].depth == 2 && folds[1].range == 5..<10 && folds[1].collapsed == false)
+    }
+
+    @Test("updateFolds carries over collapse state via collapsedProvider")
+    func preserveCollapseState() {
+        var storage = LineFoldStorage(documentLength: 15)
+        let raw = [LineFoldStorage.RawFold(depth: 1, range: 0..<5)]
+        // First pass: no collapsed
+        storage.updateFolds(from: raw) { [] }
+        #expect(storage.folds(in: 0..<15).first?.collapsed == false)
+
+        // Second pass: provider marks depth=1, start=0 as collapsed
+        storage.updateFolds(from: raw) {
+            collapsedSet((1, 0))
+        }
+        #expect(storage.folds(in: 0..<15).first?.collapsed == true)
+    }
+
+    @Test("FoldRegion IDs remain stable between identical updates")
+    func stableIDsBetweenUpdates() {
+        var storage = LineFoldStorage(documentLength: 30)
+        let raw = [LineFoldStorage.RawFold(depth: 2, range: 10..<20)]
+
+        storage.updateFolds(from: raw) { [] }
+        let initial = storage.fullFoldRegion(at: 10, depth: 2)!.id
+
+        // Perform update again with identical raw folds
+        storage.updateFolds(from: raw) { [] }
+        let subsequent = storage.fullFoldRegion(at: 10, depth: 2)!.id
+
+        #expect(initial == subsequent)
     }
 }

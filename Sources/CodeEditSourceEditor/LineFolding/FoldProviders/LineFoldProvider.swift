@@ -35,7 +35,7 @@ protocol LineFoldProvider: AnyObject {
     func foldLevelAtLine(
         lineNumber: Int,
         lineRange: NSRange,
-        currentDepth: Int,
+        previousDepth: Int,
         text: NSTextStorage
-    ) -> LineFoldProviderLineInfo?
+    ) -> [LineFoldProviderLineInfo]
 }

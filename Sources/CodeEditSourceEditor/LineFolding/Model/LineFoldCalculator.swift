@@ -15,16 +15,10 @@ import Combine
 /// Fold information is emitted via `rangesPublisher`.
 /// Notify the calculator it should re-calculate
 class LineFoldCalculator {
-    private struct LineInfo {
-        let lineNumber: Int
-        let providerInfo: LineFoldProviderLineInfo
-        let collapsed: Bool
-    }
-
     weak var foldProvider: LineFoldProvider?
     weak var textView: TextView?
 
-    var rangesPublisher = CurrentValueSubject<[FoldRange], Never>([])
+    var rangesPublisher = CurrentValueSubject<LineFoldStorage, Never>(.init(documentLength: 0))
 
     private let workQueue = DispatchQueue.global(qos: .default)
 
@@ -47,99 +41,100 @@ class LineFoldCalculator {
     /// For each line in the document, find the indentation level using the ``levelProvider``. At each line, if the
     /// indent increases from the previous line, we start a new fold. If it decreases we end the fold we were in.
     private func buildFoldsForDocument(afterEditIn: NSRange, delta: Int) {
-//        workQueue.async {
-//            guard let textView = self.textView, let foldProvider = self.foldProvider else { return }
-//            var foldCache: [FoldRange] = []
-//            var currentFold: FoldRange?
-//            var currentDepth: Int = 0
-//            var iterator = textView.layoutManager.linesInRange(textView.documentRange)
-//
-//            var lines = self.getMoreLines(
-//                textView: textView,
-//                iterator: &iterator,
-//                lastDepth: currentDepth,
-//                foldProvider: foldProvider
-//            )
-//            while let lineChunk = lines {
-//                for lineInfo in lineChunk {
-//                    // Start a new fold, going deeper to a new depth.
-//                    if lineInfo.providerInfo.depth > currentDepth {
-//                        let newFold = FoldRange(
-//                            lineRange: lineInfo.lineNumber...lineInfo.lineNumber,
-//                            range: NSRange(location: lineInfo.providerInfo.rangeIndice, length: 0),
-//                            depth: lineInfo.providerInfo.depth,
-//                            collapsed: lineInfo.collapsed,
-//                            parent: currentFold,
-//                            subFolds: []
-//                        )
-//
-//                        if currentFold == nil {
-//                            foldCache.append(newFold)
-//                        } else {
-//                            currentFold?.subFolds.append(newFold)
-//                        }
-//                        currentFold = newFold
-//                    } else if lineInfo.providerInfo.depth < currentDepth {
-//                        // End this fold, go shallower "popping" folds deeper than the new depth
-//                        while let fold = currentFold, fold.depth > lineInfo.providerInfo.depth {
-//                            // close this fold at the current line
-//                            fold.lineRange = fold.lineRange.lowerBound...lineInfo.lineNumber
-//                            fold.range = NSRange(start: fold.range.location, end: lineInfo.providerInfo.rangeIndice)
-//                            // move up
-//                            currentFold = fold.parent
-//                        }
-//                    }
-//
-//                    currentDepth = lineInfo.providerInfo.depth
-//                }
-//                lines = self.getMoreLines(
-//                    textView: textView,
-//                    iterator: &iterator,
-//                    lastDepth: currentDepth,
-//                    foldProvider: foldProvider
-//                )
-//            }
-//
-//            // Clean up any hanging folds.
-//            while let fold = currentFold {
-//                fold.lineRange = fold.lineRange.lowerBound...textView.layoutManager.lineCount - 1
-//                fold.range = NSRange(start: fold.range.location, end: textView.documentRange.length)
-//                currentFold = fold.parent
-//            }
-//
-//            self.rangesPublisher.send(foldCache)
-//        }
+        workQueue.async {
+            guard let textView = self.textView, let foldProvider = self.foldProvider else { return }
+            var foldCache: [LineFoldStorage.RawFold] = []
+            // Depth: Open range
+            var openFolds: [Int: LineFoldStorage.RawFold] = [:]
+            var currentDepth: Int = 0
+            var iterator = textView.layoutManager.linesInRange(textView.documentRange)
+
+            var lines = self.getMoreLines(
+                textView: textView,
+                iterator: &iterator,
+                previousDepth: currentDepth,
+                foldProvider: foldProvider
+            )
+            while let lineChunk = lines {
+                for lineInfo in lineChunk where lineInfo.depth > 0 {
+                    // Start a new fold, going deeper to a new depth.
+                    if lineInfo.depth > currentDepth {
+                        let newFold = LineFoldStorage.RawFold(
+                            depth: lineInfo.depth,
+                            range: lineInfo.rangeIndice..<lineInfo.rangeIndice
+                        )
+                        openFolds[newFold.depth] = newFold
+                    } else if lineInfo.depth < currentDepth {
+                        // End open folds > received depth
+                        for openFold in openFolds.values.filter({ $0.depth > lineInfo.depth }) {
+                            openFolds.removeValue(forKey: openFold.depth)
+                            foldCache.append(
+                                LineFoldStorage.RawFold(
+                                    depth: openFold.depth,
+                                    range: openFold.range.lowerBound..<lineInfo.rangeIndice
+                                )
+                            )
+                        }
+                    }
+
+                    currentDepth = lineInfo.depth
+                }
+                lines = self.getMoreLines(
+                    textView: textView,
+                    iterator: &iterator,
+                    previousDepth: currentDepth,
+                    foldProvider: foldProvider
+                )
+            }
+
+            // Clean up any hanging folds.
+            for fold in openFolds.values {
+                foldCache.append(
+                    LineFoldStorage.RawFold(
+                        depth: fold.depth,
+                        range: fold.range.lowerBound..<textView.length
+                    )
+                )
+            }
+
+            let storage = LineFoldStorage(
+                documentLength: textView.length,
+                folds: foldCache.sorted(by: { $0.range.lowerBound < $1.range.lowerBound }),
+                collapsedProvider: {
+                    Set(
+                        textView.layoutManager.attachments
+                            .getAttachmentsOverlapping(textView.documentRange)
+                            .compactMap { $0.attachment as? LineFoldPlaceholder }
+                            .map {
+                                LineFoldStorage.DepthStartPair(depth: $0.fold.depth, start: $0.fold.range.lowerBound)
+                            }
+                    )
+                }
+            )
+            self.rangesPublisher.send(storage)
+        }
     }
 
     private func getMoreLines(
         textView: TextView,
         iterator: inout TextLayoutManager.RangeIterator,
-        lastDepth: Int,
+        previousDepth: Int,
         foldProvider: LineFoldProvider
-    ) -> [LineInfo]? {
+    ) -> [LineFoldProviderLineInfo]? {
         DispatchQueue.main.asyncAndWait {
-            var results: [LineInfo] = []
+            var results: [LineFoldProviderLineInfo] = []
             var count = 0
-            var lastDepth = lastDepth
+            var previousDepth: Int = previousDepth
             while count < 50, let linePosition = iterator.next() {
-                guard let foldInfo = foldProvider.foldLevelAtLine(
+                let foldInfo = foldProvider.foldLevelAtLine(
                     lineNumber: linePosition.index,
                     lineRange: linePosition.range,
-                    currentDepth: lastDepth,
+                    previousDepth: previousDepth,
                     text: textView.textStorage
-                ) else {
-                    count += 1
-                    continue
-                }
-                results.append(
-                    LineInfo(
-                        lineNumber: linePosition.index,
-                        providerInfo: foldInfo,
-                        collapsed: false
-                    )
                 )
+                results.append(contentsOf: foldInfo)
                 count += 1
-                lastDepth = foldInfo.depth
+                previousDepth = foldInfo.max(by: { $0.depth < $1.depth })?.depth ?? previousDepth
             }
             if results.isEmpty && count == 0 {
                 return nil

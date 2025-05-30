@@ -9,6 +9,12 @@ import AppKit
 import CodeEditTextView
 
 class LineFoldPlaceholder: TextAttachment {
+    let fold: FoldRange
+
+    init(fold: FoldRange) {
+        self.fold = fold
+    }
+
     var width: CGFloat { 17 }
 
     func draw(in context: CGContext, rect: NSRect) {

@@ -21,7 +21,7 @@ import Combine
 class LineFoldingModel: NSObject, NSTextStorageDelegate {
     /// An ordered tree of fold ranges in a document. Can be traversed using ``FoldRange/parent``
     /// and ``FoldRange/subFolds``.
-    @Published var foldCache: Atomic<[FoldRange]> = Atomic([])
+    @Published var foldCache: Atomic<LineFoldStorage> = Atomic(LineFoldStorage(documentLength: 0))
     private var cacheLock = NSLock()
     private var calculator: LineFoldCalculator
     private var cancellable: AnyCancellable?
@@ -39,9 +39,8 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
         calculator.textChangedReceiver.send((.zero, 0))
     }
 
-    func getFolds(in lineRange: ClosedRange<Int>) -> [FoldRange] {
-//        foldCache.withValue { $0.filter({ $0.lineRange.overlaps(lineRange) }) }
-        []
+    func getFolds(in range: Range<Int>) -> [FoldRange] {
+        foldCache.withValue({ $0.folds(in: range) })
     }
 
     func textStorage(
@@ -53,6 +52,7 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
         guard editedMask.contains(.editedCharacters) else {
             return
         }
+        foldCache.mutate({ $0.storageUpdated(editedRange: editedRange, changeInLength: delta) })
         calculator.textChangedReceiver.send((editedRange, delta))
     }
 
@@ -67,9 +67,12 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
     /// - Parameter lineNumber: The line number to query, zero-indexed.
     /// - Returns: The deepest cached fold and depth of the fold if it was found.
     func getCachedFoldAt(lineNumber: Int) -> (range: FoldRange, depth: Int)? {
-//        foldCache.withValue { foldCache in
-//            binarySearchFoldsArray(lineNumber: lineNumber, folds: foldCache, currentDepth: 0, findDeepest: true)
-//        }
-        nil
+        guard let lineRange = textView?.layoutManager.textLineForIndex(lineNumber)?.range else { return nil }
+        return foldCache.withValue { foldCache in
+            guard let deepestFold = foldCache.folds(in: lineRange.intRange).max(by: { $0.depth < $1.depth }) else {
+                return nil
+            }
+            return (deepestFold, deepestFold.depth)
+        }
     }
 }
