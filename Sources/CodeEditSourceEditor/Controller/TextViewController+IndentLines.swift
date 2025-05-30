@@ -128,7 +128,7 @@ extension TextViewController {
         }
         return false
     }
-    
+
     /// Find the range of lines overlapping a text range.
     ///
     /// Use this method to determine what lines to apply a text transformation on using a text selection. For instance,
