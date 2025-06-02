@@ -33,7 +33,10 @@ struct CodeEditSourceEditorExampleDocument: FileDocument, @unchecked Sendable {
         NSString.stringEncoding(
             for: data,
             encodingOptions: [
-                .allowLossyKey: false, // Fail if using lossy encoding.
+                // Fail if using lossy encoding.
+                .allowLossyKey: false,
+                // In a real app, you'll want to handle more than just this encoding scheme. Check out CodeEdit's
+                // implementation for a more involved solution.
                 .suggestedEncodingsKey: [NSUTF8StringEncoding],
                 .useOnlySuggestedEncodingsKey: true
             ],
