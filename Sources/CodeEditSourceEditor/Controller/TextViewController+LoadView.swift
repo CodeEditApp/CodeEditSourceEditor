@@ -211,8 +211,14 @@ extension TextViewController {
         case (commandKey, "["):
             handleIndent(inwards: true)
             return nil
+        case (commandKey | optionKey, "["):
+            moveLinesUp()
+            return nil
         case (commandKey, "]"):
             handleIndent()
+            return nil
+        case (commandKey | optionKey, "]"):
+            moveLinesDown()
             return nil
         case (commandKey, "f"):
             _ = self.textView.resignFirstResponder()
