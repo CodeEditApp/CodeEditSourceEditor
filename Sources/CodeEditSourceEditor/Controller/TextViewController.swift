@@ -21,6 +21,9 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
     public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
 
     weak var findViewController: FindViewController?
+    var findPanelViewModel: FindPanelViewModel? {
+        findViewController?.viewModel
+    }
 
     var scrollView: NSScrollView!
     var textView: TextView!
@@ -391,4 +394,51 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         }
         localEvenMonitor = nil
     }
+
+    // MARK: - Multiple Selection Commands
+
+    @objc func selectNextOccurrence(_ sender: Any?) {
+        guard let findPanelViewModel = findPanelViewModel else { return }
+        findPanelViewModel.selectNextOccurrence()
+    }
+
+    @objc func selectPreviousOccurrence(_ sender: Any?) {
+        guard let findPanelViewModel = findPanelViewModel else { return }
+        findPanelViewModel.selectPreviousOccurrence()
+    }
+
+    public override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // Initialize find view controller if not already set
+        if findViewController == nil {
+            let findVC = FindViewController(target: self, childView: view)
+            addChild(findVC)
+            view.addSubview(findVC.view)
+
+            // Set up constraints
+            findVC.view.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                findVC.view.topAnchor.constraint(equalTo: view.topAnchor),
+                findVC.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                findVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+            ])
+
+            findViewController = findVC
+        }
+    }
 }
+
+// MARK: - NSMenuItemValidation
+
+extension TextViewController: NSMenuItemValidation {
+    public func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
+        switch menuItem.action {
+        case #selector(selectNextOccurrence(_:)), #selector(selectPreviousOccurrence(_:)):
+            return textView.selectedRange.length > 0
+        default:
+            return true
+        }
+    }
+}
+

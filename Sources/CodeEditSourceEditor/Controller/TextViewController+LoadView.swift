@@ -201,6 +201,8 @@ extension TextViewController {
 
     func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
         let commandKey = NSEvent.ModifierFlags.command.rawValue
+        let optionKey = NSEvent.ModifierFlags.option.rawValue
+        let shiftKey = NSEvent.ModifierFlags.shift.rawValue
 
         switch (modifierFlags, event.charactersIgnoringModifiers) {
         case (commandKey, "/"):
@@ -218,6 +220,12 @@ extension TextViewController {
             return nil
         case (0, "\u{1b}"): // Escape key
             self.findViewController?.hideFindPanel()
+            return nil
+        case (commandKey | optionKey | shiftKey, "E"): // ⇧ ⌥ ⌘ E - uppercase letter because shiftKey is present
+            selectPreviousOccurrence(nil)
+            return nil
+        case (commandKey | optionKey, "e"): // ⌥ ⌘ E
+            selectNextOccurrence(nil)
             return nil
         case (_, _):
             return event
