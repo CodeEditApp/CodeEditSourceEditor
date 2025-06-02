@@ -94,6 +94,8 @@ struct FindSearchField: View {
                         .frame(width: 30, height: 20)
                 })
                 .toggleStyle(.icon)
+                Divider()
+                FindMethodPicker(method: $viewModel.findMethod, condensed: condensed)
             },
             helperText: helperText,
             clearable: true

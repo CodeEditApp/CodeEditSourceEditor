@@ -31,7 +31,7 @@ struct StatusBar: View {
     var body: some View {
         HStack {
             Menu {
-                IndentPicker(indentOption: $indentOption, enabled: document.text.isEmpty)
+                IndentPicker(indentOption: $indentOption, enabled: document.text.length == 0)
                     .buttonStyle(.borderless)
                 Toggle("Wrap Lines", isOn: $wrapLines)
                 Toggle("Show Minimap", isOn: $showMinimap)
@@ -108,8 +108,8 @@ struct StatusBar: View {
         guard let fileURL else { return nil  }
         return CodeLanguage.detectLanguageFrom(
             url: fileURL,
-            prefixBuffer: document.text.getFirstLines(5),
-            suffixBuffer: document.text.getLastLines(5)
+            prefixBuffer: document.text.string.getFirstLines(5),
+            suffixBuffer: document.text.string.getLastLines(5)
         )
     }
 

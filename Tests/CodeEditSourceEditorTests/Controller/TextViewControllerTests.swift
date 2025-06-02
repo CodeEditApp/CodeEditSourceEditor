@@ -492,6 +492,32 @@ final class TextViewControllerTests: XCTestCase {
         controller.gutterView.updateWidthIfNeeded() // Would be called on a display pass
         XCTAssertEqual(controller.gutterView.frame.width, noRibbonWidth + 7.0)
     }
+
+    // MARK: - Get Overlapping Lines
+
+    func test_getOverlappingLines() {
+        controller.setText("A\nB\nC")
+
+        // Select the entire first line, shouldn't include the second line
+        var lines = controller.getOverlappingLines(for: NSRange(location: 0, length: 2))
+        XCTAssertEqual(0...0, lines)
+
+        // Select the first char of the second line
+        lines = controller.getOverlappingLines(for: NSRange(location: 0, length: 3))
+        XCTAssertEqual(0...1, lines)
+
+        // Select the newline in the first line, and part of the second line
+        lines = controller.getOverlappingLines(for: NSRange(location: 1, length: 2))
+        XCTAssertEqual(0...1, lines)
+
+        // Select until the end of the document
+        lines = controller.getOverlappingLines(for: NSRange(location: 3, length: 2))
+        XCTAssertEqual(1...2, lines)
+
+        // Select just the last line of the document
+        lines = controller.getOverlappingLines(for: NSRange(location: 4, length: 1))
+        XCTAssertEqual(2...2, lines)
+    }
 }
 
 // swiftlint:disable:this file_length
