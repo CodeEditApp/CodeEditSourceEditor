@@ -56,15 +56,13 @@ actor LineFoldCalculator {
         // Depth: Open range
         var openFolds: [Int: LineFoldStorage.RawFold] = [:]
         var currentDepth: Int = 0
-        var iterator = await controller.textView.layoutManager.lineStorage.makeIterator()
-
-        var lines = await self.getMoreLines(
+        var lineIterator = await ChunkedLineIterator(
             controller: controller,
-            iterator: &iterator,
-            previousDepth: currentDepth,
-            foldProvider: foldProvider
+            foldProvider: foldProvider,
+            textIterator: await controller.textView.layoutManager.lineStorage.makeIterator()
         )
-        while let lineChunk = lines {
+
+        for await lineChunk in lineIterator {
             for lineInfo in lineChunk {
                 // Start a new fold, going deeper to a new depth.
                 if lineInfo.depth > currentDepth {
@@ -88,12 +86,6 @@ actor LineFoldCalculator {
 
                 currentDepth = lineInfo.depth
             }
-            lines = await self.getMoreLines(
-                controller: controller,
-                iterator: &iterator,
-                previousDepth: currentDepth,
-                foldProvider: foldProvider
-            )
         }
 
         // Clean up any hanging folds.
@@ -106,6 +98,14 @@ actor LineFoldCalculator {
             )
         }
 
+        await yieldNewStorage(newFolds: foldCache, controller: controller, documentRange: documentRange)
+    }
+
+    private func yieldNewStorage(
+        newFolds: [LineFoldStorage.RawFold],
+        controller: TextViewController,
+        documentRange: NSRange
+    ) async {
         let attachments = await controller.textView.layoutManager.attachments
             .getAttachmentsOverlapping(documentRange)
             .compactMap { attachmentBox -> LineFoldStorage.DepthStartPair? in
@@ -116,39 +116,55 @@ actor LineFoldCalculator {
             }
 
         let storage = LineFoldStorage(
-            documentLength: foldCache.max(
+            documentLength: newFolds.max(
                 by: { $0.range.upperBound < $1.range.upperBound }
             )?.range.upperBound ?? documentRange.length,
-            folds: foldCache.sorted(by: { $0.range.lowerBound < $1.range.lowerBound }),
+            folds: newFolds.sorted(by: { $0.range.lowerBound < $1.range.lowerBound }),
             collapsedRanges: Set(attachments)
         )
         valueStreamContinuation.yield(storage)
     }
 
     @MainActor
-    private func getMoreLines(
-        controller: TextViewController,
-        iterator: inout TextLineStorage<TextLine>.TextLineStorageIterator,
-        previousDepth: Int,
-        foldProvider: LineFoldProvider
-    ) -> [LineFoldProviderLineInfo]? {
-        var results: [LineFoldProviderLineInfo] = []
-        var count = 0
-        var previousDepth: Int = previousDepth
-        while count < 50, let linePosition = iterator.next() {
-            let foldInfo = foldProvider.foldLevelAtLine(
-                lineNumber: linePosition.index,
-                lineRange: linePosition.range,
-                previousDepth: previousDepth,
-                controller: controller
-            )
-            results.append(contentsOf: foldInfo)
-            count += 1
-            previousDepth = foldInfo.max(by: { $0.depth < $1.depth })?.depth ?? previousDepth
+    struct ChunkedLineIterator: AsyncSequence, AsyncIteratorProtocol {
+        var controller: TextViewController
+        var foldProvider: LineFoldProvider
+        private var previousDepth: Int = 0
+        var textIterator: TextLineStorage<TextLine>.TextLineStorageIterator
+
+        init(
+            controller: TextViewController,
+            foldProvider: LineFoldProvider,
+            textIterator: TextLineStorage<TextLine>.TextLineStorageIterator
+        ) {
+            self.controller = controller
+            self.foldProvider = foldProvider
+            self.textIterator = textIterator
         }
-        if results.isEmpty && count == 0 {
-            return nil
+
+        nonisolated func makeAsyncIterator() -> ChunkedLineIterator {
+            self
         }
-        return results
+
+        mutating func next() async -> [LineFoldProviderLineInfo]? {
+            var results: [LineFoldProviderLineInfo] = []
+            var count = 0
+            var previousDepth: Int = previousDepth
+            while count < 50, let linePosition = textIterator.next() {
+                let foldInfo = foldProvider.foldLevelAtLine(
+                    lineNumber: linePosition.index,
+                    lineRange: linePosition.range,
+                    previousDepth: previousDepth,
+                    controller: controller
+                )
+                results.append(contentsOf: foldInfo)
+                count += 1
+                previousDepth = foldInfo.max(by: { $0.depth < $1.depth })?.depth ?? previousDepth
+            }
+            if results.isEmpty && count == 0 {
+                return nil
+            }
+            return results
+        }
     }
 }

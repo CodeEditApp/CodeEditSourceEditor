@@ -24,6 +24,7 @@ extension NSBezierPath {
         public static let bottomRight = Corners(rawValue: 1 << 3)
     }
 
+    // swiftlint:disable:next function_body_length
     convenience init(rect: CGRect, roundedCorners corners: Corners, cornerRadius: CGFloat) {
         self.init()
 
@@ -94,7 +95,6 @@ extension NSBezierPath {
 
         close()
     }
-
 
     convenience init(roundingRect: CGRect, capTop: Bool, capBottom: Bool, cornerRadius radius: CGFloat) {
         switch (capTop, capBottom) {

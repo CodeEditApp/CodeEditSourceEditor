@@ -12,7 +12,7 @@ extension RangeStore {
     func findIndex(at offset: Int) -> (index: Index, remaining: Int) {
         _guts.find(at: offset, in: OffsetMetric(), preferEnd: false)
     }
-    
+
     /// Finds the value stored at a given string offset.
     /// - Parameter offset: The offset to query for.
     /// - Returns: The element stored, if any.
