@@ -17,7 +17,7 @@ import OSLog
 ///
 /// This class manages multiple objects that help perform this task:
 /// - ``StyledRangeContainer``
-/// - ``StyledRangeStore``
+/// - ``RangeStore``
 /// - ``VisibleRangeProvider``
 /// - ``HighlightProviderState``
 ///
@@ -34,12 +34,12 @@ import OSLog
 /// |
 /// | Queries coalesced styles
 /// v
-/// +-------------------------------+             +-----------------------------+
-/// |    StyledRangeContainer       |   ------>   |      StyledRangeStore[]     |
-/// |                               |             |                             | Stores styles for one provider
-/// |  - manages combined ranges    |             |  - stores raw ranges &      |
-/// |  - layers highlight styles    |             |    captures                 |
-/// |  + getAttributesForRange()    |             +-----------------------------+
+/// +-------------------------------+             +-------------------------+
+/// |    StyledRangeContainer       |   ------>   |      RangeStore[]       |
+/// |                               |             |                         | Stores styles for one provider
+/// |  - manages combined ranges    |             |  - stores raw ranges &  |
+/// |  - layers highlight styles    |             |    captures             |
+/// |  + getAttributesForRange()    |             +-------------------------+
 /// +-------------------------------+
 /// ^
 /// | Sends highlighted runs
@@ -276,7 +276,7 @@ extension Highlighter: StyledRangeContainerDelegate {
             guard let range = NSRange(location: offset, length: run.length).intersection(range) else {
                 continue
             }
-            storage?.setAttributes(attributeProvider.attributesFor(run.capture), range: range)
+            storage?.setAttributes(attributeProvider.attributesFor(run.value?.capture), range: range)
             offset += range.length
         }
 

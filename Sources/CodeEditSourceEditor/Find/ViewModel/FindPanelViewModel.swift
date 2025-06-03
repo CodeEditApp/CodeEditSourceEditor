@@ -25,6 +25,14 @@ class FindPanelViewModel: ObservableObject {
         }
     }
 
+    @Published var findMethod: FindMethod = .contains {
+        didSet {
+            if !findText.isEmpty {
+                find()
+            }
+        }
+    }
+
     @Published var isFocused: Bool = false
 
     @Published var matchCase: Bool = false
