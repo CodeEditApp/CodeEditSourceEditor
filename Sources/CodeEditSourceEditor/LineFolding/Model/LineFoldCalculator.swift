@@ -11,8 +11,6 @@ import CodeEditTextView
 /// A utility that calculates foldable line ranges in a text document based on indentation depth.
 ///
 /// `LineFoldCalculator` observes text edits and rebuilds fold regions asynchronously.
-/// Fold information is emitted via `rangesPublisher`.
-/// Notify the calculator it should re-calculate
 actor LineFoldCalculator {
     weak var foldProvider: LineFoldProvider?
     weak var controller: TextViewController?
@@ -21,7 +19,12 @@ actor LineFoldCalculator {
 
     private var valueStreamContinuation: AsyncStream<LineFoldStorage>.Continuation
     private var textChangedTask: Task<Void, Never>?
-
+    
+    /// Create a new calculator object that listens to a given stream for text changes.
+    /// - Parameters:
+    ///   - foldProvider: The object to use to calculate fold regions.
+    ///   - controller: The text controller to use for text and attachment fetching.
+    ///   - textChangedStream: A stream of text changes, received as the document is edited.
     init(
         foldProvider: LineFoldProvider?,
         controller: TextViewController,
@@ -36,7 +39,9 @@ actor LineFoldCalculator {
     deinit {
         textChangedTask?.cancel()
     }
-
+    
+    /// Sets up an attached task to listen to values on a stream of text changes.
+    /// - Parameter textChangedStream: A stream of text changes.
     private func listenToTextChanges(textChangedStream: AsyncStream<(NSRange, Int)>) {
         textChangedTask = Task {
             for await edit in textChangedStream {
@@ -100,7 +105,12 @@ actor LineFoldCalculator {
 
         await yieldNewStorage(newFolds: foldCache, controller: controller, documentRange: documentRange)
     }
-
+    
+    /// Yield a new storage value on the value stream using a new set of folds.
+    /// - Parameters:
+    ///   - newFolds: The new folds to yield with the storage value.
+    ///   - controller: The text controller used for range and attachment fetching.
+    ///   - documentRange: The total range of the current document.
     private func yieldNewStorage(
         newFolds: [LineFoldStorage.RawFold],
         controller: TextViewController,
@@ -125,6 +135,10 @@ actor LineFoldCalculator {
         valueStreamContinuation.yield(storage)
     }
 
+    /// Asynchronously gets more line information from the fold provider.
+    /// Runs on the main thread so all text-related calculations are safe with the main text storage.
+    ///
+    /// Has to be an `AsyncSequence` so it can be main actor isolated.
     @MainActor
     struct ChunkedLineIterator: AsyncSequence, AsyncIteratorProtocol {
         var controller: TextViewController
@@ -146,7 +160,7 @@ actor LineFoldCalculator {
             self
         }
 
-        mutating func next() async -> [LineFoldProviderLineInfo]? {
+        mutating func next() -> [LineFoldProviderLineInfo]? {
             var results: [LineFoldProviderLineInfo] = []
             var count = 0
             var previousDepth: Int = previousDepth

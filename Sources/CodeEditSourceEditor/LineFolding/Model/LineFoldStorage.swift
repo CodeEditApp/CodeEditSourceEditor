@@ -120,12 +120,4 @@ struct LineFoldStorage: Sendable {
 
         return result.sorted { $0.range.lowerBound < $1.range.lowerBound }
     }
-
-    /// Given a depth and a location, return the full original fold region
-    func fullFoldRegion(at location: Int, depth: Int) -> FoldRange? {
-        guard let elem = store.findValue(at: location), elem.depth == depth else {
-            return nil
-        }
-        return foldRanges[elem.id]
-    }
 }

@@ -50,19 +50,4 @@ struct LineFoldStorageTests {
         storage.updateFolds(from: raw, collapsedRanges: collapsedSet((1, 0)))
         #expect(storage.folds(in: 0..<15).first?.isCollapsed == true)
     }
-
-    @Test
-    func stableIDsBetweenUpdates() {
-        var storage = LineFoldStorage(documentLength: 30)
-        let raw = [LineFoldStorage.RawFold(depth: 2, range: 10..<20)]
-
-        storage.updateFolds(from: raw, collapsedRanges: [])
-        let initial = storage.fullFoldRegion(at: 10, depth: 2)!.id
-
-        // Perform update again with identical raw folds
-        storage.updateFolds(from: raw, collapsedRanges: [])
-        let subsequent = storage.fullFoldRegion(at: 10, depth: 2)!.id
-
-        #expect(initial == subsequent)
-    }
 }
