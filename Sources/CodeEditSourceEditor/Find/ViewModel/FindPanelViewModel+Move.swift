@@ -64,8 +64,9 @@ extension FindPanelViewModel {
                 showWrapNotification(forwards: forwards, error: true, targetView: target.findPanelTargetView)
                 return
             }
-            
-            if isAtLimit && wrapAround {
+
+            // Show wrap notification when we're on the first occurrence and about to wrap to the last occurrence
+            if currentFindMatchIndex == findMatches.count - 1 && !forwards && wrapAround {
                 showWrapNotification(forwards: forwards, error: false, targetView: target.findPanelTargetView)
             }
         }
