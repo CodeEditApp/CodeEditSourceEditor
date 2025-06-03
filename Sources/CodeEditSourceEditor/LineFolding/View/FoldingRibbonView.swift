@@ -135,9 +135,8 @@ class FoldingRibbonView: NSView {
             super.mouseDown(with: event)
             return
         }
-        if let attachment = model?.controller?.textView?.layoutManager.attachments
-            .getAttachmentsStartingIn(NSRange(fold.range))
-            .filter({ $0.attachment is LineFoldPlaceholder && firstLineInFold.range.contains($0.range.location) }).first {
+
+        if let attachment = findAttachmentFor(fold: fold, firstLineRange: firstLineInFold.range) {
             layoutManager.attachments.remove(atOffset: attachment.range.location)
             attachments.removeAll(where: { $0 === attachment.attachment })
         } else {
@@ -148,6 +147,14 @@ class FoldingRibbonView: NSView {
 
         model?.foldCache.toggleCollapse(forFold: fold)
         model?.controller?.textView.needsLayout = true
+    }
+
+    private func findAttachmentFor(fold: FoldRange, firstLineRange: NSRange) -> AnyTextAttachment? {
+        model?.controller?.textView?.layoutManager.attachments
+            .getAttachmentsStartingIn(NSRange(fold.range))
+            .filter({
+                $0.attachment is LineFoldPlaceholder && firstLineRange.contains($0.range.location)
+            }).first
     }
 
     override func mouseMoved(with event: NSEvent) {
@@ -193,6 +200,7 @@ class FoldingRibbonView: NSView {
     }
 
     override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
         hoverAnimationProgress = 0.0
         hoveringFold = nil
     }

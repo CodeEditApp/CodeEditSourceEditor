@@ -9,18 +9,50 @@ import AppKit
 import CodeEditTextView
 
 extension FoldingRibbonView {
-    /// The context in which the fold is being drawn, including the depth and fold range.
-    struct FoldMarkerDrawingContext {
-        let range: ClosedRange<Int>
-        let depth: UInt
+    struct FoldCapInfo {
+        let startIndices: Set<Int>
+        let endIndices: Set<Int>
 
-        /// Increment the depth
-        func incrementDepth() -> FoldMarkerDrawingContext {
-            FoldMarkerDrawingContext(
-                range: range,
-                depth: depth + 1
+        init(_ folds: [DrawingFoldInfo]) {
+            self.startIndices = folds.reduce(into: Set<Int>(), { $0.insert($1.startLine.index) })
+            self.endIndices = folds.reduce(into: Set<Int>(), { $0.insert($1.endLine.index) })
+        }
+
+        func foldNeedsTopCap(_ fold: DrawingFoldInfo) -> Bool {
+            endIndices.contains(fold.startLine.index)
+        }
+
+        func foldNeedsBottomCap(_ fold: DrawingFoldInfo) -> Bool {
+            startIndices.contains(fold.endLine.index)
+        }
+
+        func adjustFoldRect(
+            using fold: DrawingFoldInfo,
+            rect: NSRect
+        ) -> NSRect {
+            let capTop = foldNeedsTopCap(fold)
+            let capBottom = foldNeedsBottomCap(fold)
+            let yDelta = capTop ? fold.startLine.height / 2.0 : 0.0
+            let heightDelta: CGFloat = if capTop && capBottom {
+                -fold.startLine.height
+            } else if capTop || capBottom {
+                -(fold.startLine.height / 2.0)
+            } else {
+                0.0
+            }
+            return NSRect(
+                x: rect.origin.x,
+                y: rect.origin.y + yDelta,
+                width: rect.size.width,
+                height: rect.size.height + heightDelta
             )
         }
+    }
+
+    struct DrawingFoldInfo {
+        let fold: FoldRange
+        let startLine: TextLineStorage<TextLine>.TextLinePosition
+        let endLine: TextLineStorage<TextLine>.TextLinePosition
     }
 
     override func draw(_ dirtyRect: NSRect) {
@@ -38,19 +70,21 @@ extension FoldingRibbonView {
             return
         }
         let textRange = rangeStart.range.location..<rangeEnd.range.upperBound
-
-        let folds = getDrawingFolds(forTextRange: textRange)
-        for fold in folds.filter({ !$0.isCollapsed }) {
+        let folds = getDrawingFolds(forTextRange: textRange, layoutManager: layoutManager)
+        let foldCaps = FoldCapInfo(folds)
+        for fold in folds.filter({ !$0.fold.isCollapsed }) {
             drawFoldMarker(
                 fold,
+                foldCaps: foldCaps,
                 in: context,
                 using: layoutManager
             )
         }
 
-        for fold in folds.filter({ $0.isCollapsed }) {
+        for fold in folds.filter({ $0.fold.isCollapsed }) {
             drawFoldMarker(
                 fold,
+                foldCaps: foldCaps,
                 in: context,
                 using: layoutManager
             )
@@ -59,7 +93,10 @@ extension FoldingRibbonView {
         context.restoreGState()
     }
 
-    private func getDrawingFolds(forTextRange textRange: Range<Int>) -> [FoldRange] {
+    private func getDrawingFolds(
+        forTextRange textRange: Range<Int>,
+        layoutManager: TextLayoutManager
+    ) -> [DrawingFoldInfo] {
         var folds = model?.getFolds(in: textRange) ?? []
 
         // Add in some fake depths, we can draw these underneath the rest of the folds to make it look like it's
@@ -78,7 +115,14 @@ extension FoldingRibbonView {
             }
         }
 
-        return folds
+        return folds.compactMap { fold in
+            guard let startLine = layoutManager.textLineForOffset(fold.range.lowerBound),
+                  let endLine = layoutManager.textLineForOffset(fold.range.upperBound) else {
+                return nil
+            }
+
+            return DrawingFoldInfo(fold: fold, startLine: startLine, endLine: endLine)
+        }
     }
 
     /// Draw a single fold marker for a fold.
@@ -86,28 +130,23 @@ extension FoldingRibbonView {
     /// Ensure the correct fill color is set on the drawing context before calling.
     ///
     /// - Parameters:
-    ///   - fold: The fold to draw.
+    ///   - foldInfo: The fold to draw.
     ///   - markerContext: The context in which the fold is being drawn, including the depth and if a line is
     ///                    being hovered.
     ///   - context: The drawing context to use.
     ///   - layoutManager: A layout manager used to retrieve position information for lines.
     private func drawFoldMarker(
-        _ fold: FoldRange,
+        _ foldInfo: DrawingFoldInfo,
+        foldCaps: FoldCapInfo,
         in context: CGContext,
         using layoutManager: TextLayoutManager
     ) {
-        guard let minYPosition = layoutManager.textLineForOffset(fold.range.lowerBound)?.yPos,
-              let maxPosition = layoutManager.textLineForOffset(fold.range.upperBound) else {
-            return
-        }
+        let minYPosition = foldInfo.startLine.yPos
+        let maxYPosition = foldInfo.endLine.yPos + foldInfo.endLine.height
 
-        let maxYPosition = maxPosition.yPos + maxPosition.height
-
-        if fold.isCollapsed {
+        if foldInfo.fold.isCollapsed {
             drawCollapsedFold(minYPosition: minYPosition, maxYPosition: maxYPosition, in: context)
-        } else if let hoveringFold,
-                    hoveringFold.depth == fold.depth,
-                  NSRange(hoveringFold.range).intersection(NSRange(fold.range)) == NSRange(hoveringFold.range) {
+        } else if let hoveringFold, hoveringFold.isHoveringEqual(foldInfo.fold) {
             drawHoveredFold(
                 minYPosition: minYPosition,
                 maxYPosition: maxYPosition,
@@ -115,7 +154,8 @@ extension FoldingRibbonView {
             )
         } else {
             drawNestedFold(
-                fold: fold,
+                foldInfo: foldInfo,
+                foldCaps: foldCaps,
                 minYPosition: minYPosition,
                 maxYPosition: maxYPosition,
                 in: context
@@ -204,26 +244,37 @@ extension FoldingRibbonView {
     }
 
     private func drawNestedFold(
-        fold: FoldRange,
+        foldInfo: DrawingFoldInfo,
+        foldCaps: FoldCapInfo,
         minYPosition: CGFloat,
         maxYPosition: CGFloat,
         in context: CGContext
     ) {
         context.saveGState()
-        let plainRect = NSRect(x: 0, y: minYPosition + 1, width: 7, height: maxYPosition - minYPosition - 2)
-        // TODO: Draw a single horizontal line when folds are adjacent
-        let roundedRect = NSBezierPath(roundedRect: plainRect, xRadius: 3.5, yRadius: 3.5)
+        let plainRect = foldCaps.adjustFoldRect(
+            using: foldInfo,
+            rect: NSRect(x: 0, y: minYPosition + 1, width: 7, height: maxYPosition - minYPosition - 2)
+        )
+        let radius = plainRect.width / 2.0
+        let roundedRect = NSBezierPath(
+            roundingRect: plainRect,
+            capTop: foldCaps.foldNeedsTopCap(foldInfo),
+            capBottom: foldCaps.foldNeedsBottomCap(foldInfo),
+            cornerRadius: radius
+        )
 
         context.setFillColor(markerColor)
         context.addPath(roundedRect.cgPathFallback)
         context.drawPath(using: .fill)
 
         // Add small white line if we're overlapping with other markers
-        if fold.depth != 0 {
+        if foldInfo.fold.depth != 0 {
             drawOutline(
+                foldInfo: foldInfo,
+                foldCaps: foldCaps,
+                originalPath: roundedRect.cgPathFallback,
                 minYPosition: minYPosition,
                 maxYPosition: maxYPosition,
-                originalPath: roundedRect,
                 in: context
             )
         }
@@ -241,19 +292,31 @@ extension FoldingRibbonView {
     ///   - originalPath: The original bezier path for the rounded rectangle.
     ///   - context: The context to draw in.
     private func drawOutline(
+        foldInfo: DrawingFoldInfo,
+        foldCaps: FoldCapInfo,
+        originalPath: CGPath,
         minYPosition: CGFloat,
         maxYPosition: CGFloat,
-        originalPath: NSBezierPath,
         in context: CGContext
     ) {
         context.saveGState()
 
-        let plainRect = NSRect(x: -0.5, y: minYPosition, width: 8, height: maxYPosition - minYPosition)
-        let roundedRect = NSBezierPath(roundedRect: plainRect, xRadius: 4, yRadius: 4)
+        let plainRect = foldCaps.adjustFoldRect(
+            using: foldInfo,
+            rect: NSRect(x: -0.5, y: minYPosition, width: frame.width + 1.0, height: maxYPosition - minYPosition)
+        )
+        let radius = plainRect.width / 2.0
+        let roundedRect = NSBezierPath(
+            roundingRect: plainRect,
+            capTop: foldCaps.foldNeedsTopCap(foldInfo),
+            capBottom: foldCaps.foldNeedsBottomCap(foldInfo),
+            cornerRadius: radius
+        )
+        roundedRect.transform(using: .init(translationByX: -0.5, byY: 0.0))
 
         let combined = CGMutablePath()
         combined.addPath(roundedRect.cgPathFallback)
-        combined.addPath(originalPath.cgPathFallback)
+        combined.addPath(originalPath)
 
         context.clip(to: CGRect(x: 0, y: minYPosition, width: 7, height: maxYPosition - minYPosition))
         context.addPath(combined)
