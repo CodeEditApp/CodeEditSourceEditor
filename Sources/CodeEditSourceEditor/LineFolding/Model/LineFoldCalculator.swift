@@ -7,7 +7,6 @@
 
 import AppKit
 import CodeEditTextView
-import Combine
 
 /// A utility that calculates foldable line ranges in a text document based on indentation depth.
 ///

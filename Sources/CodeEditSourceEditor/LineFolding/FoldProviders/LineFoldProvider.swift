@@ -31,6 +31,7 @@ enum LineFoldProviderLineInfo {
     }
 }
 
+@MainActor
 protocol LineFoldProvider: AnyObject {
     func foldLevelAtLine(
         lineNumber: Int,

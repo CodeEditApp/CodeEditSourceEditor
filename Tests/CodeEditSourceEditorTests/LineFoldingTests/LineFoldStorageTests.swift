@@ -30,7 +30,7 @@ struct LineFoldStorageTests {
             LineFoldStorage.RawFold(depth: 1, range: 0..<5),
             LineFoldStorage.RawFold(depth: 2, range: 5..<10)
         ]
-        storage.updateFolds(from: raw) { [] }
+        storage.updateFolds(from: raw, collapsedRanges: [])
 
         let folds = storage.folds(in: 0..<20)
         #expect(folds.count == 2)
@@ -43,13 +43,11 @@ struct LineFoldStorageTests {
         var storage = LineFoldStorage(documentLength: 15)
         let raw = [LineFoldStorage.RawFold(depth: 1, range: 0..<5)]
         // First pass: no collapsed
-        storage.updateFolds(from: raw) { [] }
+        storage.updateFolds(from: raw, collapsedRanges: [])
         #expect(storage.folds(in: 0..<15).first?.isCollapsed == false)
 
         // Second pass: provider marks depth=1, start=0 as collapsed
-        storage.updateFolds(from: raw) {
-            collapsedSet((1, 0))
-        }
+        storage.updateFolds(from: raw, collapsedRanges: collapsedSet((1, 0)))
         #expect(storage.folds(in: 0..<15).first?.isCollapsed == true)
     }
 
@@ -58,11 +56,11 @@ struct LineFoldStorageTests {
         var storage = LineFoldStorage(documentLength: 30)
         let raw = [LineFoldStorage.RawFold(depth: 2, range: 10..<20)]
 
-        storage.updateFolds(from: raw) { [] }
+        storage.updateFolds(from: raw, collapsedRanges: [])
         let initial = storage.fullFoldRegion(at: 10, depth: 2)!.id
 
         // Perform update again with identical raw folds
-        storage.updateFolds(from: raw) { [] }
+        storage.updateFolds(from: raw, collapsedRanges: [])
         let subsequent = storage.fullFoldRegion(at: 10, depth: 2)!.id
 
         #expect(initial == subsequent)

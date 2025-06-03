@@ -18,10 +18,10 @@ import Combine
 /// - For each line in the document, put its indent level into a list.
 /// - Loop through the list, creating nested folds as indents go up and down.
 ///
-class LineFoldingModel: NSObject, NSTextStorageDelegate {
+class LineFoldingModel: NSObject, NSTextStorageDelegate, ObservableObject {
     /// An ordered tree of fold ranges in a document. Can be traversed using ``FoldRange/parent``
     /// and ``FoldRange/subFolds``.
-    var foldCache: LineFoldStorage = LineFoldStorage(documentLength: 0)
+    @Published var foldCache: LineFoldStorage = LineFoldStorage(documentLength: 0)
     private var calculator: LineFoldCalculator
 
     private var textChangedStream: AsyncStream<(NSRange, Int)>
@@ -30,7 +30,7 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
 
     weak var controller: TextViewController?
 
-    init(controller: TextViewController, foldView: FoldingRibbonView, foldProvider: LineFoldProvider?) {
+    init(controller: TextViewController, foldView: NSView, foldProvider: LineFoldProvider?) {
         self.controller = controller
         (textChangedStream, textChangedStreamContinuation) = AsyncStream<(NSRange, Int)>.makeStream()
         self.calculator = LineFoldCalculator(
