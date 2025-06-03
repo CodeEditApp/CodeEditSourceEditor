@@ -8,7 +8,7 @@
 import CodeEditTextView
 
 extension FindPanelViewModel {
-    func addMatchEmphases(flashCurrent: Bool) {
+    func addMatchEmphases(flashCurrent: Bool, allowSelection: Bool = true) {
         guard let target = target, let emphasisManager = target.textView.emphasisManager else {
             return
         }
@@ -23,7 +23,7 @@ extension FindPanelViewModel {
                 style: .standard,
                 flash: flashCurrent && index == currentFindMatchIndex,
                 inactive: index != currentFindMatchIndex,
-                selectInDocument: index == currentFindMatchIndex
+                selectInDocument: allowSelection && index == currentFindMatchIndex
             )
         }
 
@@ -31,7 +31,7 @@ extension FindPanelViewModel {
         emphasisManager.addEmphases(emphases, for: EmphasisGroup.find)
     }
 
-    func flashCurrentMatch() {
+    func flashCurrentMatch(allowSelection: Bool = true) {
         guard let target = target,
               let emphasisManager = target.textView.emphasisManager,
               let currentFindMatchIndex else {
@@ -50,7 +50,7 @@ extension FindPanelViewModel {
                 style: .standard,
                 flash: true,
                 inactive: false,
-                selectInDocument: true
+                selectInDocument: allowSelection
             )
         )
 

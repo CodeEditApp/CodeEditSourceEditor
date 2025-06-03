@@ -236,4 +236,65 @@ struct FindPanelTests {
         viewModel.find()
         #expect(viewModel.findMatches.count == 3)
     }
+
+    @Test func selectNextOccurrence() async throws {
+        target.textView.string = "test1 test2 test3"
+        
+        // Select first occurrence
+        target.setCursorPositions([CursorPosition(range: NSRange(location: 0, length: 4))], scrollToVisible: false)
+        
+        // Select next occurrence
+        viewModel.selectNextOccurrence()
+        
+        // Verify we have two selections
+        #expect(target.cursorPositions.count == 2)
+        #expect(target.cursorPositions[0].range == NSRange(location: 0, length: 4))
+        #expect(target.cursorPositions[1].range == NSRange(location: 6, length: 4))
+    }
+
+    @Test func selectPreviousOccurrence() async throws {
+        target.textView.string = "test1 test2 test3"
+        
+        // Select last occurrence
+        target.setCursorPositions([CursorPosition(range: NSRange(location: 12, length: 4))], scrollToVisible: false)
+        
+        // Select previous occurrence
+        viewModel.selectPreviousOccurrence()
+        
+        // Verify we have two selections
+        #expect(target.cursorPositions.count == 2)
+        #expect(target.cursorPositions[0].range == NSRange(location: 12, length: 4))
+        #expect(target.cursorPositions[1].range == NSRange(location: 6, length: 4))
+    }
+
+    @Test func selectNextOccurrenceWrapsAround() async throws {
+        target.textView.string = "test1 test2 test3"
+        
+        // Select last occurrence
+        target.setCursorPositions([CursorPosition(range: NSRange(location: 12, length: 4))], scrollToVisible: false)
+        
+        // Select next occurrence (should wrap to first)
+        viewModel.selectNextOccurrence()
+        
+        // Verify we have two selections
+        #expect(target.cursorPositions.count == 2)
+        #expect(target.cursorPositions[0].range == NSRange(location: 12, length: 4))
+        #expect(target.cursorPositions[1].range == NSRange(location: 0, length: 4))
+    }
+
+    @Test func selectPreviousOccurrenceWrapsAround() async throws {
+        target.textView.string = "test1 test2 test3"
+        
+        // Select first occurrence
+        target.setCursorPositions([CursorPosition(range: NSRange(location: 0, length: 4))], scrollToVisible: false)
+        
+        // Select previous occurrence (should wrap to last)
+        viewModel.selectPreviousOccurrence()
+        
+        // Verify we have two selections
+        #expect(target.cursorPositions.count == 2)
+        #expect(target.cursorPositions[0].range == NSRange(location: 0, length: 4))
+        #expect(target.cursorPositions[1].range == NSRange(location: 12, length: 4))
+    }
 }
+ 
