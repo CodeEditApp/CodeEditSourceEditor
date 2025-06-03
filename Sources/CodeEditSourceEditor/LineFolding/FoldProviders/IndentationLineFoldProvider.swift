@@ -13,7 +13,7 @@ extension NSString: @retroactive TextStoring {
     public func substring(from range: NSRange) -> String? {
         self.substring(with: range)
     }
-    
+
     public func applyMutation(_ mutation: TextMutation) {
         self.replacingCharacters(in: mutation.range, with: mutation.string)
     }
@@ -37,7 +37,7 @@ final class IndentationLineFoldProvider: LineFoldProvider {
         controller: TextViewController
     ) -> [LineFoldProviderLineInfo] {
         let text = controller.textView.textStorage.string as NSString
-        guard let leadingIndent = text.leadingRange(in: lineRange, within: .whitespacesWithoutNewlines)?.length,
+        guard let leadingIndent = text.leadingRange(in: lineRange, within: .whitespacesAndNewlines)?.length,
               leadingIndent != lineRange.length else {
             return []
         }

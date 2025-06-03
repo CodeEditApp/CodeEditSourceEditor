@@ -66,7 +66,7 @@ actor LineFoldCalculator {
             foldProvider: foldProvider
         )
         while let lineChunk = lines {
-            for lineInfo in lineChunk where lineInfo.depth > 0 {
+            for lineInfo in lineChunk {
                 // Start a new fold, going deeper to a new depth.
                 if lineInfo.depth > currentDepth {
                     let newFold = LineFoldStorage.RawFold(

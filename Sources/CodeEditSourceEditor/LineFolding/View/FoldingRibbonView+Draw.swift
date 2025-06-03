@@ -39,7 +39,23 @@ extension FoldingRibbonView {
         }
         let textRange = rangeStart.range.location..<rangeEnd.range.upperBound
 
+        let folds = getDrawingFolds(forTextRange: textRange)
+        for fold in folds {
+            drawFoldMarker(
+                fold,
+                in: context,
+                using: layoutManager
+            )
+        }
+
+        context.restoreGState()
+    }
+
+    private func getDrawingFolds(forTextRange textRange: Range<Int>) -> [FoldRange] {
         var folds = model?.getFolds(in: textRange) ?? []
+
+        // Add in some fake depths, we can draw these underneath the rest of the folds to make it look like it's
+        // continuous
         if let minimumDepth = folds.min(by: { $0.depth < $1.depth })?.depth {
             for depth in (1..<minimumDepth).reversed() {
                 folds.insert(
@@ -53,16 +69,8 @@ extension FoldingRibbonView {
                 )
             }
         }
-        for (idx, fold) in folds.enumerated() {
-            drawFoldMarker(
-                fold,
-                isFirst: idx == 0,
-                in: context,
-                using: layoutManager
-            )
-        }
 
-        context.restoreGState()
+        return folds
     }
 
     /// Draw a single fold marker for a fold.
@@ -77,12 +85,11 @@ extension FoldingRibbonView {
     ///   - layoutManager: A layout manager used to retrieve position information for lines.
     private func drawFoldMarker(
         _ fold: FoldRange,
-        isFirst: Bool,
         in context: CGContext,
         using layoutManager: TextLayoutManager
     ) {
         guard let minYPosition = layoutManager.textLineForOffset(fold.range.lowerBound)?.yPos,
-              let maxPosition = layoutManager.textLineForOffset(fold.range.upperBound - 1) else {
+              let maxPosition = layoutManager.textLineForOffset(fold.range.upperBound) else {
             return
         }
 
@@ -101,7 +108,6 @@ extension FoldingRibbonView {
         } else {
             drawNestedFold(
                 fold: fold,
-                isFirst: isFirst,
                 minYPosition: minYPosition,
                 maxYPosition: maxYPosition,
                 in: context
@@ -190,7 +196,6 @@ extension FoldingRibbonView {
 
     private func drawNestedFold(
         fold: FoldRange,
-        isFirst: Bool,
         minYPosition: CGFloat,
         maxYPosition: CGFloat,
         in context: CGContext
@@ -201,16 +206,8 @@ extension FoldingRibbonView {
         let roundedRect = NSBezierPath(roundedRect: plainRect, xRadius: 3.5, yRadius: 3.5)
 
         context.setFillColor(markerColor)
-
-//        if isFirst {
-//            for _ in 0..<fold.depth {
-//                context.addPath(roundedRect.cgPathFallback)
-//                context.drawPath(using: .fill)
-//            }
-//        } else {
-            context.addPath(roundedRect.cgPathFallback)
-            context.drawPath(using: .fill)
-//        }
+        context.addPath(roundedRect.cgPathFallback)
+        context.drawPath(using: .fill)
 
         // Add small white line if we're overlapping with other markers
         if fold.depth != 0 {
@@ -221,6 +218,7 @@ extension FoldingRibbonView {
                 in: context
             )
         }
+
         context.restoreGState()
     }
 
