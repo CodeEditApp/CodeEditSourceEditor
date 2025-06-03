@@ -36,6 +36,6 @@ protocol LineFoldProvider: AnyObject {
         lineNumber: Int,
         lineRange: NSRange,
         previousDepth: Int,
-        text: NSTextStorage
+        controller: TextViewController
     ) -> [LineFoldProviderLineInfo]
 }

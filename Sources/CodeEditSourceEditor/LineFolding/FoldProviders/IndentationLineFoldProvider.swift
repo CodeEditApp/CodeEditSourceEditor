@@ -6,7 +6,18 @@
 //
 
 import AppKit
+import TextStory
 import CodeEditTextView
+
+extension NSString: @retroactive TextStoring {
+    public func substring(from range: NSRange) -> String? {
+        self.substring(with: range)
+    }
+    
+    public func applyMutation(_ mutation: TextMutation) {
+        self.replacingCharacters(in: mutation.range, with: mutation.string)
+    }
+}
 
 final class IndentationLineFoldProvider: LineFoldProvider {
     func indentLevelAtLine(substring: NSString) -> Int? {
@@ -23,18 +34,24 @@ final class IndentationLineFoldProvider: LineFoldProvider {
         lineNumber: Int,
         lineRange: NSRange,
         previousDepth: Int,
-        text: NSTextStorage
+        controller: TextViewController
     ) -> [LineFoldProviderLineInfo] {
+        let text = controller.textView.textStorage.string as NSString
         guard let leadingIndent = text.leadingRange(in: lineRange, within: .whitespacesWithoutNewlines)?.length,
               leadingIndent != lineRange.length else {
             return []
         }
-
         var foldIndicators: [LineFoldProviderLineInfo] = []
 
-        if leadingIndent < previousDepth {
+        let leadingDepth = leadingIndent / controller.indentOption.charCount
+        if leadingDepth < previousDepth {
             // End the fold at the start of whitespace
-            foldIndicators.append(.endFold(rangeEnd: lineRange.location + leadingIndent, newDepth: leadingIndent))
+            foldIndicators.append(
+                .endFold(
+                    rangeEnd: lineRange.location + leadingIndent,
+                    newDepth: leadingDepth
+                )
+            )
         }
 
         // Check if the next line has more indent
@@ -45,7 +62,12 @@ final class IndentationLineFoldProvider: LineFoldProvider {
         }
 
         if nextIndent > leadingIndent, let trailingWhitespace = text.trailingWhitespaceRange(in: lineRange) {
-            foldIndicators.append(.startFold(rangeStart: trailingWhitespace.location, newDepth: nextIndent))
+            foldIndicators.append(
+                .startFold(
+                    rangeStart: trailingWhitespace.location,
+                    newDepth: nextIndent / controller.indentOption.charCount
+                )
+            )
         }
 
         return foldIndicators

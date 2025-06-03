@@ -8,13 +8,21 @@ import _RopeModule
 import Foundation
 
 /// Represents a single fold region with stable identifier and collapse state
-struct FoldRange: Sendable {
+struct FoldRange: Sendable, Equatable {
     typealias FoldIdentifier = UInt32
 
     let id: FoldIdentifier
     let depth: Int
     let range: Range<Int>
     var isCollapsed: Bool
+}
+
+/// Represents a single fold run with stable identifier and collapse state
+struct FoldRun: Sendable {
+    let id: FoldRange.FoldIdentifier
+    let depth: Int
+    let range: Range<Int>
+    let isCollapsed: Bool
 }
 
 /// Sendable data model for code folding using RangeStore
@@ -112,6 +120,20 @@ struct LineFoldStorage: Sendable {
         }
 
         return result.sorted { $0.range.lowerBound < $1.range.lowerBound }
+//        let runs = store.runs(in: queryRange.clamped(to: 0..<store.length))
+//        var currentLocation = queryRange.lowerBound
+//        return runs.compactMap { run in
+//            defer {
+//                currentLocation += run.length
+//            }
+//            guard let value = run.value else { return nil }
+//            return FoldRun(
+//                id: value.id,
+//                depth: value.depth,
+//                range: currentLocation..<(currentLocation + run.length),
+//                isCollapsed: foldRanges[value.id]?.isCollapsed ?? false
+//            )
+//        }
     }
 
     /// Given a depth and a location, return the full original fold region

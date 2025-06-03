@@ -25,7 +25,7 @@ extension FoldingRibbonView {
 
     override func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext,
-              let layoutManager = model.textView?.layoutManager else {
+              let layoutManager = model?.controller?.textView.layoutManager else {
             return
         }
 
@@ -39,11 +39,24 @@ extension FoldingRibbonView {
         }
         let textRange = rangeStart.range.location..<rangeEnd.range.upperBound
 
-        context.setFillColor(markerColor)
-        let folds = model.getFolds(in: textRange)
-        for fold in folds {
+        var folds = model?.getFolds(in: textRange) ?? []
+        if let minimumDepth = folds.min(by: { $0.depth < $1.depth })?.depth {
+            for depth in (1..<minimumDepth).reversed() {
+                folds.insert(
+                    FoldRange(
+                        id: .max,
+                        depth: depth,
+                        range: (textRange.lowerBound)..<(textRange.upperBound + 1),
+                        isCollapsed: false
+                    ),
+                    at: 0
+                )
+            }
+        }
+        for (idx, fold) in folds.enumerated() {
             drawFoldMarker(
                 fold,
+                isFirst: idx == 0,
                 in: context,
                 using: layoutManager
             )
@@ -64,11 +77,12 @@ extension FoldingRibbonView {
     ///   - layoutManager: A layout manager used to retrieve position information for lines.
     private func drawFoldMarker(
         _ fold: FoldRange,
+        isFirst: Bool,
         in context: CGContext,
         using layoutManager: TextLayoutManager
     ) {
         guard let minYPosition = layoutManager.textLineForOffset(fold.range.lowerBound)?.yPos,
-              let maxPosition = layoutManager.textLineForOffset(fold.range.upperBound) else {
+              let maxPosition = layoutManager.textLineForOffset(fold.range.upperBound - 1) else {
             return
         }
 
@@ -76,7 +90,9 @@ extension FoldingRibbonView {
 
         if fold.isCollapsed {
             drawCollapsedFold(minYPosition: minYPosition, maxYPosition: maxYPosition, in: context)
-        } else if let hoveringFold, fold.id == hoveringFold {
+        } else if let hoveringFold,
+                    hoveringFold.depth == fold.depth,
+                  NSRange(hoveringFold.range).intersection(NSRange(fold.range)) == NSRange(hoveringFold.range) {
             drawHoveredFold(
                 minYPosition: minYPosition,
                 maxYPosition: maxYPosition,
@@ -85,6 +101,7 @@ extension FoldingRibbonView {
         } else {
             drawNestedFold(
                 fold: fold,
+                isFirst: isFirst,
                 minYPosition: minYPosition,
                 maxYPosition: maxYPosition,
                 in: context
@@ -173,16 +190,27 @@ extension FoldingRibbonView {
 
     private func drawNestedFold(
         fold: FoldRange,
+        isFirst: Bool,
         minYPosition: CGFloat,
         maxYPosition: CGFloat,
         in context: CGContext
     ) {
+        context.saveGState()
         let plainRect = NSRect(x: 0, y: minYPosition + 1, width: 7, height: maxYPosition - minYPosition - 2)
         // TODO: Draw a single horizontal line when folds are adjacent
         let roundedRect = NSBezierPath(roundedRect: plainRect, xRadius: 3.5, yRadius: 3.5)
 
-        context.addPath(roundedRect.cgPathFallback)
-        context.drawPath(using: .fill)
+        context.setFillColor(markerColor)
+
+//        if isFirst {
+//            for _ in 0..<fold.depth {
+//                context.addPath(roundedRect.cgPathFallback)
+//                context.drawPath(using: .fill)
+//            }
+//        } else {
+            context.addPath(roundedRect.cgPathFallback)
+            context.drawPath(using: .fill)
+//        }
 
         // Add small white line if we're overlapping with other markers
         if fold.depth != 0 {
@@ -193,6 +221,7 @@ extension FoldingRibbonView {
                 in: context
             )
         }
+        context.restoreGState()
     }
 
     /// Draws a rounded outline for a rectangle, creating the small, light, outline around each fold indicator.

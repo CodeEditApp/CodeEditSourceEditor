@@ -26,7 +26,7 @@ extension TextViewController {
             font: font.rulerFont,
             textColor: theme.text.color.withAlphaComponent(0.35),
             selectedTextColor: theme.text.color,
-            textView: textView,
+            controller: self,
             delegate: self
         )
         gutterView.updateWidthIfNeeded()
