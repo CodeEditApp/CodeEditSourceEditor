@@ -57,7 +57,7 @@ actor LineFoldCalculator {
         // Depth: Open range
         var openFolds: [Int: LineFoldStorage.RawFold] = [:]
         var currentDepth: Int = 0
-        var iterator = await controller.textView.layoutManager.linesInRange(documentRange)
+        var iterator = await controller.textView.layoutManager.lineStorage.makeIterator()
 
         var lines = await self.getMoreLines(
             controller: controller,
@@ -109,9 +109,11 @@ actor LineFoldCalculator {
 
         let attachments = await controller.textView.layoutManager.attachments
             .getAttachmentsOverlapping(documentRange)
-            .compactMap { $0.attachment as? LineFoldPlaceholder }
-            .map {
-                LineFoldStorage.DepthStartPair(depth: $0.fold.depth, start: $0.fold.range.lowerBound)
+            .compactMap { attachmentBox -> LineFoldStorage.DepthStartPair? in
+                guard let attachment = attachmentBox.attachment as? LineFoldPlaceholder else {
+                    return nil
+                }
+                return LineFoldStorage.DepthStartPair(depth: attachment.fold.depth, start: attachmentBox.range.location)
             }
 
         let storage = LineFoldStorage(
@@ -119,7 +121,7 @@ actor LineFoldCalculator {
                 by: { $0.range.upperBound < $1.range.upperBound }
             )?.range.upperBound ?? documentRange.length,
             folds: foldCache.sorted(by: { $0.range.lowerBound < $1.range.lowerBound }),
-            collapsedProvider: { Set(attachments) }
+            collapsedRanges: Set(attachments)
         )
         valueStreamContinuation.yield(storage)
     }
@@ -127,7 +129,7 @@ actor LineFoldCalculator {
     @MainActor
     private func getMoreLines(
         controller: TextViewController,
-        iterator: inout TextLayoutManager.RangeIterator,
+        iterator: inout TextLineStorage<TextLine>.TextLineStorageIterator,
         previousDepth: Int,
         foldProvider: LineFoldProvider
     ) -> [LineFoldProviderLineInfo]? {

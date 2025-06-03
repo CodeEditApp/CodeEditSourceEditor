@@ -130,28 +130,31 @@ class FoldingRibbonView: NSView {
         guard let layoutManager = model?.controller?.textView.layoutManager,
               event.type == .leftMouseDown,
               let lineNumber = layoutManager.textLineForPosition(clickPoint.y)?.index,
-              let fold = model?.getCachedFoldAt(lineNumber: lineNumber) else {
+              let fold = model?.getCachedFoldAt(lineNumber: lineNumber),
+              let firstLineInFold = layoutManager.textLineForOffset(fold.range.lowerBound) else {
             super.mouseDown(with: event)
             return
         }
         if let attachment = model?.controller?.textView?.layoutManager.attachments
-            .getAttachmentsStartingIn(NSRange(fold.range.range))
-            .filter({ $0.attachment is LineFoldPlaceholder })
-            .first {
+            .getAttachmentsStartingIn(NSRange(fold.range))
+            .filter({ $0.attachment is LineFoldPlaceholder && firstLineInFold.range.contains($0.range.location) }).first {
             layoutManager.attachments.remove(atOffset: attachment.range.location)
-//            fold.range.isCollapsed = false
             attachments.removeAll(where: { $0 === attachment.attachment })
         } else {
-            let placeholder = LineFoldPlaceholder(fold: fold.range)
-            layoutManager.attachments.add(placeholder, for: NSRange(fold.range.range))
+            let placeholder = LineFoldPlaceholder(fold: fold)
+            layoutManager.attachments.add(placeholder, for: NSRange(fold.range))
             attachments.append(placeholder)
-//            fold.range.collapsed = true
         }
 
+        model?.foldCache.toggleCollapse(forFold: fold)
         model?.controller?.textView.needsLayout = true
     }
 
     override func mouseMoved(with event: NSEvent) {
+        defer {
+            super.mouseMoved(with: event)
+        }
+
         let pointInView = convert(event.locationInWindow, from: nil)
         guard let lineNumber = model?.controller?.textView.layoutManager.textLineForPosition(pointInView.y)?.index,
               let fold = model?.getCachedFoldAt(lineNumber: lineNumber) else {
@@ -160,7 +163,7 @@ class FoldingRibbonView: NSView {
             return
         }
 
-        guard fold.range.range != hoveringFold?.range else {
+        guard fold.range != hoveringFold?.range else {
             return
         }
         hoverAnimationTimer?.invalidate()
@@ -168,7 +171,7 @@ class FoldingRibbonView: NSView {
         // show it immediately.
         if hoveringFold == nil {
             hoverAnimationProgress = 0.0
-            hoveringFold = fold.range
+            hoveringFold = fold
 
             let duration: TimeInterval = 0.2
             let startTime = CACurrentMediaTime()
@@ -186,7 +189,7 @@ class FoldingRibbonView: NSView {
 
         // Don't animate these
         hoverAnimationProgress = 1.0
-        hoveringFold = fold.range
+        hoveringFold = fold
     }
 
     override func mouseExited(with event: NSEvent) {

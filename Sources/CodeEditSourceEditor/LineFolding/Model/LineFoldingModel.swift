@@ -77,11 +77,19 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate {
     /// Finds the deepest cached fold and depth of the fold for a line number.
     /// - Parameter lineNumber: The line number to query, zero-indexed.
     /// - Returns: The deepest cached fold and depth of the fold if it was found.
-    func getCachedFoldAt(lineNumber: Int) -> (range: FoldRange, depth: Int)? {
+    func getCachedFoldAt(lineNumber: Int) -> FoldRange? {
         guard let lineRange = controller?.textView.layoutManager.textLineForIndex(lineNumber)?.range else { return nil }
-        guard let deepestFold = foldCache.folds(in: lineRange.intRange).max(by: { $0.depth < $1.depth }) else {
+        guard let deepestFold = foldCache.folds(in: lineRange.intRange).max(by: {
+            if $0.isCollapsed != $1.isCollapsed {
+                $1.isCollapsed // Collapsed folds take precedence.
+            } else if $0.isCollapsed {
+                $0.depth > $1.depth
+            } else {
+                $0.depth < $1.depth
+            }
+        }) else {
             return nil
         }
-        return (deepestFold, deepestFold.depth)
+        return deepestFold
     }
 }

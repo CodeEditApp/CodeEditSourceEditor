@@ -17,14 +17,6 @@ struct FoldRange: Sendable, Equatable {
     var isCollapsed: Bool
 }
 
-/// Represents a single fold run with stable identifier and collapse state
-struct FoldRun: Sendable {
-    let id: FoldRange.FoldIdentifier
-    let depth: Int
-    let range: Range<Int>
-    let isCollapsed: Bool
-}
-
 /// Sendable data model for code folding using RangeStore
 struct LineFoldStorage: Sendable {
     /// A temporary fold representation without stable ID
@@ -51,9 +43,9 @@ struct LineFoldStorage: Sendable {
     private var foldRanges: [FoldRange.FoldIdentifier: FoldRange] = [:]
 
     /// Initialize with the full document length
-    init(documentLength: Int, folds: [RawFold] = [], collapsedProvider: () -> Set<DepthStartPair> = { [] }) {
+    init(documentLength: Int, folds: [RawFold] = [], collapsedRanges: Set<DepthStartPair> = []) {
         self.store = RangeStore<FoldStoreElement>(documentLength: documentLength)
-        self.updateFolds(from: folds, collapsedProvider: collapsedProvider)
+        self.updateFolds(from: folds, collapsedRanges: collapsedRanges)
     }
 
     private mutating func nextFoldId() -> FoldRange.FoldIdentifier {
@@ -63,16 +55,13 @@ struct LineFoldStorage: Sendable {
 
     /// Replace all fold data from raw folds, preserving collapse state via callback
     /// - Parameter rawFolds: newly computed folds (depth + range)
-    /// - Parameter collapsedProvider: callback returning current collapsed ranges/depths
-    mutating func updateFolds(from rawFolds: [RawFold], collapsedProvider: () -> Set<DepthStartPair>) {
+    /// - Parameter collapsedRanges: Current collapsed ranges/depths
+    mutating func updateFolds(from rawFolds: [RawFold], collapsedRanges: Set<DepthStartPair>) {
         // Build reuse map by start+depth, carry over collapse state
         var reuseMap: [DepthStartPair: FoldRange] = [:]
         for region in foldRanges.values {
             reuseMap[DepthStartPair(depth: region.depth, start: region.range.lowerBound)] = region
         }
-
-        // Determine which ranges are currently collapsed
-        let collapsedSet = collapsedProvider()
 
         // Build new regions
         foldRanges.removeAll(keepingCapacity: true)
@@ -85,7 +74,7 @@ struct LineFoldStorage: Sendable {
             let id = prior?.id ?? nextFoldId()
             let wasCollapsed = prior?.isCollapsed ?? false
             // override collapse if provider says so
-            let isCollapsed = collapsedSet.contains(key) || wasCollapsed
+            let isCollapsed = collapsedRanges.contains(key) || wasCollapsed
             let fold = FoldRange(id: id, depth: raw.depth, range: raw.range, isCollapsed: isCollapsed)
 
             foldRanges[id] = fold
@@ -97,6 +86,12 @@ struct LineFoldStorage: Sendable {
     /// Keep folding offsets in sync after text edits
     mutating func storageUpdated(editedRange: NSRange, changeInLength delta: Int) {
         store.storageUpdated(editedRange: editedRange, changeInLength: delta)
+    }
+
+    mutating func toggleCollapse(forFold fold: FoldRange) {
+        guard var existingRange = foldRanges[fold.id] else { return }
+        existingRange.isCollapsed.toggle()
+        foldRanges[fold.id] = existingRange
     }
 
     /// Query a document subrange and return all folds as an ordered list by start position
@@ -120,20 +115,6 @@ struct LineFoldStorage: Sendable {
         }
 
         return result.sorted { $0.range.lowerBound < $1.range.lowerBound }
-//        let runs = store.runs(in: queryRange.clamped(to: 0..<store.length))
-//        var currentLocation = queryRange.lowerBound
-//        return runs.compactMap { run in
-//            defer {
-//                currentLocation += run.length
-//            }
-//            guard let value = run.value else { return nil }
-//            return FoldRun(
-//                id: value.id,
-//                depth: value.depth,
-//                range: currentLocation..<(currentLocation + run.length),
-//                isCollapsed: foldRanges[value.id]?.isCollapsed ?? false
-//            )
-//        }
     }
 
     /// Given a depth and a location, return the full original fold region

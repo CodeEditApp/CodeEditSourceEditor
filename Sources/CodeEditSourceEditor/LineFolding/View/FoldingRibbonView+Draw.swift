@@ -40,7 +40,15 @@ extension FoldingRibbonView {
         let textRange = rangeStart.range.location..<rangeEnd.range.upperBound
 
         let folds = getDrawingFolds(forTextRange: textRange)
-        for fold in folds {
+        for fold in folds.filter({ !$0.isCollapsed }) {
+            drawFoldMarker(
+                fold,
+                in: context,
+                using: layoutManager
+            )
+        }
+
+        for fold in folds.filter({ $0.isCollapsed }) {
             drawFoldMarker(
                 fold,
                 in: context,
@@ -141,6 +149,7 @@ extension FoldingRibbonView {
         context.setLineJoin(.round)
         context.setLineWidth(1.3)
 
+        context.setFillColor(NSColor.tertiaryLabelColor.cgColor)
         context.fill(fillRect)
         context.addPath(chevron)
         context.strokePath()
