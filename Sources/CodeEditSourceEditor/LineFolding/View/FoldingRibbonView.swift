@@ -10,6 +10,21 @@ import AppKit
 import CodeEditTextView
 import Combine
 
+extension NSColor {
+    convenience init(light: NSColor, dark: NSColor) {
+        self.init(name: nil) { appearance in
+            return switch appearance.name {
+            case .aqua:
+                light
+            case .darkAqua:
+                dark
+            default:
+                NSColor()
+            }
+        }
+    }
+}
+
 /// Displays the code folding ribbon in the ``GutterView``.
 ///
 /// This view draws its contents
@@ -33,52 +48,37 @@ class FoldingRibbonView: NSView {
     var backgroundColor: NSColor = NSColor.controlBackgroundColor
 
     @Invalidating(.display)
-    var markerColor = NSColor(name: nil) { appearance in
-        return switch appearance.name {
-        case .aqua:
-            NSColor(deviceWhite: 0.0, alpha: 0.1)
-        case .darkAqua:
-            NSColor(deviceWhite: 1.0, alpha: 0.2)
-        default:
-            NSColor()
-        }
-    }.cgColor
+    var markerColor = NSColor(
+        light: NSColor(deviceWhite: 0.0, alpha: 0.1),
+        dark: NSColor(deviceWhite: 1.0, alpha: 0.2)
+    ).cgColor
 
     @Invalidating(.display)
-    var markerBorderColor = NSColor(name: nil) { appearance in
-        return switch appearance.name {
-        case .aqua:
-            NSColor(deviceWhite: 1.0, alpha: 0.4)
-        case .darkAqua:
-            NSColor(deviceWhite: 0.0, alpha: 0.4)
-        default:
-            NSColor()
-        }
-    }.cgColor
+    var markerBorderColor = NSColor(
+        light: NSColor(deviceWhite: 1.0, alpha: 0.4),
+        dark: NSColor(deviceWhite: 0.0, alpha: 0.4)
+    ).cgColor
 
     @Invalidating(.display)
-    var hoverFillColor = NSColor(name: nil) { appearance in
-        return switch appearance.name {
-        case .aqua:
-            NSColor(deviceWhite: 1.0, alpha: 1.0)
-        case .darkAqua:
-            NSColor(deviceWhite: 0.17, alpha: 1.0)
-        default:
-            NSColor()
-        }
-    }.cgColor
+    var hoverFillColor = NSColor(
+        light: NSColor(deviceWhite: 1.0, alpha: 1.0),
+        dark: NSColor(deviceWhite: 0.17, alpha: 1.0)
+    ).cgColor
 
     @Invalidating(.display)
-    var hoverBorderColor = NSColor(name: nil) { appearance in
-        return switch appearance.name {
-        case .aqua:
-            NSColor(deviceWhite: 0.8, alpha: 1.0)
-        case .darkAqua:
-            NSColor(deviceWhite: 0.4, alpha: 1.0)
-        default:
-            NSColor()
-        }
-    }.cgColor
+    var hoverBorderColor = NSColor(
+        light: NSColor(deviceWhite: 0.8, alpha: 1.0),
+        dark: NSColor(deviceWhite: 0.4, alpha: 1.0)
+    ).cgColor
+
+    @Invalidating(.display)
+    var foldedIndicatorColor = NSColor(
+        light: NSColor(deviceWhite: 0.0, alpha: 0.3),
+        dark: NSColor(deviceWhite: 1.0, alpha: 0.6)
+    ).cgColor
+
+    @Invalidating(.display)
+    var foldedIndicatorChevronColor = NSColor.secondaryLabelColor.cgColor
 
     override public var isFlipped: Bool {
         true

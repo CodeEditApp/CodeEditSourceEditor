@@ -15,6 +15,8 @@ extension FoldingRibbonView {
         let endLine: TextLineStorage<TextLine>.TextLinePosition
     }
 
+    // MARK: - Draw
+
     override func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext,
               let layoutManager = model?.controller?.textView.layoutManager else {
@@ -53,6 +55,20 @@ extension FoldingRibbonView {
         context.restoreGState()
     }
 
+    // MARK: - Get Drawing Folds
+    
+    /// Generates drawable fold info for a range of text.
+    ///
+    /// The fold storage intentionally does not store the full ranges of all folds at each interval. We may, for an
+    /// interval, find that we only receive fold information for depths > 1. In this case, we still need to draw those
+    /// layers of color to create the illusion that those folds are continuous under the nested folds. To achieve this,
+    /// we create 'fake' folds that span more than the queried text range. When returned for drawing, the drawing
+    /// methods will draw those extra folds normally.
+    ///
+    /// - Parameters:
+    ///   - textRange: The range of characters in text to create drawing fold info for.
+    ///   - layoutManager: A layout manager to query for line layout information.
+    /// - Returns: A list of folds to draw for the given text range.
     private func getDrawingFolds(
         forTextRange textRange: Range<Int>,
         layoutManager: TextLayoutManager
@@ -123,6 +139,8 @@ extension FoldingRibbonView {
         }
     }
 
+    // MARK: - Collapsed Fold
+
     private func drawCollapsedFold(
         minYPosition: CGFloat,
         maxYPosition: CGFloat,
@@ -144,18 +162,20 @@ extension FoldingRibbonView {
         chevron.addLine(to: CGPoint(x: maxX, y: centerY))
         chevron.addLine(to: CGPoint(x: minX, y: maxY))
 
-        context.setStrokeColor(NSColor.secondaryLabelColor.cgColor)
+        context.setStrokeColor(foldedIndicatorChevronColor)
         context.setLineCap(.round)
         context.setLineJoin(.round)
         context.setLineWidth(1.3)
 
-        context.setFillColor(NSColor.tertiaryLabelColor.cgColor)
+        context.setFillColor(foldedIndicatorColor)
         context.fill(fillRect)
         context.addPath(chevron)
         context.strokePath()
 
         context.restoreGState()
     }
+
+    // MARK: - Hovered Fold
 
     private func drawHoveredFold(
         minYPosition: CGFloat,
@@ -203,6 +223,8 @@ extension FoldingRibbonView {
         context.restoreGState()
     }
 
+    // MARK: - Nested Fold
+
     private func drawNestedFold(
         foldInfo: DrawingFoldInfo,
         foldCaps: FoldCapInfo,
@@ -240,6 +262,8 @@ extension FoldingRibbonView {
 
         context.restoreGState()
     }
+
+    // MARK: - Nested Outline
 
     /// Draws a rounded outline for a rectangle, creating the small, light, outline around each fold indicator.
     ///
