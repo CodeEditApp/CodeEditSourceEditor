@@ -10,23 +10,21 @@ import AppKit
 import CodeEditTextView
 import Combine
 
-#warning("Replace before release")
-fileprivate let demoFoldProvider = IndentationLineFoldProvider()
-
 /// Displays the code folding ribbon in the ``GutterView``.
+///
+/// This view draws its contents
 class FoldingRibbonView: NSView {
-    struct HoveringFold: Equatable {
-        let range: ClosedRange<Int>
-        let depth: Int
-    }
+
+#warning("Replace before release")
+    private static let demoFoldProvider = IndentationLineFoldProvider()
 
     static let width: CGFloat = 7.0
 
-    var model: LineFoldingModel
+    var model: LineFoldingModel?
 
     // Disabling this lint rule because this initial value is required for @Invalidating
     @Invalidating(.display)
-    var hoveringFold: HoveringFold? = nil // swiftlint:disable:this redundant_optional_initialization
+    var hoveringFold: FoldRange? = nil // swiftlint:disable:this redundant_optional_initialization
     var hoverAnimationTimer: Timer?
     @Invalidating(.display)
     var hoverAnimationProgress: CGFloat = 0.0
@@ -82,33 +80,30 @@ class FoldingRibbonView: NSView {
         }
     }.cgColor
 
-    private var foldUpdateCancellable: AnyCancellable?
-
     override public var isFlipped: Bool {
         true
     }
 
-    init(textView: TextView, foldProvider: LineFoldProvider?) {
-        #warning("Replace before release")
-        self.model = LineFoldingModel(
-            textView: textView,
-            foldProvider: foldProvider ?? demoFoldProvider
-        )
+    init(controller: TextViewController, foldProvider: LineFoldProvider?) {
         super.init(frame: .zero)
         layerContentsRedrawPolicy = .onSetNeedsDisplay
         clipsToBounds = false
 
-        foldUpdateCancellable = model.foldsUpdatedPublisher.sink {
-            self.needsDisplay = true
-        }
+        #warning("Replace before release")
+        self.model = LineFoldingModel(
+            controller: controller,
+            foldView: self,
+            foldProvider: foldProvider ?? Self.demoFoldProvider
+        )
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        foldUpdateCancellable?.cancel()
+    override public func resetCursorRects() {
+        // Don't use an iBeam in this view
+        addCursorRect(bounds, cursor: .arrow)
     }
 
     // MARK: - Hover
@@ -124,17 +119,59 @@ class FoldingRibbonView: NSView {
         addTrackingArea(area)
     }
 
+    var attachments: [LineFoldPlaceholder] = []
+
+    override func scrollWheel(with event: NSEvent) {
+        super.scrollWheel(with: event)
+        self.mouseMoved(with: event)
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        let clickPoint = convert(event.locationInWindow, from: nil)
+        guard let layoutManager = model?.controller?.textView.layoutManager,
+              event.type == .leftMouseDown,
+              let lineNumber = layoutManager.textLineForPosition(clickPoint.y)?.index,
+              let fold = model?.getCachedFoldAt(lineNumber: lineNumber),
+              let firstLineInFold = layoutManager.textLineForOffset(fold.range.lowerBound) else {
+            super.mouseDown(with: event)
+            return
+        }
+
+        if let attachment = findAttachmentFor(fold: fold, firstLineRange: firstLineInFold.range) {
+            layoutManager.attachments.remove(atOffset: attachment.range.location)
+            attachments.removeAll(where: { $0 === attachment.attachment })
+        } else {
+            let placeholder = LineFoldPlaceholder(fold: fold)
+            layoutManager.attachments.add(placeholder, for: NSRange(fold.range))
+            attachments.append(placeholder)
+        }
+
+        model?.foldCache.toggleCollapse(forFold: fold)
+        model?.controller?.textView.needsLayout = true
+    }
+
+    private func findAttachmentFor(fold: FoldRange, firstLineRange: NSRange) -> AnyTextAttachment? {
+        model?.controller?.textView?.layoutManager.attachments
+            .getAttachmentsStartingIn(NSRange(fold.range))
+            .filter({
+                $0.attachment is LineFoldPlaceholder && firstLineRange.contains($0.range.location)
+            }).first
+    }
+
     override func mouseMoved(with event: NSEvent) {
+        defer {
+            super.mouseMoved(with: event)
+        }
+
         let pointInView = convert(event.locationInWindow, from: nil)
-        guard let lineNumber = model.textView?.layoutManager.textLineForPosition(pointInView.y)?.index,
-              let fold = model.getCachedFoldAt(lineNumber: lineNumber) else {
+        guard let lineNumber = model?.controller?.textView.layoutManager.textLineForPosition(pointInView.y)?.index,
+              let fold = model?.getCachedFoldAt(lineNumber: lineNumber) else {
             hoverAnimationProgress = 0.0
             hoveringFold = nil
             return
         }
 
-        let newHoverRange = HoveringFold(range: fold.range.lineRange, depth: fold.depth)
-        guard newHoverRange != hoveringFold else {
+        guard fold.range != hoveringFold?.range else {
             return
         }
         hoverAnimationTimer?.invalidate()
@@ -142,7 +179,7 @@ class FoldingRibbonView: NSView {
         // show it immediately.
         if hoveringFold == nil {
             hoverAnimationProgress = 0.0
-            hoveringFold = newHoverRange
+            hoveringFold = fold
 
             let duration: TimeInterval = 0.2
             let startTime = CACurrentMediaTime()
@@ -160,10 +197,11 @@ class FoldingRibbonView: NSView {
 
         // Don't animate these
         hoverAnimationProgress = 1.0
-        hoveringFold = newHoverRange
+        hoveringFold = fold
     }
 
     override func mouseExited(with event: NSEvent) {
+        super.mouseExited(with: event)
         hoverAnimationProgress = 0.0
         hoveringFold = nil
     }

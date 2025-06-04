@@ -101,7 +101,7 @@ public class GutterView: NSView {
     }
 
     /// The view that draws the fold decoration in the gutter.
-    private var foldingRibbon: FoldingRibbonView
+    var foldingRibbon: FoldingRibbonView
 
     /// Syntax helper for determining the required space for the folding ribbon.
     private var foldingRibbonWidth: CGFloat {
@@ -137,16 +137,16 @@ public class GutterView: NSView {
         font: NSFont,
         textColor: NSColor,
         selectedTextColor: NSColor?,
-        textView: TextView,
+        controller: TextViewController,
         delegate: GutterViewDelegate? = nil
     ) {
         self.font = font
         self.textColor = textColor
         self.selectedLineTextColor = selectedTextColor ?? .secondaryLabelColor
-        self.textView = textView
+        self.textView = controller.textView
         self.delegate = delegate
 
-        foldingRibbon = FoldingRibbonView(textView: textView, foldProvider: nil)
+        foldingRibbon = FoldingRibbonView(controller: controller, foldProvider: nil)
 
         super.init(frame: .zero)
         clipsToBounds = true

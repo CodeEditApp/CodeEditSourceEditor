@@ -6,6 +6,7 @@
 //
 
 import _RopeModule
+import Foundation
 
 /// RangeStore is a container type that allows for setting and querying values for relative ranges in text. The
 /// container reflects a text document in that its length needs to be kept up-to-date. It can efficiently remove and
@@ -49,7 +50,7 @@ struct RangeStore<Element: RangeStoreElement>: Sendable {
         var index = findIndex(at: range.lowerBound).index
         var offset: Int? = range.lowerBound - _guts.offset(of: index, in: OffsetMetric())
 
-        while index < _guts.endIndex {
+        while index < _guts.endIndex, _guts.offset(of: index, in: OffsetMetric()) < range.upperBound {
             let run = _guts[index]
             runs.append(Run(length: run.length - (offset ?? 0), value: run.value))
 
@@ -96,6 +97,22 @@ struct RangeStore<Element: RangeStoreElement>: Sendable {
 // MARK: - Storage Sync
 
 extension RangeStore {
+    /// Handles keeping the internal storage in sync with the document.
+    mutating func storageUpdated(editedRange: NSRange, changeInLength delta: Int) {
+        let storageRange: Range<Int>
+        let newLength: Int
+
+        if editedRange.length == 0 { // Deleting, editedRange is at beginning of the range that was deleted
+            storageRange = editedRange.location..<(editedRange.location - delta)
+            newLength = 0
+        } else { // Replacing or inserting
+            storageRange = editedRange.location..<(editedRange.location + editedRange.length - delta)
+            newLength = editedRange.length
+        }
+
+        storageUpdated(replacedCharactersIn: storageRange, withCount: newLength)
+    }
+
     /// Handles keeping the internal storage in sync with the document.
     mutating func storageUpdated(replacedCharactersIn range: Range<Int>, withCount newLength: Int) {
         assert(range.lowerBound >= 0, "Negative lowerBound")
