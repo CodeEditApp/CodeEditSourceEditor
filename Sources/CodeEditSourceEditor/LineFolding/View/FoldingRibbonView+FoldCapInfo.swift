@@ -9,22 +9,50 @@ import AppKit
 
 extension FoldingRibbonView {
     /// A helper type that determines if a fold should be drawn with a cap on the top or bottom if
-    /// there's an adjacent fold on the same text line. It also provides a helper method
+    /// there's an adjacent fold on the same text line. It also provides a helper method to adjust fold rects using
+    /// the cap information.
     struct FoldCapInfo {
-        let startIndices: Set<Int>
-        let endIndices: Set<Int>
+        private let startIndices: Set<Int>
+        private let endIndices: Set<Int>
+        private let collapsedStartIndices: Set<Int>
+        private let collapsedEndIndices: Set<Int>
 
         init(_ folds: [DrawingFoldInfo]) {
-            self.startIndices = folds.reduce(into: Set<Int>(), { $0.insert($1.startLine.index) })
-            self.endIndices = folds.reduce(into: Set<Int>(), { $0.insert($1.endLine.index) })
+            var startIndices = Set<Int>()
+            var endIndices = Set<Int>()
+            var collapsedStartIndices = Set<Int>()
+            var collapsedEndIndices = Set<Int>()
+
+            for fold in folds {
+                if fold.fold.isCollapsed {
+                    collapsedStartIndices.insert(fold.startLine.index)
+                    collapsedEndIndices.insert(fold.endLine.index)
+                } else {
+                    startIndices.insert(fold.startLine.index)
+                    endIndices.insert(fold.endLine.index)
+                }
+            }
+
+            self.startIndices = startIndices
+            self.endIndices = endIndices
+            self.collapsedStartIndices = collapsedStartIndices
+            self.collapsedEndIndices = collapsedEndIndices
         }
 
         func foldNeedsTopCap(_ fold: DrawingFoldInfo) -> Bool {
-            endIndices.contains(fold.startLine.index)
+            endIndices.contains(fold.startLine.index) || collapsedEndIndices.contains(fold.startLine.index)
         }
 
         func foldNeedsBottomCap(_ fold: DrawingFoldInfo) -> Bool {
-            startIndices.contains(fold.endLine.index)
+            startIndices.contains(fold.endLine.index) || collapsedStartIndices.contains(fold.endLine.index)
+        }
+
+        func hoveredFoldShouldDrawTopChevron(_ fold: DrawingFoldInfo) -> Bool {
+            !collapsedEndIndices.contains(fold.startLine.index)
+        }
+
+        func hoveredFoldShouldDrawBottomChevron(_ fold: DrawingFoldInfo) -> Bool {
+            !collapsedStartIndices.contains(fold.endLine.index)
         }
 
         func adjustFoldRect(
@@ -33,13 +61,17 @@ extension FoldingRibbonView {
         ) -> NSRect {
             let capTop = foldNeedsTopCap(fold)
             let capBottom = foldNeedsBottomCap(fold)
-            let yDelta = capTop ? fold.startLine.height / 2.0 : 0.0
+            let yDelta: CGFloat = if capTop && !collapsedEndIndices.contains(fold.startLine.index) {
+                fold.startLine.height / 2.0
+            } else {
+                0.0
+            }
 
             var heightDelta: CGFloat = 0.0
-            if capTop {
+            if capTop && !collapsedEndIndices.contains(fold.startLine.index) {
                 heightDelta -= fold.startLine.height / 2.0
             }
-            if capBottom {
+            if capBottom && !collapsedStartIndices.contains(fold.endLine.index) {
                 heightDelta -= fold.endLine.height / 2.0
             }
 

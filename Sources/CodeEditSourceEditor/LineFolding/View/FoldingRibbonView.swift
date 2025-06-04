@@ -8,22 +8,6 @@
 import Foundation
 import AppKit
 import CodeEditTextView
-import Combine
-
-extension NSColor {
-    convenience init(light: NSColor, dark: NSColor) {
-        self.init(name: nil) { appearance in
-            return switch appearance.name {
-            case .aqua:
-                light
-            case .darkAqua:
-                dark
-            default:
-                NSColor()
-            }
-        }
-    }
-}
 
 /// Displays the code folding ribbon in the ``GutterView``.
 ///
@@ -40,6 +24,7 @@ class FoldingRibbonView: NSView {
     // Disabling this lint rule because this initial value is required for @Invalidating
     @Invalidating(.display)
     var hoveringFold: FoldRange? = nil // swiftlint:disable:this redundant_optional_initialization
+    var hoveringFoldMask: CGPath?
     var hoverAnimationTimer: Timer?
     @Invalidating(.display)
     var hoverAnimationProgress: CGFloat = 0.0
@@ -78,7 +63,10 @@ class FoldingRibbonView: NSView {
     ).cgColor
 
     @Invalidating(.display)
-    var foldedIndicatorChevronColor = NSColor.secondaryLabelColor.cgColor
+    var foldedIndicatorChevronColor = NSColor(
+        light: NSColor(deviceWhite: 1.0, alpha: 1.0),
+        dark: NSColor(deviceWhite: 0.0, alpha: 1.0)
+    ).cgColor
 
     override public var isFlipped: Bool {
         true
@@ -148,6 +136,7 @@ class FoldingRibbonView: NSView {
 
         model?.foldCache.toggleCollapse(forFold: fold)
         model?.controller?.textView.needsLayout = true
+        mouseMoved(with: event)
     }
 
     private func findAttachmentFor(fold: FoldRange, firstLineRange: NSRange) -> AnyTextAttachment? {
@@ -165,9 +154,11 @@ class FoldingRibbonView: NSView {
 
         let pointInView = convert(event.locationInWindow, from: nil)
         guard let lineNumber = model?.controller?.textView.layoutManager.textLineForPosition(pointInView.y)?.index,
-              let fold = model?.getCachedFoldAt(lineNumber: lineNumber) else {
+              let fold = model?.getCachedFoldAt(lineNumber: lineNumber),
+              !fold.isCollapsed else {
             hoverAnimationProgress = 0.0
             hoveringFold = nil
+            hoveringFoldMask = nil
             return
         }
 
@@ -180,6 +171,7 @@ class FoldingRibbonView: NSView {
         if hoveringFold == nil {
             hoverAnimationProgress = 0.0
             hoveringFold = fold
+            hoveringFoldMask = nil
 
             let duration: TimeInterval = 0.2
             let startTime = CACurrentMediaTime()
@@ -198,11 +190,13 @@ class FoldingRibbonView: NSView {
         // Don't animate these
         hoverAnimationProgress = 1.0
         hoveringFold = fold
+        hoveringFoldMask = nil
     }
 
     override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
         hoverAnimationProgress = 0.0
         hoveringFold = nil
+        hoveringFoldMask = nil
     }
 }
