@@ -13,6 +13,18 @@ import CodeEditTextView
 ///
 /// This view draws its contents
 class FoldingRibbonView: NSView {
+    struct HoverAnimationDetails: Equatable {
+        var fold: FoldRange? = nil
+        var foldMask: CGPath?
+        var timer: Timer?
+        var progress: CGFloat = 0.0
+
+        static let empty = HoverAnimationDetails()
+
+        public static func == (_ lhs: HoverAnimationDetails, _ rhs: HoverAnimationDetails) -> Bool {
+            lhs.fold == rhs.fold && lhs.foldMask == rhs.foldMask && lhs.progress == rhs.progress
+        }
+    }
 
 #warning("Replace before release")
     private static let demoFoldProvider = IndentationLineFoldProvider()
@@ -21,13 +33,8 @@ class FoldingRibbonView: NSView {
 
     var model: LineFoldingModel?
 
-    // Disabling this lint rule because this initial value is required for @Invalidating
     @Invalidating(.display)
-    var hoveringFold: FoldRange? = nil // swiftlint:disable:this redundant_optional_initialization
-    var hoveringFoldMask: CGPath?
-    var hoverAnimationTimer: Timer?
-    @Invalidating(.display)
-    var hoverAnimationProgress: CGFloat = 0.0
+    var hoveringFold: HoverAnimationDetails = .empty
 
     @Invalidating(.display)
     var backgroundColor: NSColor = NSColor.controlBackgroundColor
@@ -129,7 +136,7 @@ class FoldingRibbonView: NSView {
             layoutManager.attachments.remove(atOffset: attachment.range.location)
             attachments.removeAll(where: { $0 === attachment.attachment })
         } else {
-            let placeholder = LineFoldPlaceholder(fold: fold)
+            let placeholder = LineFoldPlaceholder(fold: fold, charWidth: model?.controller?.fontCharWidth ?? 1.0)
             layoutManager.attachments.add(placeholder, for: NSRange(fold.range))
             attachments.append(placeholder)
         }
@@ -156,47 +163,58 @@ class FoldingRibbonView: NSView {
         guard let lineNumber = model?.controller?.textView.layoutManager.textLineForPosition(pointInView.y)?.index,
               let fold = model?.getCachedFoldAt(lineNumber: lineNumber),
               !fold.isCollapsed else {
-            hoverAnimationProgress = 0.0
-            hoveringFold = nil
-            hoveringFoldMask = nil
+            clearHoveredFold()
             return
         }
 
-        guard fold.range != hoveringFold?.range else {
-            return
-        }
-        hoverAnimationTimer?.invalidate()
-        // We only animate the first hovered fold. If the user moves the mouse vertically into other folds we just
-        // show it immediately.
-        if hoveringFold == nil {
-            hoverAnimationProgress = 0.0
-            hoveringFold = fold
-            hoveringFoldMask = nil
-
-            let duration: TimeInterval = 0.2
-            let startTime = CACurrentMediaTime()
-            hoverAnimationTimer = Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { [weak self] timer in
-                guard let self = self else { return }
-                let now = CACurrentMediaTime()
-                let time = CGFloat((now - startTime) / duration)
-                self.hoverAnimationProgress = min(1.0, time)
-                if self.hoverAnimationProgress >= 1.0 {
-                    timer.invalidate()
-                }
-            }
+        guard fold.range != hoveringFold.fold?.range else {
             return
         }
 
-        // Don't animate these
-        hoverAnimationProgress = 1.0
-        hoveringFold = fold
-        hoveringFoldMask = nil
+        setHoveredFold(fold: fold)
     }
 
     override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
-        hoverAnimationProgress = 0.0
-        hoveringFold = nil
-        hoveringFoldMask = nil
+        clearHoveredFold()
+    }
+    
+    /// Clears the current hovered fold. Does not animate.
+    func clearHoveredFold() {
+        hoveringFold = .empty
+        model?.clearEmphasis()
+    }
+    
+    /// Set the current hovered fold. This method determines when an animation is required and will facilitate it.
+    /// - Parameter fold: The fold to set as the current hovered fold.
+    func setHoveredFold(fold: FoldRange) {
+        defer {
+            model?.emphasizeBracketsForFold(fold)
+        }
+
+        hoveringFold.timer?.invalidate()
+        // We only animate the first hovered fold. If the user moves the mouse vertically into other folds we just
+        // show it immediately.
+        if hoveringFold.fold == nil {
+            let duration: TimeInterval = 0.2
+            let startTime = CACurrentMediaTime()
+
+            hoveringFold = HoverAnimationDetails(
+                fold: fold,
+                timer: Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { [weak self] timer in
+                    guard let self = self else { return }
+                    let now = CACurrentMediaTime()
+                    let time = CGFloat((now - startTime) / duration)
+                    self.hoveringFold.progress = min(1.0, time)
+                    if self.hoveringFold.progress >= 1.0 {
+                        timer.invalidate()
+                    }
+                }
+            )
+            return
+        }
+
+        // Don't animate these
+        hoveringFold = HoverAnimationDetails(fold: fold, progress: 1.0)
     }
 }

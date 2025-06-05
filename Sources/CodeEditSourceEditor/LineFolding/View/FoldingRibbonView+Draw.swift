@@ -130,7 +130,7 @@ extension FoldingRibbonView {
                 maxYPosition: maxYPosition,
                 in: context
             )
-        } else if hoveringFold?.isHoveringEqual(foldInfo.fold) == true {
+        } else if hoveringFold.fold?.isHoveringEqual(foldInfo.fold) == true {
             drawHoveredFold(
                 foldInfo: foldInfo,
                 foldCaps: foldCaps,
@@ -171,7 +171,8 @@ extension FoldingRibbonView {
         chevron.addLine(to: CGPoint(x: maxX, y: centerY))
         chevron.addLine(to: CGPoint(x: minX, y: maxY))
 
-        if let hoveringFoldMask, hoveringFoldMask.intersects(CGPath(rect: fillRect, transform: .none)) {
+        if let hoveringFoldMask = hoveringFold.foldMask,
+           hoveringFoldMask.intersects(CGPath(rect: fillRect, transform: .none)) {
             context.addPath(hoveringFoldMask)
             context.clip()
         }
@@ -205,8 +206,8 @@ extension FoldingRibbonView {
             yRadius: plainRect.width / 2
         )
 
-        context.setFillColor(hoverFillColor.copy(alpha: hoverAnimationProgress) ?? hoverFillColor)
-        context.setStrokeColor(hoverBorderColor.copy(alpha: hoverAnimationProgress) ?? hoverBorderColor)
+        context.setFillColor(hoverFillColor.copy(alpha: hoveringFold.progress) ?? hoverFillColor)
+        context.setStrokeColor(hoverBorderColor.copy(alpha: hoveringFold.progress) ?? hoverBorderColor)
         context.addPath(roundedRect.cgPathFallback)
         context.drawPath(using: .fillStroke)
 
@@ -220,7 +221,7 @@ extension FoldingRibbonView {
 
         let plainMaskRect = foldRect.transform(y: 1.0, height: -2.0)
         let roundedMaskRect = NSBezierPath(roundedRect: plainMaskRect, xRadius: Self.width / 2, yRadius: Self.width / 2)
-        hoveringFoldMask = roundedMaskRect.cgPathFallback
+        hoveringFold.foldMask = roundedMaskRect.cgPathFallback
 
         context.restoreGState()
     }
@@ -240,7 +241,7 @@ extension FoldingRibbonView {
             yPosition - chevronSize.height
         }
 
-        context.setStrokeColor(NSColor.secondaryLabelColor.withAlphaComponent(hoverAnimationProgress).cgColor)
+        context.setStrokeColor(NSColor.secondaryLabelColor.withAlphaComponent(hoveringFold.progress).cgColor)
         context.setLineCap(.round)
         context.setLineJoin(.round)
         context.setLineWidth(1.3)
