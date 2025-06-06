@@ -57,7 +57,7 @@ extension FoldingRibbonView {
     }
 
     // MARK: - Get Drawing Folds
-    
+
     /// Generates drawable fold info for a range of text.
     ///
     /// The fold storage intentionally does not store the full ranges of all folds at each interval. We may, for an

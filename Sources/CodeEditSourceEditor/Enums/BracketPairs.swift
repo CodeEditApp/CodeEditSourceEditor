@@ -19,7 +19,7 @@ enum BracketPairs {
         ("[", "]"),
         ("(", ")")
     ]
-    
+
     /// Checks if the given string is a matchable emphasis string.
     /// - Parameter potentialMatch: The string to check for matches.
     /// - Returns: True if a match was found with either start or end bracket pairs.

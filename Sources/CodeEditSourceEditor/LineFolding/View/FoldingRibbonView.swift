@@ -14,7 +14,7 @@ import CodeEditTextView
 /// This view draws its contents
 class FoldingRibbonView: NSView {
     struct HoverAnimationDetails: Equatable {
-        var fold: FoldRange? = nil
+        var fold: FoldRange?
         var foldMask: CGPath?
         var timer: Timer?
         var progress: CGFloat = 0.0
@@ -178,13 +178,13 @@ class FoldingRibbonView: NSView {
         super.mouseExited(with: event)
         clearHoveredFold()
     }
-    
+
     /// Clears the current hovered fold. Does not animate.
     func clearHoveredFold() {
         hoveringFold = .empty
         model?.clearEmphasis()
     }
-    
+
     /// Set the current hovered fold. This method determines when an animation is required and will facilitate it.
     /// - Parameter fold: The fold to set as the current hovered fold.
     func setHoveredFold(fold: FoldRange) {
