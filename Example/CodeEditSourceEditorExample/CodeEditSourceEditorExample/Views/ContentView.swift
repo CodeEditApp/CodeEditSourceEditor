@@ -30,6 +30,7 @@ struct ContentView: View {
     @State private var indentOption: IndentOption = .spaces(count: 4)
     @AppStorage("reformatAtColumn") private var reformatAtColumn: Int = 80
     @AppStorage("showReformattingGuide") private var showReformattingGuide: Bool = false
+    @State private var invisibleCharactersConfig: InvisibleCharactersConfig = .empty
 
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
         self._document = document
@@ -56,7 +57,8 @@ struct ContentView: View {
                 useSystemCursor: useSystemCursor,
                 showMinimap: showMinimap,
                 reformatAtColumn: reformatAtColumn,
-                showReformattingGuide: showReformattingGuide
+                showReformattingGuide: showReformattingGuide,
+                invisibleCharactersConfig: invisibleCharactersConfig
             )
             .overlay(alignment: .bottom) {
                 StatusBar(
@@ -71,7 +73,8 @@ struct ContentView: View {
                     showMinimap: $showMinimap,
                     indentOption: $indentOption,
                     reformatAtColumn: $reformatAtColumn,
-                    showReformattingGuide: $showReformattingGuide
+                    showReformattingGuide: $showReformattingGuide,
+                    invisibles: $invisibleCharactersConfig
                 )
             }
             .ignoresSafeArea()

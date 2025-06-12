@@ -35,6 +35,10 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
     var localEvenMonitor: Any?
     var isPostingCursorNotification: Bool = false
 
+    /// Middleman between the text view to our invisible characters config, with knowledge of things like the
+    /// user's theme and indent option to help correctly draw invisible character placeholders.
+    var invisibleCharactersCoordinator: InvisibleCharactersCoordinator
+
     /// The string contents.
     public var string: String {
         textView.string
@@ -52,6 +56,7 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
     public var font: NSFont {
         didSet {
             textView.font = font
+            invisibleCharactersCoordinator.font = font
             highlighter?.invalidate()
         }
     }
@@ -70,6 +75,7 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
             gutterView.selectedLineTextColor = theme.text.color
             minimapView.setTheme(theme)
             guideView?.setTheme(theme)
+            invisibleCharactersCoordinator.theme = theme
         }
     }
 
@@ -86,6 +92,7 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
     public var indentOption: IndentOption {
         didSet {
             setUpTextFormation()
+            invisibleCharactersCoordinator.indentOption = indentOption
         }
     }
 
@@ -265,6 +272,15 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         }
     }
 
+    /// Configuration for drawing invisible characters.
+    ///
+    /// See ``InvisibleCharactersConfig`` for more details.
+    var invisibleCharactersConfig: InvisibleCharactersConfig {
+        didSet {
+            invisibleCharactersCoordinator.config = invisibleCharactersConfig
+        }
+    }
+
     // MARK: Init
 
     init(
@@ -291,7 +307,8 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         coordinators: [TextViewCoordinator] = [],
         showMinimap: Bool,
         reformatAtColumn: Int = 80,
-        showReformattingGuide: Bool = false
+        showReformattingGuide: Bool = false,
+        invisibleCharactersConfig: InvisibleCharactersConfig = .empty
     ) {
         self.language = language
         self.font = font
@@ -314,6 +331,13 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         self.showMinimap = showMinimap
         self.reformatAtColumn = reformatAtColumn
         self.showReformattingGuide = showReformattingGuide
+        self.invisibleCharactersCoordinator = InvisibleCharactersCoordinator(
+            config: invisibleCharactersConfig,
+            indentOption: indentOption,
+            theme: theme,
+            font: font
+        )
+        self.invisibleCharactersConfig = invisibleCharactersConfig
 
         super.init(nibName: nil, bundle: nil)
 
@@ -341,6 +365,8 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
             useSystemCursor: platformGuardedSystemCursor,
             delegate: self
         )
+
+        textView.layoutManager.invisibleCharacterDelegate = invisibleCharactersCoordinator
 
         // Initialize guide view
         self.guideView = ReformattingGuideView(column: reformatAtColumn, isVisible: showReformattingGuide, theme: theme)

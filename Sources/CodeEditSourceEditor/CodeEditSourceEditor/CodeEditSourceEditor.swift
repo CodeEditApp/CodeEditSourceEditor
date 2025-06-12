@@ -53,6 +53,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///   - showMinimap: Whether to show the minimap
     ///   - reformatAtColumn: The column to reformat at
     ///   - showReformattingGuide: Whether to show the reformatting guide
+    ///   - invisibleCharactersConfig: Configuration for displaying invisible characters. Defaults to an empty object.   
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
@@ -77,7 +78,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         coordinators: [any TextViewCoordinator] = [],
         showMinimap: Bool,
         reformatAtColumn: Int,
-        showReformattingGuide: Bool
+        showReformattingGuide: Bool,
+        invisibleCharactersConfig: InvisibleCharactersConfig = .empty
     ) {
         self.text = .binding(text)
         self.language = language
@@ -107,6 +109,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.showMinimap = showMinimap
         self.reformatAtColumn = reformatAtColumn
         self.showReformattingGuide = showReformattingGuide
+        self.invisibleCharactersConfig = invisibleCharactersConfig
     }
 
     /// Initializes a Text Editor
@@ -139,6 +142,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///   - showMinimap: Whether to show the minimap
     ///   - reformatAtColumn: The column to reformat at
     ///   - showReformattingGuide: Whether to show the reformatting guide
+    ///   - invisibleCharactersConfig: Configuration for displaying invisible characters. Defaults to an empty object.
     public init(
         _ text: NSTextStorage,
         language: CodeLanguage,
@@ -163,7 +167,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         coordinators: [any TextViewCoordinator] = [],
         showMinimap: Bool,
         reformatAtColumn: Int,
-        showReformattingGuide: Bool
+        showReformattingGuide: Bool,
+        invisibleCharactersConfig: InvisibleCharactersConfig = .empty
     ) {
         self.text = .storage(text)
         self.language = language
@@ -193,6 +198,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.showMinimap = showMinimap
         self.reformatAtColumn = reformatAtColumn
         self.showReformattingGuide = showReformattingGuide
+        self.invisibleCharactersConfig = invisibleCharactersConfig
     }
 
     package var text: TextAPI
@@ -219,6 +225,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     package var showMinimap: Bool
     private var reformatAtColumn: Int
     private var showReformattingGuide: Bool
+    private var invisibleCharactersConfig: InvisibleCharactersConfig
 
     public typealias NSViewControllerType = TextViewController
 
@@ -247,7 +254,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             coordinators: coordinators,
             showMinimap: showMinimap,
             reformatAtColumn: reformatAtColumn,
-            showReformattingGuide: showReformattingGuide
+            showReformattingGuide: showReformattingGuide,
+            invisibleCharactersConfig: invisibleCharactersConfig
         )
         switch text {
         case .binding(let binding):
@@ -352,6 +360,10 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         if controller.useSystemCursor != useSystemCursor {
             controller.useSystemCursor = useSystemCursor
         }
+
+        if controller.invisibleCharactersConfig != invisibleCharactersConfig {
+            controller.invisibleCharactersConfig = invisibleCharactersConfig
+        }
     }
 
     private func updateThemeAndLanguage(_ controller: TextViewController) {
@@ -397,6 +409,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.showMinimap == showMinimap &&
         controller.reformatAtColumn == reformatAtColumn &&
         controller.showReformattingGuide == showReformattingGuide &&
+        controller.invisibleCharactersConfig == invisibleCharactersConfig &&
         areHighlightProvidersEqual(controller: controller, coordinator: coordinator)
     }
 
