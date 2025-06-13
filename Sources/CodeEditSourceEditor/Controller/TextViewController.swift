@@ -276,14 +276,20 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
     ///
     /// See ``InvisibleCharactersConfig`` for more details.
     var invisibleCharactersConfig: InvisibleCharactersConfig {
-        didSet {
-            invisibleCharactersCoordinator.config = invisibleCharactersConfig
+        get {
+            invisibleCharactersCoordinator.config
+        }
+        set {
+            invisibleCharactersCoordinator.config = newValue
         }
     }
 
     // MARK: Init
 
-    init(
+    // Disabling function body length warning for now. There's an open issue for combining a lot of these parameters
+    // into a single config object.
+
+    init( // swiftlint:disable:this function_body_length
         string: String,
         language: CodeLanguage,
         font: NSFont,
@@ -331,9 +337,12 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         self.showMinimap = showMinimap
         self.reformatAtColumn = reformatAtColumn
         self.showReformattingGuide = showReformattingGuide
-
-        invisibleCharactersCoordinator = .init(config: .empty, indentOption: indentOption, theme: theme, font: font)
-        self.invisibleCharactersConfig = invisibleCharactersConfig
+        self.invisibleCharactersCoordinator = InvisibleCharactersCoordinator(
+            config: invisibleCharactersConfig,
+            indentOption: indentOption,
+            theme: theme,
+            font: font
+        )
 
         super.init(nibName: nil, bundle: nil)
 
