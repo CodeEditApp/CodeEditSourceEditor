@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CodeEditTextView
 
 extension FindPanelViewModel {
     // MARK: - Find
@@ -64,8 +65,10 @@ extension FindPanelViewModel {
 
         self.findMatches = matches.map(\.range)
 
-        // Find the nearest match to the current cursor position
-        currentFindMatchIndex = getNearestEmphasisIndex(matchRanges: findMatches)
+        // Only set currentFindMatchIndex if we're not doing multiple selection
+        if !isFocused {
+            currentFindMatchIndex = getNearestEmphasisIndex(matchRanges: findMatches)
+        }
 
         // Only add emphasis layers if the find panel is focused
         if isFocused {
@@ -113,6 +116,186 @@ extension FindPanelViewModel {
         }
 
         return bestIndex >= 0 ? bestIndex : nil
+    }
+
+    // MARK: - Multiple Selection Support
+
+    /// Selects the next occurrence of the current selection while maintaining existing selections
+    func selectNextOccurrence() {
+        guard let target = target,
+              let currentSelection = target.cursorPositions.first?.range else {
+            return
+        }
+
+        // Set find text to the current selection
+        let selectedText = (target.textView.string as NSString).substring(with: currentSelection)
+
+        // Only update findText if it's different from the current selection
+        if findText != selectedText {
+            findText = selectedText
+            // Clear existing matches since we're searching for something new
+            findMatches = []
+            currentFindMatchIndex = nil
+        }
+
+        // Perform find if we haven't already
+        if findMatches.isEmpty {
+            find()
+        }
+
+        // Find the next unselected match
+        let selectedRanges = target.cursorPositions.map { $0.range }
+
+        // Find the index of the current selection
+        if let currentIndex = findMatches.firstIndex(where: { $0.location == currentSelection.location }) {
+            // Find the next unselected match
+            var nextIndex = (currentIndex + 1) % findMatches.count
+            var wrappedAround = false
+
+            while selectedRanges.contains(where: { $0.location == findMatches[nextIndex].location }) {
+                nextIndex = (nextIndex + 1) % findMatches.count
+                // If we've gone all the way around, break to avoid infinite loop
+                if nextIndex == currentIndex {
+                    // If we've wrapped around and still haven't found an unselected match,
+                    // show the "no more matches" notification and flash the current match
+                    showWrapNotification(forwards: true, error: true, targetView: target.findPanelTargetView)
+                    if let currentIndex = currentFindMatchIndex {
+                        target.textView.emphasisManager?.addEmphases([
+                            Emphasis(
+                                range: findMatches[currentIndex],
+                                style: .standard,
+                                flash: true,
+                                inactive: false,
+                                selectInDocument: false
+                            )
+                        ], for: EmphasisGroup.find)
+                    }
+                    return
+                }
+                // If we've wrapped around once, set the flag
+                if nextIndex == 0 {
+                    wrappedAround = true
+                }
+            }
+
+            // If we wrapped around and wrapAround is false, show the "no more matches" notification
+            if wrappedAround && !wrapAround {
+                showWrapNotification(forwards: true, error: true, targetView: target.findPanelTargetView)
+                if let currentIndex = currentFindMatchIndex {
+                    target.textView.emphasisManager?.addEmphases([
+                        Emphasis(
+                            range: findMatches[currentIndex],
+                            style: .standard,
+                            flash: true,
+                            inactive: false,
+                            selectInDocument: false
+                        )
+                    ], for: EmphasisGroup.find)
+                }
+                return
+            }
+
+            // If we wrapped around and wrapAround is true, show the wrap notification
+            if wrappedAround {
+                showWrapNotification(forwards: true, error: false, targetView: target.findPanelTargetView)
+            }
+
+            currentFindMatchIndex = nextIndex
+        } else {
+            currentFindMatchIndex = nil
+        }
+
+        // Use the existing moveMatch function with keepExistingSelections enabled
+        moveMatch(forwards: true, keepExistingSelections: true)
+    }
+
+    /// Selects the previous occurrence of the current selection while maintaining existing selections
+    func selectPreviousOccurrence() {
+        guard let target = target,
+              let currentSelection = target.cursorPositions.first?.range else {
+            return
+        }
+
+        // Set find text to the current selection
+        let selectedText = (target.textView.string as NSString).substring(with: currentSelection)
+
+        // Only update findText if it's different from the current selection
+        if findText != selectedText {
+            findText = selectedText
+            // Clear existing matches since we're searching for something new
+            findMatches = []
+            currentFindMatchIndex = nil
+        }
+
+        // Perform find if we haven't already
+        if findMatches.isEmpty {
+            find()
+        }
+
+        // Find the previous unselected match
+        let selectedRanges = target.cursorPositions.map { $0.range }
+
+        // Find the index of the current selection
+        if let currentIndex = findMatches.firstIndex(where: { $0.location == currentSelection.location }) {
+            // Find the previous unselected match
+            var prevIndex = (currentIndex - 1 + findMatches.count) % findMatches.count
+            var wrappedAround = false
+
+            while selectedRanges.contains(where: { $0.location == findMatches[prevIndex].location }) {
+                prevIndex = (prevIndex - 1 + findMatches.count) % findMatches.count
+                // If we've gone all the way around, break to avoid infinite loop
+                if prevIndex == currentIndex {
+                    // If we've wrapped around and still haven't found an unselected match,
+                    // show the "no more matches" notification and flash the current match
+                    showWrapNotification(forwards: false, error: true, targetView: target.findPanelTargetView)
+                    if let currentIndex = currentFindMatchIndex {
+                        target.textView.emphasisManager?.addEmphases([
+                            Emphasis(
+                                range: findMatches[currentIndex],
+                                style: .standard,
+                                flash: true,
+                                inactive: false,
+                                selectInDocument: false
+                            )
+                        ], for: EmphasisGroup.find)
+                    }
+                    return
+                }
+                // If we've wrapped around once, set the flag
+                if prevIndex == findMatches.count - 1 {
+                    wrappedAround = true
+                }
+            }
+
+            // If we wrapped around and wrapAround is false, show the "no more matches" notification
+            if wrappedAround && !wrapAround {
+                showWrapNotification(forwards: false, error: true, targetView: target.findPanelTargetView)
+                if let currentIndex = currentFindMatchIndex {
+                    target.textView.emphasisManager?.addEmphases([
+                        Emphasis(
+                            range: findMatches[currentIndex],
+                            style: .standard,
+                            flash: true,
+                            inactive: false,
+                            selectInDocument: false
+                        )
+                    ], for: EmphasisGroup.find)
+                }
+                return
+            }
+
+            // If we wrapped around and wrapAround is true, show the wrap notification
+            if wrappedAround {
+                showWrapNotification(forwards: false, error: false, targetView: target.findPanelTargetView)
+            }
+
+            currentFindMatchIndex = prevIndex
+        } else {
+            currentFindMatchIndex = nil
+        }
+
+        // Use the existing moveMatch function with keepExistingSelections enabled
+        moveMatch(forwards: false, keepExistingSelections: true)
     }
 
 }
