@@ -64,7 +64,7 @@ final class InvisibleCharactersCoordinator: InvisibleCharactersDelegate {
             size: font.pointSize
         ) ?? font
     }
-    
+
     /// Determines if the textview should clear cached styles.
     func invisibleStyleShouldClearCache() -> Bool {
         if needsCacheClear {
@@ -73,7 +73,7 @@ final class InvisibleCharactersCoordinator: InvisibleCharactersDelegate {
         }
         return false
     }
-    
+
     /// Determines the replacement style for a character found in a line fragment. Returns the style the text view
     /// should use to emphasize or replace the character.
     ///

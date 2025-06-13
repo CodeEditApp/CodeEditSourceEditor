@@ -53,7 +53,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///   - showMinimap: Whether to show the minimap
     ///   - reformatAtColumn: The column to reformat at
     ///   - showReformattingGuide: Whether to show the reformatting guide
-    ///   - invisibleCharactersConfig: Configuration for displaying invisible characters. Defaults to an empty object.   
+    ///   - invisibleCharactersConfig: Configuration for displaying invisible characters. Defaults to an empty object.
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,

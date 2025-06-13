@@ -30,7 +30,7 @@ public struct InvisibleCharactersConfig: Equatable, Hashable, Sendable, Codable 
         self.showLineEndings = showLineEndings
         self.warningCharacters = warningCharacters
     }
-    
+
     /// Determines what characters should trigger a custom drawing action.
     func triggerCharacters() -> Set<UInt16> {
         var set = Set<UInt16>()
@@ -52,7 +52,7 @@ public struct InvisibleCharactersConfig: Equatable, Hashable, Sendable, Codable 
 
         return set
     }
-    
+
     /// Some commonly used whitespace symbols in their unichar representation.
     public enum Symbols {
         public static let space: UInt16 = 0x20

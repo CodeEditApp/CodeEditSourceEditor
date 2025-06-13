@@ -331,21 +331,16 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         self.showMinimap = showMinimap
         self.reformatAtColumn = reformatAtColumn
         self.showReformattingGuide = showReformattingGuide
-        self.invisibleCharactersCoordinator = InvisibleCharactersCoordinator(
-            config: invisibleCharactersConfig,
-            indentOption: indentOption,
-            theme: theme,
-            font: font
-        )
+
+        invisibleCharactersCoordinator = .init(config: .empty, indentOption: indentOption, theme: theme, font: font)
         self.invisibleCharactersConfig = invisibleCharactersConfig
 
         super.init(nibName: nil, bundle: nil)
 
-        let platformGuardedSystemCursor: Bool
-        if #available(macOS 14, *) {
-            platformGuardedSystemCursor = useSystemCursor
+        let platformGuardedSystemCursor: Bool = if #available(macOS 14, *) {
+            useSystemCursor
         } else {
-            platformGuardedSystemCursor = false
+            false
         }
 
         if let idx = highlightProviders.firstIndex(where: { $0 is TreeSitterClient }),
@@ -417,4 +412,4 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         }
         localEvenMonitor = nil
     }
-}
+} // swiftlint:disable:this file_length
