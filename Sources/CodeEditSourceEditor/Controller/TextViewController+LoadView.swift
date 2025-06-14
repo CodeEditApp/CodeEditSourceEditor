@@ -201,7 +201,6 @@ extension TextViewController {
 
     func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
         let commandKey = NSEvent.ModifierFlags.command.rawValue
-        let commandOptionKey = NSEvent.ModifierFlags.command.union(.option).rawValue
 
         switch (modifierFlags, event.charactersIgnoringModifiers) {
         case (commandKey, "/"):
@@ -210,14 +209,8 @@ extension TextViewController {
         case (commandKey, "["):
             handleIndent(inwards: true)
             return nil
-        case (commandOptionKey, "["):
-            moveLinesUp()
-            return nil
         case (commandKey, "]"):
             handleIndent()
-            return nil
-        case (commandOptionKey, "]"):
-            moveLinesDown()
             return nil
         case (commandKey, "f"):
             _ = self.textView.resignFirstResponder()
