@@ -95,6 +95,16 @@ public class GutterView: NSView {
         true
     }
 
+    public convenience init(config: EditorConfig, textView: TextView, delegate: GutterViewDelegate? = nil) {
+        self.init(
+            font: config.appearance.font,
+            textColor: config.appearance.theme.text.color,
+            selectedTextColor: config.appearance.theme.selection,
+            textView: textView,
+            delegate: delegate
+        )
+    }
+
     public init(
         font: NSFont,
         textColor: NSColor,

@@ -16,25 +16,19 @@ extension TextViewController {
         scrollView.documentView = textView
 
         gutterView = GutterView(
-            font: font.rulerFont,
-            textColor: theme.text.color.withAlphaComponent(0.35),
-            selectedTextColor: theme.text.color,
+            config: config,
             textView: textView,
             delegate: self
         )
         gutterView.updateWidthIfNeeded()
         scrollView.addFloatingSubview(gutterView, for: .horizontal)
 
-        guideView = ReformattingGuideView(
-            column: self.reformatAtColumn,
-            isVisible: self.showReformattingGuide,
-            theme: theme
-        )
+        guideView = ReformattingGuideView(config: config)
         guideView.wantsLayer = true
         scrollView.addFloatingSubview(guideView, for: .vertical)
         guideView.updatePosition(in: textView)
 
-        minimapView = MinimapView(textView: textView, theme: theme)
+        minimapView = MinimapView(textView: textView, theme: config.appearance.theme)
         scrollView.addFloatingSubview(minimapView, for: .vertical)
 
         let findViewController = FindViewController(target: self, childView: scrollView)

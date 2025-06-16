@@ -22,6 +22,14 @@ class ReformattingGuideView: NSView {
         }
     }
 
+    convenience init(config: borrowing EditorConfig) {
+        self.init(
+            column: config.behavior.reformatAtColumn,
+            isVisible: config.peripherals.showReformattingGuide,
+            theme: config.appearance.theme
+        )
+    }
+
     init(column: Int = 80, isVisible: Bool = false, theme: EditorTheme) {
         self.column = column
         self._isVisible = isVisible

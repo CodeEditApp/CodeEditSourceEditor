@@ -9,8 +9,8 @@ import AppKit
 
 extension TextViewController {
     func reloadUI() {
-        textView.isEditable = isEditable
-        textView.isSelectable = isSelectable
+        textView.isEditable = config.behavior.isEditable
+        textView.isSelectable = config.behavior.isSelectable
 
         styleScrollView()
         styleTextView()
