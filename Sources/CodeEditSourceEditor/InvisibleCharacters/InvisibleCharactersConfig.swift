@@ -12,7 +12,7 @@
 public struct InvisibleCharactersConfig: Equatable, Hashable, Sendable, Codable {
     /// An empty configuration.
     public static var empty: InvisibleCharactersConfig {
-        InvisibleCharactersConfig(showSpaces: false, showTabs: false, showLineEndings: false, warningCharacters: [])
+        InvisibleCharactersConfig(showSpaces: false, showTabs: false, showLineEndings: false)
     }
 
     /// Set to true to draw spaces with a dot.
@@ -37,22 +37,10 @@ public struct InvisibleCharactersConfig: Equatable, Hashable, Sendable, Codable 
     /// Replacement when drawing the line separator character, enabled by ``showLineEndings``.
     public var lineSeparatorReplacement: String = "⏎"
 
-    /// A set of characters the editor should draw with a small red border.
-    ///
-    /// Indicates characters that the user may not have meant to insert, such as a zero-width space: `(0x200D)` or a
-    /// non-standard quote character: `“ (0x201C)`.
-    public var warningCharacters: Set<UInt16>
-
-    public init(
-        showSpaces: Bool,
-        showTabs: Bool,
-        showLineEndings: Bool,
-        warningCharacters: Set<UInt16>
-    ) {
+    public init(showSpaces: Bool, showTabs: Bool, showLineEndings: Bool) {
         self.showSpaces = showSpaces
         self.showTabs = showTabs
         self.showLineEndings = showLineEndings
-        self.warningCharacters = warningCharacters
     }
 
     /// Determines what characters should trigger a custom drawing action.
@@ -73,8 +61,6 @@ public struct InvisibleCharactersConfig: Equatable, Hashable, Sendable, Codable 
             set.insert(Symbols.paragraphSeparator)
             set.insert(Symbols.lineSeparator)
         }
-
-        set.formUnion(warningCharacters)
 
         return set
     }

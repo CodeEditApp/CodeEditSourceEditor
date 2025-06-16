@@ -27,6 +27,15 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
     var gutterView: GutterView!
     var minimapView: MinimapView!
 
+    /// The reformatting guide view
+    var guideView: ReformattingGuideView! {
+        didSet {
+            if let oldValue = oldValue {
+                oldValue.removeFromSuperview()
+            }
+        }
+    }
+
     var minimapXConstraint: NSLayoutConstraint?
 
     var _undoManager: CEUndoManager!
@@ -263,24 +272,28 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         }
     }
 
-    /// The reformatting guide view
-    var guideView: ReformattingGuideView! {
-        didSet {
-            if let oldValue = oldValue {
-                oldValue.removeFromSuperview()
-            }
-        }
-    }
-
     /// Configuration for drawing invisible characters.
     ///
     /// See ``InvisibleCharactersConfig`` for more details.
-    var invisibleCharactersConfig: InvisibleCharactersConfig {
+    public var invisibleCharactersConfig: InvisibleCharactersConfig {
         get {
             invisibleCharactersCoordinator.config
         }
         set {
             invisibleCharactersCoordinator.config = newValue
+        }
+    }
+
+    /// A set of characters the editor should draw with a small red border.
+    ///
+    /// Indicates characters that the user may not have meant to insert, such as a zero-width space: `(0x200D)` or a
+    /// non-standard quote character: `“ (0x201C)`.
+    public var warningCharacters: Set<UInt16> {
+        get {
+            invisibleCharactersCoordinator.warningCharacters
+        }
+        set {
+            invisibleCharactersCoordinator.warningCharacters = newValue
         }
     }
 
@@ -314,7 +327,8 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         showMinimap: Bool,
         reformatAtColumn: Int = 80,
         showReformattingGuide: Bool = false,
-        invisibleCharactersConfig: InvisibleCharactersConfig = .empty
+        invisibleCharactersConfig: InvisibleCharactersConfig = .empty,
+        warningCharacters: Set<UInt16> = []
     ) {
         self.language = language
         self.font = font
@@ -339,6 +353,7 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         self.showReformattingGuide = showReformattingGuide
         self.invisibleCharactersCoordinator = InvisibleCharactersCoordinator(
             config: invisibleCharactersConfig,
+            warningCharacters: warningCharacters,
             indentOption: indentOption,
             theme: theme,
             font: font

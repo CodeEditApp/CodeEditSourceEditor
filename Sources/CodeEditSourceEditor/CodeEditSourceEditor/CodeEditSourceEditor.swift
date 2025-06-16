@@ -50,10 +50,14 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///   - useSystemCursor: If true, uses the system cursor on `>=macOS 14`.
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
     ///   - coordinators: Any text coordinators for the view to use. See ``TextViewCoordinator`` for more information.
-    ///   - showMinimap: Whether to show the minimap
-    ///   - reformatAtColumn: The column to reformat at
-    ///   - showReformattingGuide: Whether to show the reformatting guide
+    ///   - showMinimap: Whether to show the minimap.
+    ///   - reformatAtColumn: The column to reformat at.
+    ///   - showReformattingGuide: Whether to show the reformatting guide.
     ///   - invisibleCharactersConfig: Configuration for displaying invisible characters. Defaults to an empty object.
+    ///                                See ``TextViewController/invisibleCharactersConfig`` and
+    ///                                ``InvisibleCharactersConfig`` for more information.
+    ///   - warningCharacters: A set of characters the editor should draw with a small red border. See
+    ///                        ``TextViewController/warningCharacters`` for more information.
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
@@ -79,7 +83,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         showMinimap: Bool,
         reformatAtColumn: Int,
         showReformattingGuide: Bool,
-        invisibleCharactersConfig: InvisibleCharactersConfig = .empty
+        invisibleCharactersConfig: InvisibleCharactersConfig = .empty,
+        warningCharacters: Set<UInt16> = []
     ) {
         self.text = .binding(text)
         self.language = language
@@ -110,6 +115,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.reformatAtColumn = reformatAtColumn
         self.showReformattingGuide = showReformattingGuide
         self.invisibleCharactersConfig = invisibleCharactersConfig
+        self.warningCharacters = warningCharacters
     }
 
     /// Initializes a Text Editor
@@ -139,10 +145,14 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     ///                           See `BracketPairEmphasis` for more information. Defaults to `nil`
     ///   - undoManager: The undo manager for the text view. Defaults to `nil`, which will create a new CEUndoManager
     ///   - coordinators: Any text coordinators for the view to use. See ``TextViewCoordinator`` for more information.
-    ///   - showMinimap: Whether to show the minimap
-    ///   - reformatAtColumn: The column to reformat at
-    ///   - showReformattingGuide: Whether to show the reformatting guide
+    ///   - showMinimap: Whether to show the minimap.
+    ///   - reformatAtColumn: The column to reformat at.
+    ///   - showReformattingGuide: Whether to show the reformatting guide.
     ///   - invisibleCharactersConfig: Configuration for displaying invisible characters. Defaults to an empty object.
+    ///                                See ``TextViewController/invisibleCharactersConfig`` and
+    ///                                ``InvisibleCharactersConfig`` for more information.
+    ///   - warningCharacters: A set of characters the editor should draw with a small red border. See
+    ///                        ``TextViewController/warningCharacters`` for more information.
     public init(
         _ text: NSTextStorage,
         language: CodeLanguage,
@@ -168,7 +178,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         showMinimap: Bool,
         reformatAtColumn: Int,
         showReformattingGuide: Bool,
-        invisibleCharactersConfig: InvisibleCharactersConfig = .empty
+        invisibleCharactersConfig: InvisibleCharactersConfig = .empty,
+        warningCharacters: Set<UInt16> = []
     ) {
         self.text = .storage(text)
         self.language = language
@@ -199,6 +210,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         self.reformatAtColumn = reformatAtColumn
         self.showReformattingGuide = showReformattingGuide
         self.invisibleCharactersConfig = invisibleCharactersConfig
+        self.warningCharacters = warningCharacters
     }
 
     package var text: TextAPI
@@ -226,6 +238,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     private var reformatAtColumn: Int
     private var showReformattingGuide: Bool
     private var invisibleCharactersConfig: InvisibleCharactersConfig
+    private var warningCharacters: Set<UInt16>
 
     public typealias NSViewControllerType = TextViewController
 
@@ -364,6 +377,10 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         if controller.invisibleCharactersConfig != invisibleCharactersConfig {
             controller.invisibleCharactersConfig = invisibleCharactersConfig
         }
+
+        if controller.warningCharacters != warningCharacters {
+            controller.warningCharacters = warningCharacters
+        }
     }
 
     private func updateThemeAndLanguage(_ controller: TextViewController) {
@@ -410,6 +427,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         controller.reformatAtColumn == reformatAtColumn &&
         controller.showReformattingGuide == showReformattingGuide &&
         controller.invisibleCharactersConfig == invisibleCharactersConfig &&
+        controller.warningCharacters == warningCharacters &&
         areHighlightProvidersEqual(controller: controller, coordinator: coordinator)
     }
 

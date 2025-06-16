@@ -21,9 +21,19 @@ import CodeEditTextView
 final class InvisibleCharactersCoordinator: InvisibleCharactersDelegate {
     var config: InvisibleCharactersConfig {
         didSet {
-            triggerCharacters = config.triggerCharacters()
+            updateTriggerCharacters()
         }
     }
+    /// A set of characters the editor should draw with a small red border.
+    ///
+    /// Indicates characters that the user may not have meant to insert, such as a zero-width space: `(0x200D)` or a
+    /// non-standard quote character: `“ (0x201C)`.
+    public var warningCharacters: Set<UInt16> {
+        didSet {
+            updateTriggerCharacters()
+        }
+    }
+
     var indentOption: IndentOption
     var theme: EditorTheme {
         didSet {
@@ -43,19 +53,25 @@ final class InvisibleCharactersCoordinator: InvisibleCharactersDelegate {
         }
     }
 
-    private var needsCacheClear = false
-    private var invisibleColor: NSColor
-    private var emphasizedFont: NSFont
+    var needsCacheClear = false
+    var invisibleColor: NSColor
+    var emphasizedFont: NSFont
 
     /// The set of characters the text view should trigger a call to ``invisibleStyle`` for.
-    var triggerCharacters: Set<UInt16>
+    var triggerCharacters: Set<UInt16> = []
 
-    init(config: InvisibleCharactersConfig, indentOption: IndentOption, theme: EditorTheme, font: NSFont) {
+    init(
+        config: InvisibleCharactersConfig,
+        warningCharacters: Set<UInt16>,
+        indentOption: IndentOption,
+        theme: EditorTheme,
+        font: NSFont
+    ) {
         self.config = config
+        self.warningCharacters = warningCharacters
         self.indentOption = indentOption
         self.theme = theme
         self.font = font
-        triggerCharacters = config.triggerCharacters()
         invisibleColor = theme.invisibles.color
         emphasizedFont = NSFontManager.shared.font(
             withFamily: font.familyName ?? "",
@@ -63,6 +79,11 @@ final class InvisibleCharactersCoordinator: InvisibleCharactersDelegate {
             weight: 15, // Condensed
             size: font.pointSize
         ) ?? font
+        updateTriggerCharacters()
+    }
+
+    private func updateTriggerCharacters() {
+        triggerCharacters = config.triggerCharacters().union(warningCharacters)
     }
 
     /// Determines if the textview should clear cached styles.
@@ -144,7 +165,7 @@ final class InvisibleCharactersCoordinator: InvisibleCharactersDelegate {
     }
 
     private func warningCharacterStyle(for character: UInt16) -> InvisibleCharacterStyle? {
-        guard config.warningCharacters.contains(character) else { return nil }
+        guard warningCharacters.contains(character) else { return nil }
         return .emphasize(color: .systemRed.withAlphaComponent(0.3))
     }
 }
