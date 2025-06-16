@@ -6,6 +6,9 @@
 //
 
 /// Configuration for how the editor draws invisible characters.
+///
+/// Enable specific categories using the ``showSpaces``, ``showTabs``, and ``showLineEndings`` toggles. Customize
+/// drawing further with the ``spaceReplacement`` and family variables.
 public struct InvisibleCharactersConfig: Equatable, Hashable, Sendable, Codable {
     /// An empty configuration.
     public static var empty: InvisibleCharactersConfig {
@@ -14,17 +17,38 @@ public struct InvisibleCharactersConfig: Equatable, Hashable, Sendable, Codable 
 
     /// Set to true to draw spaces with a dot.
     public var showSpaces: Bool
+
     /// Set to true to draw tabs with a small arrow.
     public var showTabs: Bool
+
     /// Set to true to draw line endings.
     public var showLineEndings: Bool
+
+    /// Replacement when drawing the space character, enabled by ``showSpaces``.
+    public var spaceReplacement: String = "·"
+    /// Replacement when drawing the tab character, enabled by ``showTabs``.
+    public var tabReplacement: String = "→"
+    /// Replacement when drawing the carriage return character, enabled by ``showLineEndings``.
+    public var carriageReturnReplacement: String = "↵"
+    /// Replacement when drawing the line feed character, enabled by ``showLineEndings``.
+    public var lineFeedReplacement: String = "¬"
+    /// Replacement when drawing the paragraph separator character, enabled by ``showLineEndings``.
+    public var paragraphSeparatorReplacement: String = "¶"
+    /// Replacement when drawing the line separator character, enabled by ``showLineEndings``.
+    public var lineSeparatorReplacement: String = "⏎"
+
     /// A set of characters the editor should draw with a small red border.
     ///
     /// Indicates characters that the user may not have meant to insert, such as a zero-width space: `(0x200D)` or a
     /// non-standard quote character: `“ (0x201C)`.
     public var warningCharacters: Set<UInt16>
 
-    public init(showSpaces: Bool, showTabs: Bool, showLineEndings: Bool, warningCharacters: Set<UInt16>) {
+    public init(
+        showSpaces: Bool,
+        showTabs: Bool,
+        showLineEndings: Bool,
+        warningCharacters: Set<UInt16>
+    ) {
         self.showSpaces = showSpaces
         self.showTabs = showTabs
         self.showLineEndings = showLineEndings
@@ -46,6 +70,8 @@ public struct InvisibleCharactersConfig: Equatable, Hashable, Sendable, Codable 
         if showLineEndings {
             set.insert(Symbols.lineFeed)
             set.insert(Symbols.carriageReturn)
+            set.insert(Symbols.paragraphSeparator)
+            set.insert(Symbols.lineSeparator)
         }
 
         set.formUnion(warningCharacters)
@@ -59,5 +85,7 @@ public struct InvisibleCharactersConfig: Equatable, Hashable, Sendable, Codable 
         public static let tab: UInt16 = 0x9
         public static let lineFeed: UInt16 = 0xA // \n
         public static let carriageReturn: UInt16 = 0xD // \r
+        public static let paragraphSeparator: UInt16 = 0x2029 // ¶
+        public static let lineSeparator: UInt16 = 0x2028 // line separator
     }
 }

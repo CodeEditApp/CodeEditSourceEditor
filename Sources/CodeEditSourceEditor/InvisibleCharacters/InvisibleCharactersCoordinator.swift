@@ -83,21 +83,68 @@ final class InvisibleCharactersCoordinator: InvisibleCharactersDelegate {
     func invisibleStyle(for character: UInt16, at range: NSRange, lineRange: NSRange) -> InvisibleCharacterStyle? {
         switch character {
         case InvisibleCharactersConfig.Symbols.space:
-            guard config.showSpaces else { return nil }
-            let locationInLine = range.location - lineRange.location
-            let shouldBold = locationInLine % indentOption.charCount == indentOption.charCount - 1
-            return .replace(replacementCharacter: "·", color: invisibleColor, font: shouldBold ? emphasizedFont : font)
+            return spacesStyle(range: range, lineRange: lineRange)
         case InvisibleCharactersConfig.Symbols.tab:
-            guard config.showTabs else { return nil }
-            return .replace(replacementCharacter: "→", color: invisibleColor, font: font)
-        case InvisibleCharactersConfig.Symbols.carriageReturn, InvisibleCharactersConfig.Symbols.lineFeed:
-            guard config.showLineEndings else { return nil }
-            return .replace(replacementCharacter: "¬", color: invisibleColor, font: font)
+            return tabStyle()
+        case InvisibleCharactersConfig.Symbols.carriageReturn:
+            return carriageReturnStyle()
+        case InvisibleCharactersConfig.Symbols.lineFeed:
+            return lineFeedStyle()
+        case InvisibleCharactersConfig.Symbols.paragraphSeparator:
+            return paragraphSeparatorStyle()
+        case InvisibleCharactersConfig.Symbols.lineSeparator:
+            return lineSeparatorStyle()
         default:
-            guard config.warningCharacters.contains(character) else {
-                return nil
-            }
-            return .emphasize(color: .systemRed.withAlphaComponent(0.3))
+            return warningCharacterStyle(for: character)
         }
+    }
+
+    private func spacesStyle(range: NSRange, lineRange: NSRange) -> InvisibleCharacterStyle? {
+        guard config.showSpaces else { return nil }
+        let locationInLine = range.location - lineRange.location
+        let shouldBold = locationInLine % indentOption.charCount == indentOption.charCount - 1
+        return .replace(
+            replacementCharacter: config.spaceReplacement,
+            color: invisibleColor,
+            font: shouldBold ? emphasizedFont : font
+        )
+    }
+
+    private func tabStyle() -> InvisibleCharacterStyle? {
+        guard config.showTabs else { return nil }
+        return .replace(replacementCharacter: config.tabReplacement, color: invisibleColor, font: font)
+    }
+
+    private func carriageReturnStyle() -> InvisibleCharacterStyle? {
+        guard config.showLineEndings else { return nil }
+        return .replace(replacementCharacter: config.carriageReturnReplacement, color: invisibleColor, font: font)
+    }
+
+    private func lineFeedStyle() -> InvisibleCharacterStyle? {
+        guard config.showLineEndings else { return nil }
+        return .replace(replacementCharacter: config.lineFeedReplacement, color: invisibleColor, font: font)
+    }
+
+    private func paragraphSeparatorStyle() -> InvisibleCharacterStyle? {
+        guard config.showLineEndings else { return nil }
+        return .replace(
+            replacementCharacter: config.paragraphSeparatorReplacement,
+            color: invisibleColor,
+            font: font
+        )
+    }
+
+    private func lineSeparatorStyle() -> InvisibleCharacterStyle? {
+        guard config.showLineEndings else { return nil }
+        return .replace(
+            replacementCharacter: config.lineSeparatorReplacement,
+            color: invisibleColor,
+            font: font
+        )
+    }
+
+    private func warningCharacterStyle(for character: UInt16) -> InvisibleCharacterStyle? {
+        guard config.warningCharacters.contains(character) else { return nil }
+        return .emphasize(color: .systemRed.withAlphaComponent(0.3))
     }
 }
