@@ -93,7 +93,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
             cursorPositions: cursorPositions.wrappedValue,
             highlightProviders: context.coordinator.highlightProviders,
             undoManager: undoManager,
-            coordinators: coordinators,
+            coordinators: coordinators
         )
         switch text {
         case .binding(let binding):
