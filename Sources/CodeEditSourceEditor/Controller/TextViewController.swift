@@ -181,7 +181,7 @@ public class TextViewController: NSViewController {
         cursorPositions: [CursorPosition],
         highlightProviders: [HighlightProviding] = [TreeSitterClient()],
         undoManager: CEUndoManager? = nil,
-        coordinators: [TextViewCoordinator] = [],
+        coordinators: [TextViewCoordinator] = []
     ) {
         self.language = language
         self.configuration = config
