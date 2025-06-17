@@ -5,7 +5,7 @@
 //  Created by Khan Winter on 6/16/25.
 //
 
-extension EditorConfig {
+extension SourceEditorConfiguration {
     public struct Peripherals: Equatable {
         /// Whether to show the gutter.
         public var showGutter: Bool = true
@@ -27,20 +27,20 @@ extension EditorConfig {
         }
 
         @MainActor
-        func didSetOnController(controller: TextViewController, oldConfig: Peripherals) {
+        func didSetOnController(controller: TextViewController, oldConfig: Peripherals?) {
             var shouldUpdateInsets = false
 
-            if oldConfig.showGutter != showGutter {
+            if oldConfig?.showGutter != showGutter {
                 controller.gutterView.isHidden = !showGutter
                 shouldUpdateInsets = true
             }
 
-            if oldConfig.showMinimap != showMinimap {
+            if oldConfig?.showMinimap != showMinimap {
                 controller.minimapView?.isHidden = !showMinimap
                 shouldUpdateInsets = true
             }
 
-            if oldConfig.showReformattingGuide != showReformattingGuide {
+            if oldConfig?.showReformattingGuide != showReformattingGuide {
                 controller.reformattingGuideView.isHidden = !showReformattingGuide
                 controller.reformattingGuideView.updatePosition(in: controller.textView)
             }

@@ -22,6 +22,7 @@ struct StatusBar: View {
     @Binding var isInLongParse: Bool
     @Binding var language: CodeLanguage
     @Binding var theme: EditorTheme
+    @Binding var showGutter: Bool
     @Binding var showMinimap: Bool
     @Binding var indentOption: IndentOption
     @Binding var reformatAtColumn: Int
@@ -33,6 +34,7 @@ struct StatusBar: View {
                 IndentPicker(indentOption: $indentOption, enabled: document.text.length == 0)
                     .buttonStyle(.borderless)
                 Toggle("Wrap Lines", isOn: $wrapLines)
+                Toggle("Show Gutter", isOn: $showGutter)
                 Toggle("Show Minimap", isOn: $showMinimap)
                 Toggle("Show Reformatting Guide", isOn: $showReformattingGuide)
                 Picker("Reformat column at column", selection: $reformatAtColumn) {

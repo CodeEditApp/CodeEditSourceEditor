@@ -1,5 +1,5 @@
 //
-//  EditorConfig.swift
+//  SourceEditorConfiguration.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 6/16/25.
@@ -7,7 +7,7 @@
 
 import AppKit
 
-public struct EditorConfig: Equatable {
+public struct SourceEditorConfiguration: Equatable {
     public var appearance: Appearance
     public var behavior: Behavior
     public var peripherals: Peripherals
@@ -26,10 +26,10 @@ public struct EditorConfig: Equatable {
     }
 
     @MainActor
-    func didSetOnController(controller: TextViewController, oldConfig: EditorConfig) {
-        appearance.didSetOnController(controller: controller, oldConfig: oldConfig.appearance)
-        behavior.didSetOnController(controller: controller, oldConfig: oldConfig.behavior)
-        layout.didSetOnController(controller: controller, oldConfig: oldConfig.layout)
-        peripherals.didSetOnController(controller: controller, oldConfig: oldConfig.peripherals)
+    func didSetOnController(controller: TextViewController, oldConfig: SourceEditorConfiguration?) {
+        appearance.didSetOnController(controller: controller, oldConfig: oldConfig?.appearance)
+        behavior.didSetOnController(controller: controller, oldConfig: oldConfig?.behavior)
+        layout.didSetOnController(controller: controller, oldConfig: oldConfig?.layout)
+        peripherals.didSetOnController(controller: controller, oldConfig: oldConfig?.peripherals)
     }
 }

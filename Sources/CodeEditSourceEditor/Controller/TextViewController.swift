@@ -62,7 +62,7 @@ public class TextViewController: NSViewController {
 
     /// The configuration for the editor, when updated will automatically update the controller to reflect the new
     /// configuration.
-    public var config: EditorConfig {
+    public var config: SourceEditorConfiguration {
         didSet {
             config.didSetOnController(controller: self, oldConfig: oldValue)
         }
@@ -177,7 +177,7 @@ public class TextViewController: NSViewController {
     init(
         string: String,
         language: CodeLanguage,
-        config: EditorConfig,
+        config: SourceEditorConfiguration,
         cursorPositions: [CursorPosition],
         highlightProviders: [HighlightProviding] = [TreeSitterClient()],
         undoManager: CEUndoManager? = nil,

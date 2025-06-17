@@ -1,5 +1,5 @@
 //
-//  EditorConfig+Appearance.swift
+//  SourceEditorConfiguration+Appearance.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 6/16/25.
@@ -7,7 +7,7 @@
 
 import AppKit
 
-extension EditorConfig {
+extension SourceEditorConfiguration {
     public struct Appearance: Equatable {
         /// The theme for syntax highlighting.
         public var theme: EditorTheme
@@ -42,11 +42,11 @@ extension EditorConfig {
             theme: EditorTheme,
             useThemeBackground: Bool = true,
             font: NSFont,
-            lineHeightMultiple: Double,
+            lineHeightMultiple: Double = 1.2,
             letterSpacing: Double = 1.0,
             wrapLines: Bool,
             useSystemCursor: Bool = true,
-            tabWidth: Int,
+            tabWidth: Int = 4,
             bracketPairEmphasis: BracketPairEmphasis? = .flash
         ) {
             self.theme = theme
@@ -65,15 +65,15 @@ extension EditorConfig {
         }
 
         @MainActor
-        func didSetOnController(controller: TextViewController, oldConfig: Appearance) {
+        func didSetOnController(controller: TextViewController, oldConfig: Appearance?) {
             var needsHighlighterInvalidation = false
 
-            if oldConfig.font != font {
+            if oldConfig?.font != font {
                 controller.textView.font = font
                 needsHighlighterInvalidation = true
             }
 
-            if oldConfig.theme != theme {
+            if oldConfig?.theme != theme {
                 controller.textView.layoutManager.setNeedsLayout()
                 controller.textView.textStorage.setAttributes(
                     controller.attributesFor(nil),
@@ -87,17 +87,17 @@ extension EditorConfig {
                 needsHighlighterInvalidation = true
             }
 
-            if oldConfig.tabWidth != tabWidth {
+            if oldConfig?.tabWidth != tabWidth {
                 controller.paragraphStyle = controller.generateParagraphStyle()
                 controller.textView.layoutManager.setNeedsLayout()
                 needsHighlighterInvalidation = true
             }
 
-            if oldConfig.lineHeightMultiple != lineHeightMultiple {
+            if oldConfig?.lineHeightMultiple != lineHeightMultiple {
                 controller.textView.layoutManager.lineHeightMultiplier = lineHeightMultiple
             }
 
-            if oldConfig.wrapLines != wrapLines {
+            if oldConfig?.wrapLines != wrapLines {
                 controller.textView.layoutManager.wrapLines = wrapLines
                 controller.minimapView.layoutManager?.wrapLines = wrapLines
                 controller.scrollView.hasHorizontalScroller = !wrapLines
@@ -106,18 +106,18 @@ extension EditorConfig {
 
             // useThemeBackground isn't needed
 
-            if oldConfig.letterSpacing != letterSpacing {
+            if oldConfig?.letterSpacing != letterSpacing {
                 controller.textView.letterSpacing = letterSpacing
                 needsHighlighterInvalidation = true
             }
 
-            if oldConfig.bracketPairEmphasis != bracketPairEmphasis {
+            if oldConfig?.bracketPairEmphasis != bracketPairEmphasis {
                 controller.emphasizeSelectionPairs()
             }
 
             // Cant put these in one if sadly
             if #available(macOS 14, *) {
-                if oldConfig.useSystemCursor != useSystemCursor {
+                if oldConfig?.useSystemCursor != useSystemCursor {
                     controller.textView.useSystemCursor = useSystemCursor
                 }
             }

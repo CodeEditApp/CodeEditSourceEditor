@@ -62,6 +62,8 @@ extension TextViewController {
         }
         setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
         updateContentInsets()
+
+        config.didSetOnController(controller: self, oldConfig: nil)
     }
 
     func setUpConstraints() {

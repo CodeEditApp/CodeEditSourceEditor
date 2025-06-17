@@ -1,4 +1,4 @@
-# ``CodeEditSourceEditor``
+# ``SourceEditor``
 
 A code editor with syntax highlighting powered by tree-sitter. 
 

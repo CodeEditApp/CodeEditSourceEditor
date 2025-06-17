@@ -19,17 +19,22 @@ struct ContentView: View {
 
     @State private var language: CodeLanguage = .default
     @State private var theme: EditorTheme = .light
+    @State private var cursorPositions: [CursorPosition] = [.init(line: 1, column: 1)]
+
     @State private var font: NSFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .medium)
     @AppStorage("wrapLines") private var wrapLines: Bool = true
-    @State private var cursorPositions: [CursorPosition] = [.init(line: 1, column: 1)]
     @AppStorage("systemCursor") private var useSystemCursor: Bool = false
-    @State private var isInLongParse = false
-    @State private var settingsIsPresented: Bool = false
-    @State private var treeSitterClient = TreeSitterClient()
-    @AppStorage("showMinimap") private var showMinimap: Bool = true
     @State private var indentOption: IndentOption = .spaces(count: 4)
     @AppStorage("reformatAtColumn") private var reformatAtColumn: Int = 80
+
+    @AppStorage("showGutter") private var showGutter: Bool = true
+    @AppStorage("showMinimap") private var showMinimap: Bool = true
     @AppStorage("showReformattingGuide") private var showReformattingGuide: Bool = false
+
+    @State private var isInLongParse = false
+    @State private var settingsIsPresented: Bool = false
+
+    @State private var treeSitterClient = TreeSitterClient()
 
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
         self._document = document
@@ -38,26 +43,49 @@ struct ContentView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            CodeEditSourceEditor(
+            SourceEditor(
                 document.text,
                 language: language,
-                theme: theme,
-                font: font,
-                tabWidth: 4,
-                indentOption: indentOption,
-                lineHeight: 1.2,
-                wrapLines: wrapLines,
-                editorOverscroll: 0.3,
-                cursorPositions: $cursorPositions,
-                useThemeBackground: true,
-                highlightProviders: [treeSitterClient],
-                contentInsets: NSEdgeInsets(top: proxy.safeAreaInsets.top, left: 0, bottom: 28.0, right: 0),
-                additionalTextInsets: NSEdgeInsets(top: 1, left: 0, bottom: 1, right: 0),
-                useSystemCursor: useSystemCursor,
-                showMinimap: showMinimap,
-                reformatAtColumn: reformatAtColumn,
-                showReformattingGuide: showReformattingGuide
+                config: SourceEditorConfiguration(
+                    appearance: .init(theme: theme, font: font, wrapLines: wrapLines),
+                    behavior: .init(indentOption: indentOption),
+                    layout: .init(
+                        contentInsets: NSEdgeInsets(
+                            top: proxy.safeAreaInsets.top,
+                            left: showGutter ? 0 : 1,
+                            bottom: 28.0,
+                            right: 0
+                        )
+                    ),
+                    peripherals: .init(
+                        showGutter: showGutter,
+                        showMinimap: showMinimap,
+                        showReformattingGuide: showReformattingGuide
+                    )
+                ),
+                cursorPositions: $cursorPositions
             )
+//            SourceEditor(
+//                document.text,
+//                language: language,
+//                font: font,
+//                theme: theme,
+//                font: font,
+//                tabWidth: 4,
+//                indentOption: indentOption,
+//                lineHeight: 1.2,
+//                wrapLines: wrapLines,
+//                editorOverscroll: 0.3,
+//                cursorPositions: $cursorPositions,
+//                useThemeBackground: true,
+//                highlightProviders: [treeSitterClient],
+//                contentInsets: NSEdgeInsets(top: proxy.safeAreaInsets.top, left: 0, bottom: 28.0, right: 0),
+//                additionalTextInsets: NSEdgeInsets(top: 1, left: 0, bottom: 1, right: 0),
+//                useSystemCursor: useSystemCursor,
+//                showMinimap: showMinimap,
+//                reformatAtColumn: reformatAtColumn,
+//                showReformattingGuide: showReformattingGuide
+//            )
             .overlay(alignment: .bottom) {
                 StatusBar(
                     fileURL: fileURL,
@@ -68,6 +96,7 @@ struct ContentView: View {
                     isInLongParse: $isInLongParse,
                     language: $language,
                     theme: $theme,
+                    showGutter: $showGutter,
                     showMinimap: $showMinimap,
                     indentOption: $indentOption,
                     reformatAtColumn: $reformatAtColumn,

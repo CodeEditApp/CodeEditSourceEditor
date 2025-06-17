@@ -1,11 +1,11 @@
 //
-//  EditorConfig+Behavior.swift
+//  SourceEditorConfiguration+Behavior.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 6/16/25.
 //
 
-extension EditorConfig {
+extension SourceEditorConfiguration {
     public struct Behavior: Equatable {
         /// Controls whether the text view allows the user to edit text.
         public var isEditable: Bool = true
@@ -33,21 +33,22 @@ extension EditorConfig {
         }
 
         @MainActor
-        func didSetOnController(controller: TextViewController, oldConfig: Behavior) {
-            if oldConfig.isEditable != isEditable {
+        func didSetOnController(controller: TextViewController, oldConfig: Behavior?) {
+            if oldConfig?.isEditable != isEditable {
                 controller.textView.isEditable = isEditable
             }
 
-            if oldConfig.isSelectable != isSelectable {
+            if oldConfig?.isSelectable != isSelectable {
                 controller.textView.isSelectable = isSelectable
             }
 
-            if oldConfig.indentOption != indentOption {
+            if oldConfig?.indentOption != indentOption {
                 controller.setUpTextFormation()
             }
 
-            if oldConfig.reformatAtColumn != reformatAtColumn {
+            if oldConfig?.reformatAtColumn != reformatAtColumn {
                 controller.reformattingGuideView.column = reformatAtColumn
+                controller.reformattingGuideView.updatePosition(in: controller.textView)
             }
         }
     }

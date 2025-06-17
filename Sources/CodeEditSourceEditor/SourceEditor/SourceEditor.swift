@@ -1,5 +1,5 @@
 //
-//  CodeEditSourceEditor.swift
+//  SourceEditor.swift
 //  CodeEditSourceEditor
 //
 //  Created by Lukas Pistrol on 24.05.22.
@@ -11,7 +11,7 @@ import CodeEditTextView
 import CodeEditLanguages
 
 /// A SwiftUI View that provides source editing functionality.
-public struct CodeEditSourceEditor: NSViewControllerRepresentable {
+public struct SourceEditor: NSViewControllerRepresentable {
     package enum TextAPI {
         case binding(Binding<String>)
         case storage(NSTextStorage)
@@ -21,7 +21,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     /// - Parameters:
     ///   - text: The text content
     ///   - language: The language for syntax highlighting
-    ///   - config: A configuration object, determining appearance, layout, behaviors  and more. See ``EditorConfig``.
+    ///   - config: A configuration object, determining appearance, layout, behaviors  and more.
+    ///             See ``SourceEditorConfiguration``.
     ///   - cursorPositions: The cursor's position in the editor, measured in `(lineNum, columnNum)`
     ///   - highlightProviders: A set of classes you provide to perform syntax highlighting. Leave this as `nil` to use
     ///                         the default `TreeSitterClient` highlighter.
@@ -30,7 +31,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
-        config: EditorConfig,
+        config: SourceEditorConfiguration,
         cursorPositions: Binding<[CursorPosition]>,
         highlightProviders: [any HighlightProviding]? = nil,
         undoManager: CEUndoManager? = nil,
@@ -49,7 +50,8 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     /// - Parameters:
     ///   - text: The text content
     ///   - language: The language for syntax highlighting
-    ///   - config: A configuration object, determining appearance, layout, behaviors  and more. See ``EditorConfig``.
+    ///   - config: A configuration object, determining appearance, layout, behaviors  and more.
+    ///             See ``SourceEditorConfiguration``.
     ///   - cursorPositions: The cursor's position in the editor, measured in `(lineNum, columnNum)`
     ///   - highlightProviders: A set of classes you provide to perform syntax highlighting. Leave this as `nil` to use
     ///                         the default `TreeSitterClient` highlighter.
@@ -58,7 +60,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
     public init(
         _ text: NSTextStorage,
         language: CodeLanguage,
-        config: EditorConfig,
+        config: SourceEditorConfiguration,
         cursorPositions: Binding<[CursorPosition]>,
         highlightProviders: [any HighlightProviding]? = nil,
         undoManager: CEUndoManager? = nil,
@@ -75,7 +77,7 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
 
     package var text: TextAPI
     private var language: CodeLanguage
-    private var config: EditorConfig
+    private var config: SourceEditorConfiguration
     package var cursorPositions: Binding<[CursorPosition]>
     private var highlightProviders: [any HighlightProviding]?
     private var undoManager: CEUndoManager?
@@ -135,6 +137,9 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             return
         }
 
+        if controller.language != language {
+            controller.language = language
+        }
         controller.config = config
         updateHighlighting(controller, coordinator: context.coordinator)
 
@@ -162,38 +167,3 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
         == coordinator.highlightProviders.map { ObjectIdentifier($0) }
     }
 }
-
-// swiftlint:disable:next line_length
-@available(*, unavailable, renamed: "CodeEditSourceEditor", message: "CodeEditTextView has been renamed to CodeEditSourceEditor.")
-public struct CodeEditTextView: View {
-    public init(
-        _ text: Binding<String>,
-        language: CodeLanguage,
-        theme: EditorTheme,
-        font: NSFont,
-        tabWidth: Int,
-        indentOption: IndentOption = .spaces(count: 4),
-        lineHeight: Double,
-        wrapLines: Bool,
-        editorOverscroll: CGFloat = 0,
-        cursorPositions: Binding<[CursorPosition]>,
-        useThemeBackground: Bool = true,
-        highlightProvider: HighlightProviding? = nil,
-        contentInsets: NSEdgeInsets? = nil,
-        isEditable: Bool = true,
-        isSelectable: Bool = true,
-        letterSpacing: Double = 1.0,
-        bracketPairEmphasis: BracketPairEmphasis? = nil,
-        undoManager: CEUndoManager? = nil,
-        coordinators: [any TextViewCoordinator] = []
-    ) {
-
-    }
-
-    public var body: some View {
-        EmptyView()
-    }
-}
-
-// swiftlint:enable type_body_length
-// swiftlint:enable file_length
