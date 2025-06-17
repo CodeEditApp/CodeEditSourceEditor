@@ -13,7 +13,7 @@ extension TextViewController {
         // swiftlint:disable:next force_cast
         let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
         paragraph.tabStops.removeAll()
-        paragraph.defaultTabInterval = CGFloat(config.appearance.tabWidth) * fontCharWidth
+        paragraph.defaultTabInterval = CGFloat(tabWidth) * fontCharWidth
         return paragraph
     }
 
@@ -21,15 +21,16 @@ extension TextViewController {
     package func styleTextView() {
         textView.postsFrameChangedNotifications = true
         textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.selectionManager.selectionBackgroundColor = config.appearance.theme.selection
+        textView.selectionManager.selectionBackgroundColor = theme.selection
         textView.selectionManager.selectedLineBackgroundColor = getThemeBackground()
         textView.selectionManager.highlightSelectedLine = config.behavior.isEditable
-        textView.selectionManager.insertionPointColor = config.appearance.theme.insertionPoint
-        textView.enclosingScrollView?.backgroundColor = if config.appearance.useThemeBackground {
-            config.appearance.theme.background
+        textView.selectionManager.insertionPointColor = theme.insertionPoint
+        textView.enclosingScrollView?.backgroundColor = if useThemeBackground {
+            theme.background
         } else {
             .clear
         }
+        textView.overscrollAmount = editorOverscroll
         paragraphStyle = generateParagraphStyle()
         textView.typingAttributes = attributesFor(nil)
     }
@@ -37,8 +38,8 @@ extension TextViewController {
     /// Finds the preferred use theme background.
     /// - Returns: The background color to use.
     private func getThemeBackground() -> NSColor {
-        if config.appearance.useThemeBackground {
-            return config.appearance.theme.lineHighlight
+        if useThemeBackground {
+            return theme.lineHighlight
         }
 
         if systemAppearance == .darkAqua {
@@ -50,17 +51,17 @@ extension TextViewController {
 
     /// Style the gutter view.
     package func styleGutterView() {
-        gutterView.selectedLineColor = if config.appearance.useThemeBackground {
-            config.appearance.theme.lineHighlight
+        gutterView.selectedLineColor = if useThemeBackground {
+            theme.lineHighlight
         } else if systemAppearance == .darkAqua {
             NSColor.quaternaryLabelColor
         } else {
             NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
         }
         gutterView.highlightSelectedLines = config.behavior.isEditable
-        gutterView.font = config.appearance.font.rulerFont
-        gutterView.backgroundColor = if config.appearance.useThemeBackground {
-            config.appearance.theme.background
+        gutterView.font = font.rulerFont
+        gutterView.backgroundColor = if useThemeBackground {
+            theme.background
         } else {
             .windowBackgroundColor
         }
@@ -68,6 +69,7 @@ extension TextViewController {
             gutterView.selectedLineTextColor = nil
             gutterView.selectedLineColor = .clear
         }
+        gutterView.isHidden = !showGutter
     }
 
     /// Style the scroll view.
@@ -75,13 +77,18 @@ extension TextViewController {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.contentView.postsFrameChangedNotifications = true
         scrollView.hasVerticalScroller = true
-        scrollView.hasHorizontalScroller = !config.appearance.wrapLines
+        scrollView.hasHorizontalScroller = !wrapLines
         scrollView.scrollerStyle = .overlay
     }
 
     package func styleMinimapView() {
         minimapView.postsFrameChangedNotifications = true
-        minimapView.isHidden = !config.peripherals.showMinimap
+        minimapView.isHidden = !showMinimap
+    }
+
+    package func styleReformattingGuideView() {
+        reformattingGuideView.updatePosition(in: textView)
+        reformattingGuideView.isHidden = !showReformattingGuide
     }
 
     /// Updates all relevant content insets including the find panel, scroll view, minimap and gutter position.

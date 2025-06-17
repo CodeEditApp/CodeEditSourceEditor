@@ -44,38 +44,36 @@ class MockHighlightProvider: HighlightProviding {
 enum Mock {
     class Delegate: TextViewDelegate { }
 
+    static func config() -> EditorConfig {
+        EditorConfig(
+            appearance: .init(
+                theme: theme(),
+                font: .monospacedSystemFont(ofSize: 11, weight: .medium),
+                lineHeightMultiple: 1.0,
+                wrapLines: true,
+                tabWidth: 4
+            )
+        )
+    }
+
     static func textViewController(theme: EditorTheme) -> TextViewController {
         TextViewController(
             string: "",
             language: .html,
-            font: .monospacedSystemFont(ofSize: 11, weight: .medium),
-            theme: theme,
-            tabWidth: 4,
-            indentOption: .spaces(count: 4),
-            lineHeight: 1.0,
-            wrapLines: true,
+            config: config(),
             cursorPositions: [],
-            editorOverscroll: 0.5,
-            useThemeBackground: true,
-            highlightProviders: [TreeSitterClient()],
-            contentInsets: NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0),
-            isEditable: true,
-            isSelectable: true,
-            letterSpacing: 1.0,
-            useSystemCursor: false,
-            bracketPairEmphasis: .flash,
-            showMinimap: true
+            highlightProviders: [TreeSitterClient()]
         )
     }
 
     static func theme() -> EditorTheme {
         EditorTheme(
             text: EditorTheme.Attribute(color: .textColor),
-            insertionPoint: .textColor,
+            insertionPoint: .textColor.usingColorSpace(.deviceRGB) ?? .black,
             invisibles: EditorTheme.Attribute(color: .gray),
-            background: .textBackgroundColor,
-            lineHighlight: .highlightColor,
-            selection: .selectedTextColor,
+            background: .textBackgroundColor.usingColorSpace(.deviceRGB) ?? .black,
+            lineHighlight: .highlightColor.usingColorSpace(.deviceRGB) ?? .black,
+            selection: .selectedTextColor.usingColorSpace(.deviceRGB) ?? .black,
             keywords: EditorTheme.Attribute(color: .systemPink),
             commands: EditorTheme.Attribute(color: .systemBlue),
             types: EditorTheme.Attribute(color: .systemMint),

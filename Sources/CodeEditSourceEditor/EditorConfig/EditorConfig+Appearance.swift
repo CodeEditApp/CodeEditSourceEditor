@@ -19,7 +19,7 @@ extension EditorConfig {
         public var font: NSFont
 
         /// The line height multiplier (e.g. `1.2`).
-        public var lineHeight: Double
+        public var lineHeightMultiple: Double
 
         /// The amount of space to use between letters, as a percent. Eg: `1.0` = no space, `1.5` = 1/2 a
         /// character's width between characters, etc. Defaults to `1.0`.
@@ -42,7 +42,7 @@ extension EditorConfig {
             theme: EditorTheme,
             useThemeBackground: Bool = true,
             font: NSFont,
-            lineHeight: Double,
+            lineHeightMultiple: Double,
             letterSpacing: Double = 1.0,
             wrapLines: Bool,
             useSystemCursor: Bool = true,
@@ -52,7 +52,7 @@ extension EditorConfig {
             self.theme = theme
             self.useThemeBackground = useThemeBackground
             self.font = font
-            self.lineHeight = lineHeight
+            self.lineHeightMultiple = lineHeightMultiple
             self.letterSpacing = letterSpacing
             self.wrapLines = wrapLines
             if #available(macOS 14, *) {
@@ -62,6 +62,69 @@ extension EditorConfig {
             }
             self.tabWidth = tabWidth
             self.bracketPairEmphasis = bracketPairEmphasis
+        }
+
+        @MainActor
+        func didSetOnController(controller: TextViewController, oldConfig: Appearance) {
+            var needsHighlighterInvalidation = false
+
+            if oldConfig.font != font {
+                controller.textView.font = font
+                needsHighlighterInvalidation = true
+            }
+
+            if oldConfig.theme != theme {
+                controller.textView.layoutManager.setNeedsLayout()
+                controller.textView.textStorage.setAttributes(
+                    controller.attributesFor(nil),
+                    range: NSRange(location: 0, length: controller.textView.textStorage.length)
+                )
+                controller.textView.selectionManager.selectedLineBackgroundColor = theme.selection
+                controller.gutterView.textColor = theme.text.color.withAlphaComponent(0.35)
+                controller.gutterView.selectedLineTextColor = theme.text.color
+                controller.minimapView.setTheme(theme)
+                controller.reformattingGuideView?.theme = theme
+                needsHighlighterInvalidation = true
+            }
+
+            if oldConfig.tabWidth != tabWidth {
+                controller.paragraphStyle = controller.generateParagraphStyle()
+                controller.textView.layoutManager.setNeedsLayout()
+                needsHighlighterInvalidation = true
+            }
+
+            if oldConfig.lineHeightMultiple != lineHeightMultiple {
+                controller.textView.layoutManager.lineHeightMultiplier = lineHeightMultiple
+            }
+
+            if oldConfig.wrapLines != wrapLines {
+                controller.textView.layoutManager.wrapLines = wrapLines
+                controller.minimapView.layoutManager?.wrapLines = wrapLines
+                controller.scrollView.hasHorizontalScroller = !wrapLines
+                controller.updateTextInsets()
+            }
+
+            // useThemeBackground isn't needed
+
+            if oldConfig.letterSpacing != letterSpacing {
+                controller.textView.letterSpacing = letterSpacing
+                needsHighlighterInvalidation = true
+            }
+
+            if oldConfig.bracketPairEmphasis != bracketPairEmphasis {
+                controller.emphasizeSelectionPairs()
+            }
+
+            // Cant put these in one if sadly
+            if #available(macOS 14, *) {
+                if oldConfig.useSystemCursor != useSystemCursor {
+                    controller.textView.useSystemCursor = useSystemCursor
+                }
+            }
+
+            if needsHighlighterInvalidation {
+                controller.highlighter?.invalidate()
+            }
         }
     }
 }

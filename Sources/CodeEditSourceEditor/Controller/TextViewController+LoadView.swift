@@ -23,10 +23,8 @@ extension TextViewController {
         gutterView.updateWidthIfNeeded()
         scrollView.addFloatingSubview(gutterView, for: .horizontal)
 
-        guideView = ReformattingGuideView(config: config)
-        guideView.wantsLayer = true
-        scrollView.addFloatingSubview(guideView, for: .vertical)
-        guideView.updatePosition(in: textView)
+        reformattingGuideView = ReformattingGuideView(config: config)
+        scrollView.addFloatingSubview(reformattingGuideView, for: .vertical)
 
         minimapView = MinimapView(textView: textView, theme: config.appearance.theme)
         scrollView.addFloatingSubview(minimapView, for: .vertical)
@@ -130,7 +128,7 @@ extension TextViewController {
             - (self?.scrollView.contentInsets.top ?? 0)
 
             self?.gutterView.needsDisplay = true
-            self?.guideView?.updatePosition(in: textView)
+            self?.reformattingGuideView?.updatePosition(in: textView)
             self?.scrollView.needsLayout = true
         }
     }

@@ -18,18 +18,37 @@ extension EditorConfig {
         public var indentOption: IndentOption = .spaces(count: 4)
 
         /// The column to reformat at.
-        public var reformatAtColumn: Int
+        public var reformatAtColumn: Int = 80
 
         public init(
             isEditable: Bool = true,
             isSelectable: Bool = true,
             indentOption: IndentOption = .spaces(count: 4),
-            reformatAtColumn: Int
+            reformatAtColumn: Int = 80
         ) {
             self.isEditable = isEditable
             self.isSelectable = isSelectable
             self.indentOption = indentOption
             self.reformatAtColumn = reformatAtColumn
+        }
+
+        @MainActor
+        func didSetOnController(controller: TextViewController, oldConfig: Behavior) {
+            if oldConfig.isEditable != isEditable {
+                controller.textView.isEditable = isEditable
+            }
+
+            if oldConfig.isSelectable != isSelectable {
+                controller.textView.isSelectable = isSelectable
+            }
+
+            if oldConfig.indentOption != indentOption {
+                controller.setUpTextFormation()
+            }
+
+            if oldConfig.reformatAtColumn != reformatAtColumn {
+                controller.reformattingGuideView.column = reformatAtColumn
+            }
         }
     }
 }

@@ -9,34 +9,25 @@ import AppKit
 import CodeEditTextView
 
 class ReformattingGuideView: NSView {
-    private var column: Int
-    private var _isVisible: Bool
-    private var theme: EditorTheme
+    @Invalidating(.display)
+    var column: Int = 80
 
-    var isVisible: Bool {
-        get { _isVisible }
-        set {
-            _isVisible = newValue
-            isHidden = !newValue
-            needsDisplay = true
-        }
+    var theme: EditorTheme {
+        didSet { needsDisplay = true }
     }
 
     convenience init(config: borrowing EditorConfig) {
         self.init(
             column: config.behavior.reformatAtColumn,
-            isVisible: config.peripherals.showReformattingGuide,
             theme: config.appearance.theme
         )
     }
 
-    init(column: Int = 80, isVisible: Bool = false, theme: EditorTheme) {
+    init(column: Int = 80, theme: EditorTheme) {
         self.column = column
-        self._isVisible = isVisible
         self.theme = theme
         super.init(frame: .zero)
         wantsLayer = true
-        isHidden = !isVisible
     }
 
     required init?(coder: NSCoder) {
@@ -50,9 +41,6 @@ class ReformattingGuideView: NSView {
     // Draw the reformatting guide line and shaded area
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        guard isVisible else {
-            return
-        }
 
         // Determine if we should use light or dark colors based on the theme's background color
         let isLightMode = theme.background.brightnessComponent > 0.5
@@ -87,10 +75,6 @@ class ReformattingGuideView: NSView {
     }
 
     func updatePosition(in textView: TextView) {
-        guard isVisible else {
-            return
-        }
-
         // Calculate the x position based on the font's character width and column number
         let charWidth = textView.font.boundingRectForFont.width
         let xPosition = CGFloat(column) * charWidth / 2  // Divide by 2 to account for coordinate system
@@ -111,20 +95,6 @@ class ReformattingGuideView: NSView {
         ).pixelAligned
 
         frame = newFrame
-        needsDisplay = true
-    }
-
-    func setVisible(_ visible: Bool) {
-        isVisible = visible
-    }
-
-    func setColumn(_ newColumn: Int) {
-        column = newColumn
-        needsDisplay = true
-    }
-
-    func setTheme(_ newTheme: EditorTheme) {
-        theme = newTheme
         needsDisplay = true
     }
 }

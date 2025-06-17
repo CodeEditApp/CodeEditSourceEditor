@@ -135,88 +135,18 @@ public struct CodeEditSourceEditor: NSViewControllerRepresentable {
             return
         }
 
-        updateControllerParams(controller: controller, coordinator: context.coordinator)
+        controller.config = config
+        updateHighlighting(controller, coordinator: context.coordinator)
 
         controller.reloadUI()
         return
     }
 
-    /// Update the parameters of the controller.
-    /// - Parameter controller: The controller to update.
-    func updateControllerParams(controller: TextViewController, coordinator: Coordinator) {
-//        updateTextProperties(controller)
-//        updateEditorProperties(controller)
-//        updateThemeAndLanguage(controller)
-//        updateHighlighting(controller, coordinator: coordinator)
-//
-//        if controller.reformatAtColumn != reformatAtColumn {
-//            controller.reformatAtColumn = reformatAtColumn
-//        }
-//
-//        if controller.showReformattingGuide != showReformattingGuide {
-//            controller.showReformattingGuide = showReformattingGuide
-//        }
+    private func updateHighlighting(_ controller: TextViewController, coordinator: Coordinator) {
+        if !areHighlightProvidersEqual(controller: controller, coordinator: coordinator) {
+            controller.setHighlightProviders(coordinator.highlightProviders)
+        }
     }
-//
-//    private func updateTextProperties(_ controller: TextViewController) {
-//        if controller.font != font {
-//            controller.font = font
-//        }
-//
-//        if controller.isEditable != isEditable {
-//            controller.isEditable = isEditable
-//        }
-//
-//        if controller.isSelectable != isSelectable {
-//            controller.isSelectable = isSelectable
-//        }
-//    }
-//
-//    private func updateEditorProperties(_ controller: TextViewController) {
-//        controller.wrapLines = wrapLines
-//        controller.useThemeBackground = useThemeBackground
-//        controller.lineHeightMultiple = lineHeight
-//        controller.editorOverscroll = editorOverscroll
-//        controller.contentInsets = contentInsets
-//        controller.additionalTextInsets = additionalTextInsets
-//        controller.showMinimap = showMinimap
-//
-//        if controller.indentOption != indentOption {
-//            controller.indentOption = indentOption
-//        }
-//
-//        if controller.tabWidth != tabWidth {
-//            controller.tabWidth = tabWidth
-//        }
-//
-//        if controller.letterSpacing != letterSpacing {
-//            controller.letterSpacing = letterSpacing
-//        }
-//
-//        if controller.useSystemCursor != useSystemCursor {
-//            controller.useSystemCursor = useSystemCursor
-//        }
-//    }
-//
-//    private func updateThemeAndLanguage(_ controller: TextViewController) {
-//        if controller.language.id != language.id {
-//            controller.language = language
-//        }
-//
-//        if controller.theme != theme {
-//            controller.theme = theme
-//        }
-//    }
-//
-//    private func updateHighlighting(_ controller: TextViewController, coordinator: Coordinator) {
-//        if !areHighlightProvidersEqual(controller: controller, coordinator: coordinator) {
-//            controller.setHighlightProviders(coordinator.highlightProviders)
-//        }
-//
-//        if controller.bracketPairEmphasis != bracketPairEmphasis {
-//            controller.bracketPairEmphasis = bracketPairEmphasis
-//        }
-//    }
 
     /// Checks if the controller needs updating.
     /// - Parameter controller: The controller to check.
