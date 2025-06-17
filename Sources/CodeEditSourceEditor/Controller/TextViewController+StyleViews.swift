@@ -23,7 +23,7 @@ extension TextViewController {
         textView.translatesAutoresizingMaskIntoConstraints = false
         textView.selectionManager.selectionBackgroundColor = theme.selection
         textView.selectionManager.selectedLineBackgroundColor = getThemeBackground()
-        textView.selectionManager.highlightSelectedLine = config.behavior.isEditable
+        textView.selectionManager.highlightSelectedLine = configuration.behavior.isEditable
         textView.selectionManager.insertionPointColor = theme.insertionPoint
         textView.enclosingScrollView?.backgroundColor = if useThemeBackground {
             theme.background
@@ -58,14 +58,14 @@ extension TextViewController {
         } else {
             NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
         }
-        gutterView.highlightSelectedLines = config.behavior.isEditable
+        gutterView.highlightSelectedLines = configuration.behavior.isEditable
         gutterView.font = font.rulerFont
         gutterView.backgroundColor = if useThemeBackground {
             theme.background
         } else {
             .windowBackgroundColor
         }
-        if config.behavior.isEditable == false {
+        if configuration.behavior.isEditable == false {
             gutterView.selectedLineTextColor = nil
             gutterView.selectedLineColor = .clear
         }
@@ -96,7 +96,7 @@ extension TextViewController {
         updateTextInsets()
 
         scrollView.contentView.postsBoundsChangedNotifications = true
-        if let contentInsets = config.layout.contentInsets {
+        if let contentInsets = configuration.layout.contentInsets {
             scrollView.automaticallyAdjustsContentInsets = false
             scrollView.contentInsets = contentInsets
 
@@ -109,7 +109,7 @@ extension TextViewController {
         }
 
         // `additionalTextInsets` only effects text content.
-        let additionalTextInsets = config.layout.additionalTextInsets
+        let additionalTextInsets = configuration.layout.additionalTextInsets
         scrollView.contentInsets.top += additionalTextInsets?.top ?? 0
         scrollView.contentInsets.bottom += additionalTextInsets?.bottom ?? 0
         minimapView.scrollView.contentInsets.top += additionalTextInsets?.top ?? 0
@@ -124,7 +124,7 @@ extension TextViewController {
         scrollView.contentInsets.top += findInset
         minimapView.scrollView.contentInsets.top += findInset
 
-        findViewController?.topPadding = config.layout.contentInsets?.top
+        findViewController?.topPadding = configuration.layout.contentInsets?.top
 
         gutterView.frame.origin.y = textView.frame.origin.y - scrollView.contentInsets.top
 

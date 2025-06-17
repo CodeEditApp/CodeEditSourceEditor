@@ -38,9 +38,9 @@ extension TextViewController {
 
         setUpOpenPairFilters(pairs: BracketPairs.allValues)
         setUpTagFilter()
-        setUpNewlineTabFilters(indentOption: config.behavior.indentOption)
+        setUpNewlineTabFilters(indentOption: configuration.behavior.indentOption)
         setUpDeletePairFilters(pairs: BracketPairs.allValues)
-        setUpDeleteWhitespaceFilter(indentOption: config.behavior.indentOption)
+        setUpDeleteWhitespaceFilter(indentOption: configuration.behavior.indentOption)
     }
 
     /// Returns a `TextualIndenter` based on available language configuration.
@@ -95,7 +95,7 @@ extension TextViewController {
         guard let treeSitterClient, language.id.shouldProcessTags() else { return }
         textFilters.append(TagFilter(
             language: self.language,
-            indentOption: config.behavior.indentOption,
+            indentOption: configuration.behavior.indentOption,
             lineEnding: textView.layoutManager.detectedLineEnding,
             treeSitterClient: treeSitterClient
         ))
@@ -112,12 +112,12 @@ extension TextViewController {
             return true
         }
 
-        let indentationUnit = config.behavior.indentOption.stringValue
+        let indentationUnit = configuration.behavior.indentOption.stringValue
         let indenter: TextualIndenter = getTextIndenter()
         let whitespaceProvider = WhitespaceProviders(
             leadingWhitespace: indenter.substitionProvider(
                 indentationUnit: indentationUnit,
-                width: config.appearance.tabWidth
+                width: configuration.appearance.tabWidth
             ),
             trailingWhitespace: { _, _ in ""
             }

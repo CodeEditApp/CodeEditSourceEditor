@@ -51,7 +51,7 @@ final class TextViewControllerIndentTests: XCTestCase {
 
     func testHandleIndentWithTabsInwards() {
         controller.setText("\tThis is a test string")
-        controller.config.behavior .indentOption = .tab
+        controller.configuration.behavior .indentOption = .tab
         let cursorPositions = [CursorPosition(range: NSRange(location: 0, length: 0))]
         controller.textView.selectionManager.textSelections = [.init(range: NSRange(location: 0, length: 0))]
         controller.cursorPositions = cursorPositions
@@ -63,7 +63,7 @@ final class TextViewControllerIndentTests: XCTestCase {
 
     func testHandleIndentWithTabsOutwards() {
         controller.setText("This is a test string")
-        controller.config.behavior.indentOption = .tab
+        controller.configuration.behavior.indentOption = .tab
         let cursorPositions = [CursorPosition(range: NSRange(location: 0, length: 0))]
         controller.textView.selectionManager.textSelections = [.init(range: NSRange(location: 0, length: 0))]
         controller.cursorPositions = cursorPositions
@@ -76,7 +76,7 @@ final class TextViewControllerIndentTests: XCTestCase {
     }
 
     func testHandleIndentMultiLine() {
-        controller.config.behavior.indentOption = .tab
+        controller.configuration.behavior.indentOption = .tab
         let strings: [(NSString, Int)] = [
             ("This is a test string\n", 0),
             ("With multiple lines\n", 22),
@@ -99,7 +99,7 @@ final class TextViewControllerIndentTests: XCTestCase {
     }
 
     func testHandleInwardIndentMultiLine() {
-        controller.config.behavior.indentOption = .tab
+        controller.configuration.behavior.indentOption = .tab
         let strings: [(NSString, NSRange)] = [
             ("\tThis is a test string\n", NSRange(location: 0, length: 0)),
             ("\tWith multiple lines\n", NSRange(location: 23, length: 0)),

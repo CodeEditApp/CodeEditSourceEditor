@@ -97,7 +97,7 @@ extension TextViewController {
             lineCount: lineCount
         )
 
-        let charCount = config.behavior.indentOption.charCount
+        let charCount = configuration.behavior.indentOption.charCount
 
         selection.range.location += inwards ? -charCount * sectionModifier : charCount * sectionModifier
         if lineCount > 1 {
@@ -169,7 +169,7 @@ extension TextViewController {
     }
 
     private func adjustIndentation(lineIndexes: ClosedRange<Int>, inwards: Bool) {
-        let indentationChars: String = config.behavior.indentOption.stringValue
+        let indentationChars: String = configuration.behavior.indentOption.stringValue
         for lineIndex in lineIndexes {
             adjustIndentation(
                 lineIndex: lineIndex,
@@ -183,7 +183,7 @@ extension TextViewController {
         guard let lineInfo = textView.layoutManager.textLineForIndex(lineIndex) else { return }
 
         if inwards {
-            if config.behavior.indentOption != .tab {
+            if configuration.behavior.indentOption != .tab {
                 removeLeadingSpaces(lineInfo: lineInfo, spaceCount: indentationChars.count)
             } else {
                 removeLeadingTab(lineInfo: lineInfo)

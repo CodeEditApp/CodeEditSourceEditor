@@ -62,9 +62,9 @@ public class TextViewController: NSViewController {
 
     /// The configuration for the editor, when updated will automatically update the controller to reflect the new
     /// configuration.
-    public var config: SourceEditorConfiguration {
+    public var configuration: SourceEditorConfiguration {
         didSet {
-            config.didSetOnController(controller: self, oldConfig: oldValue)
+            configuration.didSetOnController(controller: self, oldConfig: oldValue)
         }
     }
 
@@ -77,68 +77,68 @@ public class TextViewController: NSViewController {
     // MARK: - Config Helpers
 
     /// The font to use in the `textView`
-    public var font: NSFont { config.appearance.font }
+    public var font: NSFont { configuration.appearance.font }
 
     /// The  ``EditorTheme`` used for highlighting.
-    public var theme: EditorTheme { config.appearance.theme }
+    public var theme: EditorTheme { configuration.appearance.theme }
 
     /// The visual width of tab characters in the text view measured in number of spaces.
-    public var tabWidth: Int { config.appearance.tabWidth }
+    public var tabWidth: Int { configuration.appearance.tabWidth }
 
     /// The behavior to use when the tab key is pressed.
-    public var indentOption: IndentOption { config.behavior.indentOption }
+    public var indentOption: IndentOption { configuration.behavior.indentOption }
 
     /// A multiplier for setting the line height. Defaults to `1.0`
-    public var lineHeightMultiple: CGFloat { config.appearance.lineHeightMultiple }
+    public var lineHeightMultiple: CGFloat { configuration.appearance.lineHeightMultiple }
 
     /// Whether lines wrap to the width of the editor
-    public var wrapLines: Bool { config.appearance.wrapLines }
+    public var wrapLines: Bool { configuration.appearance.wrapLines }
 
     /// The editorOverscroll to use for the textView over scroll
     ///
     /// Measured in a percentage of the view's total height, meaning a `0.3` value will result in overscroll
     /// of 1/3 of the view.
-    public var editorOverscroll: CGFloat { config.layout.editorOverscroll }
+    public var editorOverscroll: CGFloat { configuration.layout.editorOverscroll }
 
     /// Whether the code editor should use the theme background color or be transparent
-    public var useThemeBackground: Bool { config.appearance.useThemeBackground }
+    public var useThemeBackground: Bool { configuration.appearance.useThemeBackground }
 
     /// Optional insets to offset the text view and find panel in the scroll view by.
-    public var contentInsets: NSEdgeInsets? { config.layout.contentInsets }
+    public var contentInsets: NSEdgeInsets? { configuration.layout.contentInsets }
 
     /// An additional amount to inset text by. Horizontal values are ignored.
     ///
     /// This value does not affect decorations like the find panel, but affects things that are relative to text, such
     /// as line numbers and of course the text itself.
-    public var additionalTextInsets: NSEdgeInsets? { config.layout.additionalTextInsets }
+    public var additionalTextInsets: NSEdgeInsets? { configuration.layout.additionalTextInsets }
 
     /// Whether or not text view is editable by user
-    public var isEditable: Bool { config.behavior.isEditable }
+    public var isEditable: Bool { configuration.behavior.isEditable }
 
     /// Whether or not text view is selectable by user
-    public var isSelectable: Bool { config.behavior.isSelectable }
+    public var isSelectable: Bool { configuration.behavior.isSelectable }
 
     /// A multiplier that determines the amount of space between characters. `1.0` indicates no space,
     /// `2.0` indicates one character of space between other characters.
-    public var letterSpacing: Double { config.appearance.letterSpacing }
+    public var letterSpacing: Double { configuration.appearance.letterSpacing }
 
     /// The type of highlight to use when highlighting bracket pairs. Leave as `nil` to disable highlighting.
-    public var bracketPairEmphasis: BracketPairEmphasis? { config.appearance.bracketPairEmphasis }
+    public var bracketPairEmphasis: BracketPairEmphasis? { configuration.appearance.bracketPairEmphasis }
 
     /// The column at which to show the reformatting guide
-    public var reformatAtColumn: Int { config.behavior.reformatAtColumn }
+    public var reformatAtColumn: Int { configuration.behavior.reformatAtColumn }
 
     /// If true, uses the system cursor on macOS 14 or greater.
-    public var useSystemCursor: Bool { config.appearance.useSystemCursor }
+    public var useSystemCursor: Bool { configuration.appearance.useSystemCursor }
 
     /// Toggle the visibility of the gutter view in the editor.
-    public var showGutter: Bool { config.peripherals.showGutter }
+    public var showGutter: Bool { configuration.peripherals.showGutter }
 
     /// Toggle the visibility of the minimap view in the editor.
-    public var showMinimap: Bool { config.peripherals.showMinimap }
+    public var showMinimap: Bool { configuration.peripherals.showMinimap }
 
     /// Toggle the visibility of the reformatting guide in the editor.
-    public var showReformattingGuide: Bool { config.peripherals.showReformattingGuide }
+    public var showReformattingGuide: Bool { configuration.peripherals.showReformattingGuide }
 
     // MARK: - Internal Variables
 
@@ -184,7 +184,7 @@ public class TextViewController: NSViewController {
         coordinators: [TextViewCoordinator] = [],
     ) {
         self.language = language
-        self.config = config
+        self.configuration = config
         self.cursorPositions = cursorPositions
         self.highlightProviders = highlightProviders
         self._undoManager = undoManager

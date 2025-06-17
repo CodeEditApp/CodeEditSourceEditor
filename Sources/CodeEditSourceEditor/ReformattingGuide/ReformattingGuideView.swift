@@ -16,10 +16,10 @@ class ReformattingGuideView: NSView {
         didSet { needsDisplay = true }
     }
 
-    convenience init(config: borrowing SourceEditorConfiguration) {
+    convenience init(configuration: borrowing SourceEditorConfiguration) {
         self.init(
-            column: config.behavior.reformatAtColumn,
-            theme: config.appearance.theme
+            column: configuration.behavior.reformatAtColumn,
+            theme: configuration.appearance.theme
         )
     }
 

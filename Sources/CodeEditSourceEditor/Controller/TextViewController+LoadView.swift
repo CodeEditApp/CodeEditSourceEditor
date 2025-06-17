@@ -16,17 +16,17 @@ extension TextViewController {
         scrollView.documentView = textView
 
         gutterView = GutterView(
-            config: config,
+            configuration: configuration,
             textView: textView,
             delegate: self
         )
         gutterView.updateWidthIfNeeded()
         scrollView.addFloatingSubview(gutterView, for: .horizontal)
 
-        reformattingGuideView = ReformattingGuideView(config: config)
+        reformattingGuideView = ReformattingGuideView(configuration: configuration)
         scrollView.addFloatingSubview(reformattingGuideView, for: .vertical)
 
-        minimapView = MinimapView(textView: textView, theme: config.appearance.theme)
+        minimapView = MinimapView(textView: textView, theme: configuration.appearance.theme)
         scrollView.addFloatingSubview(minimapView, for: .vertical)
 
         let findViewController = FindViewController(target: self, childView: scrollView)
@@ -63,7 +63,7 @@ extension TextViewController {
         setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
         updateContentInsets()
 
-        config.didSetOnController(controller: self, oldConfig: nil)
+        configuration.didSetOnController(controller: self, oldConfig: nil)
     }
 
     func setUpConstraints() {

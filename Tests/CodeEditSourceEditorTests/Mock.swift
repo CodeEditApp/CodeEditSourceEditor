@@ -44,8 +44,8 @@ class MockHighlightProvider: HighlightProviding {
 enum Mock {
     class Delegate: TextViewDelegate { }
 
-    static func config() -> EditorConfig {
-        EditorConfig(
+    static func config() -> SourceEditorConfiguration {
+        SourceEditorConfiguration(
             appearance: .init(
                 theme: theme(),
                 font: .monospacedSystemFont(ofSize: 11, weight: .medium),

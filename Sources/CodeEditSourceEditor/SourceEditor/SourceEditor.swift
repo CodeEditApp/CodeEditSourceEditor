@@ -21,8 +21,8 @@ public struct SourceEditor: NSViewControllerRepresentable {
     /// - Parameters:
     ///   - text: The text content
     ///   - language: The language for syntax highlighting
-    ///   - config: A configuration object, determining appearance, layout, behaviors  and more.
-    ///             See ``SourceEditorConfiguration``.
+    ///   - configuration: A configuration object, determining appearance, layout, behaviors  and more.
+    ///                    See ``SourceEditorConfiguration``.
     ///   - cursorPositions: The cursor's position in the editor, measured in `(lineNum, columnNum)`
     ///   - highlightProviders: A set of classes you provide to perform syntax highlighting. Leave this as `nil` to use
     ///                         the default `TreeSitterClient` highlighter.
@@ -31,7 +31,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
     public init(
         _ text: Binding<String>,
         language: CodeLanguage,
-        config: SourceEditorConfiguration,
+        configuration: SourceEditorConfiguration,
         cursorPositions: Binding<[CursorPosition]>,
         highlightProviders: [any HighlightProviding]? = nil,
         undoManager: CEUndoManager? = nil,
@@ -39,7 +39,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
     ) {
         self.text = .binding(text)
         self.language = language
-        self.config = config
+        self.configuration = configuration
         self.cursorPositions = cursorPositions
         self.highlightProviders = highlightProviders
         self.undoManager = undoManager
@@ -50,8 +50,8 @@ public struct SourceEditor: NSViewControllerRepresentable {
     /// - Parameters:
     ///   - text: The text content
     ///   - language: The language for syntax highlighting
-    ///   - config: A configuration object, determining appearance, layout, behaviors  and more.
-    ///             See ``SourceEditorConfiguration``.
+    ///   - configuration: A configuration object, determining appearance, layout, behaviors  and more.
+    ///                    See ``SourceEditorConfiguration``.
     ///   - cursorPositions: The cursor's position in the editor, measured in `(lineNum, columnNum)`
     ///   - highlightProviders: A set of classes you provide to perform syntax highlighting. Leave this as `nil` to use
     ///                         the default `TreeSitterClient` highlighter.
@@ -60,7 +60,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
     public init(
         _ text: NSTextStorage,
         language: CodeLanguage,
-        config: SourceEditorConfiguration,
+        configuration: SourceEditorConfiguration,
         cursorPositions: Binding<[CursorPosition]>,
         highlightProviders: [any HighlightProviding]? = nil,
         undoManager: CEUndoManager? = nil,
@@ -68,7 +68,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
     ) {
         self.text = .storage(text)
         self.language = language
-        self.config = config
+        self.configuration = configuration
         self.cursorPositions = cursorPositions
         self.highlightProviders = highlightProviders
         self.undoManager = undoManager
@@ -77,7 +77,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
 
     package var text: TextAPI
     private var language: CodeLanguage
-    private var config: SourceEditorConfiguration
+    private var configuration: SourceEditorConfiguration
     package var cursorPositions: Binding<[CursorPosition]>
     private var highlightProviders: [any HighlightProviding]?
     private var undoManager: CEUndoManager?
@@ -89,7 +89,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         let controller = TextViewController(
             string: "",
             language: language,
-            config: config,
+            config: configuration,
             cursorPositions: cursorPositions.wrappedValue,
             highlightProviders: context.coordinator.highlightProviders,
             undoManager: undoManager,
@@ -140,7 +140,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         if controller.language != language {
             controller.language = language
         }
-        controller.config = config
+        controller.configuration = configuration
         updateHighlighting(controller, coordinator: context.coordinator)
 
         controller.reloadUI()
@@ -158,7 +158,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
     /// - Returns: True, if the controller's parameters should be updated.
     func paramsAreEqual(controller: NSViewControllerType, coordinator: Coordinator) -> Bool {
         controller.language.id == language.id &&
-        controller.config == config &&
+        controller.configuration == configuration &&
         areHighlightProvidersEqual(controller: controller, coordinator: coordinator)
     }
 

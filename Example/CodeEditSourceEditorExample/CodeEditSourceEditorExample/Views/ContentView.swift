@@ -36,6 +36,10 @@ struct ContentView: View {
 
     @State private var treeSitterClient = TreeSitterClient()
 
+    private func contentInsets(proxy: GeometryProxy) -> NSEdgeInsets {
+        NSEdgeInsets(top: proxy.safeAreaInsets.top, left: showGutter ? 0 : 1, bottom: 28.0, right: 0)
+    }
+
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
         self._document = document
         self.fileURL = fileURL
@@ -46,20 +50,13 @@ struct ContentView: View {
             SourceEditor(
                 document.text,
                 language: language,
-                config: SourceEditorConfiguration(
+                configuration: SourceEditorConfiguration(
                     appearance: .init(theme: theme, font: font, wrapLines: wrapLines),
                     behavior: .init(
                         indentOption: indentOption,
                         reformatAtColumn: reformatAtColumn
                     ),
-                    layout: .init(
-                        contentInsets: NSEdgeInsets(
-                            top: proxy.safeAreaInsets.top,
-                            left: showGutter ? 0 : 1,
-                            bottom: 28.0,
-                            right: 0
-                        )
-                    ),
+                    layout: .init(contentInsets: contentInsets(proxy: proxy)),
                     peripherals: .init(
                         showGutter: showGutter,
                         showMinimap: showMinimap,
@@ -68,27 +65,6 @@ struct ContentView: View {
                 ),
                 cursorPositions: $cursorPositions
             )
-//            SourceEditor(
-//                document.text,
-//                language: language,
-//                font: font,
-//                theme: theme,
-//                font: font,
-//                tabWidth: 4,
-//                indentOption: indentOption,
-//                lineHeight: 1.2,
-//                wrapLines: wrapLines,
-//                editorOverscroll: 0.3,
-//                cursorPositions: $cursorPositions,
-//                useThemeBackground: true,
-//                highlightProviders: [treeSitterClient],
-//                contentInsets: NSEdgeInsets(top: proxy.safeAreaInsets.top, left: 0, bottom: 28.0, right: 0),
-//                additionalTextInsets: NSEdgeInsets(top: 1, left: 0, bottom: 1, right: 0),
-//                useSystemCursor: useSystemCursor,
-//                showMinimap: showMinimap,
-//                reformatAtColumn: reformatAtColumn,
-//                showReformattingGuide: showReformattingGuide
-//            )
             .overlay(alignment: .bottom) {
                 StatusBar(
                     fileURL: fileURL,
