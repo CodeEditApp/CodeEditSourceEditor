@@ -42,7 +42,6 @@ This package is fully documented [here](https://codeeditapp.github.io/CodeEditSo
 import CodeEditSourceEditor
 
 struct ContentView: View {
-
     @State var text = "let x = 1.0"
     
     /// Automatically updates with cursor positions, or update the binding to set the user's cursors.
