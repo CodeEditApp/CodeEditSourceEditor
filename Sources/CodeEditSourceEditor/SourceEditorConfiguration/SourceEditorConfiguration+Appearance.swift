@@ -8,6 +8,7 @@
 import AppKit
 
 extension SourceEditorConfiguration {
+    /// Configure the appearance of the editor. Font, theme, line height, etc.
     public struct Appearance: Equatable {
         /// The theme for syntax highlighting.
         public var theme: EditorTheme
@@ -38,6 +39,20 @@ extension SourceEditorConfiguration {
         /// See ``BracketPairEmphasis`` for more information. Defaults to `.flash`.
         public var bracketPairEmphasis: BracketPairEmphasis? = .flash
 
+        /// Create a new appearance configuration object.
+        /// - Parameters:
+        ///   - theme: The theme for syntax highlighting.
+        ///   - useThemeBackground: Determines whether the editor uses the theme's background color, or a transparent
+        ///                         background color.
+        ///   - font: The default font.
+        ///   - lineHeightMultiple: The line height multiplier (e.g. `1.2`).
+        ///   - letterSpacing: The amount of space to use between letters, as a percent. Eg: `1.0` = no space, `1.5`
+        ///                    = 1/2 of a character's width between characters, etc. Defaults to `1.0`.
+        ///   - wrapLines: Whether lines wrap to the width of the editor.
+        ///   - useSystemCursor: If true, uses the system cursor on `>=macOS 14`.
+        ///   - tabWidth: The visual tab width in number of spaces.
+        ///   - bracketPairEmphasis: The type of highlight to use to highlight bracket pairs. See
+        ///                          ``BracketPairEmphasis`` for more information. Defaults to `.flash`.
         public init(
             theme: EditorTheme,
             useThemeBackground: Bool = true,

@@ -174,7 +174,7 @@ public class TextViewController: NSViewController {
 
     // MARK: Init
 
-    init(
+    public init(
         string: String,
         language: CodeLanguage,
         config: SourceEditorConfiguration,
