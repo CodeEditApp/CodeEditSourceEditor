@@ -74,13 +74,15 @@ class ReformattingGuideView: NSView {
         shadedRect.fill()
     }
 
-    func updatePosition(in textView: TextView) {
+    func updatePosition(in controller: TextViewController) {
         // Calculate the x position based on the font's character width and column number
-        let charWidth = textView.font.boundingRectForFont.width
-        let xPosition = CGFloat(column) * charWidth / 2  // Divide by 2 to account for coordinate system
+        let xPosition = (
+            CGFloat(column) * (controller.fontCharWidth / 2) // Divide by 2 to account for coordinate system
+            + (controller.textViewInsets.left / 2)
+        )
 
         // Get the scroll view's content size
-        guard let scrollView = textView.enclosingScrollView else { return }
+        guard let scrollView = controller.scrollView else { return }
         let contentSize = scrollView.documentVisibleRect.size
 
         // Ensure we don't create an invalid frame
@@ -90,7 +92,7 @@ class ReformattingGuideView: NSView {
         let newFrame = NSRect(
             x: xPosition,
             y: 0,  // Start above the visible area
-            width: maxWidth + 1000,
+            width: maxWidth,
             height: contentSize.height  // Use extended height
         ).pixelAligned
 

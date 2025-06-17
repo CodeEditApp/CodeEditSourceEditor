@@ -42,7 +42,7 @@ extension SourceEditorConfiguration {
 
             if oldConfig?.showReformattingGuide != showReformattingGuide {
                 controller.reformattingGuideView.isHidden = !showReformattingGuide
-                controller.reformattingGuideView.updatePosition(in: controller.textView)
+                controller.reformattingGuideView.updatePosition(in: controller)
             }
 
             if shouldUpdateInsets && controller.scrollView != nil { // Check for view existence

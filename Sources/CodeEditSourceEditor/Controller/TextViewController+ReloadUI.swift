@@ -22,7 +22,7 @@ extension TextViewController {
 
         // Update reformatting guide position
         if let guideView = textView.subviews.first(where: { $0 is ReformattingGuideView }) as? ReformattingGuideView {
-            guideView.updatePosition(in: textView)
+            guideView.updatePosition(in: self)
         }
     }
 }

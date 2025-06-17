@@ -87,7 +87,7 @@ extension TextViewController {
     }
 
     package func styleReformattingGuideView() {
-        reformattingGuideView.updatePosition(in: textView)
+        reformattingGuideView.updatePosition(in: self)
         reformattingGuideView.isHidden = !showReformattingGuide
     }
 

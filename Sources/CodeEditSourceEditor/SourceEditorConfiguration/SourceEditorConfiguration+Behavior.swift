@@ -48,7 +48,8 @@ extension SourceEditorConfiguration {
 
             if oldConfig?.reformatAtColumn != reformatAtColumn {
                 controller.reformattingGuideView.column = reformatAtColumn
-                controller.reformattingGuideView.updatePosition(in: controller.textView)
+                controller.reformattingGuideView.updatePosition(in: controller)
+                controller.view.updateConstraintsForSubtreeIfNeeded()
             }
         }
     }

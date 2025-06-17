@@ -48,7 +48,10 @@ struct ContentView: View {
                 language: language,
                 config: SourceEditorConfiguration(
                     appearance: .init(theme: theme, font: font, wrapLines: wrapLines),
-                    behavior: .init(indentOption: indentOption),
+                    behavior: .init(
+                        indentOption: indentOption,
+                        reformatAtColumn: reformatAtColumn
+                    ),
                     layout: .init(
                         contentInsets: NSEdgeInsets(
                             top: proxy.safeAreaInsets.top,

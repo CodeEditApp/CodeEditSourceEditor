@@ -124,14 +124,12 @@ extension TextViewController {
             object: textView,
             queue: .main
         ) { [weak self] _ in
-            guard let textView = self?.textView else { return }
-            self?.gutterView.frame.size.height = (self?.textView.frame.height ?? 0) + 10
-            self?.gutterView.frame.origin.y = (self?.textView.frame.origin.y ?? 0.0)
-            - (self?.scrollView.contentInsets.top ?? 0)
-
-            self?.gutterView.needsDisplay = true
-            self?.reformattingGuideView?.updatePosition(in: textView)
-            self?.scrollView.needsLayout = true
+            guard let self else { return }
+            self.gutterView.frame.size.height = self.textView.frame.height + 10
+            self.gutterView.frame.origin.y = self.textView.frame.origin.y - self.scrollView.contentInsets.top
+            self.gutterView.needsDisplay = true
+            self.reformattingGuideView?.updatePosition(in: self)
+            self.scrollView.needsLayout = true
         }
     }
 
