@@ -63,7 +63,8 @@ enum Mock {
             isSelectable: true,
             letterSpacing: 1.0,
             useSystemCursor: false,
-            bracketPairHighlight: .flash
+            bracketPairEmphasis: .flash,
+            showMinimap: true
         )
     }
 
@@ -128,6 +129,7 @@ enum Mock {
     ) -> Highlighter {
         Highlighter(
             textView: textView,
+            minimapView: nil,
             providers: highlightProviders,
             attributeProvider: attributeProvider,
             language: language

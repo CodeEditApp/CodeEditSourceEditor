@@ -11,16 +11,25 @@ import CodeEditLanguages
 import CodeEditTextView
 
 struct ContentView: View {
+    @Environment(\.colorScheme)
+    var colorScheme
+
     @Binding var document: CodeEditSourceEditorExampleDocument
     let fileURL: URL?
 
     @State private var language: CodeLanguage = .default
-    @State private var theme: EditorTheme = .standard
-    @State private var font: NSFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+    @State private var theme: EditorTheme = .light
+    @State private var font: NSFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .medium)
     @AppStorage("wrapLines") private var wrapLines: Bool = true
-    @State private var cursorPositions: [CursorPosition] = []
+    @State private var cursorPositions: [CursorPosition] = [.init(line: 1, column: 1)]
     @AppStorage("systemCursor") private var useSystemCursor: Bool = false
     @State private var isInLongParse = false
+    @State private var settingsIsPresented: Bool = false
+    @State private var treeSitterClient = TreeSitterClient()
+    @AppStorage("showMinimap") private var showMinimap: Bool = true
+    @State private var indentOption: IndentOption = .spaces(count: 4)
+    @AppStorage("reformatAtColumn") private var reformatAtColumn: Int = 80
+    @AppStorage("showReformattingGuide") private var showReformattingGuide: Bool = false
 
     init(document: Binding<CodeEditSourceEditorExampleDocument>, fileURL: URL?) {
         self._document = document
@@ -28,93 +37,63 @@ struct ContentView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("Language")
-                LanguagePicker(language: $language)
-                    .frame(maxWidth: 100)
-                Toggle("Wrap Lines", isOn: $wrapLines)
-                if #available(macOS 14, *) {
-                    Toggle("Use System Cursor", isOn: $useSystemCursor)
-                } else {
-                    Toggle("Use System Cursor", isOn: $useSystemCursor)
-                        .disabled(true)
-                        .help("macOS 14 required")
-                }
-                Spacer()
-                Text(getLabel(cursorPositions))
-            }
-            .padding(4)
-            .zIndex(2)
-            .background(Color(NSColor.windowBackgroundColor))
-            Divider()
-            ZStack {
-                if isInLongParse {
-                    VStack {
-                        HStack {
-                            Spacer()
-                            Text("Parsing document...")
-                            Spacer()
-                        }
-                        .padding(4)
-                        .background(Color(NSColor.windowBackgroundColor))
-                        Spacer()
-                    }
-                    .zIndex(2)
-                    .transition(.opacity)
-                }
-                CodeEditSourceEditor(
-                    $document.text,
-                    language: language,
-                    theme: theme,
-                    font: font,
-                    tabWidth: 4,
-                    lineHeight: 1.2,
-                    wrapLines: wrapLines,
+        GeometryReader { proxy in
+            CodeEditSourceEditor(
+                document.text,
+                language: language,
+                theme: theme,
+                font: font,
+                tabWidth: 4,
+                indentOption: indentOption,
+                lineHeight: 1.2,
+                wrapLines: wrapLines,
+                editorOverscroll: 0.3,
+                cursorPositions: $cursorPositions,
+                useThemeBackground: true,
+                highlightProviders: [treeSitterClient],
+                contentInsets: NSEdgeInsets(top: proxy.safeAreaInsets.top, left: 0, bottom: 28.0, right: 0),
+                additionalTextInsets: NSEdgeInsets(top: 1, left: 0, bottom: 1, right: 0),
+                useSystemCursor: useSystemCursor,
+                showMinimap: showMinimap,
+                reformatAtColumn: reformatAtColumn,
+                showReformattingGuide: showReformattingGuide
+            )
+            .overlay(alignment: .bottom) {
+                StatusBar(
+                    fileURL: fileURL,
+                    document: $document,
+                    wrapLines: $wrapLines,
+                    useSystemCursor: $useSystemCursor,
                     cursorPositions: $cursorPositions,
-                    useSystemCursor: useSystemCursor
+                    isInLongParse: $isInLongParse,
+                    language: $language,
+                    theme: $theme,
+                    showMinimap: $showMinimap,
+                    indentOption: $indentOption,
+                    reformatAtColumn: $reformatAtColumn,
+                    showReformattingGuide: $showReformattingGuide
                 )
             }
-        }
-        .onAppear {
-            self.language = detectLanguage(fileURL: fileURL) ?? .default
-        }
-        .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParse)) { _ in
-            withAnimation(.easeIn(duration: 0.1)) {
-                isInLongParse = true
+            .ignoresSafeArea()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParse)) { _ in
+                withAnimation(.easeIn(duration: 0.1)) {
+                    isInLongParse = true
+                }
+            }
+            .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParseFinished)) { _ in
+                withAnimation(.easeIn(duration: 0.1)) {
+                    isInLongParse = false
+                }
+            }
+            .onChange(of: colorScheme) { _, newValue in
+                if newValue == .dark {
+                    theme = .dark
+                } else {
+                    theme = .light
+                }
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: TreeSitterClient.Constants.longParseFinished)) { _ in
-            withAnimation(.easeIn(duration: 0.1)) {
-                isInLongParse = false
-            }
-        }
-    }
-
-    private func detectLanguage(fileURL: URL?) -> CodeLanguage? {
-        guard let fileURL else { return nil  }
-        return CodeLanguage.detectLanguageFrom(
-            url: fileURL,
-            prefixBuffer: document.text.getFirstLines(5),
-            suffixBuffer: document.text.getLastLines(5)
-        )
-    }
-
-    /// Create a label string for cursor positions.
-    /// - Parameter cursorPositions: The cursor positions to create the label for.
-    /// - Returns: A string describing the user's location in a document.
-    func getLabel(_ cursorPositions: [CursorPosition]) -> String {
-        if cursorPositions.isEmpty {
-            return ""
-        }
-
-        // More than one selection, display the number of selections.
-        if cursorPositions.count > 1 {
-            return "\(cursorPositions.count) selected ranges"
-        }
-
-        // When there's a single cursor, display the line and column.
-        return "Line: \(cursorPositions[0].line)  Col: \(cursorPositions[0].column) Range: \(cursorPositions[0].range)"
     }
 }
 

@@ -45,7 +45,11 @@ public class GutterView: NSView {
     var textColor: NSColor = .secondaryLabelColor
 
     @Invalidating(.display)
-    var font: NSFont = .systemFont(ofSize: 13)
+    var font: NSFont = .systemFont(ofSize: 13) {
+        didSet {
+            updateFontLineHeight()
+        }
+    }
 
     @Invalidating(.display)
     var edgeInsets: EdgeInsets = EdgeInsets(leading: 20, trailing: 12)
@@ -60,7 +64,7 @@ public class GutterView: NSView {
     var highlightSelectedLines: Bool = true
 
     @Invalidating(.display)
-    var selectedLineTextColor: NSColor? = .textColor
+    var selectedLineTextColor: NSColor? = .labelColor
 
     @Invalidating(.display)
     var selectedLineColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
@@ -74,6 +78,19 @@ public class GutterView: NSView {
     /// The maximum number of digits found for a line number.
     private var maxLineLength: Int = 0
 
+    private var fontLineHeight = 1.0
+
+    private func updateFontLineHeight() {
+        let string = NSAttributedString(string: "0", attributes: [.font: font])
+        let typesetter = CTTypesetterCreateWithAttributedString(string)
+        let ctLine = CTTypesetterCreateLine(typesetter, CFRangeMake(0, 1))
+        var ascent: CGFloat = 0
+        var descent: CGFloat = 0
+        var leading: CGFloat = 0
+        CTLineGetTypographicBounds(ctLine, &ascent, &descent, &leading)
+        fontLineHeight = (ascent + descent + leading)
+    }
+
     override public var isFlipped: Bool {
         true
     }
@@ -81,11 +98,13 @@ public class GutterView: NSView {
     public init(
         font: NSFont,
         textColor: NSColor,
+        selectedTextColor: NSColor?,
         textView: TextView,
         delegate: GutterViewDelegate? = nil
     ) {
         self.font = font
         self.textColor = textColor
+        self.selectedLineTextColor = selectedTextColor ?? .secondaryLabelColor
         self.textView = textView
         self.delegate = delegate
 
@@ -179,7 +198,7 @@ public class GutterView: NSView {
                     y: line.yPos,
                     width: width,
                     height: line.height
-                )
+                ).pixelAligned
             )
         }
 
@@ -201,15 +220,6 @@ public class GutterView: NSView {
 
         context.saveGState()
 
-        context.setAllowsAntialiasing(true)
-        context.setShouldAntialias(true)
-        context.setAllowsFontSmoothing(false)
-        context.setAllowsFontSubpixelPositioning(true)
-        context.setShouldSubpixelPositionFonts(true)
-        context.setAllowsFontSubpixelQuantization(true)
-        context.setShouldSubpixelQuantizeFonts(true)
-        ContextSetHiddenSmoothingStyle(context, 16)
-
         context.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
         for linePosition in textView.layoutManager.visibleLines() {
             if selectionRangeMap.intersects(integersIn: linePosition.range) {
@@ -224,12 +234,16 @@ public class GutterView: NSView {
             let fragment: LineFragment? = linePosition.data.lineFragments.first?.data
             var ascent: CGFloat = 0
             let lineNumberWidth = CTLineGetTypographicBounds(ctLine, &ascent, nil, nil)
+            let fontHeightDifference = ((fragment?.height ?? 0) - fontLineHeight) / 4
 
-            let yPos = linePosition.yPos + ascent + (fragment?.heightDifference ?? 0)/2
+            let yPos = linePosition.yPos + ascent + (fragment?.heightDifference ?? 0)/2 + fontHeightDifference
             // Leading padding + (width - linewidth)
             let xPos = edgeInsets.leading + (maxWidth - lineNumberWidth)
 
-            context.textPosition = CGPoint(x: xPos, y: yPos).pixelAligned
+            ContextSetHiddenSmoothingStyle(context, 16)
+
+            context.textPosition = CGPoint(x: xPos, y: yPos)
+
             CTLineDraw(ctLine, context)
         }
         context.restoreGState()

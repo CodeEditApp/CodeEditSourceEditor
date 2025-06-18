@@ -16,20 +16,24 @@ import TextFormation
 ///
 /// A view controller class for managing a source editor. Uses ``CodeEditTextView/TextView`` for input and rendering,
 /// tree-sitter for syntax highlighting, and TextFormation for live editing completions.
-public class TextViewController: NSViewController {
+public class TextViewController: NSViewController { // swiftlint:disable:this type_body_length
     // swiftlint:disable:next line_length
     public static let cursorPositionUpdatedNotification: Notification.Name = .init("TextViewController.cursorPositionNotification")
 
-    var scrollView: NSScrollView!
-    private(set) public var textView: TextView!
-    var gutterView: GutterView!
-    internal var _undoManager: CEUndoManager?
-    /// Internal reference to any injected layers in the text view.
-    internal var highlightLayers: [CALayer] = []
-    internal var systemAppearance: NSAppearance.Name?
+    weak var findViewController: FindViewController?
 
-    package var localEventMonitor: Any?
-    package var isPostingCursorNotification: Bool = false
+    var scrollView: NSScrollView!
+    var textView: TextView!
+    var gutterView: GutterView!
+    var minimapView: MinimapView!
+
+    var minimapXConstraint: NSLayoutConstraint?
+
+    var _undoManager: CEUndoManager!
+    var systemAppearance: NSAppearance.Name?
+
+    var localEvenMonitor: Any?
+    var isPostingCursorNotification: Bool = false
 
     /// The string contents.
     public var string: String {
@@ -62,6 +66,10 @@ public class TextViewController: NSViewController {
             )
             textView.selectionManager.selectedLineBackgroundColor = theme.selection
             highlighter?.invalidate()
+            gutterView.textColor = theme.text.color.withAlphaComponent(0.35)
+            gutterView.selectedLineTextColor = theme.text.color
+            minimapView.setTheme(theme)
+            guideView?.setTheme(theme)
         }
     }
 
@@ -92,8 +100,9 @@ public class TextViewController: NSViewController {
     public var wrapLines: Bool {
         didSet {
             textView.layoutManager.wrapLines = wrapLines
+            minimapView.layoutManager?.wrapLines = wrapLines
             scrollView.hasHorizontalScroller = !wrapLines
-            textView.textInsets = textViewInsets
+            updateTextInsets()
         }
     }
 
@@ -116,8 +125,22 @@ public class TextViewController: NSViewController {
     /// The provided highlight provider.
     public var highlightProviders: [HighlightProviding]
 
-    /// Optional insets to offset the text view in the scroll view by.
-    public var contentInsets: NSEdgeInsets?
+    /// Optional insets to offset the text view and find panel in the scroll view by.
+    public var contentInsets: NSEdgeInsets? {
+        didSet {
+            updateContentInsets()
+        }
+    }
+
+    /// An additional amount to inset text by. Horizontal values are ignored.
+    ///
+    /// This value does not affect decorations like the find panel, but affects things that are relative to text, such
+    /// as line numbers and of course the text itself.
+    public var additionalTextInsets: NSEdgeInsets? {
+        didSet {
+            styleScrollView()
+        }
+    }
 
     /// Whether or not text view is editable by user
     public var isEditable: Bool {
@@ -143,9 +166,9 @@ public class TextViewController: NSViewController {
     }
 
     /// The type of highlight to use when highlighting bracket pairs. Leave as `nil` to disable highlighting.
-    public var bracketPairHighlight: BracketPairHighlight? {
+    public var bracketPairEmphasis: BracketPairEmphasis? {
         didSet {
-            highlightSelectionPairs()
+            emphasizeSelectionPairs()
         }
     }
 
@@ -171,6 +194,16 @@ public class TextViewController: NSViewController {
         }
     }
 
+    public var showMinimap: Bool {
+        didSet {
+            minimapView?.isHidden = !showMinimap
+            if scrollView != nil { // Check for view existence
+                updateContentInsets()
+                updateTextInsets()
+            }
+        }
+    }
+
     var textCoordinators: [WeakCoordinator] = []
 
     var highlighter: Highlighter?
@@ -187,11 +220,11 @@ public class TextViewController: NSViewController {
 
     internal var cancellables = Set<AnyCancellable>()
 
-    /// The trailing inset for the editor. Grows when line wrapping is disabled.
+    /// The trailing inset for the editor. Grows when line wrapping is disabled or when the minimap is shown.
     package var textViewTrailingInset: CGFloat {
         // See https://github.com/CodeEditApp/CodeEditTextView/issues/66
         // wrapLines ? 1 : 48
-        0
+        (minimapView?.isHidden ?? false) ? 0 : (minimapView?.frame.width ?? 0.0)
     }
 
     package var textViewInsets: HorizontalEdgeInsets {
@@ -199,6 +232,37 @@ public class TextViewController: NSViewController {
             left: gutterView.gutterWidth,
             right: textViewTrailingInset
         )
+    }
+
+    /// The column at which to show the reformatting guide
+    public var reformatAtColumn: Int = 80 {
+        didSet {
+            if let guideView = self.guideView {
+                guideView.setColumn(reformatAtColumn)
+                guideView.updatePosition(in: textView)
+                guideView.needsDisplay = true
+            }
+        }
+    }
+
+    /// Whether to show the reformatting guide
+    public var showReformattingGuide: Bool = false {
+        didSet {
+            if let guideView = self.guideView {
+                guideView.setVisible(showReformattingGuide)
+                guideView.updatePosition(in: textView)
+                guideView.needsDisplay = true
+            }
+        }
+    }
+
+    /// The reformatting guide view
+    var guideView: ReformattingGuideView! {
+        didSet {
+            if let oldValue = oldValue {
+                oldValue.removeFromSuperview()
+            }
+        }
     }
 
     // MARK: Init
@@ -217,13 +281,17 @@ public class TextViewController: NSViewController {
         useThemeBackground: Bool,
         highlightProviders: [HighlightProviding] = [TreeSitterClient()],
         contentInsets: NSEdgeInsets?,
+        additionalTextInsets: NSEdgeInsets? = nil,
         isEditable: Bool,
         isSelectable: Bool,
         letterSpacing: Double,
         useSystemCursor: Bool,
-        bracketPairHighlight: BracketPairHighlight?,
+        bracketPairEmphasis: BracketPairEmphasis?,
         undoManager: CEUndoManager? = nil,
-        coordinators: [TextViewCoordinator] = []
+        coordinators: [TextViewCoordinator] = [],
+        showMinimap: Bool,
+        reformatAtColumn: Int = 80,
+        showReformattingGuide: Bool = false
     ) {
         self.language = language
         self.font = font
@@ -237,11 +305,15 @@ public class TextViewController: NSViewController {
         self.useThemeBackground = useThemeBackground
         self.highlightProviders = highlightProviders
         self.contentInsets = contentInsets
+        self.additionalTextInsets = additionalTextInsets
         self.isEditable = isEditable
         self.isSelectable = isSelectable
         self.letterSpacing = letterSpacing
-        self.bracketPairHighlight = bracketPairHighlight
+        self.bracketPairEmphasis = bracketPairEmphasis
         self._undoManager = undoManager
+        self.showMinimap = showMinimap
+        self.reformatAtColumn = reformatAtColumn
+        self.showReformattingGuide = showReformattingGuide
 
         super.init(nibName: nil, bundle: nil)
 
@@ -269,6 +341,9 @@ public class TextViewController: NSViewController {
             delegate: self
         )
 
+        // Initialize guide view
+        self.guideView = ReformattingGuideView(column: reformatAtColumn, isVisible: showReformattingGuide, theme: theme)
+
         coordinators.forEach {
             $0.prepareCoordinator(controller: self)
         }
@@ -291,17 +366,11 @@ public class TextViewController: NSViewController {
     /// A default `NSParagraphStyle` with a set `lineHeight`
     package lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
 
-    // MARK: - Reload UI
-
-    func reloadUI() {
-        textView.isEditable = isEditable
-        textView.isSelectable = isSelectable
-
-        styleScrollView()
-        styleTextView()
-        styleGutterView()
-
-        highlighter?.invalidate()
+    override public func viewWillAppear() {
+        super.viewWillAppear()
+        // The calculation this causes cannot be done until the view knows it's final position
+        updateTextInsets()
+        minimapView.layout()
     }
 
     deinit {
@@ -320,12 +389,5 @@ public class TextViewController: NSViewController {
             NSEvent.removeMonitor(localEventMonitor)
         }
         localEventMonitor = nil
-    }
-}
-
-extension TextViewController: GutterViewDelegate {
-    public func gutterViewWidthDidUpdate(newWidth: CGFloat) {
-        gutterView?.frame.size.width = newWidth
-        textView?.textInsets = textViewInsets
     }
 }

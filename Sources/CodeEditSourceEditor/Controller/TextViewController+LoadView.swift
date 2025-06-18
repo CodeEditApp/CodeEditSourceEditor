@@ -9,32 +9,41 @@ import CodeEditTextView
 import AppKit
 
 extension TextViewController {
-    // swiftlint:disable:next function_body_length
     override public func loadView() {
-        scrollView = NSScrollView()
-        textView.postsFrameChangedNotifications = true
-        textView.translatesAutoresizingMaskIntoConstraints = false
+        super.loadView()
 
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.contentView.postsFrameChangedNotifications = true
-        scrollView.hasVerticalScroller = true
-        scrollView.hasHorizontalScroller = !wrapLines
+        scrollView = NSScrollView()
         scrollView.documentView = textView
-        scrollView.contentView.postsBoundsChangedNotifications = true
 
         gutterView = GutterView(
             font: font.rulerFont,
-            textColor: .secondaryLabelColor,
+            textColor: theme.text.color.withAlphaComponent(0.35),
+            selectedTextColor: theme.text.color,
             textView: textView,
             delegate: self
         )
         gutterView.updateWidthIfNeeded()
-        scrollView.addFloatingSubview(
-            gutterView,
-            for: .horizontal
-        )
+        scrollView.addFloatingSubview(gutterView, for: .horizontal)
 
-        self.view = scrollView
+        guideView = ReformattingGuideView(
+            column: self.reformatAtColumn,
+            isVisible: self.showReformattingGuide,
+            theme: theme
+        )
+        guideView.wantsLayer = true
+        scrollView.addFloatingSubview(guideView, for: .vertical)
+        guideView.updatePosition(in: textView)
+
+        minimapView = MinimapView(textView: textView, theme: theme)
+        scrollView.addFloatingSubview(minimapView, for: .vertical)
+
+        let findViewController = FindViewController(target: self, childView: scrollView)
+        addChild(findViewController)
+        self.findViewController = findViewController
+        self.view.addSubview(findViewController.view)
+        findViewController.view.viewDidMoveToSuperview()
+        self.findViewController = findViewController
+
         if let _undoManager {
             textView.setUndoManager(_undoManager)
         }
@@ -42,63 +51,108 @@ extension TextViewController {
         styleTextView()
         styleScrollView()
         styleGutterView()
+        styleMinimapView()
+
         setUpHighlighter()
         setUpTextFormation()
-
-        NSLayoutConstraint.activate([
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        ])
 
         if !cursorPositions.isEmpty {
             setCursorPositions(cursorPositions)
         }
 
-        // Layout on scroll change
+        setUpConstraints()
+        setUpOberservers()
+
+        textView.updateFrameIfNeeded()
+
+        if let localEventMonitor = self.localEvenMonitor {
+            NSEvent.removeMonitor(localEventMonitor)
+        }
+        setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
+        updateContentInsets()
+    }
+
+    func setUpConstraints() {
+        guard let findViewController else { return }
+
+        let maxWidthConstraint = minimapView.widthAnchor.constraint(lessThanOrEqualToConstant: MinimapView.maxWidth)
+        let relativeWidthConstraint = minimapView.widthAnchor.constraint(
+            equalTo: view.widthAnchor,
+            multiplier: 0.17
+        )
+        relativeWidthConstraint.priority = .defaultLow
+        let minimapXConstraint = minimapView.trailingAnchor.constraint(
+            equalTo: scrollView.contentView.safeAreaLayoutGuide.trailingAnchor
+        )
+        self.minimapXConstraint = minimapXConstraint
+
+        NSLayoutConstraint.activate([
+            findViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            findViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            findViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
+            findViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+
+            minimapView.topAnchor.constraint(equalTo: scrollView.contentView.topAnchor),
+            minimapView.bottomAnchor.constraint(equalTo: scrollView.contentView.bottomAnchor),
+            minimapXConstraint,
+            maxWidthConstraint,
+            relativeWidthConstraint
+        ])
+    }
+
+    func setUpOnScrollChangeObserver() {
         NotificationCenter.default.addObserver(
             forName: NSView.boundsDidChangeNotification,
             object: scrollView.contentView,
             queue: .main
-        ) { [weak self] _ in
-            self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
+        ) { [weak self] notification in
+            guard let clipView = notification.object as? NSClipView else { return }
             self?.gutterView.needsDisplay = true
+            self?.minimapXConstraint?.constant = clipView.bounds.origin.x
         }
+    }
 
-        // Layout on frame change
+    func setUpOnScrollViewFrameChangeObserver() {
         NotificationCenter.default.addObserver(
             forName: NSView.frameDidChangeNotification,
             object: scrollView.contentView,
             queue: .main
         ) { [weak self] _ in
-            self?.textView.updatedViewport(self?.scrollView.documentVisibleRect ?? .zero)
             self?.gutterView.needsDisplay = true
-            if self?.bracketPairHighlight == .flash {
-                self?.removeHighlightLayers()
-            }
+            self?.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
+            self?.updateTextInsets()
         }
+    }
 
+    func setUpTextViewFrameChangeObserver() {
         NotificationCenter.default.addObserver(
             forName: NSView.frameDidChangeNotification,
             object: textView,
             queue: .main
         ) { [weak self] _ in
+            guard let textView = self?.textView else { return }
             self?.gutterView.frame.size.height = (self?.textView.frame.height ?? 0) + 10
-            self?.gutterView.needsDisplay = true
-        }
+            self?.gutterView.frame.origin.y = (self?.textView.frame.origin.y ?? 0.0)
+            - (self?.scrollView.contentInsets.top ?? 0)
 
+            self?.gutterView.needsDisplay = true
+            self?.guideView?.updatePosition(in: textView)
+            self?.scrollView.needsLayout = true
+        }
+    }
+
+    func setUpSelectionChangedObserver() {
         NotificationCenter.default.addObserver(
             forName: TextSelectionManager.selectionChangedNotification,
             object: textView.selectionManager,
             queue: .main
         ) { [weak self] _ in
             self?.updateCursorPosition()
-            self?.highlightSelectionPairs()
+            self?.emphasizeSelectionPairs()
         }
+    }
 
-        textView.updateFrameIfNeeded()
-
+    func setUpAppearanceChangedObserver() {
         NSApp.publisher(for: \.effectiveAppearance)
             .receive(on: RunLoop.main)
             .sink { [weak self] newValue in
@@ -106,23 +160,41 @@ extension TextViewController {
 
                 if self.systemAppearance != newValue.name {
                     self.systemAppearance = newValue.name
+
+                    // Reset content insets and gutter position when appearance changes
+                    self.styleScrollView()
+                    self.gutterView.frame.origin.y = self.textView.frame.origin.y - self.scrollView.contentInsets.top
                 }
             }
             .store(in: &cancellables)
+    }
 
-        if let localEventMonitor = self.localEventMonitor {
-            NSEvent.removeMonitor(localEventMonitor)
-        }
-        self.localEventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-            guard self?.view.window?.firstResponder == self?.textView else { return event }
+    func setUpOberservers() {
+        setUpOnScrollChangeObserver()
+        setUpOnScrollViewFrameChangeObserver()
+        setUpTextViewFrameChangeObserver()
+        setUpSelectionChangedObserver()
+        setUpAppearanceChangedObserver()
+    }
 
+    func setUpKeyBindings(eventMonitor: inout Any?) {
+        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event -> NSEvent? in
+            guard let self = self else { return event }
+
+            // Check if this window is key and if the text view is the first responder
+            let isKeyWindow = self.view.window?.isKeyWindow ?? false
+            let isFirstResponder = self.view.window?.firstResponder === self.textView
+
+            // Only handle commands if this is the key window and text view is first responder
+            guard isKeyWindow && isFirstResponder else { return event }
+
+            let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
             let tabKey: UInt16 = 0x30
-            let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue
 
             if event.keyCode == tabKey {
-                return self?.handleTab(event: event, modifierFalgs: modifierFlags)
+                return self.handleTab(event: event, modifierFalgs: modifierFlags.rawValue)
             } else {
-                return self?.handleCommand(event: event, modifierFlags: modifierFlags)
+                return self.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
             }
         }
     }
@@ -139,6 +211,13 @@ extension TextViewController {
             return nil
         case (commandKey, "]"):
             handleIndent()
+            return nil
+        case (commandKey, "f"):
+            _ = self.textView.resignFirstResponder()
+            self.findViewController?.showFindPanel()
+            return nil
+        case (0, "\u{1b}"): // Escape key
+            self.findViewController?.hideFindPanel()
             return nil
         case (_, _):
             return event

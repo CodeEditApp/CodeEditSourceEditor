@@ -21,7 +21,7 @@ extension TextViewController {
             ("'", "'")
         ]
 
-        static let highlightValues: [(String, String)] = [
+        static let emphasisValues: [(String, String)] = [
             ("{", "}"),
             ("[", "]"),
             ("(", ")")
