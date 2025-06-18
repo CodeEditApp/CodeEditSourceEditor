@@ -237,7 +237,7 @@ extension SuggestionController: NSTableViewDataSource, NSTableViewDelegate {
 
     public func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         guard row >= 0, row < items.count else { return nil }
-        return (items[row] as? any CodeSuggestionEntry)?.view
+        return items[row].view
     }
 
     public func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {

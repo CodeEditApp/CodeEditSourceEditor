@@ -32,7 +32,7 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
     var _undoManager: CEUndoManager!
     var systemAppearance: NSAppearance.Name?
 
-    var localEvenMonitor: Any?
+    var localEventMonitor: Any?
     var isPostingCursorNotification: Bool = false
 
     /// The string contents.
