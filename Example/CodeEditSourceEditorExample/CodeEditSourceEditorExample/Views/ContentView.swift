@@ -103,23 +103,6 @@ struct ContentView: View {
             }
         }
     }
-
-    func bruh() {
-        let editorController = TextViewController(
-            string: "let x = 10;",
-            language: .swift,
-            config: SourceEditorConfiguration(
-                appearance: .init(theme: theme, font: font),
-                behavior: .init(indentOption: indentOption),
-                layout: .init(editorOverscroll: editorOverscroll),
-                peripherals: .init(showMinimap: showMinimap)
-            ),
-            cursorPositions: [CursorPosition(line: 0, column: 0)],
-            highlightProviders: [], // Use the tree-sitter provider by default
-            undoManager: nil,
-            coordinators: [] // Optionally inject editing behavior or other plugins.
-        )
-    }
 }
 
 #Preview {
