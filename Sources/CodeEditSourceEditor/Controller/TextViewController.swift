@@ -41,7 +41,7 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
     var _undoManager: CEUndoManager!
     var systemAppearance: NSAppearance.Name?
 
-    var localEvenMonitor: Any?
+    var localEventMonitor: Any?
     var isPostingCursorNotification: Bool = false
 
     /// Middleman between the text view to our invisible characters config, with knowledge of things like the
@@ -381,7 +381,6 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
             isEditable: isEditable,
             isSelectable: isSelectable,
             letterSpacing: letterSpacing,
-            useSystemCursor: platformGuardedSystemCursor,
             delegate: self
         )
 
@@ -431,9 +430,9 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         textCoordinators.removeAll()
         NotificationCenter.default.removeObserver(self)
         cancellables.forEach { $0.cancel() }
-        if let localEvenMonitor {
-            NSEvent.removeMonitor(localEvenMonitor)
+        if let localEventMonitor {
+            NSEvent.removeMonitor(localEventMonitor)
         }
-        localEvenMonitor = nil
+        localEventMonitor = nil
     }
 } // swiftlint:disable:this file_length

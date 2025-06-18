@@ -65,10 +65,10 @@ extension TextViewController {
 
         textView.updateFrameIfNeeded()
 
-        if let localEventMonitor = self.localEvenMonitor {
+        if let localEventMonitor = self.localEventMonitor {
             NSEvent.removeMonitor(localEventMonitor)
         }
-        setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
+        setUpKeyBindings(eventMonitor: &self.localEventMonitor)
         updateContentInsets()
     }
 

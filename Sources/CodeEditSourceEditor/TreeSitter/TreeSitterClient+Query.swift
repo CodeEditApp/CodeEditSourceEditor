@@ -16,7 +16,7 @@ extension TreeSitterClient {
     public struct NodeResult {
         let id: TreeSitterLanguage
         let language: Language
-        let node: Node
+        public let node: Node
     }
 
     public struct QueryResult {
