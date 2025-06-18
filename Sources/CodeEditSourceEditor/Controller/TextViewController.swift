@@ -209,6 +209,8 @@ public class TextViewController: NSViewController {
             delegate: self
         )
 
+        textView.layoutManager.invisibleCharacterDelegate = invisibleCharactersCoordinator
+
         coordinators.forEach {
             $0.prepareCoordinator(controller: self)
         }
@@ -255,4 +257,4 @@ public class TextViewController: NSViewController {
         }
         localEvenMonitor = nil
     }
-}
+} // swiftlint:disable:this file_length

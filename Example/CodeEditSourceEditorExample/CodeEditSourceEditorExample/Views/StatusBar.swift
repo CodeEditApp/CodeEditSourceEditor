@@ -27,6 +27,7 @@ struct StatusBar: View {
     @Binding var indentOption: IndentOption
     @Binding var reformatAtColumn: Int
     @Binding var showReformattingGuide: Bool
+    @Binding var invisibles: InvisibleCharactersConfig
 
     var body: some View {
         HStack {
@@ -51,6 +52,33 @@ struct StatusBar: View {
                     Toggle("Use System Cursor", isOn: $useSystemCursor)
                         .disabled(true)
                         .help("macOS 14 required")
+                }
+
+                Menu {
+                    Toggle("Spaces", isOn: $invisibles.showSpaces)
+                    Toggle("Tabs", isOn: $invisibles.showTabs)
+                    Toggle("Line Endings", isOn: $invisibles.showLineEndings)
+                    Divider()
+                    Toggle(
+                        "Warning Characters",
+                        isOn: Binding(
+                            get: {
+                                !invisibles.warningCharacters.isEmpty
+                            },
+                            set: { newValue in
+                                // In this example app, we only add one character
+                                // For real apps, consider providing a table where users can add UTF16
+                                // char codes to warn about, as well as a set of good defaults.
+                                if newValue {
+                                    invisibles.warningCharacters.insert(0x200B) // zero-width space
+                                } else {
+                                    invisibles.warningCharacters.removeAll()
+                                }
+                            }
+                        )
+                    )
+                } label: {
+                    Text("Invisibles")
                 }
             } label: {}
                 .background {

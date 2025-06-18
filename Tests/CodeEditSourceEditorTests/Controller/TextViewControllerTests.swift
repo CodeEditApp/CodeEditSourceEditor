@@ -468,5 +468,77 @@ final class TextViewControllerTests: XCTestCase {
         lines = controller.getOverlappingLines(for: NSRange(location: 4, length: 1))
         XCTAssertEqual(2...2, lines)
     }
+
+    // MARK: - Invisible Characters
+
+    func test_setInvisibleCharacterConfig() {
+        controller.setText("     Hello world")
+        controller.indentOption = .spaces(count: 4)
+
+        XCTAssertEqual(controller.invisibleCharactersConfig, .empty)
+
+        controller.invisibleCharactersConfig = .init(showSpaces: true, showTabs: true, showLineEndings: true)
+        XCTAssertEqual(
+            controller.invisibleCharactersConfig,
+            .init(showSpaces: true, showTabs: true, showLineEndings: true)
+        )
+        XCTAssertEqual(
+            controller.invisibleCharactersCoordinator.config,
+            .init(showSpaces: true, showTabs: true, showLineEndings: true)
+        )
+
+        // Should emphasize the 4th space
+        XCTAssertEqual(
+            controller.invisibleCharactersCoordinator.invisibleStyle(
+                for: InvisibleCharactersConfig.Symbols.space,
+                at: NSRange(location: 3, length: 1),
+                lineRange: NSRange(location: 0, length: 15)
+            ),
+            .replace(
+                replacementCharacter: "·",
+                color: controller.theme.invisibles.color,
+                font: controller.invisibleCharactersCoordinator.emphasizedFont
+            )
+        )
+        XCTAssertEqual(
+            controller.invisibleCharactersCoordinator.invisibleStyle(
+                for: InvisibleCharactersConfig.Symbols.space,
+                at: NSRange(location: 4, length: 1),
+                lineRange: NSRange(location: 0, length: 15)
+            ),
+            .replace(
+                replacementCharacter: "·",
+                color: controller.theme.invisibles.color,
+                font: controller.font
+            )
+        )
+
+        if case .emphasize = controller.invisibleCharactersCoordinator.invisibleStyle(
+            for: InvisibleCharactersConfig.Symbols.tab,
+            at: .zero,
+            lineRange: .zero
+        ) {
+            XCTFail("Incorrect character style for invisible character")
+        }
+    }
+
+    // MARK: - Warning Characters
+
+    func test_setWarningCharacterConfig() {
+        XCTAssertEqual(controller.warningCharacters, [])
+
+        controller.warningCharacters = [0, 1]
+
+        XCTAssertEqual(controller.warningCharacters, [0, 1])
+        XCTAssertEqual(controller.invisibleCharactersCoordinator.warningCharacters, [0, 1])
+
+        if case .replace = controller.invisibleCharactersCoordinator.invisibleStyle(
+            for: 0,
+            at: .zero,
+            lineRange: .zero
+        ) {
+            XCTFail("Incorrect character style for warning character")
+        }
+    }
 }
 // swiftlint:enable all

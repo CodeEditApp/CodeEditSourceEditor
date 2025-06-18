@@ -30,6 +30,7 @@ struct ContentView: View {
     @AppStorage("showGutter") private var showGutter: Bool = true
     @AppStorage("showMinimap") private var showMinimap: Bool = true
     @AppStorage("showReformattingGuide") private var showReformattingGuide: Bool = false
+    @State private var invisibleCharactersConfig: InvisibleCharactersConfig = .empty
 
     @State private var isInLongParse = false
     @State private var settingsIsPresented: Bool = false
@@ -79,7 +80,8 @@ struct ContentView: View {
                     showMinimap: $showMinimap,
                     indentOption: $indentOption,
                     reformatAtColumn: $reformatAtColumn,
-                    showReformattingGuide: $showReformattingGuide
+                    showReformattingGuide: $showReformattingGuide,
+                    invisibles: $invisibleCharactersConfig
                 )
             }
             .ignoresSafeArea()
