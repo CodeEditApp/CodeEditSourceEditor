@@ -60,7 +60,7 @@ enum Mock {
         TextViewController(
             string: "",
             language: .html,
-            config: config(),
+            configuration: config(),
             cursorPositions: [],
             highlightProviders: [TreeSitterClient()]
         )

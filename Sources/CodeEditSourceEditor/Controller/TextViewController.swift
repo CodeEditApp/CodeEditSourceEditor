@@ -32,6 +32,10 @@ public class TextViewController: NSViewController {
     /// The reformatting guide view
     var reformattingGuideView: ReformattingGuideView!
 
+    /// Middleman between the text view to our invisible characters config, with knowledge of things like the
+    ///  /// user's theme and indent option to help correctly draw invisible character placeholders.
+    var invisibleCharactersCoordinator: InvisibleCharactersCoordinator
+
     var minimapXConstraint: NSLayoutConstraint?
 
     var _undoManager: CEUndoManager!
@@ -140,6 +144,17 @@ public class TextViewController: NSViewController {
     /// Toggle the visibility of the reformatting guide in the editor.
     public var showReformattingGuide: Bool { configuration.peripherals.showReformattingGuide }
 
+    /// Configuration for drawing invisible characters.
+    ///
+    /// See ``InvisibleCharactersConfiguration`` for more details.
+    public var invisibleCharactersConfiguration: InvisibleCharactersConfiguration {
+        configuration.peripherals.invisibleCharactersConfiguration
+    }
+
+    /// Indicates characters that the user may not have meant to insert, such as a zero-width space: `(0x200D)` or a
+    /// non-standard quote character: `“ (0x201C)`.
+    public var warningCharacters: Set<UInt16> { configuration.peripherals.warningCharacters }
+
     // MARK: - Internal Variables
 
     var textCoordinators: [WeakCoordinator] = []
@@ -177,17 +192,18 @@ public class TextViewController: NSViewController {
     public init(
         string: String,
         language: CodeLanguage,
-        config: SourceEditorConfiguration,
+        configuration: SourceEditorConfiguration,
         cursorPositions: [CursorPosition],
         highlightProviders: [HighlightProviding] = [TreeSitterClient()],
         undoManager: CEUndoManager? = nil,
         coordinators: [TextViewCoordinator] = []
     ) {
         self.language = language
-        self.configuration = config
+        self.configuration = configuration
         self.cursorPositions = cursorPositions
         self.highlightProviders = highlightProviders
         self._undoManager = undoManager
+        self.invisibleCharactersCoordinator = InvisibleCharactersCoordinator(configuration: configuration)
 
         super.init(nibName: nil, bundle: nil)
 

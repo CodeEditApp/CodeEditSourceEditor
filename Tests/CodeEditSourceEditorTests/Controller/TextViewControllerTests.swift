@@ -473,24 +473,28 @@ final class TextViewControllerTests: XCTestCase {
 
     func test_setInvisibleCharacterConfig() {
         controller.setText("     Hello world")
-        controller.indentOption = .spaces(count: 4)
+        controller.configuration.behavior.indentOption = .spaces(count: 4)
 
-        XCTAssertEqual(controller.invisibleCharactersConfig, .empty)
+        XCTAssertEqual(controller.invisibleCharactersConfiguration, .empty)
 
-        controller.invisibleCharactersConfig = .init(showSpaces: true, showTabs: true, showLineEndings: true)
+        controller.configuration.peripherals.invisibleCharactersConfiguration = .init(
+            showSpaces: true,
+            showTabs: true,
+            showLineEndings: true
+        )
         XCTAssertEqual(
-            controller.invisibleCharactersConfig,
+            controller.invisibleCharactersConfiguration,
             .init(showSpaces: true, showTabs: true, showLineEndings: true)
         )
         XCTAssertEqual(
-            controller.invisibleCharactersCoordinator.config,
+            controller.invisibleCharactersCoordinator.configuration,
             .init(showSpaces: true, showTabs: true, showLineEndings: true)
         )
 
         // Should emphasize the 4th space
         XCTAssertEqual(
             controller.invisibleCharactersCoordinator.invisibleStyle(
-                for: InvisibleCharactersConfig.Symbols.space,
+                for: InvisibleCharactersConfiguration.Symbols.space,
                 at: NSRange(location: 3, length: 1),
                 lineRange: NSRange(location: 0, length: 15)
             ),
@@ -502,7 +506,7 @@ final class TextViewControllerTests: XCTestCase {
         )
         XCTAssertEqual(
             controller.invisibleCharactersCoordinator.invisibleStyle(
-                for: InvisibleCharactersConfig.Symbols.space,
+                for: InvisibleCharactersConfiguration.Symbols.space,
                 at: NSRange(location: 4, length: 1),
                 lineRange: NSRange(location: 0, length: 15)
             ),
@@ -514,7 +518,7 @@ final class TextViewControllerTests: XCTestCase {
         )
 
         if case .emphasize = controller.invisibleCharactersCoordinator.invisibleStyle(
-            for: InvisibleCharactersConfig.Symbols.tab,
+            for: InvisibleCharactersConfiguration.Symbols.tab,
             at: .zero,
             lineRange: .zero
         ) {
@@ -525,9 +529,9 @@ final class TextViewControllerTests: XCTestCase {
     // MARK: - Warning Characters
 
     func test_setWarningCharacterConfig() {
-        XCTAssertEqual(controller.warningCharacters, [])
+        XCTAssertEqual(controller.warningCharacters, Set<UInt16>([]))
 
-        controller.warningCharacters = [0, 1]
+        controller.configuration.peripherals.warningCharacters = [0, 1]
 
         XCTAssertEqual(controller.warningCharacters, [0, 1])
         XCTAssertEqual(controller.invisibleCharactersCoordinator.warningCharacters, [0, 1])

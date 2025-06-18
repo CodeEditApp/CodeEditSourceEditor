@@ -30,7 +30,8 @@ struct ContentView: View {
     @AppStorage("showGutter") private var showGutter: Bool = true
     @AppStorage("showMinimap") private var showMinimap: Bool = true
     @AppStorage("showReformattingGuide") private var showReformattingGuide: Bool = false
-    @State private var invisibleCharactersConfig: InvisibleCharactersConfig = .empty
+    @State private var invisibleCharactersConfig: InvisibleCharactersConfiguration = .empty
+    @State private var warningCharacters: Set<UInt16> = []
 
     @State private var isInLongParse = false
     @State private var settingsIsPresented: Bool = false
@@ -61,7 +62,9 @@ struct ContentView: View {
                     peripherals: .init(
                         showGutter: showGutter,
                         showMinimap: showMinimap,
-                        showReformattingGuide: showReformattingGuide
+                        showReformattingGuide: showReformattingGuide,
+                        invisibleCharactersConfiguration: invisibleCharactersConfig,
+                        warningCharacters: warningCharacters
                     )
                 ),
                 cursorPositions: $cursorPositions
@@ -81,7 +84,8 @@ struct ContentView: View {
                     indentOption: $indentOption,
                     reformatAtColumn: $reformatAtColumn,
                     showReformattingGuide: $showReformattingGuide,
-                    invisibles: $invisibleCharactersConfig
+                    invisibles: $invisibleCharactersConfig,
+                    warningCharacters: $warningCharacters
                 )
             }
             .ignoresSafeArea()

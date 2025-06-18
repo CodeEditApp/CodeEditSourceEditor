@@ -89,7 +89,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         let controller = TextViewController(
             string: "",
             language: language,
-            config: configuration,
+            configuration: configuration,
             cursorPositions: cursorPositions.wrappedValue,
             highlightProviders: context.coordinator.highlightProviders,
             undoManager: undoManager,
