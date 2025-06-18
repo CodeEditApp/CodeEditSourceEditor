@@ -27,6 +27,15 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
     var gutterView: GutterView!
     var minimapView: MinimapView!
 
+    /// The reformatting guide view
+    var guideView: ReformattingGuideView! {
+        didSet {
+            if let oldValue = oldValue {
+                oldValue.removeFromSuperview()
+            }
+        }
+    }
+
     var minimapXConstraint: NSLayoutConstraint?
 
     var _undoManager: CEUndoManager!
@@ -34,6 +43,10 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
 
     var localEvenMonitor: Any?
     var isPostingCursorNotification: Bool = false
+
+    /// Middleman between the text view to our invisible characters config, with knowledge of things like the
+    /// user's theme and indent option to help correctly draw invisible character placeholders.
+    var invisibleCharactersCoordinator: InvisibleCharactersCoordinator
 
     /// The string contents.
     public var string: String {
@@ -52,6 +65,7 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
     public var font: NSFont {
         didSet {
             textView.font = font
+            invisibleCharactersCoordinator.font = font
             highlighter?.invalidate()
         }
     }
@@ -70,6 +84,7 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
             gutterView.selectedLineTextColor = theme.text.color
             minimapView.setTheme(theme)
             guideView?.setTheme(theme)
+            invisibleCharactersCoordinator.theme = theme
         }
     }
 
@@ -86,6 +101,7 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
     public var indentOption: IndentOption {
         didSet {
             setUpTextFormation()
+            invisibleCharactersCoordinator.indentOption = indentOption
         }
     }
 
@@ -256,18 +272,37 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         }
     }
 
-    /// The reformatting guide view
-    var guideView: ReformattingGuideView! {
-        didSet {
-            if let oldValue = oldValue {
-                oldValue.removeFromSuperview()
-            }
+    /// Configuration for drawing invisible characters.
+    ///
+    /// See ``InvisibleCharactersConfig`` for more details.
+    public var invisibleCharactersConfig: InvisibleCharactersConfig {
+        get {
+            invisibleCharactersCoordinator.config
+        }
+        set {
+            invisibleCharactersCoordinator.config = newValue
+        }
+    }
+
+    /// A set of characters the editor should draw with a small red border.
+    ///
+    /// Indicates characters that the user may not have meant to insert, such as a zero-width space: `(0x200D)` or a
+    /// non-standard quote character: `“ (0x201C)`.
+    public var warningCharacters: Set<UInt16> {
+        get {
+            invisibleCharactersCoordinator.warningCharacters
+        }
+        set {
+            invisibleCharactersCoordinator.warningCharacters = newValue
         }
     }
 
     // MARK: Init
 
-    init(
+    // Disabling function body length warning for now. There's an open issue for combining a lot of these parameters
+    // into a single config object.
+
+    init( // swiftlint:disable:this function_body_length
         string: String,
         language: CodeLanguage,
         font: NSFont,
@@ -291,7 +326,9 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         coordinators: [TextViewCoordinator] = [],
         showMinimap: Bool,
         reformatAtColumn: Int = 80,
-        showReformattingGuide: Bool = false
+        showReformattingGuide: Bool = false,
+        invisibleCharactersConfig: InvisibleCharactersConfig = .empty,
+        warningCharacters: Set<UInt16> = []
     ) {
         self.language = language
         self.font = font
@@ -314,14 +351,20 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         self.showMinimap = showMinimap
         self.reformatAtColumn = reformatAtColumn
         self.showReformattingGuide = showReformattingGuide
+        self.invisibleCharactersCoordinator = InvisibleCharactersCoordinator(
+            config: invisibleCharactersConfig,
+            warningCharacters: warningCharacters,
+            indentOption: indentOption,
+            theme: theme,
+            font: font
+        )
 
         super.init(nibName: nil, bundle: nil)
 
-        let platformGuardedSystemCursor: Bool
-        if #available(macOS 14, *) {
-            platformGuardedSystemCursor = useSystemCursor
+        let platformGuardedSystemCursor: Bool = if #available(macOS 14, *) {
+            useSystemCursor
         } else {
-            platformGuardedSystemCursor = false
+            false
         }
 
         if let idx = highlightProviders.firstIndex(where: { $0 is TreeSitterClient }),
@@ -341,6 +384,8 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
             useSystemCursor: platformGuardedSystemCursor,
             delegate: self
         )
+
+        textView.layoutManager.invisibleCharacterDelegate = invisibleCharactersCoordinator
 
         // Initialize guide view
         self.guideView = ReformattingGuideView(column: reformatAtColumn, isVisible: showReformattingGuide, theme: theme)
@@ -391,4 +436,4 @@ public class TextViewController: NSViewController { // swiftlint:disable:this ty
         }
         localEvenMonitor = nil
     }
-}
+} // swiftlint:disable:this file_length
