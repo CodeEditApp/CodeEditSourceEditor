@@ -21,6 +21,7 @@ import Combine
 class LineFoldingModel: NSObject, NSTextStorageDelegate, ObservableObject {
     static let emphasisId = "lineFolding"
 
+
     /// An ordered tree of fold ranges in a document. Can be traversed using ``FoldRange/parent``
     /// and ``FoldRange/subFolds``.
     @Published var foldCache: LineFoldStorage = LineFoldStorage(documentLength: 0)
