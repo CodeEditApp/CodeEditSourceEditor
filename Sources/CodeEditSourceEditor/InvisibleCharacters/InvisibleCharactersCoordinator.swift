@@ -12,7 +12,7 @@ import CodeEditTextView
 ///
 /// Takes a few parameters for contextual drawing such as the current editor theme, font, and indent option.
 ///
-/// To keep lookups fast, does not use a computed property for ``InvisibleCharactersConfig/triggerCharacters``.
+/// To keep lookups fast, does not use a computed property for ``InvisibleCharactersConfiguration/triggerCharacters``.
 /// Instead, this type keeps that internal property up-to-date whenever config is updated.
 ///
 /// Another performance optimization is a cache mechanism in CodeEditTextView. Whenever the config, indent option,
@@ -148,7 +148,11 @@ final class InvisibleCharactersCoordinator: InvisibleCharactersDelegate {
 
     private func carriageReturnStyle() -> InvisibleCharacterStyle? {
         guard configuration.showLineEndings else { return nil }
-        return .replace(replacementCharacter: configuration.carriageReturnReplacement, color: invisibleColor, font: font)
+        return .replace(
+            replacementCharacter: configuration.carriageReturnReplacement,
+            color: invisibleColor,
+            font: font
+        )
     }
 
     private func lineFeedStyle() -> InvisibleCharacterStyle? {

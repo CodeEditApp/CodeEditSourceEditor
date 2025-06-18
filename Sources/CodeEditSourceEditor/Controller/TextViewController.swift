@@ -273,4 +273,4 @@ public class TextViewController: NSViewController {
         }
         localEvenMonitor = nil
     }
-} // swiftlint:disable:this file_length
+}

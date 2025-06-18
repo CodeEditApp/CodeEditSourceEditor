@@ -31,7 +31,6 @@ import AppKit
 ///   - The category initializer.
 ///   - The passthrough variable in `TextViewController`.
 
-
 /// Configuration object for the ``SourceEditor``. Determines appearance, behavior, layout and what features are
 /// enabled (peripherals).
 ///
