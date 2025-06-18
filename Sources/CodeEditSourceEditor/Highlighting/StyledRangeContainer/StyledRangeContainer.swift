@@ -127,9 +127,9 @@ class StyledRangeContainer {
         return runs.reversed()
     }
 
-    func storageUpdated(replacedContentIn range: Range<Int>, withCount newLength: Int) {
+    func storageUpdated(editedRange: NSRange, changeInLength delta: Int) {
         for key in _storage.keys {
-            _storage[key]?.storageUpdated(replacedCharactersIn: range, withCount: newLength)
+            _storage[key]?.storageUpdated(editedRange: editedRange, changeInLength: delta)
         }
     }
 }

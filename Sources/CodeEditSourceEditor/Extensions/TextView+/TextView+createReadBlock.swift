@@ -30,7 +30,7 @@ extension TextView {
                 let range = NSRange(location..<end)
                 return self?.textStorage.substring(from: range)?.data(using: String.nativeUTF16Encoding)
             }
-            return DispatchQueue.syncMainIfNot(workItem)
+            return DispatchQueue.waitMainIfNot(workItem)
         }
     }
     /// Creates a block for safely reading data for a text provider.
@@ -45,7 +45,7 @@ extension TextView {
             let workItem: () -> String? = {
                 self?.textStorage.substring(from: range)
             }
-            return DispatchQueue.syncMainIfNot(workItem)
+            return DispatchQueue.waitMainIfNot(workItem)
         }
     }
 }

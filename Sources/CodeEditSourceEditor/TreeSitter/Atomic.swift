@@ -22,6 +22,10 @@ final package class Atomic<T> {
         }
     }
 
+    func withValue<F>(_ handler: (T) -> F) -> F {
+        lock.withLock { handler(wrappedValue) }
+    }
+
     func value() -> T {
         lock.withLock { wrappedValue }
     }

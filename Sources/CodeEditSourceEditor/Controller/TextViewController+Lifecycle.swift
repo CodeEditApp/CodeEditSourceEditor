@@ -26,7 +26,7 @@ extension TextViewController {
             font: font.rulerFont,
             textColor: theme.text.color.withAlphaComponent(0.35),
             selectedTextColor: theme.text.color,
-            textView: textView,
+            controller: self,
             delegate: self
         )
         gutterView.updateWidthIfNeeded()
@@ -143,6 +143,7 @@ extension TextViewController {
             - (self?.scrollView.contentInsets.top ?? 0)
 
             self?.gutterView.needsDisplay = true
+            self?.gutterView.foldingRibbon.needsDisplay = true
             self?.guideView?.updatePosition(in: textView)
             self?.scrollView.needsLayout = true
         }

@@ -223,23 +223,9 @@ extension Highlighter: NSTextStorageDelegate {
     ) {
         // This method is called whenever attributes are updated, so to avoid re-highlighting the entire document
         // each time an attribute is applied, we check to make sure this is in response to an edit.
-        guard editedMask.contains(.editedCharacters), let textView else { return }
+        guard editedMask.contains(.editedCharacters) else { return }
 
-        let styleContainerRange: Range<Int>
-        let newLength: Int
-
-        if editedRange.length == 0 { // Deleting, editedRange is at beginning of the range that was deleted
-            styleContainerRange = editedRange.location..<(editedRange.location - delta)
-            newLength = 0
-        } else { // Replacing or inserting
-            styleContainerRange = editedRange.location..<(editedRange.location + editedRange.length - delta)
-            newLength = editedRange.length
-        }
-
-        styleContainer.storageUpdated(
-            replacedContentIn: styleContainerRange,
-            withCount: newLength
-        )
+        styleContainer.storageUpdated(editedRange: editedRange, changeInLength: delta)
 
         if delta > 0 {
             visibleRangeProvider.visibleSet.insert(range: editedRange)
