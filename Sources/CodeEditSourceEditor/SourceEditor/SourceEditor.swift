@@ -118,11 +118,6 @@ public struct SourceEditor: NSViewControllerRepresentable {
 
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
         context.coordinator.updateHighlightProviders(highlightProviders)
-        print(
-            context.coordinator.isUpdateFromTextView,
-            state.findPanelVisible,
-            controller.findViewController?.viewModel.isShowingFindPanel ?? false
-        )
 
         // Prevent infinite loop of update notifications
         if context.coordinator.isUpdateFromTextView {
@@ -137,7 +132,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
                 controller.gutterView.needsDisplay = true
             }
 
-            if let findText = state.findText {
+            if let findText = state.findText, findText != state.findText {
                 controller.findViewController?.viewModel.findText = findText
             }
 

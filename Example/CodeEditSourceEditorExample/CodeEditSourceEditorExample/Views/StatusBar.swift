@@ -109,6 +109,12 @@ struct StatusBar: View {
             Divider()
                 .frame(height: 12)
 
+            Text(state.findText ?? "")
+                .frame(maxWidth: 30)
+                .lineLimit(1)
+                .truncationMode(.head)
+                .foregroundStyle(.secondary)
+
             Button {
                 state.findPanelVisible.toggle()
             } label: {
