@@ -32,7 +32,7 @@ extension SourceEditor {
 
         func setController(_ controller: TextViewController) {
             self.controller = controller
-            // swiftlint:disable:this notification_center_detachment
+            // swiftlint:disable:next notification_center_detachment
             NotificationCenter.default.removeObserver(self)
 
             NotificationCenter.default.addObserver(
@@ -49,7 +49,7 @@ extension SourceEditor {
                 object: controller
             )
 
-            // Needs to be put on the main runloop or SwiftUI gets mad
+            // Needs to be put on the main runloop or SwiftUI gets mad about updating state during view updates.
             NotificationCenter.default
                 .publisher(
                     for: TextViewController.scrollPositionDidUpdateNotification,
@@ -58,6 +58,28 @@ extension SourceEditor {
                 .receive(on: RunLoop.main)
                 .sink { [weak self] notification in
                     self?.textControllerScrollDidChange(notification)
+                }
+                .store(in: &cancellables)
+
+            NotificationCenter.default
+                .publisher(
+                    for: FindPanelViewModel.findPanelTextDidChangeNotification,
+                    object: controller
+                )
+                .receive(on: RunLoop.main)
+                .sink { [weak self] notification in
+                    self?.textControllerFindTextDidChange(notification)
+                }
+                .store(in: &cancellables)
+
+            NotificationCenter.default
+                .publisher(
+                    for: FindPanelViewModel.findPanelDidToggleNotification,
+                    object: controller
+                )
+                .receive(on: RunLoop.main)
+                .sink { [weak self] notification in
+                    self?.textControllerFindDidToggle(notification)
                 }
                 .store(in: &cancellables)
         }
@@ -91,7 +113,26 @@ extension SourceEditor {
             guard let controller = notification.object as? TextViewController else {
                 return
             }
-            updateState { $0.scrollPosition = controller.scrollView.contentView.bounds.origin }
+            let currentPosition = controller.scrollView.contentView.bounds.origin
+            if editorState.scrollPosition != currentPosition {
+                updateState { $0.scrollPosition = currentPosition }
+            }
+        }
+
+        func textControllerFindTextDidChange(_ notification: Notification) {
+            guard let controller = notification.object as? TextViewController,
+                  let findModel = controller.findViewController?.viewModel else {
+                return
+            }
+            updateState { $0.findText = findModel.findText }
+        }
+
+        func textControllerFindDidToggle(_ notification: Notification) {
+            guard let controller = notification.object as? TextViewController,
+                  let findModel = controller.findViewController?.viewModel else {
+                return
+            }
+            updateState { $0.findPanelVisible = findModel.isShowingFindPanel }
         }
 
         private func updateState(_ modifyCallback: (inout SourceEditorState) -> Void) {

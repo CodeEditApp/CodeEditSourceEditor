@@ -105,6 +105,18 @@ struct StatusBar: View {
                 Text(getLabel(state.cursorPositions))
             }
             .foregroundStyle(.secondary)
+
+            Divider()
+                .frame(height: 12)
+
+            Button {
+                state.findPanelVisible.toggle()
+            } label: {
+                Text(state.findPanelVisible ? "Hide" : "Show") + Text(" Find")
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(.secondary)
+
             Divider()
                 .frame(height: 12)
             LanguagePicker(language: $language)
@@ -133,12 +145,37 @@ struct StatusBar: View {
         }
     }
 
+    var formatter: NumberFormatter {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 0
+        formatter.allowsFloats = true
+        return formatter
+    }
+
     @ViewBuilder private var scrollPosition: some View {
-        Text("{")
-        + Text(Double(state.scrollPosition?.x ?? -1), format: .number.precision(.fractionLength(1)))
-        + Text(",")
-        + Text(Double(state.scrollPosition?.y ?? -1), format: .number.precision(.fractionLength(1)))
-        + Text("}")
+        HStack(spacing: 0) {
+            Text("{")
+            TextField(
+                "",
+                value: Binding(get: { Double(state.scrollPosition?.x ?? 0.0) }, set: { state.scrollPosition?.x = $0 }),
+                formatter: formatter
+            )
+            .textFieldStyle(.plain)
+            .labelsHidden()
+            .fixedSize()
+            Text(",")
+            TextField(
+                "",
+                value: Binding(get: { Double(state.scrollPosition?.y ?? 0.0) }, set: { state.scrollPosition?.y = $0 }),
+                formatter: formatter
+            )
+            .textFieldStyle(.plain)
+            .labelsHidden()
+            .fixedSize()
+            Text("}")
+        }
     }
 
     private func detectLanguage(fileURL: URL?) -> CodeLanguage? {

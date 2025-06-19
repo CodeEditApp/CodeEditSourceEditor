@@ -44,6 +44,11 @@ extension FindViewController {
 
         viewModel.isFocused = true
         findPanel.addEventMonitor()
+
+        NotificationCenter.default.post(
+            name: FindPanelViewModel.findPanelDidToggleNotification,
+            object: viewModel.target
+        )
     }
 
     /// Hide the find panel
@@ -70,6 +75,11 @@ extension FindViewController {
         if let target = viewModel.target {
             _ = target.findPanelTargetView.window?.makeFirstResponder(target.findPanelTargetView)
         }
+
+        NotificationCenter.default.post(
+            name: FindPanelViewModel.findPanelDidToggleNotification,
+            object: viewModel.target
+        )
     }
 
     /// Performs an animation with a completion handler, conditionally animating the changes.

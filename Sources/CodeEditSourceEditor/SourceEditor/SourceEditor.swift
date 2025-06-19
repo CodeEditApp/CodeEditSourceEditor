@@ -10,25 +10,6 @@ import SwiftUI
 import CodeEditTextView
 import CodeEditLanguages
 
-public struct SourceEditorState: Equatable, Hashable, Sendable, Codable {
-    public var cursorPositions: [CursorPosition] = []
-    public var scrollPosition: CGPoint?
-    public var findText: String?
-    public var isShowingFindResults: Bool = false
-
-    public init(
-        cursorPositions: [CursorPosition],
-        scrollPosition: CGPoint? = nil,
-        findText: String? = nil,
-        isShowingFindResults: Bool = false
-    ) {
-        self.cursorPositions = cursorPositions
-        self.scrollPosition = scrollPosition
-        self.findText = findText
-        self.isShowingFindResults = isShowingFindResults
-    }
-}
-
 /// A SwiftUI View that provides source editing functionality.
 public struct SourceEditor: NSViewControllerRepresentable {
     enum TextAPI {
@@ -137,14 +118,41 @@ public struct SourceEditor: NSViewControllerRepresentable {
 
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
         context.coordinator.updateHighlightProviders(highlightProviders)
+        print(
+            context.coordinator.isUpdateFromTextView,
+            state.findPanelVisible,
+            controller.findViewController?.viewModel.isShowingFindPanel ?? false
+        )
 
+        // Prevent infinite loop of update notifications
         if context.coordinator.isUpdateFromTextView {
             context.coordinator.isUpdateFromTextView = false
         } else {
-            // Prevent infinite loop of update notifications
             context.coordinator.isUpdatingFromRepresentable = true
-//            controller.setCursorPositions(state.cursorPositions)
-            // TODO: Set scroll position, find text, etc.
+            controller.setCursorPositions(state.cursorPositions)
+
+            if let scrollPosition = state.scrollPosition {
+                controller.scrollView.scroll(controller.scrollView.contentView, to: scrollPosition)
+                controller.scrollView.reflectScrolledClipView(controller.scrollView.contentView)
+                controller.gutterView.needsDisplay = true
+            }
+
+            if let findText = state.findText {
+                controller.findViewController?.viewModel.findText = findText
+            }
+
+            if let findController = controller.findViewController,
+               findController.viewModel.isShowingFindPanel != state.findPanelVisible {
+                // Needs to be on the next runloop, not many great ways to do this besides a dispatch...
+                DispatchQueue.main.async {
+                    if state.findPanelVisible {
+                        findController.showFindPanel()
+                    } else {
+                        findController.hideFindPanel()
+                    }
+                }
+            }
+
             context.coordinator.isUpdatingFromRepresentable = false
         }
 
