@@ -18,7 +18,7 @@ struct StatusBar: View {
     @Binding var document: CodeEditSourceEditorExampleDocument
     @Binding var wrapLines: Bool
     @Binding var useSystemCursor: Bool
-    @Binding var cursorPositions: [CursorPosition]
+    @Binding var state: SourceEditorState
     @Binding var isInLongParse: Bool
     @Binding var language: CodeLanguage
     @Binding var theme: EditorTheme
@@ -100,9 +100,9 @@ struct StatusBar: View {
                             .controlSize(.small)
                         Text("Parsing Document")
                     }
-                } else {
-                    Text(getLabel(cursorPositions))
                 }
+                scrollPosition
+                Text(getLabel(state.cursorPositions))
             }
             .foregroundStyle(.secondary)
             Divider()
@@ -131,6 +131,14 @@ struct StatusBar: View {
             self.language = detectLanguage(fileURL: fileURL) ?? .default
             self.theme = colorScheme == .dark ? .dark : .light
         }
+    }
+
+    @ViewBuilder private var scrollPosition: some View {
+        Text("{")
+        + Text(Double(state.scrollPosition?.x ?? -1), format: .number.precision(.fractionLength(1)))
+        + Text(",")
+        + Text(Double(state.scrollPosition?.y ?? -1), format: .number.precision(.fractionLength(1)))
+        + Text("}")
     }
 
     private func detectLanguage(fileURL: URL?) -> CodeLanguage? {

@@ -5,40 +5,61 @@
 //  Created by Khan Winter on 5/20/24.
 //
 
-import Foundation
+import AppKit
 import SwiftUI
+import Combine
 import CodeEditTextView
 
 extension SourceEditor {
     @MainActor
     public class Coordinator: NSObject {
-        weak var controller: TextViewController?
+        private weak var controller: TextViewController?
         var isUpdatingFromRepresentable: Bool = false
         var isUpdateFromTextView: Bool = false
         var text: TextAPI
-        @Binding var cursorPositions: [CursorPosition]
+        @Binding var editorState: SourceEditorState
 
         private(set) var highlightProviders: [any HighlightProviding]
 
-        init(text: TextAPI, cursorPositions: Binding<[CursorPosition]>, highlightProviders: [any HighlightProviding]?) {
+        private var cancellables: Set<AnyCancellable> = []
+
+        init(text: TextAPI, editorState: Binding<SourceEditorState>, highlightProviders: [any HighlightProviding]?) {
             self.text = text
-            self._cursorPositions = cursorPositions
+            self._editorState = editorState
             self.highlightProviders = highlightProviders ?? [TreeSitterClient()]
             super.init()
+        }
+
+        func setController(_ controller: TextViewController) {
+            self.controller = controller
+            // swiftlint:disable:this notification_center_detachment
+            NotificationCenter.default.removeObserver(self)
 
             NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(textViewDidChangeText(_:)),
                 name: TextView.textDidChangeNotification,
-                object: nil
+                object: controller.textView
             )
 
             NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(textControllerCursorsDidUpdate(_:)),
                 name: TextViewController.cursorPositionUpdatedNotification,
-                object: nil
+                object: controller
             )
+
+            // Needs to be put on the main runloop or SwiftUI gets mad
+            NotificationCenter.default
+                .publisher(
+                    for: TextViewController.scrollPositionDidUpdateNotification,
+                    object: controller
+                )
+                .receive(on: RunLoop.main)
+                .sink { [weak self] notification in
+                    self?.textControllerScrollDidChange(notification)
+                }
+                .store(in: &cancellables)
         }
 
         func updateHighlightProviders(_ highlightProviders: [any HighlightProviding]?) {
@@ -50,24 +71,33 @@ extension SourceEditor {
         }
 
         @objc func textViewDidChangeText(_ notification: Notification) {
-            guard let textView = notification.object as? TextView,
-                  let controller,
-                  controller.textView === textView else {
+            guard let textView = notification.object as? TextView else {
                 return
             }
+            // A plain string binding is one-way (from this view, up the hierarchy) so it's not in the state binding
             if case .binding(let binding) = text {
                 binding.wrappedValue = textView.string
             }
         }
 
         @objc func textControllerCursorsDidUpdate(_ notification: Notification) {
-            guard let notificationController = notification.object as? TextViewController,
-                  notificationController === controller else {
+            guard let controller = notification.object as? TextViewController else {
                 return
             }
+            updateState { $0.cursorPositions = controller.cursorPositions }
+        }
+
+        func textControllerScrollDidChange(_ notification: Notification) {
+            guard let controller = notification.object as? TextViewController else {
+                return
+            }
+            updateState { $0.scrollPosition = controller.scrollView.contentView.bounds.origin }
+        }
+
+        private func updateState(_ modifyCallback: (inout SourceEditorState) -> Void) {
             guard !isUpdatingFromRepresentable else { return }
             self.isUpdateFromTextView = true
-            cursorPositions = notificationController.cursorPositions
+            modifyCallback(&editorState)
         }
 
         deinit {

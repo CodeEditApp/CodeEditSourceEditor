@@ -10,9 +10,28 @@ import SwiftUI
 import CodeEditTextView
 import CodeEditLanguages
 
+public struct SourceEditorState: Equatable, Hashable, Sendable, Codable {
+    public var cursorPositions: [CursorPosition] = []
+    public var scrollPosition: CGPoint?
+    public var findText: String?
+    public var isShowingFindResults: Bool = false
+
+    public init(
+        cursorPositions: [CursorPosition],
+        scrollPosition: CGPoint? = nil,
+        findText: String? = nil,
+        isShowingFindResults: Bool = false
+    ) {
+        self.cursorPositions = cursorPositions
+        self.scrollPosition = scrollPosition
+        self.findText = findText
+        self.isShowingFindResults = isShowingFindResults
+    }
+}
+
 /// A SwiftUI View that provides source editing functionality.
 public struct SourceEditor: NSViewControllerRepresentable {
-    package enum TextAPI {
+    enum TextAPI {
         case binding(Binding<String>)
         case storage(NSTextStorage)
     }
@@ -32,7 +51,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         _ text: Binding<String>,
         language: CodeLanguage,
         configuration: SourceEditorConfiguration,
-        cursorPositions: Binding<[CursorPosition]>,
+        state: Binding<SourceEditorState>,
         highlightProviders: [any HighlightProviding]? = nil,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = []
@@ -40,7 +59,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         self.text = .binding(text)
         self.language = language
         self.configuration = configuration
-        self.cursorPositions = cursorPositions
+        self._state = state
         self.highlightProviders = highlightProviders
         self.undoManager = undoManager
         self.coordinators = coordinators
@@ -61,7 +80,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         _ text: NSTextStorage,
         language: CodeLanguage,
         configuration: SourceEditorConfiguration,
-        cursorPositions: Binding<[CursorPosition]>,
+        state: Binding<SourceEditorState>,
         highlightProviders: [any HighlightProviding]? = nil,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = []
@@ -69,19 +88,19 @@ public struct SourceEditor: NSViewControllerRepresentable {
         self.text = .storage(text)
         self.language = language
         self.configuration = configuration
-        self.cursorPositions = cursorPositions
+        self._state = state
         self.highlightProviders = highlightProviders
         self.undoManager = undoManager
         self.coordinators = coordinators
     }
 
-    package var text: TextAPI
-    private var language: CodeLanguage
-    private var configuration: SourceEditorConfiguration
-    package var cursorPositions: Binding<[CursorPosition]>
-    private var highlightProviders: [any HighlightProviding]?
-    private var undoManager: CEUndoManager?
-    package var coordinators: [any TextViewCoordinator]
+    var text: TextAPI
+    var language: CodeLanguage
+    var configuration: SourceEditorConfiguration
+    @Binding var state: SourceEditorState
+    var highlightProviders: [any HighlightProviding]?
+    var undoManager: CEUndoManager?
+    var coordinators: [any TextViewCoordinator]
 
     public typealias NSViewControllerType = TextViewController
 
@@ -90,7 +109,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
             string: "",
             language: language,
             configuration: configuration,
-            cursorPositions: cursorPositions.wrappedValue,
+            cursorPositions: state.cursorPositions,
             highlightProviders: context.coordinator.highlightProviders,
             undoManager: undoManager,
             coordinators: coordinators
@@ -104,28 +123,29 @@ public struct SourceEditor: NSViewControllerRepresentable {
         if controller.textView == nil {
             controller.loadView()
         }
-        if !cursorPositions.isEmpty {
-            controller.setCursorPositions(cursorPositions.wrappedValue)
+        if !state.cursorPositions.isEmpty {
+            controller.setCursorPositions(state.cursorPositions)
         }
 
-        context.coordinator.controller = controller
+        context.coordinator.setController(controller)
         return controller
     }
 
     public func makeCoordinator() -> Coordinator {
-        Coordinator(text: text, cursorPositions: cursorPositions, highlightProviders: highlightProviders)
+        Coordinator(text: text, editorState: $state, highlightProviders: highlightProviders)
     }
 
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
         context.coordinator.updateHighlightProviders(highlightProviders)
 
-        if !context.coordinator.isUpdateFromTextView {
+        if context.coordinator.isUpdateFromTextView {
+            context.coordinator.isUpdateFromTextView = false
+        } else {
             // Prevent infinite loop of update notifications
             context.coordinator.isUpdatingFromRepresentable = true
-            controller.setCursorPositions(cursorPositions.wrappedValue)
+//            controller.setCursorPositions(state.cursorPositions)
+            // TODO: Set scroll position, find text, etc.
             context.coordinator.isUpdatingFromRepresentable = false
-        } else {
-            context.coordinator.isUpdateFromTextView = false
         }
 
         // Set this no matter what to avoid having to compare object pointers.
