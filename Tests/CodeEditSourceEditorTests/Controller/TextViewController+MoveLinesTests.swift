@@ -37,7 +37,7 @@ final class TextViewControllerMoveLinesTests: XCTestCase {
 
         controller.moveLinesUp()
         let expectedString = "With multiple lines\nThis is a test string\n"
-        expectNoDifference(controller.string, expectedString)
+        expectNoDifference(controller.text, expectedString)
     }
 
     func testHandleMoveLinesDownForSingleLine() {
@@ -58,7 +58,7 @@ final class TextViewControllerMoveLinesTests: XCTestCase {
 
         controller.moveLinesDown()
         let expectedString = "With multiple lines\nThis is a test string\n"
-        expectNoDifference(controller.string, expectedString)
+        expectNoDifference(controller.text, expectedString)
     }
 
     func testHandleMoveLinesUpForMultiLine() {
@@ -80,7 +80,7 @@ final class TextViewControllerMoveLinesTests: XCTestCase {
 
         controller.moveLinesUp()
         let expectedString = "With multiple lines\nAnd additional info\nThis is a test string\n"
-        expectNoDifference(controller.string, expectedString)
+        expectNoDifference(controller.text, expectedString)
     }
 
     func testHandleMoveLinesDownForMultiLine() {
@@ -102,6 +102,6 @@ final class TextViewControllerMoveLinesTests: XCTestCase {
 
         controller.moveLinesDown()
         let expectedString = "And additional info\nThis is a test string\nWith multiple lines\n"
-        expectNoDifference(controller.string, expectedString)
+        expectNoDifference(controller.text, expectedString)
     }
 }

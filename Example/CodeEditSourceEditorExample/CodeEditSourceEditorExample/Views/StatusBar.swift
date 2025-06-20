@@ -22,11 +22,13 @@ struct StatusBar: View {
     @Binding var isInLongParse: Bool
     @Binding var language: CodeLanguage
     @Binding var theme: EditorTheme
+    @Binding var showGutter: Bool
     @Binding var showMinimap: Bool
     @Binding var indentOption: IndentOption
     @Binding var reformatAtColumn: Int
     @Binding var showReformattingGuide: Bool
-    @Binding var invisibles: InvisibleCharactersConfig
+    @Binding var invisibles: InvisibleCharactersConfiguration
+    @Binding var warningCharacters: Set<UInt16>
 
     var body: some View {
         HStack {
@@ -34,6 +36,7 @@ struct StatusBar: View {
                 IndentPicker(indentOption: $indentOption, enabled: document.text.length == 0)
                     .buttonStyle(.borderless)
                 Toggle("Wrap Lines", isOn: $wrapLines)
+                Toggle("Show Gutter", isOn: $showGutter)
                 Toggle("Show Minimap", isOn: $showMinimap)
                 Toggle("Show Reformatting Guide", isOn: $showReformattingGuide)
                 Picker("Reformat column at column", selection: $reformatAtColumn) {
@@ -61,16 +64,16 @@ struct StatusBar: View {
                         "Warning Characters",
                         isOn: Binding(
                             get: {
-                                !invisibles.warningCharacters.isEmpty
+                                !warningCharacters.isEmpty
                             },
                             set: { newValue in
                                 // In this example app, we only add one character
                                 // For real apps, consider providing a table where users can add UTF16
                                 // char codes to warn about, as well as a set of good defaults.
                                 if newValue {
-                                    invisibles.warningCharacters.insert(0x200B) // zero-width space
+                                    warningCharacters.insert(0x200B) // zero-width space
                                 } else {
-                                    invisibles.warningCharacters.removeAll()
+                                    warningCharacters.removeAll()
                                 }
                             }
                         )

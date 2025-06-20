@@ -1,5 +1,5 @@
 //
-//  CodeEditSourceEditor+Coordinator.swift
+//  SourceEditor+Coordinator.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 5/20/24.
@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 import CodeEditTextView
 
-extension CodeEditSourceEditor {
+extension SourceEditor {
     @MainActor
     public class Coordinator: NSObject {
         weak var controller: TextViewController?
