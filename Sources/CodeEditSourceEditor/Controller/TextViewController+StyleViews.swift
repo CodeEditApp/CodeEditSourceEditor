@@ -21,55 +21,6 @@ extension TextViewController {
     package func styleTextView() {
         textView.postsFrameChangedNotifications = true
         textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.selectionManager.selectionBackgroundColor = theme.selection
-        textView.selectionManager.selectedLineBackgroundColor = getThemeBackground()
-        textView.selectionManager.highlightSelectedLine = configuration.behavior.isEditable
-        textView.selectionManager.insertionPointColor = theme.insertionPoint
-        textView.enclosingScrollView?.backgroundColor = if useThemeBackground {
-            theme.background
-        } else {
-            .clear
-        }
-        textView.overscrollAmount = editorOverscroll
-        paragraphStyle = generateParagraphStyle()
-        textView.typingAttributes = attributesFor(nil)
-    }
-
-    /// Finds the preferred use theme background.
-    /// - Returns: The background color to use.
-    private func getThemeBackground() -> NSColor {
-        if useThemeBackground {
-            return theme.lineHighlight
-        }
-
-        if systemAppearance == .darkAqua {
-            return NSColor.quaternaryLabelColor
-        }
-
-        return NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
-    }
-
-    /// Style the gutter view.
-    package func styleGutterView() {
-        gutterView.selectedLineColor = if useThemeBackground {
-            theme.lineHighlight
-        } else if systemAppearance == .darkAqua {
-            NSColor.quaternaryLabelColor
-        } else {
-            NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
-        }
-        gutterView.highlightSelectedLines = configuration.behavior.isEditable
-        gutterView.font = font.rulerFont
-        gutterView.backgroundColor = if useThemeBackground {
-            theme.background
-        } else {
-            .windowBackgroundColor
-        }
-        if configuration.behavior.isEditable == false {
-            gutterView.selectedLineTextColor = nil
-            gutterView.selectedLineColor = .clear
-        }
-        gutterView.isHidden = !showGutter
     }
 
     /// Style the scroll view.
@@ -77,18 +28,11 @@ extension TextViewController {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.contentView.postsFrameChangedNotifications = true
         scrollView.hasVerticalScroller = true
-        scrollView.hasHorizontalScroller = !wrapLines
         scrollView.scrollerStyle = .overlay
     }
 
     package func styleMinimapView() {
         minimapView.postsFrameChangedNotifications = true
-        minimapView.isHidden = !showMinimap
-    }
-
-    package func styleReformattingGuideView() {
-        reformattingGuideView.updatePosition(in: self)
-        reformattingGuideView.isHidden = !showReformattingGuide
     }
 
     /// Updates all relevant content insets including the find panel, scroll view, minimap and gutter position.

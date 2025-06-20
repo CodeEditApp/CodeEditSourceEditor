@@ -9,20 +9,13 @@ import AppKit
 
 extension TextViewController {
     func reloadUI() {
-        textView.isEditable = configuration.behavior.isEditable
-        textView.isSelectable = configuration.behavior.isSelectable
+        configuration.didSetOnController(controller: self, oldConfig: nil)
 
         styleScrollView()
         styleTextView()
-        styleGutterView()
 
-        highlighter?.invalidate()
         minimapView.updateContentViewHeight()
         minimapView.updateDocumentVisibleViewPosition()
-
-        // Update reformatting guide position
-        if let guideView = textView.subviews.first(where: { $0 is ReformattingGuideView }) as? ReformattingGuideView {
-            guideView.updatePosition(in: self)
-        }
+        reformattingGuideView.updatePosition(in: self)
     }
 }
