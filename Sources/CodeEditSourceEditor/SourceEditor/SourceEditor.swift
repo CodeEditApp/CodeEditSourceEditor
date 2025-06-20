@@ -90,7 +90,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
             string: "",
             language: language,
             configuration: configuration,
-            cursorPositions: state.cursorPositions,
+            cursorPositions: state.cursorPositions ?? [],
             highlightProviders: context.coordinator.highlightProviders,
             undoManager: undoManager,
             coordinators: coordinators
@@ -104,8 +104,8 @@ public struct SourceEditor: NSViewControllerRepresentable {
         if controller.textView == nil {
             controller.loadView()
         }
-        if !state.cursorPositions.isEmpty {
-            controller.setCursorPositions(state.cursorPositions)
+        if !(state.cursorPositions?.isEmpty ?? true) {
+            controller.setCursorPositions(state.cursorPositions ?? [])
         }
 
         context.coordinator.setController(controller)
@@ -124,7 +124,9 @@ public struct SourceEditor: NSViewControllerRepresentable {
             context.coordinator.isUpdateFromTextView = false
         } else {
             context.coordinator.isUpdatingFromRepresentable = true
-            controller.setCursorPositions(state.cursorPositions)
+            if let cursorPositions = state.cursorPositions {
+                controller.setCursorPositions(cursorPositions)
+            }
 
             if let scrollPosition = state.scrollPosition {
                 controller.scrollView.scroll(controller.scrollView.contentView, to: scrollPosition)
@@ -136,11 +138,12 @@ public struct SourceEditor: NSViewControllerRepresentable {
                 controller.findViewController?.viewModel.findText = findText
             }
 
-            if let findController = controller.findViewController,
-               findController.viewModel.isShowingFindPanel != state.findPanelVisible {
+            if let findPanelVisible = state.findPanelVisible,
+               let findController = controller.findViewController,
+               findController.viewModel.isShowingFindPanel != findPanelVisible {
                 // Needs to be on the next runloop, not many great ways to do this besides a dispatch...
                 DispatchQueue.main.async {
-                    if state.findPanelVisible {
+                    if findPanelVisible {
                         findController.showFindPanel()
                     } else {
                         findController.hideFindPanel()

@@ -8,16 +8,16 @@
 import AppKit
 
 public struct SourceEditorState: Equatable, Hashable, Sendable, Codable {
-    public var cursorPositions: [CursorPosition] = []
+    public var cursorPositions: [CursorPosition]?
     public var scrollPosition: CGPoint?
     public var findText: String?
-    public var findPanelVisible: Bool = false
+    public var findPanelVisible: Bool?
 
     public init(
         cursorPositions: [CursorPosition],
         scrollPosition: CGPoint? = nil,
         findText: String? = nil,
-        findPanelVisible: Bool = false
+        findPanelVisible: Bool? = nil
     ) {
         self.cursorPositions = cursorPositions
         self.scrollPosition = scrollPosition
