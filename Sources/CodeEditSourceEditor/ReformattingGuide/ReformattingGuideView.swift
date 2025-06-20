@@ -9,26 +9,25 @@ import AppKit
 import CodeEditTextView
 
 class ReformattingGuideView: NSView {
-    private var column: Int
-    private var _isVisible: Bool
-    private var theme: EditorTheme
+    @Invalidating(.display)
+    var column: Int = 80
 
-    var isVisible: Bool {
-        get { _isVisible }
-        set {
-            _isVisible = newValue
-            isHidden = !newValue
-            needsDisplay = true
-        }
+    var theme: EditorTheme {
+        didSet { needsDisplay = true }
     }
 
-    init(column: Int = 80, isVisible: Bool = false, theme: EditorTheme) {
+    convenience init(configuration: borrowing SourceEditorConfiguration) {
+        self.init(
+            column: configuration.behavior.reformatAtColumn,
+            theme: configuration.appearance.theme
+        )
+    }
+
+    init(column: Int = 80, theme: EditorTheme) {
         self.column = column
-        self._isVisible = isVisible
         self.theme = theme
         super.init(frame: .zero)
         wantsLayer = true
-        isHidden = !isVisible
     }
 
     required init?(coder: NSCoder) {
@@ -42,9 +41,6 @@ class ReformattingGuideView: NSView {
     // Draw the reformatting guide line and shaded area
     override func draw(_ dirtyRect: NSRect) {
         super.draw(dirtyRect)
-        guard isVisible else {
-            return
-        }
 
         // Determine if we should use light or dark colors based on the theme's background color
         let isLightMode = theme.background.brightnessComponent > 0.5
@@ -78,17 +74,15 @@ class ReformattingGuideView: NSView {
         shadedRect.fill()
     }
 
-    func updatePosition(in textView: TextView) {
-        guard isVisible else {
-            return
-        }
-
+    func updatePosition(in controller: TextViewController) {
         // Calculate the x position based on the font's character width and column number
-        let charWidth = textView.font.boundingRectForFont.width
-        let xPosition = CGFloat(column) * charWidth / 2  // Divide by 2 to account for coordinate system
+        let xPosition = (
+            CGFloat(column) * (controller.fontCharWidth / 2) // Divide by 2 to account for coordinate system
+            + (controller.textViewInsets.left / 2)
+        )
 
         // Get the scroll view's content size
-        guard let scrollView = textView.enclosingScrollView else { return }
+        guard let scrollView = controller.scrollView else { return }
         let contentSize = scrollView.documentVisibleRect.size
 
         // Ensure we don't create an invalid frame
@@ -98,25 +92,11 @@ class ReformattingGuideView: NSView {
         let newFrame = NSRect(
             x: xPosition,
             y: 0,  // Start above the visible area
-            width: maxWidth + 1000,
+            width: maxWidth,
             height: contentSize.height  // Use extended height
         ).pixelAligned
 
         frame = newFrame
-        needsDisplay = true
-    }
-
-    func setVisible(_ visible: Bool) {
-        isVisible = visible
-    }
-
-    func setColumn(_ newColumn: Int) {
-        column = newColumn
-        needsDisplay = true
-    }
-
-    func setTheme(_ newTheme: EditorTheme) {
-        theme = newTheme
         needsDisplay = true
     }
 }

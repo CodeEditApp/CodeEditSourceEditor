@@ -7,10 +7,10 @@
 
 import AppKit
 
-/// A protocol that can be used to receive extra state change messages from ``CodeEditSourceEditor``.
+/// A protocol that can be used to receive extra state change messages from ``SourceEditor``.
 ///
 /// These are used as a way to push messages up from underlying components into SwiftUI land without requiring passing
-/// callbacks for each message to the ``CodeEditSourceEditor`` initializer.
+/// callbacks for each message to the ``SourceEditor`` initializer.
 ///
 /// They're very useful for updating UI that is directly related to the state of the editor, such as the current
 /// cursor position. For an example, see the ``CombineCoordinator`` class, which implements combine publishers for the

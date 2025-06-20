@@ -18,15 +18,17 @@ struct StatusBar: View {
     @Binding var document: CodeEditSourceEditorExampleDocument
     @Binding var wrapLines: Bool
     @Binding var useSystemCursor: Bool
-    @Binding var cursorPositions: [CursorPosition]
+    @Binding var state: SourceEditorState
     @Binding var isInLongParse: Bool
     @Binding var language: CodeLanguage
     @Binding var theme: EditorTheme
+    @Binding var showGutter: Bool
     @Binding var showMinimap: Bool
     @Binding var indentOption: IndentOption
     @Binding var reformatAtColumn: Int
     @Binding var showReformattingGuide: Bool
-    @Binding var invisibles: InvisibleCharactersConfig
+    @Binding var invisibles: InvisibleCharactersConfiguration
+    @Binding var warningCharacters: Set<UInt16>
 
     var body: some View {
         HStack {
@@ -34,6 +36,7 @@ struct StatusBar: View {
                 IndentPicker(indentOption: $indentOption, enabled: document.text.length == 0)
                     .buttonStyle(.borderless)
                 Toggle("Wrap Lines", isOn: $wrapLines)
+                Toggle("Show Gutter", isOn: $showGutter)
                 Toggle("Show Minimap", isOn: $showMinimap)
                 Toggle("Show Reformatting Guide", isOn: $showReformattingGuide)
                 Picker("Reformat column at column", selection: $reformatAtColumn) {
@@ -61,16 +64,16 @@ struct StatusBar: View {
                         "Warning Characters",
                         isOn: Binding(
                             get: {
-                                !invisibles.warningCharacters.isEmpty
+                                !warningCharacters.isEmpty
                             },
                             set: { newValue in
                                 // In this example app, we only add one character
                                 // For real apps, consider providing a table where users can add UTF16
                                 // char codes to warn about, as well as a set of good defaults.
                                 if newValue {
-                                    invisibles.warningCharacters.insert(0x200B) // zero-width space
+                                    warningCharacters.insert(0x200B) // zero-width space
                                 } else {
-                                    invisibles.warningCharacters.removeAll()
+                                    warningCharacters.removeAll()
                                 }
                             }
                         )
@@ -97,11 +100,29 @@ struct StatusBar: View {
                             .controlSize(.small)
                         Text("Parsing Document")
                     }
-                } else {
-                    Text(getLabel(cursorPositions))
                 }
+                scrollPosition
+                Text(getLabel(state.cursorPositions))
             }
             .foregroundStyle(.secondary)
+
+            Divider()
+                .frame(height: 12)
+
+            Text(state.findText ?? "")
+                .frame(maxWidth: 30)
+                .lineLimit(1)
+                .truncationMode(.head)
+                .foregroundStyle(.secondary)
+
+            Button {
+                state.findPanelVisible.toggle()
+            } label: {
+                Text(state.findPanelVisible ? "Hide" : "Show") + Text(" Find")
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(.secondary)
+
             Divider()
                 .frame(height: 12)
             LanguagePicker(language: $language)
@@ -127,6 +148,39 @@ struct StatusBar: View {
         .onAppear {
             self.language = detectLanguage(fileURL: fileURL) ?? .default
             self.theme = colorScheme == .dark ? .dark : .light
+        }
+    }
+
+    var formatter: NumberFormatter {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 0
+        formatter.allowsFloats = true
+        return formatter
+    }
+
+    @ViewBuilder private var scrollPosition: some View {
+        HStack(spacing: 0) {
+            Text("{")
+            TextField(
+                "",
+                value: Binding(get: { Double(state.scrollPosition?.x ?? 0.0) }, set: { state.scrollPosition?.x = $0 }),
+                formatter: formatter
+            )
+            .textFieldStyle(.plain)
+            .labelsHidden()
+            .fixedSize()
+            Text(",")
+            TextField(
+                "",
+                value: Binding(get: { Double(state.scrollPosition?.y ?? 0.0) }, set: { state.scrollPosition?.y = $0 }),
+                formatter: formatter
+            )
+            .textFieldStyle(.plain)
+            .labelsHidden()
+            .fixedSize()
+            Text("}")
         }
     }
 

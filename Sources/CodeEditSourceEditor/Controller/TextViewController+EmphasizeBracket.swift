@@ -11,7 +11,7 @@ import CodeEditTextView
 extension TextViewController {
     /// Emphasizes bracket pairs using the current selection.
     internal func emphasizeSelectionPairs() {
-        guard let bracketPairEmphasis else { return }
+        guard let bracketPairEmphasis = configuration.appearance.bracketPairEmphasis else { return }
         textView.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
         for range in textView.selectionManager.textSelections.map({ $0.range }) {
             if range.isEmpty,
@@ -119,7 +119,7 @@ extension TextViewController {
     ///   - location: The location of the character to emphasize
     ///   - scrollToRange: Set to true to scroll to the given range when emphasizing. Defaults to `false`.
     private func emphasizeCharacter(_ location: Int, scrollToRange: Bool = false) {
-        guard let bracketPairEmphasis = bracketPairEmphasis else {
+        guard let bracketPairEmphasis = configuration.appearance.bracketPairEmphasis else {
             return
         }
 
