@@ -19,7 +19,7 @@ actor LineFoldCalculator {
 
     private var valueStreamContinuation: AsyncStream<LineFoldStorage>.Continuation
     private var textChangedTask: Task<Void, Never>?
-    
+
     /// Create a new calculator object that listens to a given stream for text changes.
     /// - Parameters:
     ///   - foldProvider: The object to use to calculate fold regions.
@@ -39,7 +39,7 @@ actor LineFoldCalculator {
     deinit {
         textChangedTask?.cancel()
     }
-    
+
     /// Sets up an attached task to listen to values on a stream of text changes.
     /// - Parameter textChangedStream: A stream of text changes.
     private func listenToTextChanges(textChangedStream: AsyncStream<(NSRange, Int)>) {
@@ -105,7 +105,7 @@ actor LineFoldCalculator {
 
         await yieldNewStorage(newFolds: foldCache, controller: controller, documentRange: documentRange)
     }
-    
+
     /// Yield a new storage value on the value stream using a new set of folds.
     /// - Parameters:
     ///   - newFolds: The new folds to yield with the storage value.

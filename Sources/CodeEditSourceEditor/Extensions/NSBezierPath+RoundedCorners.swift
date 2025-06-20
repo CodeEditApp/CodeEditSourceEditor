@@ -22,6 +22,7 @@ extension NSBezierPath {
         public static let bottomLeft = Corners(rawValue: 1 << 1)
         public static let topRight = Corners(rawValue: 1 << 2)
         public static let bottomRight = Corners(rawValue: 1 << 3)
+        public static let all: Corners = Corners(rawValue: 0b1111)
     }
 
     // swiftlint:disable:next function_body_length

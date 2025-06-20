@@ -19,6 +19,9 @@ import Combine
 /// - Loop through the list, creating nested folds as indents go up and down.
 ///
 class LineFoldingModel: NSObject, NSTextStorageDelegate, ObservableObject {
+    static let emphasisId = "lineFolding"
+
+
     /// An ordered tree of fold ranges in a document. Can be traversed using ``FoldRange/parent``
     /// and ``FoldRange/subFolds``.
     @Published var foldCache: LineFoldStorage = LineFoldStorage(documentLength: 0)
@@ -91,5 +94,36 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate, ObservableObject {
             return nil
         }
         return deepestFold
+    }
+
+    func emphasizeBracketsForFold(_ fold: FoldRange) {
+        clearEmphasis()
+
+        // Find the text object, make sure there's available characters around the fold.
+        guard let text = controller?.textView.textStorage.string as? NSString,
+              fold.range.lowerBound > 0 && fold.range.upperBound < text.length - 1 else {
+            return
+        }
+
+        let firstRange = NSRange(location: fold.range.lowerBound - 1, length: 1)
+        let secondRange = NSRange(location: fold.range.upperBound, length: 1)
+
+        // Check if these are emphasizable bracket pairs.
+        guard BracketPairs.matches(text.substring(from: firstRange) ?? "")
+                && BracketPairs.matches(text.substring(from: secondRange) ?? "") else {
+            return
+        }
+
+        controller?.textView.emphasisManager?.addEmphases(
+            [
+                Emphasis(range: firstRange, style: .standard, flash: false, inactive: false, selectInDocument: false),
+                Emphasis(range: secondRange, style: .standard, flash: false, inactive: false, selectInDocument: false),
+            ],
+            for: Self.emphasisId
+        )
+    }
+
+    func clearEmphasis() {
+        controller?.textView.emphasisManager?.removeEmphases(for: Self.emphasisId)
     }
 }

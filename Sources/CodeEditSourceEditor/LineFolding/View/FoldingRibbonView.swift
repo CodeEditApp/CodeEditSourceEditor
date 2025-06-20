@@ -8,12 +8,23 @@
 import Foundation
 import AppKit
 import CodeEditTextView
-import Combine
 
 /// Displays the code folding ribbon in the ``GutterView``.
 ///
 /// This view draws its contents
 class FoldingRibbonView: NSView {
+    struct HoverAnimationDetails: Equatable {
+        var fold: FoldRange?
+        var foldMask: CGPath?
+        var timer: Timer?
+        var progress: CGFloat = 0.0
+
+        static let empty = HoverAnimationDetails()
+
+        public static func == (_ lhs: HoverAnimationDetails, _ rhs: HoverAnimationDetails) -> Bool {
+            lhs.fold == rhs.fold && lhs.foldMask == rhs.foldMask && lhs.progress == rhs.progress
+        }
+    }
 
 #warning("Replace before release")
     private static let demoFoldProvider = IndentationLineFoldProvider()
@@ -22,63 +33,47 @@ class FoldingRibbonView: NSView {
 
     var model: LineFoldingModel?
 
-    // Disabling this lint rule because this initial value is required for @Invalidating
     @Invalidating(.display)
-    var hoveringFold: FoldRange? = nil // swiftlint:disable:this redundant_optional_initialization
-    var hoverAnimationTimer: Timer?
-    @Invalidating(.display)
-    var hoverAnimationProgress: CGFloat = 0.0
+    var hoveringFold: HoverAnimationDetails = .empty
 
     @Invalidating(.display)
     var backgroundColor: NSColor = NSColor.controlBackgroundColor
 
     @Invalidating(.display)
-    var markerColor = NSColor(name: nil) { appearance in
-        return switch appearance.name {
-        case .aqua:
-            NSColor(deviceWhite: 0.0, alpha: 0.1)
-        case .darkAqua:
-            NSColor(deviceWhite: 1.0, alpha: 0.2)
-        default:
-            NSColor()
-        }
-    }.cgColor
+    var markerColor = NSColor(
+        light: NSColor(deviceWhite: 0.0, alpha: 0.1),
+        dark: NSColor(deviceWhite: 1.0, alpha: 0.2)
+    ).cgColor
 
     @Invalidating(.display)
-    var markerBorderColor = NSColor(name: nil) { appearance in
-        return switch appearance.name {
-        case .aqua:
-            NSColor(deviceWhite: 1.0, alpha: 0.4)
-        case .darkAqua:
-            NSColor(deviceWhite: 0.0, alpha: 0.4)
-        default:
-            NSColor()
-        }
-    }.cgColor
+    var markerBorderColor = NSColor(
+        light: NSColor(deviceWhite: 1.0, alpha: 0.4),
+        dark: NSColor(deviceWhite: 0.0, alpha: 0.4)
+    ).cgColor
 
     @Invalidating(.display)
-    var hoverFillColor = NSColor(name: nil) { appearance in
-        return switch appearance.name {
-        case .aqua:
-            NSColor(deviceWhite: 1.0, alpha: 1.0)
-        case .darkAqua:
-            NSColor(deviceWhite: 0.17, alpha: 1.0)
-        default:
-            NSColor()
-        }
-    }.cgColor
+    var hoverFillColor = NSColor(
+        light: NSColor(deviceWhite: 1.0, alpha: 1.0),
+        dark: NSColor(deviceWhite: 0.17, alpha: 1.0)
+    ).cgColor
 
     @Invalidating(.display)
-    var hoverBorderColor = NSColor(name: nil) { appearance in
-        return switch appearance.name {
-        case .aqua:
-            NSColor(deviceWhite: 0.8, alpha: 1.0)
-        case .darkAqua:
-            NSColor(deviceWhite: 0.4, alpha: 1.0)
-        default:
-            NSColor()
-        }
-    }.cgColor
+    var hoverBorderColor = NSColor(
+        light: NSColor(deviceWhite: 0.8, alpha: 1.0),
+        dark: NSColor(deviceWhite: 0.4, alpha: 1.0)
+    ).cgColor
+
+    @Invalidating(.display)
+    var foldedIndicatorColor = NSColor(
+        light: NSColor(deviceWhite: 0.0, alpha: 0.3),
+        dark: NSColor(deviceWhite: 1.0, alpha: 0.6)
+    ).cgColor
+
+    @Invalidating(.display)
+    var foldedIndicatorChevronColor = NSColor(
+        light: NSColor(deviceWhite: 1.0, alpha: 1.0),
+        dark: NSColor(deviceWhite: 0.0, alpha: 1.0)
+    ).cgColor
 
     override public var isFlipped: Bool {
         true
@@ -141,13 +136,14 @@ class FoldingRibbonView: NSView {
             layoutManager.attachments.remove(atOffset: attachment.range.location)
             attachments.removeAll(where: { $0 === attachment.attachment })
         } else {
-            let placeholder = LineFoldPlaceholder(fold: fold)
+            let placeholder = LineFoldPlaceholder(fold: fold, charWidth: model?.controller?.fontCharWidth ?? 1.0)
             layoutManager.attachments.add(placeholder, for: NSRange(fold.range))
             attachments.append(placeholder)
         }
 
         model?.foldCache.toggleCollapse(forFold: fold)
         model?.controller?.textView.needsLayout = true
+        mouseMoved(with: event)
     }
 
     private func findAttachmentFor(fold: FoldRange, firstLineRange: NSRange) -> AnyTextAttachment? {
@@ -165,44 +161,60 @@ class FoldingRibbonView: NSView {
 
         let pointInView = convert(event.locationInWindow, from: nil)
         guard let lineNumber = model?.controller?.textView.layoutManager.textLineForPosition(pointInView.y)?.index,
-              let fold = model?.getCachedFoldAt(lineNumber: lineNumber) else {
-            hoverAnimationProgress = 0.0
-            hoveringFold = nil
+              let fold = model?.getCachedFoldAt(lineNumber: lineNumber),
+              !fold.isCollapsed else {
+            clearHoveredFold()
             return
         }
 
-        guard fold.range != hoveringFold?.range else {
-            return
-        }
-        hoverAnimationTimer?.invalidate()
-        // We only animate the first hovered fold. If the user moves the mouse vertically into other folds we just
-        // show it immediately.
-        if hoveringFold == nil {
-            hoverAnimationProgress = 0.0
-            hoveringFold = fold
-
-            let duration: TimeInterval = 0.2
-            let startTime = CACurrentMediaTime()
-            hoverAnimationTimer = Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { [weak self] timer in
-                guard let self = self else { return }
-                let now = CACurrentMediaTime()
-                let time = CGFloat((now - startTime) / duration)
-                self.hoverAnimationProgress = min(1.0, time)
-                if self.hoverAnimationProgress >= 1.0 {
-                    timer.invalidate()
-                }
-            }
+        guard fold.range != hoveringFold.fold?.range else {
             return
         }
 
-        // Don't animate these
-        hoverAnimationProgress = 1.0
-        hoveringFold = fold
+        setHoveredFold(fold: fold)
     }
 
     override func mouseExited(with event: NSEvent) {
         super.mouseExited(with: event)
-        hoverAnimationProgress = 0.0
-        hoveringFold = nil
+        clearHoveredFold()
+    }
+
+    /// Clears the current hovered fold. Does not animate.
+    func clearHoveredFold() {
+        hoveringFold = .empty
+        model?.clearEmphasis()
+    }
+
+    /// Set the current hovered fold. This method determines when an animation is required and will facilitate it.
+    /// - Parameter fold: The fold to set as the current hovered fold.
+    func setHoveredFold(fold: FoldRange) {
+        defer {
+            model?.emphasizeBracketsForFold(fold)
+        }
+
+        hoveringFold.timer?.invalidate()
+        // We only animate the first hovered fold. If the user moves the mouse vertically into other folds we just
+        // show it immediately.
+        if hoveringFold.fold == nil {
+            let duration: TimeInterval = 0.2
+            let startTime = CACurrentMediaTime()
+
+            hoveringFold = HoverAnimationDetails(
+                fold: fold,
+                timer: Timer.scheduledTimer(withTimeInterval: 1/60, repeats: true) { [weak self] timer in
+                    guard let self = self else { return }
+                    let now = CACurrentMediaTime()
+                    let time = CGFloat((now - startTime) / duration)
+                    self.hoveringFold.progress = min(1.0, time)
+                    if self.hoveringFold.progress >= 1.0 {
+                        timer.invalidate()
+                    }
+                }
+            )
+            return
+        }
+
+        // Don't animate these
+        hoveringFold = HoverAnimationDetails(fold: fold, progress: 1.0)
     }
 }

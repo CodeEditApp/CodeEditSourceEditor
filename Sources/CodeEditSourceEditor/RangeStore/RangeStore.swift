@@ -110,7 +110,10 @@ extension RangeStore {
             newLength = editedRange.length
         }
 
-        storageUpdated(replacedCharactersIn: storageRange, withCount: newLength)
+        storageUpdated(
+            replacedCharactersIn: storageRange.clamped(to: 0..<_guts.count(in: OffsetMetric())),
+            withCount: newLength
+        )
     }
 
     /// Handles keeping the internal storage in sync with the document.

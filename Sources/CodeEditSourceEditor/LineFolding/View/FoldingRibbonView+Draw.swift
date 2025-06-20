@@ -15,23 +15,26 @@ extension FoldingRibbonView {
         let endLine: TextLineStorage<TextLine>.TextLinePosition
     }
 
+    // MARK: - Draw
+
     override func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext,
-              let layoutManager = model?.controller?.textView.layoutManager else {
+              let layoutManager = model?.controller?.textView.layoutManager,
+              // Find the visible lines in the rect AppKit is asking us to draw.
+              let rangeStart = layoutManager.textLineForPosition(dirtyRect.minY),
+              let rangeEnd = layoutManager.textLineForPosition(dirtyRect.maxY) else {
             return
         }
 
         context.saveGState()
         context.clip(to: dirtyRect)
 
-        // Find the visible lines in the rect AppKit is asking us to draw.
-        guard let rangeStart = layoutManager.textLineForPosition(dirtyRect.minY),
-              let rangeEnd = layoutManager.textLineForPosition(dirtyRect.maxY) else {
-            return
-        }
-        let textRange = rangeStart.range.location..<rangeEnd.range.upperBound
-        let folds = getDrawingFolds(forTextRange: textRange, layoutManager: layoutManager)
+        let folds = getDrawingFolds(
+            forTextRange: rangeStart.range.location..<rangeEnd.range.upperBound,
+            layoutManager: layoutManager
+        )
         let foldCaps = FoldCapInfo(folds)
+
         for fold in folds.filter({ !$0.fold.isCollapsed }) {
             drawFoldMarker(
                 fold,
@@ -53,6 +56,20 @@ extension FoldingRibbonView {
         context.restoreGState()
     }
 
+    // MARK: - Get Drawing Folds
+
+    /// Generates drawable fold info for a range of text.
+    ///
+    /// The fold storage intentionally does not store the full ranges of all folds at each interval. We may, for an
+    /// interval, find that we only receive fold information for depths > 1. In this case, we still need to draw those
+    /// layers of color to create the illusion that those folds are continuous under the nested folds. To achieve this,
+    /// we create 'fake' folds that span more than the queried text range. When returned for drawing, the drawing
+    /// methods will draw those extra folds normally.
+    ///
+    /// - Parameters:
+    ///   - textRange: The range of characters in text to create drawing fold info for.
+    ///   - layoutManager: A layout manager to query for line layout information.
+    /// - Returns: A list of folds to draw for the given text range.
     private func getDrawingFolds(
         forTextRange textRange: Range<Int>,
         layoutManager: TextLayoutManager
@@ -85,14 +102,15 @@ extension FoldingRibbonView {
         }
     }
 
+    // MARK: - Draw Fold Marker
+
     /// Draw a single fold marker for a fold.
     ///
     /// Ensure the correct fill color is set on the drawing context before calling.
     ///
     /// - Parameters:
     ///   - foldInfo: The fold to draw.
-    ///   - markerContext: The context in which the fold is being drawn, including the depth and if a line is
-    ///                    being hovered.
+    ///   - foldCaps:
     ///   - context: The drawing context to use.
     ///   - layoutManager: A layout manager used to retrieve position information for lines.
     private func drawFoldMarker(
@@ -103,34 +121,43 @@ extension FoldingRibbonView {
     ) {
         let minYPosition = foldInfo.startLine.yPos
         let maxYPosition = foldInfo.endLine.yPos + foldInfo.endLine.height
+        let foldRect = NSRect(x: 0, y: minYPosition + 1, width: 7, height: maxYPosition - minYPosition - 2)
 
         if foldInfo.fold.isCollapsed {
-            drawCollapsedFold(minYPosition: minYPosition, maxYPosition: maxYPosition, in: context)
-        } else if let hoveringFold, hoveringFold.isHoveringEqual(foldInfo.fold) {
-            drawHoveredFold(
+            drawCollapsedFold(
+                foldInfo: foldInfo,
                 minYPosition: minYPosition,
                 maxYPosition: maxYPosition,
+                in: context
+            )
+        } else if hoveringFold.fold?.isHoveringEqual(foldInfo.fold) == true {
+            drawHoveredFold(
+                foldInfo: foldInfo,
+                foldCaps: foldCaps,
+                foldRect: foldRect,
                 in: context
             )
         } else {
             drawNestedFold(
                 foldInfo: foldInfo,
                 foldCaps: foldCaps,
-                minYPosition: minYPosition,
-                maxYPosition: maxYPosition,
+                foldRect: foldCaps.adjustFoldRect(using: foldInfo, rect: foldRect),
                 in: context
             )
         }
     }
 
+    // MARK: - Collapsed Fold
+
     private func drawCollapsedFold(
+        foldInfo: DrawingFoldInfo,
         minYPosition: CGFloat,
         maxYPosition: CGFloat,
         in context: CGContext
     ) {
         context.saveGState()
 
-        let fillRect = CGRect(x: 0, y: minYPosition, width: Self.width, height: maxYPosition - minYPosition)
+        let fillRect = CGRect(x: 0, y: minYPosition + 1.0, width: Self.width, height: maxYPosition - minYPosition - 2.0)
 
         let height = 5.0
         let minX = 2.0
@@ -144,12 +171,18 @@ extension FoldingRibbonView {
         chevron.addLine(to: CGPoint(x: maxX, y: centerY))
         chevron.addLine(to: CGPoint(x: minX, y: maxY))
 
-        context.setStrokeColor(NSColor.secondaryLabelColor.cgColor)
+        if let hoveringFoldMask = hoveringFold.foldMask,
+           hoveringFoldMask.intersects(CGPath(rect: fillRect, transform: .none)) {
+            context.addPath(hoveringFoldMask)
+            context.clip()
+        }
+
+        context.setStrokeColor(foldedIndicatorChevronColor)
         context.setLineCap(.round)
         context.setLineJoin(.round)
         context.setLineWidth(1.3)
 
-        context.setFillColor(NSColor.tertiaryLabelColor.cgColor)
+        context.setFillColor(foldedIndicatorColor)
         context.fill(fillRect)
         context.addPath(chevron)
         context.strokePath()
@@ -157,23 +190,38 @@ extension FoldingRibbonView {
         context.restoreGState()
     }
 
+    // MARK: - Hovered Fold
+
     private func drawHoveredFold(
-        minYPosition: CGFloat,
-        maxYPosition: CGFloat,
+        foldInfo: DrawingFoldInfo,
+        foldCaps: FoldCapInfo,
+        foldRect: NSRect,
         in context: CGContext
     ) {
         context.saveGState()
-        let plainRect = NSRect(x: -2, y: minYPosition, width: 11.0, height: maxYPosition - minYPosition)
-        let roundedRect = NSBezierPath(roundedRect: plainRect, xRadius: 11.0 / 2, yRadius: 11.0 / 2)
+        let plainRect = foldRect.transform(x: -2.0, y: -1.0, width: 4.0, height: 2.0)
+        let roundedRect = NSBezierPath(
+            roundedRect: plainRect,
+            xRadius: plainRect.width / 2,
+            yRadius: plainRect.width / 2
+        )
 
-        context.setFillColor(hoverFillColor.copy(alpha: hoverAnimationProgress) ?? hoverFillColor)
-        context.setStrokeColor(hoverBorderColor.copy(alpha: hoverAnimationProgress) ?? hoverBorderColor)
+        context.setFillColor(hoverFillColor.copy(alpha: hoveringFold.progress) ?? hoverFillColor)
+        context.setStrokeColor(hoverBorderColor.copy(alpha: hoveringFold.progress) ?? hoverBorderColor)
         context.addPath(roundedRect.cgPathFallback)
         context.drawPath(using: .fillStroke)
 
-        // Add the little arrows
-        drawChevron(in: context, yPosition: minYPosition + 8, pointingUp: false)
-        drawChevron(in: context, yPosition: maxYPosition - 8, pointingUp: true)
+        // Add the little arrows if we're not hovering right on a collapsed guy
+        if foldCaps.hoveredFoldShouldDrawTopChevron(foldInfo) {
+            drawChevron(in: context, yPosition: plainRect.minY + 8, pointingUp: false)
+        }
+        if foldCaps.hoveredFoldShouldDrawBottomChevron(foldInfo) {
+            drawChevron(in: context, yPosition: plainRect.maxY - 8, pointingUp: true)
+        }
+
+        let plainMaskRect = foldRect.transform(y: 1.0, height: -2.0)
+        let roundedMaskRect = NSBezierPath(roundedRect: plainMaskRect, xRadius: Self.width / 2, yRadius: Self.width / 2)
+        hoveringFold.foldMask = roundedMaskRect.cgPathFallback
 
         context.restoreGState()
     }
@@ -187,9 +235,13 @@ extension FoldingRibbonView {
         let minX = center - (chevronSize.width / 2)
         let maxX = center + (chevronSize.width / 2)
 
-        let startY = pointingUp ? yPosition + chevronSize.height : yPosition - chevronSize.height
+        let startY = if pointingUp {
+            yPosition + chevronSize.height
+        } else {
+            yPosition - chevronSize.height
+        }
 
-        context.setStrokeColor(NSColor.secondaryLabelColor.withAlphaComponent(hoverAnimationProgress).cgColor)
+        context.setStrokeColor(NSColor.secondaryLabelColor.withAlphaComponent(hoveringFold.progress).cgColor)
         context.setLineCap(.round)
         context.setLineJoin(.round)
         context.setLineWidth(1.3)
@@ -203,24 +255,20 @@ extension FoldingRibbonView {
         context.restoreGState()
     }
 
+    // MARK: - Nested Fold
+
     private func drawNestedFold(
         foldInfo: DrawingFoldInfo,
         foldCaps: FoldCapInfo,
-        minYPosition: CGFloat,
-        maxYPosition: CGFloat,
+        foldRect: NSRect,
         in context: CGContext
     ) {
         context.saveGState()
-        let plainRect = foldCaps.adjustFoldRect(
-            using: foldInfo,
-            rect: NSRect(x: 0, y: minYPosition + 1, width: 7, height: maxYPosition - minYPosition - 2)
-        )
-        let radius = plainRect.width / 2.0
         let roundedRect = NSBezierPath(
-            roundingRect: plainRect,
+            roundingRect: foldRect,
             capTop: foldCaps.foldNeedsTopCap(foldInfo),
             capBottom: foldCaps.foldNeedsBottomCap(foldInfo),
-            cornerRadius: radius
+            cornerRadius: foldRect.width / 2.0
         )
 
         context.setFillColor(markerColor)
@@ -232,14 +280,16 @@ extension FoldingRibbonView {
             drawOutline(
                 foldInfo: foldInfo,
                 foldCaps: foldCaps,
+                foldRect: foldRect,
                 originalPath: roundedRect.cgPathFallback,
-                yPosition: minYPosition...maxYPosition,
                 in: context
             )
         }
 
         context.restoreGState()
     }
+
+    // MARK: - Nested Outline
 
     /// Draws a rounded outline for a rectangle, creating the small, light, outline around each fold indicator.
     ///
@@ -253,42 +303,26 @@ extension FoldingRibbonView {
     private func drawOutline(
         foldInfo: DrawingFoldInfo,
         foldCaps: FoldCapInfo,
+        foldRect: NSRect,
         originalPath: CGPath,
-        yPosition: ClosedRange<CGFloat>,
         in context: CGContext
     ) {
         context.saveGState()
 
-        let plainRect = foldCaps.adjustFoldRect(
-            using: foldInfo,
-            rect: NSRect(
-                x: -0.5,
-                y: yPosition.lowerBound,
-                width: frame.width + 1.0,
-                height: yPosition.upperBound - yPosition.lowerBound
-            )
-        )
-        let radius = plainRect.width / 2.0
+        let plainRect = foldRect.transform(x: -1.0, y: -1.0, width: 2.0, height: 2.0)
         let roundedRect = NSBezierPath(
             roundingRect: plainRect,
             capTop: foldCaps.foldNeedsTopCap(foldInfo),
             capBottom: foldCaps.foldNeedsBottomCap(foldInfo),
-            cornerRadius: radius
+            cornerRadius: plainRect.width / 2.0
         )
-        roundedRect.transform(using: .init(translationByX: -0.5, byY: 0.0))
+        roundedRect.transform(using: .init(translationByX: -1.0, byY: 0.0))
 
         let combined = CGMutablePath()
         combined.addPath(roundedRect.cgPathFallback)
         combined.addPath(originalPath)
 
-        context.clip(
-            to: CGRect(
-                x: 0,
-                y: yPosition.lowerBound,
-                width: 7,
-                height: yPosition.upperBound - yPosition.lowerBound
-            )
-        )
+        context.clip(to: foldRect.transform(y: -1.0, height: 2.0))
         context.addPath(combined)
         context.setFillColor(markerBorderColor)
         context.drawPath(using: .eoFill)
