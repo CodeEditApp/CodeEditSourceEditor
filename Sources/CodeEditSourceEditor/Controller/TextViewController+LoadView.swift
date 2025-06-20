@@ -42,7 +42,6 @@ extension TextViewController {
 
         styleTextView()
         styleScrollView()
-        styleGutterView()
         styleMinimapView()
 
         setUpHighlighter()

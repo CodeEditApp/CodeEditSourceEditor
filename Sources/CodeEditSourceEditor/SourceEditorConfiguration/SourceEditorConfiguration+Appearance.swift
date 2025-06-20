@@ -85,20 +85,13 @@ extension SourceEditorConfiguration {
 
             if oldConfig?.font != font {
                 controller.textView.font = font
+                controller.textView.typingAttributes = controller.attributesFor(nil)
+                controller.gutterView.font = font.rulerFont
                 needsHighlighterInvalidation = true
             }
 
-            if oldConfig?.theme != theme {
-                controller.textView.layoutManager.setNeedsLayout()
-                controller.textView.textStorage.setAttributes(
-                    controller.attributesFor(nil),
-                    range: NSRange(location: 0, length: controller.textView.textStorage.length)
-                )
-                controller.textView.selectionManager.selectedLineBackgroundColor = theme.selection
-                controller.gutterView.textColor = theme.text.color.withAlphaComponent(0.35)
-                controller.gutterView.selectedLineTextColor = theme.text.color
-                controller.minimapView.setTheme(theme)
-                controller.reformattingGuideView?.theme = theme
+            if oldConfig?.theme != theme || oldConfig?.useThemeBackground != useThemeBackground {
+                updateControllerNewTheme(controller: controller)
                 needsHighlighterInvalidation = true
             }
 
@@ -140,6 +133,57 @@ extension SourceEditorConfiguration {
             if needsHighlighterInvalidation {
                 controller.highlighter?.invalidate()
             }
+        }
+
+        private func updateControllerNewTheme(controller: TextViewController) {
+            controller.textView.layoutManager.setNeedsLayout()
+            controller.textView.textStorage.setAttributes(
+                controller.attributesFor(nil),
+                range: NSRange(location: 0, length: controller.textView.textStorage.length)
+            )
+            controller.textView.selectionManager.selectionBackgroundColor = theme.selection
+            controller.textView.selectionManager.selectedLineBackgroundColor = getThemeBackground(
+                systemAppearance: controller.systemAppearance
+            )
+            controller.textView.selectionManager.insertionPointColor = theme.insertionPoint
+            controller.textView.enclosingScrollView?.backgroundColor = if useThemeBackground {
+                theme.background
+            } else {
+                .clear
+            }
+
+            controller.gutterView.textColor = theme.text.color.withAlphaComponent(0.35)
+            controller.gutterView.selectedLineTextColor = theme.text.color
+            controller.gutterView.selectedLineColor = if useThemeBackground {
+                theme.lineHighlight
+            } else if controller.systemAppearance == .darkAqua {
+                NSColor.quaternaryLabelColor
+            } else {
+                NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
+            }
+            controller.gutterView.backgroundColor = if useThemeBackground {
+                theme.background
+            } else {
+                .windowBackgroundColor
+            }
+
+            controller.minimapView.setTheme(theme)
+            controller.reformattingGuideView?.theme = theme
+            controller.textView.typingAttributes = controller.attributesFor(nil)
+        }
+
+        /// Finds the preferred use theme background.
+        /// - Returns: The background color to use.
+        private func getThemeBackground(systemAppearance: NSAppearance.Name?) -> NSColor {
+            if useThemeBackground {
+                return theme.lineHighlight
+            }
+
+            if systemAppearance == .darkAqua {
+                return NSColor.quaternaryLabelColor
+            }
+
+            return NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
         }
     }
 }
