@@ -24,6 +24,8 @@ public class TextViewController: NSViewController {
 
     // MARK: - Views and Child VCs
 
+    // MARK: - Views and Child VCs
+
     weak var findViewController: FindViewController?
 
     var scrollView: NSScrollView!
