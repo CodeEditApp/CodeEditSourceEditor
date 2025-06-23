@@ -21,41 +21,6 @@ extension TextViewController {
     package func styleTextView() {
         textView.postsFrameChangedNotifications = true
         textView.translatesAutoresizingMaskIntoConstraints = false
-        textView.selectionManager.selectionBackgroundColor = theme.selection
-        textView.selectionManager.selectedLineBackgroundColor = getThemeBackground()
-        textView.selectionManager.highlightSelectedLine = isEditable
-        textView.selectionManager.insertionPointColor = theme.insertionPoint
-        textView.enclosingScrollView?.backgroundColor = useThemeBackground ? theme.background : .clear
-        paragraphStyle = generateParagraphStyle()
-        textView.typingAttributes = attributesFor(nil)
-    }
-
-    /// Finds the preferred use theme background.
-    /// - Returns: The background color to use.
-    private func getThemeBackground() -> NSColor {
-        if useThemeBackground {
-            return theme.lineHighlight
-        }
-
-        if systemAppearance == .darkAqua {
-            return NSColor.quaternaryLabelColor
-        }
-
-        return NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
-    }
-
-    /// Style the gutter view.
-    package func styleGutterView() {
-        gutterView.selectedLineColor = useThemeBackground ? theme.lineHighlight : systemAppearance == .darkAqua
-        ? NSColor.quaternaryLabelColor
-        : NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
-        gutterView.highlightSelectedLines = isEditable
-        gutterView.font = font.rulerFont
-        gutterView.backgroundColor = useThemeBackground ? theme.background : .windowBackgroundColor
-        if self.isEditable == false {
-            gutterView.selectedLineTextColor = nil
-            gutterView.selectedLineColor = .clear
-        }
     }
 
     /// Style the scroll view.
@@ -63,13 +28,11 @@ extension TextViewController {
         scrollView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.contentView.postsFrameChangedNotifications = true
         scrollView.hasVerticalScroller = true
-        scrollView.hasHorizontalScroller = !wrapLines
         scrollView.scrollerStyle = .overlay
     }
 
     package func styleMinimapView() {
         minimapView.postsFrameChangedNotifications = true
-        minimapView.isHidden = !showMinimap
     }
 
     /// Updates all relevant content insets including the find panel, scroll view, minimap and gutter position.
@@ -77,7 +40,7 @@ extension TextViewController {
         updateTextInsets()
 
         scrollView.contentView.postsBoundsChangedNotifications = true
-        if let contentInsets {
+        if let contentInsets = configuration.layout.contentInsets {
             scrollView.automaticallyAdjustsContentInsets = false
             scrollView.contentInsets = contentInsets
 
@@ -90,6 +53,7 @@ extension TextViewController {
         }
 
         // `additionalTextInsets` only effects text content.
+        let additionalTextInsets = configuration.layout.additionalTextInsets
         scrollView.contentInsets.top += additionalTextInsets?.top ?? 0
         scrollView.contentInsets.bottom += additionalTextInsets?.bottom ?? 0
         minimapView.scrollView.contentInsets.top += additionalTextInsets?.top ?? 0
@@ -104,7 +68,7 @@ extension TextViewController {
         scrollView.contentInsets.top += findInset
         minimapView.scrollView.contentInsets.top += findInset
 
-        findViewController?.topPadding = contentInsets?.top
+        findViewController?.topPadding = configuration.layout.contentInsets?.top
 
         gutterView.frame.origin.y = textView.frame.origin.y - scrollView.contentInsets.top
 

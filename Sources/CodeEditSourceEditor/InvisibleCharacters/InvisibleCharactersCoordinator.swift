@@ -12,14 +12,14 @@ import CodeEditTextView
 ///
 /// Takes a few parameters for contextual drawing such as the current editor theme, font, and indent option.
 ///
-/// To keep lookups fast, does not use a computed property for ``InvisibleCharactersConfig/triggerCharacters``.
+/// To keep lookups fast, does not use a computed property for ``InvisibleCharactersConfiguration/triggerCharacters``.
 /// Instead, this type keeps that internal property up-to-date whenever config is updated.
 ///
 /// Another performance optimization is a cache mechanism in CodeEditTextView. Whenever the config, indent option,
 /// theme, or font are updated, this object will tell the text view to clear it's cache. Keep updates to a minimum to
 /// retain as much cached data as possible.
 final class InvisibleCharactersCoordinator: InvisibleCharactersDelegate {
-    var config: InvisibleCharactersConfig {
+    var configuration: InvisibleCharactersConfiguration {
         didSet {
             updateTriggerCharacters()
         }
@@ -60,14 +60,24 @@ final class InvisibleCharactersCoordinator: InvisibleCharactersDelegate {
     /// The set of characters the text view should trigger a call to ``invisibleStyle`` for.
     var triggerCharacters: Set<UInt16> = []
 
+    convenience init(configuration: SourceEditorConfiguration) {
+        self.init(
+            configuration: configuration.peripherals.invisibleCharactersConfiguration,
+            warningCharacters: configuration.peripherals.warningCharacters,
+            indentOption: configuration.behavior.indentOption,
+            theme: configuration.appearance.theme,
+            font: configuration.appearance.font
+        )
+    }
+
     init(
-        config: InvisibleCharactersConfig,
+        configuration: InvisibleCharactersConfiguration,
         warningCharacters: Set<UInt16>,
         indentOption: IndentOption,
         theme: EditorTheme,
         font: NSFont
     ) {
-        self.config = config
+        self.configuration = configuration
         self.warningCharacters = warningCharacters
         self.indentOption = indentOption
         self.theme = theme
@@ -83,7 +93,7 @@ final class InvisibleCharactersCoordinator: InvisibleCharactersDelegate {
     }
 
     private func updateTriggerCharacters() {
-        triggerCharacters = config.triggerCharacters().union(warningCharacters)
+        triggerCharacters = configuration.triggerCharacters().union(warningCharacters)
     }
 
     /// Determines if the textview should clear cached styles.
@@ -103,17 +113,17 @@ final class InvisibleCharactersCoordinator: InvisibleCharactersDelegate {
     /// often and is cached in ``emphasizedFont``.
     func invisibleStyle(for character: UInt16, at range: NSRange, lineRange: NSRange) -> InvisibleCharacterStyle? {
         switch character {
-        case InvisibleCharactersConfig.Symbols.space:
+        case InvisibleCharactersConfiguration.Symbols.space:
             return spacesStyle(range: range, lineRange: lineRange)
-        case InvisibleCharactersConfig.Symbols.tab:
+        case InvisibleCharactersConfiguration.Symbols.tab:
             return tabStyle()
-        case InvisibleCharactersConfig.Symbols.carriageReturn:
+        case InvisibleCharactersConfiguration.Symbols.carriageReturn:
             return carriageReturnStyle()
-        case InvisibleCharactersConfig.Symbols.lineFeed:
+        case InvisibleCharactersConfiguration.Symbols.lineFeed:
             return lineFeedStyle()
-        case InvisibleCharactersConfig.Symbols.paragraphSeparator:
+        case InvisibleCharactersConfiguration.Symbols.paragraphSeparator:
             return paragraphSeparatorStyle()
-        case InvisibleCharactersConfig.Symbols.lineSeparator:
+        case InvisibleCharactersConfiguration.Symbols.lineSeparator:
             return lineSeparatorStyle()
         default:
             return warningCharacterStyle(for: character)
@@ -121,44 +131,48 @@ final class InvisibleCharactersCoordinator: InvisibleCharactersDelegate {
     }
 
     private func spacesStyle(range: NSRange, lineRange: NSRange) -> InvisibleCharacterStyle? {
-        guard config.showSpaces else { return nil }
+        guard configuration.showSpaces else { return nil }
         let locationInLine = range.location - lineRange.location
         let shouldBold = locationInLine % indentOption.charCount == indentOption.charCount - 1
         return .replace(
-            replacementCharacter: config.spaceReplacement,
+            replacementCharacter: configuration.spaceReplacement,
             color: invisibleColor,
             font: shouldBold ? emphasizedFont : font
         )
     }
 
     private func tabStyle() -> InvisibleCharacterStyle? {
-        guard config.showTabs else { return nil }
-        return .replace(replacementCharacter: config.tabReplacement, color: invisibleColor, font: font)
+        guard configuration.showTabs else { return nil }
+        return .replace(replacementCharacter: configuration.tabReplacement, color: invisibleColor, font: font)
     }
 
     private func carriageReturnStyle() -> InvisibleCharacterStyle? {
-        guard config.showLineEndings else { return nil }
-        return .replace(replacementCharacter: config.carriageReturnReplacement, color: invisibleColor, font: font)
+        guard configuration.showLineEndings else { return nil }
+        return .replace(
+            replacementCharacter: configuration.carriageReturnReplacement,
+            color: invisibleColor,
+            font: font
+        )
     }
 
     private func lineFeedStyle() -> InvisibleCharacterStyle? {
-        guard config.showLineEndings else { return nil }
-        return .replace(replacementCharacter: config.lineFeedReplacement, color: invisibleColor, font: font)
+        guard configuration.showLineEndings else { return nil }
+        return .replace(replacementCharacter: configuration.lineFeedReplacement, color: invisibleColor, font: font)
     }
 
     private func paragraphSeparatorStyle() -> InvisibleCharacterStyle? {
-        guard config.showLineEndings else { return nil }
+        guard configuration.showLineEndings else { return nil }
         return .replace(
-            replacementCharacter: config.paragraphSeparatorReplacement,
+            replacementCharacter: configuration.paragraphSeparatorReplacement,
             color: invisibleColor,
             font: font
         )
     }
 
     private func lineSeparatorStyle() -> InvisibleCharacterStyle? {
-        guard config.showLineEndings else { return nil }
+        guard configuration.showLineEndings else { return nil }
         return .replace(
-            replacementCharacter: config.lineSeparatorReplacement,
+            replacementCharacter: configuration.lineSeparatorReplacement,
             color: invisibleColor,
             font: font
         )

@@ -5,8 +5,11 @@
 
 
 <p align="center">
-  <a aria-label="Follow CodeEdit on Twitter" href="https://twitter.com/CodeEditApp" target="_blank">
-    <img alt="" src="https://img.shields.io/badge/Follow%20@CodeEditApp-black.svg?style=for-the-badge&logo=Twitter">
+  <a aria-label="Follow CodeEdit on X" href="https://x.com/CodeEditApp" target="_blank">
+    <img alt="" src="https://img.shields.io/badge/Follow%20@CodeEditApp-black.svg?style=for-the-badge&logo=X">
+  </a>
+    <a aria-label="Follow CodeEdit on Bluesky" href="https://bsky.app/profile/codeedit.app" target="_blank">
+    <img alt="" src="https://img.shields.io/badge/Follow%20@CodeEditApp-black.svg?style=for-the-badge&logo=Bluesky">
   </a>
   <a aria-label="Join the community on Discord" href="https://discord.gg/vChUXVf9Em" target="_blank">
     <img alt="" src="https://img.shields.io/badge/Join%20the%20community-black.svg?style=for-the-badge&logo=Discord">
@@ -33,33 +36,38 @@ An Xcode-inspired code editor view written in Swift powered by tree-sitter for [
 
 This package is fully documented [here](https://codeeditapp.github.io/CodeEditSourceEditor/documentation/codeeditsourceeditor/).
 
-## Usage
+## Usage (SwiftUI)
 
 ```swift
 import CodeEditSourceEditor
 
 struct ContentView: View {
-
     @State var text = "let x = 1.0"
+    
+    /// Automatically updates with cursor positions, or update the binding to set the user's cursors.
+    @State var cursorPositions: [CursorPosition] = []
+    
+    /// Configure the editor's appearance, features, and editing behavior...
     @State var theme = EditorTheme(...)
     @State var font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
-    @State var tabWidth = 4
-    @State var lineHeight = 1.2
-    @State var editorOverscroll = 0.3
+    @State var indentOption = .spaces(count: 4)
 
     var body: some View { 
-        CodeEditSourceEditor(
+        SourceEditor(
             $text,
-            language: .swift,
-            theme: $theme,
-            font: $font,
-            tabWidth: $tabWidth,
-            lineHeight: $lineHeight,
-            editorOverscroll: $editorOverscroll
+            language: language,
+            // Tons of customization options, with good defaults to get started quickly.
+            configuration: SourceEditorConfiguration(
+                appearance: .init(theme: theme, font: font),
+                behavior: .init(indentOption: indentOption)
+            ),
+            cursorPositions: $cursorPositions
         )
     }
 }
 ```
+
+An AppKit API is also available.
 
 ## Currently Supported Languages
 
@@ -67,11 +75,11 @@ See this issue https://github.com/CodeEditApp/CodeEditLanguages/issues/10 on `Co
 
 ## Dependencies
 
-Special thanks to [Matt Massicotte](https://twitter.com/mattie) for the great work he's done!
+Special thanks to [Matt Massicotte](https://bsky.app/profile/massicotte.org) for the great work he's done!
 
 | Package | Source | Author |
 | :- | :- | :- |
-| `SwiftTreeSitter` | [GitHub](https://github.com/ChimeHQ/SwiftTreeSitter) | [Matt Massicotte](https://twitter.com/mattie) |
+| `SwiftTreeSitter` | [GitHub](https://github.com/ChimeHQ/SwiftTreeSitter) | [Matt Massicotte](https://bsky.app/profile/massicotte.org) |
 
 ## License
 

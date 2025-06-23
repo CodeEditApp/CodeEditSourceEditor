@@ -20,7 +20,7 @@ public struct CursorPosition: Sendable, Codable, Equatable, Hashable {
     /// Initialize a cursor position.
     ///
     /// When this initializer is used, ``CursorPosition/range`` will be initialized to `NSNotFound`.
-    /// The range value, however, be filled when updated by ``CodeEditSourceEditor`` via a `Binding`, or when it appears
+    /// The range value, however, be filled when updated by ``SourceEditor`` via a `Binding`, or when it appears
     /// in the``TextViewController/cursorPositions`` array.
     ///
     /// - Parameters:
@@ -35,7 +35,7 @@ public struct CursorPosition: Sendable, Codable, Equatable, Hashable {
     /// Initialize a cursor position.
     ///
     /// When this initializer is used, both ``CursorPosition/line`` and ``CursorPosition/column`` will be initialized
-    /// to `-1`. They will, however, be filled when updated by ``CodeEditSourceEditor`` via a `Binding`, or when it
+    /// to `-1`. They will, however, be filled when updated by ``SourceEditor`` via a `Binding`, or when it
     /// appears in the ``TextViewController/cursorPositions`` array.
     ///
     /// - Parameter range: The range of the cursor position.

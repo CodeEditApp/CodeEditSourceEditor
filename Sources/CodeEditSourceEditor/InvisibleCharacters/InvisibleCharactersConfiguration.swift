@@ -1,5 +1,5 @@
 //
-//  InvisibleCharactersConfig.swift
+//  InvisibleCharactersConfiguration.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 6/11/25.
@@ -9,10 +9,10 @@
 ///
 /// Enable specific categories using the ``showSpaces``, ``showTabs``, and ``showLineEndings`` toggles. Customize
 /// drawing further with the ``spaceReplacement`` and family variables.
-public struct InvisibleCharactersConfig: Equatable, Hashable, Sendable, Codable {
+public struct InvisibleCharactersConfiguration: Equatable, Hashable, Sendable, Codable {
     /// An empty configuration.
-    public static var empty: InvisibleCharactersConfig {
-        InvisibleCharactersConfig(showSpaces: false, showTabs: false, showLineEndings: false)
+    public static var empty: InvisibleCharactersConfiguration {
+        InvisibleCharactersConfiguration(showSpaces: false, showTabs: false, showLineEndings: false)
     }
 
     /// Set to true to draw spaces with a dot.
