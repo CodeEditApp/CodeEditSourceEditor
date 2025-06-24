@@ -34,19 +34,20 @@ extension SourceEditor {
             self.controller = controller
             // swiftlint:disable:next notification_center_detachment
             NotificationCenter.default.removeObserver(self)
+            listenToTextViewNotifications(controller: controller)
+            listenToCursorNotifications(controller: controller)
+            listenToFindNotifications(controller: controller)
+        }
 
+        // MARK: - Listeners
+
+        /// Listen to anything related to the text view.
+        func listenToTextViewNotifications(controller: TextViewController) {
             NotificationCenter.default.addObserver(
                 self,
                 selector: #selector(textViewDidChangeText(_:)),
                 name: TextView.textDidChangeNotification,
                 object: controller.textView
-            )
-
-            NotificationCenter.default.addObserver(
-                self,
-                selector: #selector(textControllerCursorsDidUpdate(_:)),
-                name: TextViewController.cursorPositionUpdatedNotification,
-                object: controller
             )
 
             // Needs to be put on the main runloop or SwiftUI gets mad about updating state during view updates.
@@ -60,10 +61,23 @@ extension SourceEditor {
                     self?.textControllerScrollDidChange(notification)
                 }
                 .store(in: &cancellables)
+        }
 
+        /// Listen to the cursor publisher on the text view controller.
+        func listenToCursorNotifications(controller: TextViewController) {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(textControllerCursorsDidUpdate(_:)),
+                name: TextViewController.cursorPositionUpdatedNotification,
+                object: controller
+            )
+        }
+
+        /// Listen to all find panel notifications.
+        func listenToFindNotifications(controller: TextViewController) {
             NotificationCenter.default
                 .publisher(
-                    for: FindPanelViewModel.findPanelTextDidChangeNotification,
+                    for: FindPanelViewModel.Notifications.textDidChange,
                     object: controller
                 )
                 .receive(on: RunLoop.main)
@@ -74,7 +88,7 @@ extension SourceEditor {
 
             NotificationCenter.default
                 .publisher(
-                    for: FindPanelViewModel.findPanelReplaceTextDidChangeNotification,
+                    for: FindPanelViewModel.Notifications.replaceTextDidChange,
                     object: controller
                 )
                 .receive(on: RunLoop.main)
@@ -85,7 +99,7 @@ extension SourceEditor {
 
             NotificationCenter.default
                 .publisher(
-                    for: FindPanelViewModel.findPanelDidToggleNotification,
+                    for: FindPanelViewModel.Notifications.didToggle,
                     object: controller
                 )
                 .receive(on: RunLoop.main)
@@ -94,6 +108,8 @@ extension SourceEditor {
                 }
                 .store(in: &cancellables)
         }
+
+        // MARK: - Update Published State
 
         func updateHighlightProviders(_ highlightProviders: [any HighlightProviding]?) {
             guard let highlightProviders else {

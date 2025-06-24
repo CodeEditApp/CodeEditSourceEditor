@@ -10,10 +10,11 @@ import Combine
 import CodeEditTextView
 
 class FindPanelViewModel: ObservableObject {
-    static let findPanelTextDidChangeNotification = Notification.Name("FindPanelViewModel.findPanelTextDidChange")
-    // swiftlint:disable:next line_length
-    static let findPanelReplaceTextDidChangeNotification = Notification.Name("FindPanelViewModel.findPanelReplaceTextDidChange")
-    static let findPanelDidToggleNotification = Notification.Name("FindPanelViewModel.findPanelDidToggle")
+    enum Notifications {
+        static let textDidChange = Notification.Name("FindPanelViewModel.textDidChange")
+        static let replaceTextDidChange = Notification.Name("FindPanelViewModel.replaceTextDidChange")
+        static let didToggle = Notification.Name("FindPanelViewModel.didToggle")
+    }
 
     weak var target: FindPanelTarget?
     var dismiss: (() -> Void)?
