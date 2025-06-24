@@ -40,7 +40,7 @@ This package is fully documented [here](https://codeeditapp.github.io/CodeEditSo
 
 CodeEditSourceEditor provides two APIs for creating an editor: SwiftUI and AppKit. The SwiftUI API provides extremely customizable and flexible configuration options, including two-way bindings for state like cursor positions and scroll position. 
 
-For more complex features that require access to the underlying text view or text storage, we've developed the <doc:TextViewCoordinators> API. Using this API, developers can inject custom behavior into the editor as events happen, without having to work with state or bindings.
+For more complex features that require access to the underlying text view or text storage, we've developed the [TextViewCoordinators](https://codeeditapp.github.io/CodeEditSourceEditor/documentation/codeeditsourceeditor/textviewcoordinators) API. Using this API, developers can inject custom behavior into the editor as events happen, without having to work with state or bindings.
 
 ```swift
 import CodeEditSourceEditor
