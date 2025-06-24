@@ -19,15 +19,6 @@
       }
     },
     {
-      "identity" : "codeedittextview",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/CodeEditApp/CodeEditTextView.git",
-      "state" : {
-        "revision" : "c045ffcf4d8b2904e7bd138cdeccda99cba3ab3c",
-        "version" : "0.11.2"
-      }
-    },
-    {
       "identity" : "rearrange",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ChimeHQ/Rearrange",

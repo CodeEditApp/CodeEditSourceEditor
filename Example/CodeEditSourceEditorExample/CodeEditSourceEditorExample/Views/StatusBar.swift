@@ -18,7 +18,7 @@ struct StatusBar: View {
     @Binding var document: CodeEditSourceEditorExampleDocument
     @Binding var wrapLines: Bool
     @Binding var useSystemCursor: Bool
-    @Binding var cursorPositions: [CursorPosition]
+    @Binding var state: SourceEditorState
     @Binding var isInLongParse: Bool
     @Binding var language: CodeLanguage
     @Binding var theme: EditorTheme
@@ -100,11 +100,29 @@ struct StatusBar: View {
                             .controlSize(.small)
                         Text("Parsing Document")
                     }
-                } else {
-                    Text(getLabel(cursorPositions))
                 }
+                scrollPosition
+                Text(getLabel(state.cursorPositions))
             }
             .foregroundStyle(.secondary)
+
+            Divider()
+                .frame(height: 12)
+
+            Text(state.findText ?? "")
+                .frame(maxWidth: 30)
+                .lineLimit(1)
+                .truncationMode(.head)
+                .foregroundStyle(.secondary)
+
+            Button {
+                state.findPanelVisible.toggle()
+            } label: {
+                Text(state.findPanelVisible ? "Hide" : "Show") + Text(" Find")
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(.secondary)
+
             Divider()
                 .frame(height: 12)
             LanguagePicker(language: $language)
@@ -130,6 +148,39 @@ struct StatusBar: View {
         .onAppear {
             self.language = detectLanguage(fileURL: fileURL) ?? .default
             self.theme = colorScheme == .dark ? .dark : .light
+        }
+    }
+
+    var formatter: NumberFormatter {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.maximumFractionDigits = 2
+        formatter.minimumFractionDigits = 0
+        formatter.allowsFloats = true
+        return formatter
+    }
+
+    @ViewBuilder private var scrollPosition: some View {
+        HStack(spacing: 0) {
+            Text("{")
+            TextField(
+                "",
+                value: Binding(get: { Double(state.scrollPosition?.x ?? 0.0) }, set: { state.scrollPosition?.x = $0 }),
+                formatter: formatter
+            )
+            .textFieldStyle(.plain)
+            .labelsHidden()
+            .fixedSize()
+            Text(",")
+            TextField(
+                "",
+                value: Binding(get: { Double(state.scrollPosition?.y ?? 0.0) }, set: { state.scrollPosition?.y = $0 }),
+                formatter: formatter
+            )
+            .textFieldStyle(.plain)
+            .labelsHidden()
+            .fixedSize()
+            Text("}")
         }
     }
 
