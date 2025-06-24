@@ -26,6 +26,14 @@ public protocol TextViewCoordinator: AnyObject {
     ///                         dereferenced when ``TextViewCoordinator/destroy()-9nzfl`` is called.
     func prepareCoordinator(controller: TextViewController)
 
+    /// Called when the controller's `viewDidAppear` method is called by AppKit.
+    /// - Parameter controller: The text view controller that did appear.
+    func controllerDidAppear(controller: TextViewController)
+
+    /// Called when the controller's `viewDidDisappear` method is called by AppKit.
+    /// - Parameter controller: The text view controller that did disappear.
+    func controllerDidDisappear(controller: TextViewController)
+
     /// Called when the text view's text changed.
     /// - Parameter controller: The text controller.
     func textViewDidChangeText(controller: TextViewController)
@@ -40,6 +48,8 @@ public protocol TextViewCoordinator: AnyObject {
 
 /// Default implementations
 public extension TextViewCoordinator {
+    func controllerDidAppear(controller: TextViewController) { }
+    func controllerDidDisappear(controller: TextViewController) { }
     func textViewDidChangeText(controller: TextViewController) { }
     func textViewDidChangeSelection(controller: TextViewController, newPositions: [CursorPosition]) { }
     func destroy() { }

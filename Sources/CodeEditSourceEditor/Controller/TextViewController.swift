@@ -24,8 +24,8 @@ public class TextViewController: NSViewController {
 
     weak var findViewController: FindViewController?
 
-    var scrollView: NSScrollView!
-    var textView: TextView!
+    internal(set) public var scrollView: NSScrollView!
+    internal(set) public var textView: TextView!
     var gutterView: GutterView!
     var minimapView: MinimapView!
 
@@ -254,6 +254,16 @@ public class TextViewController: NSViewController {
         // The calculation this causes cannot be done until the view knows it's final position
         updateTextInsets()
         minimapView.layout()
+    }
+
+    override public func viewDidAppear() {
+        super.viewDidAppear()
+        textCoordinators.forEach { $0.val?.controllerDidAppear(controller: self) }
+    }
+
+    override public func viewDidDisappear() {
+        super.viewDidDisappear()
+        textCoordinators.forEach { $0.val?.controllerDidDisappear(controller: self) }
     }
 
     deinit {
