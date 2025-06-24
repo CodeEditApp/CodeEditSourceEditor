@@ -46,7 +46,7 @@ extension FindViewController {
         findPanel.addEventMonitor()
 
         NotificationCenter.default.post(
-            name: FindPanelViewModel.findPanelDidToggleNotification,
+            name: FindPanelViewModel.Notifications.didToggle,
             object: viewModel.target
         )
     }
@@ -77,7 +77,7 @@ extension FindViewController {
         }
 
         NotificationCenter.default.post(
-            name: FindPanelViewModel.findPanelDidToggleNotification,
+            name: FindPanelViewModel.Notifications.didToggle,
             object: viewModel.target
         )
     }

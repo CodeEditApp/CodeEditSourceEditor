@@ -106,10 +106,10 @@ class FindPanelViewModel: ObservableObject {
         target?.textView.emphasisManager?.removeEmphases(for: EmphasisGroup.find)
         find()
 
-        NotificationCenter.default.post(name: Self.findPanelTextDidChangeNotification, object: target)
+        NotificationCenter.default.post(name: Self.Notifications.textDidChange, object: target)
     }
 
     func replaceTextDidChange() {
-        NotificationCenter.default.post(name: Self.findPanelReplaceTextDidChangeNotification, object: target)
+        NotificationCenter.default.post(name: Self.Notifications.replaceTextDidChange, object: target)
     }
 }
