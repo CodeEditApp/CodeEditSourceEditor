@@ -256,6 +256,16 @@ public class TextViewController: NSViewController {
         minimapView.layout()
     }
 
+    override public func viewDidAppear() {
+        super.viewDidAppear()
+        textCoordinators.forEach { $0.val?.controllerDidAppear(controller: self) }
+    }
+
+    override public func viewDidDisappear() {
+        super.viewDidDisappear()
+        textCoordinators.forEach { $0.val?.controllerDidDisappear(controller: self) }
+    }
+
     deinit {
         if let highlighter {
             textView.removeStorageDelegate(highlighter)
