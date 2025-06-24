@@ -124,18 +124,23 @@ public struct SourceEditor: NSViewControllerRepresentable {
             context.coordinator.isUpdateFromTextView = false
         } else {
             context.coordinator.isUpdatingFromRepresentable = true
-            if let cursorPositions = state.cursorPositions {
+            if let cursorPositions = state.cursorPositions, cursorPositions != state.cursorPositions {
                 controller.setCursorPositions(cursorPositions)
             }
 
-            if let scrollPosition = state.scrollPosition {
+            if let scrollPosition = state.scrollPosition, scrollPosition != state.scrollPosition {
                 controller.scrollView.scroll(controller.scrollView.contentView, to: scrollPosition)
                 controller.scrollView.reflectScrolledClipView(controller.scrollView.contentView)
                 controller.gutterView.needsDisplay = true
+                NotificationCenter.default.post(name: NSView.frameDidChangeNotification, object: controller.textView)
             }
 
-            if let findText = state.findText, findText != state.findText {
+            if let findText = state.findText, findText != controller.findViewController?.viewModel.findText {
                 controller.findViewController?.viewModel.findText = findText
+            }
+
+            if let replaceText = state.replaceText, replaceText != controller.findViewController?.viewModel.replaceText {
+                controller.findViewController?.viewModel.replaceText = replaceText
             }
 
             if let findPanelVisible = state.findPanelVisible,

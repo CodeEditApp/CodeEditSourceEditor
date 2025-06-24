@@ -74,6 +74,17 @@ extension SourceEditor {
 
             NotificationCenter.default
                 .publisher(
+                    for: FindPanelViewModel.findPanelReplaceTextDidChangeNotification,
+                    object: controller
+                )
+                .receive(on: RunLoop.main)
+                .sink { [weak self] notification in
+                    self?.textControllerReplaceTextDidChange(notification)
+                }
+                .store(in: &cancellables)
+
+            NotificationCenter.default
+                .publisher(
                     for: FindPanelViewModel.findPanelDidToggleNotification,
                     object: controller
                 )
@@ -125,6 +136,14 @@ extension SourceEditor {
                 return
             }
             updateState { $0.findText = findModel.findText }
+        }
+
+        func textControllerReplaceTextDidChange(_ notification: Notification) {
+            guard let controller = notification.object as? TextViewController,
+                  let findModel = controller.findViewController?.viewModel else {
+                return
+            }
+            updateState { $0.replaceText = findModel.replaceText }
         }
 
         func textControllerFindDidToggle(_ notification: Notification) {
