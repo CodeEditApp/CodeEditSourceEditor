@@ -208,7 +208,10 @@ final class TextViewControllerTests: XCTestCase {
 
         // Insert lots of spaces
         controller.configuration.behavior.indentOption = .spaces(count: 1000)
-        controller.textView.replaceCharacters(in: NSRange(location: 0, length: controller.textView.textStorage.length), with: "")
+        controller.textView.replaceCharacters(
+            in: NSRange(location: 0, length: controller.textView.textStorage.length),
+            with: ""
+        )
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, String(repeating: " ", count: 1000))
     }
@@ -241,7 +244,7 @@ final class TextViewControllerTests: XCTestCase {
 
         controller.scrollView.setFrameSize(NSSize(width: 500, height: 500))
         controller.viewDidLoad()
-        let _ = controller.textView.becomeFirstResponder()
+        _ = controller.textView.becomeFirstResponder()
         controller.configuration.appearance.bracketPairEmphasis = nil
         controller.setText("{ Lorem Ipsum {} }")
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
@@ -459,12 +462,12 @@ final class TextViewControllerTests: XCTestCase {
 
     func test_foldingRibbonToggle() {
         controller.setText("Hello World")
-        controller.showFoldingRibbon = false
+        controller.configuration.peripherals.showFoldingRibbon = false
         XCTAssertFalse(controller.gutterView.showFoldingRibbon)
         controller.gutterView.updateWidthIfNeeded() // Would be called on a display pass
         let noRibbonWidth = controller.gutterView.frame.width
 
-        controller.showFoldingRibbon = true
+        controller.configuration.peripherals.showFoldingRibbon = true
         XCTAssertTrue(controller.gutterView.showFoldingRibbon)
         controller.gutterView.updateWidthIfNeeded() // Would be called on a display pass
         XCTAssertEqual(controller.gutterView.frame.width, noRibbonWidth + 7.0)
