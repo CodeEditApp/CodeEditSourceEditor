@@ -48,6 +48,9 @@ public class TextViewController: NSViewController {
     var localEvenMonitor: Any?
     var isPostingCursorNotification: Bool = false
 
+    /// A default `NSParagraphStyle` with a set `lineHeight`
+    lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
+
     // MARK: - Public Variables
 
     /// Passthrough value for the `textView`s string
@@ -170,21 +173,21 @@ public class TextViewController: NSViewController {
     /// This will be `nil` if another highlighter provider is passed to the source editor.
     internal(set) public var treeSitterClient: TreeSitterClient?
 
-    package var fontCharWidth: CGFloat { (" " as NSString).size(withAttributes: [.font: font]).width }
+    var fontCharWidth: CGFloat { (" " as NSString).size(withAttributes: [.font: font]).width }
 
     /// Filters used when applying edits..
-    internal var textFilters: [TextFormation.Filter] = []
+    var textFilters: [TextFormation.Filter] = []
 
-    internal var cancellables = Set<AnyCancellable>()
+    var cancellables = Set<AnyCancellable>()
 
     /// The trailing inset for the editor. Grows when line wrapping is disabled or when the minimap is shown.
-    package var textViewTrailingInset: CGFloat {
+    var textViewTrailingInset: CGFloat {
         // See https://github.com/CodeEditApp/CodeEditTextView/issues/66
         // wrapLines ? 1 : 48
         (minimapView?.isHidden ?? false) ? 0 : (minimapView?.frame.width ?? 0.0)
     }
 
-    package var textViewInsets: HorizontalEdgeInsets {
+    var textViewInsets: HorizontalEdgeInsets {
         HorizontalEdgeInsets(
             left: showGutter ? gutterView.frame.width : 0.0,
             right: textViewTrailingInset
@@ -247,28 +250,6 @@ public class TextViewController: NSViewController {
         self.textView.setText(text)
         self.setUpHighlighter()
         self.gutterView.setNeedsDisplay(self.gutterView.frame)
-    }
-
-    // MARK: Paragraph Style
-
-    /// A default `NSParagraphStyle` with a set `lineHeight`
-    package lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
-
-    override public func viewWillAppear() {
-        super.viewWillAppear()
-        // The calculation this causes cannot be done until the view knows it's final position
-        updateTextInsets()
-        minimapView.layout()
-    }
-
-    override public func viewDidAppear() {
-        super.viewDidAppear()
-        textCoordinators.forEach { $0.val?.controllerDidAppear(controller: self) }
-    }
-
-    override public func viewDidDisappear() {
-        super.viewDidDisappear()
-        textCoordinators.forEach { $0.val?.controllerDidDisappear(controller: self) }
     }
 
     deinit {

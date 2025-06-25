@@ -135,14 +135,14 @@ public class GutterView: NSView {
 
     public convenience init(
         configuration: borrowing SourceEditorConfiguration,
-        textView: TextView,
+        controller: TextViewController,
         delegate: GutterViewDelegate? = nil
     ) {
         self.init(
             font: configuration.appearance.font,
             textColor: configuration.appearance.theme.text.color,
             selectedTextColor: configuration.appearance.theme.selection,
-            textView: textView,
+            controller: controller,
             delegate: delegate
         )
     }

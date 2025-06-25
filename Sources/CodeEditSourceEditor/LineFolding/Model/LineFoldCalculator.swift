@@ -61,7 +61,7 @@ actor LineFoldCalculator {
         // Depth: Open range
         var openFolds: [Int: LineFoldStorage.RawFold] = [:]
         var currentDepth: Int = 0
-        var lineIterator = await ChunkedLineIterator(
+        let lineIterator = await ChunkedLineIterator(
             controller: controller,
             foldProvider: foldProvider,
             textIterator: await controller.textView.layoutManager.lineStorage.makeIterator()

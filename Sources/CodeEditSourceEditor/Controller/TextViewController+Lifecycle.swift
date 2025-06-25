@@ -16,6 +16,16 @@ extension TextViewController {
         minimapView.layout()
     }
 
+    override public func viewDidAppear() {
+        super.viewDidAppear()
+        textCoordinators.forEach { $0.val?.controllerDidAppear(controller: self) }
+    }
+
+    override public func viewDidDisappear() {
+        super.viewDidDisappear()
+        textCoordinators.forEach { $0.val?.controllerDidDisappear(controller: self) }
+    }
+
     override public func loadView() {
         super.loadView()
 
@@ -24,7 +34,7 @@ extension TextViewController {
 
         gutterView = GutterView(
             configuration: configuration,
-            textView: textView,
+            controller: self,
             delegate: self
         )
         gutterView.updateWidthIfNeeded()
@@ -136,7 +146,7 @@ extension TextViewController {
             self.gutterView.frame.size.height = self.textView.frame.height + 10
             self.gutterView.frame.origin.y = self.textView.frame.origin.y - self.scrollView.contentInsets.top
             self.gutterView.needsDisplay = true
-            self?.gutterView.foldingRibbon.needsDisplay = true
+            self.gutterView.foldingRibbon.needsDisplay = true
             self.reformattingGuideView?.updatePosition(in: self)
             self.scrollView.needsLayout = true
         }
