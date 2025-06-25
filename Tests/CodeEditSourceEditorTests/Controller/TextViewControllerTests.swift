@@ -469,8 +469,12 @@ final class TextViewControllerTests: XCTestCase {
 
         controller.configuration.peripherals.showFoldingRibbon = true
         XCTAssertTrue(controller.gutterView.showFoldingRibbon)
+        XCTAssertFalse(controller.gutterView.foldingRibbon.isHidden)
         controller.gutterView.updateWidthIfNeeded() // Would be called on a display pass
-        XCTAssertEqual(controller.gutterView.frame.width, noRibbonWidth + 7.0)
+        XCTAssertEqual(
+            controller.gutterView.frame.width,
+            noRibbonWidth + 7.0 + controller.gutterView.foldingRibbonPadding
+        )
     }
 
     // MARK: - Get Overlapping Lines
