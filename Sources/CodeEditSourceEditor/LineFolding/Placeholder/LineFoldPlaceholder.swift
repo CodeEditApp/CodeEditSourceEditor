@@ -11,7 +11,7 @@ import CodeEditTextView
 protocol LineFoldPlaceholderDelegate: AnyObject {
     func placeholderBackgroundColor() -> NSColor
     func placeholderTextColor() -> NSColor
-    
+
     func placeholderSelectedColor() -> NSColor
     func placeholderSelectedTextColor() -> NSColor
 
