@@ -230,6 +230,7 @@ public class TextViewController: NSViewController {
         coordinators.forEach {
             $0.prepareCoordinator(controller: self)
         }
+        self.textCoordinators = coordinators.map { WeakCoordinator($0) }
     }
 
     required init?(coder: NSCoder) {
