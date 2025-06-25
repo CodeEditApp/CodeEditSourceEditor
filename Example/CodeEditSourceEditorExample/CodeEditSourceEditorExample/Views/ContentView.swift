@@ -19,7 +19,9 @@ struct ContentView: View {
 
     @State private var language: CodeLanguage = .default
     @State private var theme: EditorTheme = .light
-    @State private var cursorPositions: [CursorPosition] = [.init(line: 1, column: 1)]
+    @State private var editorState = SourceEditorState(
+        cursorPositions: [CursorPosition(line: 1, column: 1)]
+    )
 
     @State private var font: NSFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .medium)
     @AppStorage("wrapLines") private var wrapLines: Bool = true
@@ -67,7 +69,7 @@ struct ContentView: View {
                         warningCharacters: warningCharacters
                     )
                 ),
-                cursorPositions: $cursorPositions
+                state: $editorState
             )
             .overlay(alignment: .bottom) {
                 StatusBar(
@@ -75,7 +77,7 @@ struct ContentView: View {
                     document: $document,
                     wrapLines: $wrapLines,
                     useSystemCursor: $useSystemCursor,
-                    cursorPositions: $cursorPositions,
+                    state: $editorState,
                     isInLongParse: $isInLongParse,
                     language: $language,
                     theme: $theme,

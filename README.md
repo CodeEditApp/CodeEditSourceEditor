@@ -38,19 +38,27 @@ This package is fully documented [here](https://codeeditapp.github.io/CodeEditSo
 
 ## Usage (SwiftUI)
 
+CodeEditSourceEditor provides two APIs for creating an editor: SwiftUI and AppKit. The SwiftUI API provides extremely customizable and flexible configuration options, including two-way bindings for state like cursor positions and scroll position. 
+
+For more complex features that require access to the underlying text view or text storage, we've developed the [TextViewCoordinators](https://codeeditapp.github.io/CodeEditSourceEditor/documentation/codeeditsourceeditor/textviewcoordinators) API. Using this API, developers can inject custom behavior into the editor as events happen, without having to work with state or bindings.
+
 ```swift
 import CodeEditSourceEditor
 
 struct ContentView: View {
     @State var text = "let x = 1.0"
     
-    /// Automatically updates with cursor positions, or update the binding to set the user's cursors.
-    @State var cursorPositions: [CursorPosition] = []
+   /// Automatically updates with cursor positions, scroll position, find panel text.
+    /// Everything in this object is two-way, use it to update cursor positions, scroll position, etc.
+    @State var editorState = SourceEditorState()
     
     /// Configure the editor's appearance, features, and editing behavior...
     @State var theme = EditorTheme(...)
     @State var font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
     @State var indentOption = .spaces(count: 4)
+
+    /// *Powerful* customization options with our text view coordinators API 
+    @State var autoCompleteCoordinator = AutoCompleteCoordinator()
 
     var body: some View { 
         SourceEditor(
@@ -61,8 +69,26 @@ struct ContentView: View {
                 appearance: .init(theme: theme, font: font),
                 behavior: .init(indentOption: indentOption)
             ),
-            cursorPositions: $cursorPositions
+            state: $editorState,
+            coordinators: [autoCompleteCoordinator]
         )
+    }
+    
+    /// Autocompletes "Hello" to "Hello world!" whenever it's typed.
+    final class AutoCompleteCoordinator: TextViewCoordinator {
+        func prepareCoordinator(controller: TextViewController) { }
+
+        func textViewDidChangeText(controller: TextViewController) {
+            for cursorPosition in controller.cursorPositions where cursorPosition.range.location >= 5 {
+                let location = cursorPosition.range.location
+                let previousRange = NSRange(start: location - 5, end: location)
+                let string = (controller.text as NSString).substring(with: previousRange)
+
+                if string.lowercased() == "hello" {
+                    controller.textView.replaceCharacters(in: NSRange(location: location, length: 0), with: " world!")
+                }
+            }
+        }
     }
 }
 ```

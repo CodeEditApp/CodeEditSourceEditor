@@ -12,7 +12,7 @@ import CodeEditLanguages
 
 /// A SwiftUI View that provides source editing functionality.
 public struct SourceEditor: NSViewControllerRepresentable {
-    package enum TextAPI {
+    enum TextAPI {
         case binding(Binding<String>)
         case storage(NSTextStorage)
     }
@@ -32,7 +32,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         _ text: Binding<String>,
         language: CodeLanguage,
         configuration: SourceEditorConfiguration,
-        cursorPositions: Binding<[CursorPosition]>,
+        state: Binding<SourceEditorState>,
         highlightProviders: [any HighlightProviding]? = nil,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = []
@@ -40,7 +40,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         self.text = .binding(text)
         self.language = language
         self.configuration = configuration
-        self.cursorPositions = cursorPositions
+        self._state = state
         self.highlightProviders = highlightProviders
         self.undoManager = undoManager
         self.coordinators = coordinators
@@ -61,7 +61,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         _ text: NSTextStorage,
         language: CodeLanguage,
         configuration: SourceEditorConfiguration,
-        cursorPositions: Binding<[CursorPosition]>,
+        state: Binding<SourceEditorState>,
         highlightProviders: [any HighlightProviding]? = nil,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = []
@@ -69,19 +69,19 @@ public struct SourceEditor: NSViewControllerRepresentable {
         self.text = .storage(text)
         self.language = language
         self.configuration = configuration
-        self.cursorPositions = cursorPositions
+        self._state = state
         self.highlightProviders = highlightProviders
         self.undoManager = undoManager
         self.coordinators = coordinators
     }
 
-    package var text: TextAPI
-    private var language: CodeLanguage
-    private var configuration: SourceEditorConfiguration
-    package var cursorPositions: Binding<[CursorPosition]>
-    private var highlightProviders: [any HighlightProviding]?
-    private var undoManager: CEUndoManager?
-    package var coordinators: [any TextViewCoordinator]
+    var text: TextAPI
+    var language: CodeLanguage
+    var configuration: SourceEditorConfiguration
+    @Binding var state: SourceEditorState
+    var highlightProviders: [any HighlightProviding]?
+    var undoManager: CEUndoManager?
+    var coordinators: [any TextViewCoordinator]
 
     public typealias NSViewControllerType = TextViewController
 
@@ -90,7 +90,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
             string: "",
             language: language,
             configuration: configuration,
-            cursorPositions: cursorPositions.wrappedValue,
+            cursorPositions: state.cursorPositions ?? [],
             highlightProviders: context.coordinator.highlightProviders,
             undoManager: undoManager,
             coordinators: coordinators
@@ -104,28 +104,28 @@ public struct SourceEditor: NSViewControllerRepresentable {
         if controller.textView == nil {
             controller.loadView()
         }
-        if !cursorPositions.isEmpty {
-            controller.setCursorPositions(cursorPositions.wrappedValue)
+        if !(state.cursorPositions?.isEmpty ?? true) {
+            controller.setCursorPositions(state.cursorPositions ?? [])
         }
 
-        context.coordinator.controller = controller
+        context.coordinator.setController(controller)
         return controller
     }
 
     public func makeCoordinator() -> Coordinator {
-        Coordinator(text: text, cursorPositions: cursorPositions, highlightProviders: highlightProviders)
+        Coordinator(text: text, editorState: $state, highlightProviders: highlightProviders)
     }
 
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
         context.coordinator.updateHighlightProviders(highlightProviders)
 
-        if !context.coordinator.isUpdateFromTextView {
-            // Prevent infinite loop of update notifications
-            context.coordinator.isUpdatingFromRepresentable = true
-            controller.setCursorPositions(cursorPositions.wrappedValue)
-            context.coordinator.isUpdatingFromRepresentable = false
-        } else {
+        // Prevent infinite loop of update notifications
+        if context.coordinator.isUpdateFromTextView {
             context.coordinator.isUpdateFromTextView = false
+        } else {
+            context.coordinator.isUpdatingFromRepresentable = true
+            updateControllerWithState(state, controller: controller)
+            context.coordinator.isUpdatingFromRepresentable = false
         }
 
         // Do manual diffing to reduce the amount of reloads.
@@ -142,6 +142,40 @@ public struct SourceEditor: NSViewControllerRepresentable {
 
         controller.reloadUI()
         return
+    }
+
+    private func updateControllerWithState(_ state: SourceEditorState, controller: TextViewController) {
+        if let cursorPositions = state.cursorPositions, cursorPositions != state.cursorPositions {
+            controller.setCursorPositions(cursorPositions)
+        }
+
+        if let scrollPosition = state.scrollPosition, scrollPosition != state.scrollPosition {
+            controller.scrollView.scroll(controller.scrollView.contentView, to: scrollPosition)
+            controller.scrollView.reflectScrolledClipView(controller.scrollView.contentView)
+            controller.gutterView.needsDisplay = true
+            NotificationCenter.default.post(name: NSView.frameDidChangeNotification, object: controller.textView)
+        }
+
+        if let findText = state.findText, findText != controller.findViewController?.viewModel.findText {
+            controller.findViewController?.viewModel.findText = findText
+        }
+
+        if let replaceText = state.replaceText, replaceText != controller.findViewController?.viewModel.replaceText {
+            controller.findViewController?.viewModel.replaceText = replaceText
+        }
+
+        if let findPanelVisible = state.findPanelVisible,
+           let findController = controller.findViewController,
+           findController.viewModel.isShowingFindPanel != findPanelVisible {
+            // Needs to be on the next runloop, not many great ways to do this besides a dispatch...
+            DispatchQueue.main.async {
+                if findPanelVisible {
+                    findController.showFindPanel()
+                } else {
+                    findController.hideFindPanel()
+                }
+            }
+        }
     }
 
     private func updateHighlighting(_ controller: TextViewController, coordinator: Coordinator) {
