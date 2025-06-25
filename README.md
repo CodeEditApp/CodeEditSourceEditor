@@ -5,8 +5,11 @@
 
 
 <p align="center">
-  <a aria-label="Follow CodeEdit on Twitter" href="https://twitter.com/CodeEditApp" target="_blank">
-    <img alt="" src="https://img.shields.io/badge/Follow%20@CodeEditApp-black.svg?style=for-the-badge&logo=Twitter">
+  <a aria-label="Follow CodeEdit on X" href="https://x.com/CodeEditApp" target="_blank">
+    <img alt="" src="https://img.shields.io/badge/Follow%20@CodeEditApp-black.svg?style=for-the-badge&logo=X">
+  </a>
+    <a aria-label="Follow CodeEdit on Bluesky" href="https://bsky.app/profile/codeedit.app" target="_blank">
+    <img alt="" src="https://img.shields.io/badge/Follow%20@CodeEditApp-black.svg?style=for-the-badge&logo=Bluesky">
   </a>
   <a aria-label="Join the community on Discord" href="https://discord.gg/vChUXVf9Em" target="_blank">
     <img alt="" src="https://img.shields.io/badge/Join%20the%20community-black.svg?style=for-the-badge&logo=Discord">
@@ -21,8 +24,7 @@ An Xcode-inspired code editor view written in Swift powered by tree-sitter for [
 <img width="1012" alt="social-cover-textview" src="https://user-images.githubusercontent.com/806104/194083584-91555dce-ad4c-4066-922e-1eab889134be.png">
 
 ![GitHub release](https://img.shields.io/github/v/release/CodeEditApp/CodeEditSourceEditor?color=orange&label=latest%20release&sort=semver&style=flat-square)
-![Github Tests](https://img.shields.io/github/actions/workflow/status/CodeEditApp/CodeEditSourceEditor/tests.yml?branch=main&label=tests&style=flat-square)
-![Documentation](https://img.shields.io/github/actions/workflow/status/CodeEditApp/CodeEditSourceEditor/build-documentation.yml?branch=main&label=docs&style=flat-square)
+![Github Tests](https://img.shields.io/github/actions/workflow/status/CodeEditApp/CodeEditSourceEditor/CI-push.yml?branch=main&label=tests&style=flat-square)
 ![GitHub Repo stars](https://img.shields.io/github/stars/CodeEditApp/CodeEditSourceEditor?style=flat-square)
 ![GitHub forks](https://img.shields.io/github/forks/CodeEditApp/CodeEditSourceEditor?style=flat-square)
 [![Discord Badge](https://img.shields.io/discord/951544472238444645?color=5865F2&label=Discord&logo=discord&logoColor=white&style=flat-square)](https://discord.gg/vChUXVf9Em)
@@ -34,33 +36,64 @@ An Xcode-inspired code editor view written in Swift powered by tree-sitter for [
 
 This package is fully documented [here](https://codeeditapp.github.io/CodeEditSourceEditor/documentation/codeeditsourceeditor/).
 
-## Usage
+## Usage (SwiftUI)
+
+CodeEditSourceEditor provides two APIs for creating an editor: SwiftUI and AppKit. The SwiftUI API provides extremely customizable and flexible configuration options, including two-way bindings for state like cursor positions and scroll position. 
+
+For more complex features that require access to the underlying text view or text storage, we've developed the [TextViewCoordinators](https://codeeditapp.github.io/CodeEditSourceEditor/documentation/codeeditsourceeditor/textviewcoordinators) API. Using this API, developers can inject custom behavior into the editor as events happen, without having to work with state or bindings.
 
 ```swift
 import CodeEditSourceEditor
 
 struct ContentView: View {
-
     @State var text = "let x = 1.0"
+    
+   /// Automatically updates with cursor positions, scroll position, find panel text.
+    /// Everything in this object is two-way, use it to update cursor positions, scroll position, etc.
+    @State var editorState = SourceEditorState()
+    
+    /// Configure the editor's appearance, features, and editing behavior...
     @State var theme = EditorTheme(...)
     @State var font = NSFont.monospacedSystemFont(ofSize: 11, weight: .regular)
-    @State var tabWidth = 4
-    @State var lineHeight = 1.2
-    @State var editorOverscroll = 0.3
+    @State var indentOption = .spaces(count: 4)
+
+    /// *Powerful* customization options with our text view coordinators API 
+    @State var autoCompleteCoordinator = AutoCompleteCoordinator()
 
     var body: some View { 
-        CodeEditSourceEditor(
+        SourceEditor(
             $text,
-            language: .swift,
-            theme: $theme,
-            font: $font,
-            tabWidth: $tabWidth,
-            lineHeight: $lineHeight,
-            editorOverscroll: $editorOverscroll
+            language: language,
+            // Tons of customization options, with good defaults to get started quickly.
+            configuration: SourceEditorConfiguration(
+                appearance: .init(theme: theme, font: font),
+                behavior: .init(indentOption: indentOption)
+            ),
+            state: $editorState,
+            coordinators: [autoCompleteCoordinator]
         )
+    }
+    
+    /// Autocompletes "Hello" to "Hello world!" whenever it's typed.
+    final class AutoCompleteCoordinator: TextViewCoordinator {
+        func prepareCoordinator(controller: TextViewController) { }
+
+        func textViewDidChangeText(controller: TextViewController) {
+            for cursorPosition in controller.cursorPositions where cursorPosition.range.location >= 5 {
+                let location = cursorPosition.range.location
+                let previousRange = NSRange(start: location - 5, end: location)
+                let string = (controller.text as NSString).substring(with: previousRange)
+
+                if string.lowercased() == "hello" {
+                    controller.textView.replaceCharacters(in: NSRange(location: location, length: 0), with: " world!")
+                }
+            }
+        }
     }
 }
 ```
+
+An AppKit API is also available.
 
 ## Currently Supported Languages
 
@@ -68,11 +101,11 @@ See this issue https://github.com/CodeEditApp/CodeEditLanguages/issues/10 on `Co
 
 ## Dependencies
 
-Special thanks to [Matt Massicotte](https://twitter.com/mattie) for the great work he's done!
+Special thanks to [Matt Massicotte](https://bsky.app/profile/massicotte.org) for the great work he's done!
 
 | Package | Source | Author |
 | :- | :- | :- |
-| `SwiftTreeSitter` | [GitHub](https://github.com/ChimeHQ/SwiftTreeSitter) | [Matt Massicotte](https://twitter.com/mattie) |
+| `SwiftTreeSitter` | [GitHub](https://github.com/ChimeHQ/SwiftTreeSitter) | [Matt Massicotte](https://bsky.app/profile/massicotte.org) |
 
 ## License
 

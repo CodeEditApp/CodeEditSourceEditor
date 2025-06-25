@@ -14,6 +14,7 @@ jobs:
         run: |
           cd docs
           git init
+          git config http.postBuffer 524288000
           git add -A
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"

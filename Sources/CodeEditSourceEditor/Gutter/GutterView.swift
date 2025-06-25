@@ -19,7 +19,7 @@ public protocol GutterViewDelegate: AnyObject {
 ///
 /// If the gutter needs more space (when the number of digits in the numbers increases eg. adding a line after line 99),
 /// it will notify it's delegate via the ``GutterViewDelegate/gutterViewWidthDidUpdate(newWidth:)`` method. In
-/// `CodeEditSourceEditor`, this notifies the ``TextViewController``, which in turn updates the textview's edge insets
+/// `SourceEditor`, this notifies the ``TextViewController``, which in turn updates the textview's edge insets
 /// to adjust for the new leading inset.
 ///
 /// This view also listens for selection updates, and draws a selected background on selected lines to keep the illusion
@@ -131,6 +131,20 @@ public class GutterView: NSView {
                 height: newValue.height
             )
         }
+    }
+
+    public convenience init(
+        configuration: borrowing SourceEditorConfiguration,
+        textView: TextView,
+        delegate: GutterViewDelegate? = nil
+    ) {
+        self.init(
+            font: configuration.appearance.font,
+            textColor: configuration.appearance.theme.text.color,
+            selectedTextColor: configuration.appearance.theme.selection,
+            textView: textView,
+            delegate: delegate
+        )
     }
 
     public init(

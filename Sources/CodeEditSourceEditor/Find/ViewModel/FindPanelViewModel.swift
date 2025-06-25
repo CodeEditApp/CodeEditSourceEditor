@@ -10,6 +10,12 @@ import Combine
 import CodeEditTextView
 
 class FindPanelViewModel: ObservableObject {
+    enum Notifications {
+        static let textDidChange = Notification.Name("FindPanelViewModel.textDidChange")
+        static let replaceTextDidChange = Notification.Name("FindPanelViewModel.replaceTextDidChange")
+        static let didToggle = Notification.Name("FindPanelViewModel.didToggle")
+    }
+
     weak var target: FindPanelTarget?
     var dismiss: (() -> Void)?
 
@@ -100,5 +106,11 @@ class FindPanelViewModel: ObservableObject {
         // Clear existing emphases before performing new find
         target?.textView.emphasisManager?.removeEmphases(for: EmphasisGroup.find)
         find()
+
+        NotificationCenter.default.post(name: Self.Notifications.textDidChange, object: target)
+    }
+
+    func replaceTextDidChange() {
+        NotificationCenter.default.post(name: Self.Notifications.replaceTextDidChange, object: target)
     }
 }

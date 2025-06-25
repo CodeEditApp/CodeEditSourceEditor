@@ -23,25 +23,17 @@ extension TextViewController {
         scrollView.documentView = textView
 
         gutterView = GutterView(
-            font: font.rulerFont,
-            textColor: theme.text.color.withAlphaComponent(0.35),
-            selectedTextColor: theme.text.color,
-            controller: self,
+            configuration: configuration,
+            textView: textView,
             delegate: self
         )
         gutterView.updateWidthIfNeeded()
         scrollView.addFloatingSubview(gutterView, for: .horizontal)
 
-        guideView = ReformattingGuideView(
-            column: self.reformatAtColumn,
-            isVisible: self.showReformattingGuide,
-            theme: theme
-        )
-        guideView.wantsLayer = true
-        scrollView.addFloatingSubview(guideView, for: .vertical)
-        guideView.updatePosition(in: textView)
+        reformattingGuideView = ReformattingGuideView(configuration: configuration)
+        scrollView.addFloatingSubview(reformattingGuideView, for: .vertical)
 
-        minimapView = MinimapView(textView: textView, theme: theme)
+        minimapView = MinimapView(textView: textView, theme: configuration.appearance.theme)
         scrollView.addFloatingSubview(minimapView, for: .vertical)
 
         let findViewController = FindViewController(target: self, childView: scrollView)
@@ -57,7 +49,6 @@ extension TextViewController {
 
         styleTextView()
         styleScrollView()
-        styleGutterView()
         styleMinimapView()
 
         setUpHighlighter()
@@ -77,6 +68,8 @@ extension TextViewController {
         }
         setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
         updateContentInsets()
+
+        configuration.didSetOnController(controller: self, oldConfig: nil)
     }
 
     func setUpConstraints() {
@@ -116,6 +109,7 @@ extension TextViewController {
             guard let clipView = notification.object as? NSClipView else { return }
             self?.gutterView.needsDisplay = true
             self?.minimapXConstraint?.constant = clipView.bounds.origin.x
+            NotificationCenter.default.post(name: Self.scrollPositionDidUpdateNotification, object: self)
         }
     }
 
@@ -128,6 +122,7 @@ extension TextViewController {
             self?.gutterView.needsDisplay = true
             self?.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
             self?.updateTextInsets()
+            NotificationCenter.default.post(name: Self.scrollPositionDidUpdateNotification, object: self)
         }
     }
 
@@ -137,15 +132,13 @@ extension TextViewController {
             object: textView,
             queue: .main
         ) { [weak self] _ in
-            guard let textView = self?.textView else { return }
-            self?.gutterView.frame.size.height = (self?.textView.frame.height ?? 0) + 10
-            self?.gutterView.frame.origin.y = (self?.textView.frame.origin.y ?? 0.0)
-            - (self?.scrollView.contentInsets.top ?? 0)
-
-            self?.gutterView.needsDisplay = true
+            guard let self else { return }
+            self.gutterView.frame.size.height = self.textView.frame.height + 10
+            self.gutterView.frame.origin.y = self.textView.frame.origin.y - self.scrollView.contentInsets.top
+            self.gutterView.needsDisplay = true
             self?.gutterView.foldingRibbon.needsDisplay = true
-            self?.guideView?.updatePosition(in: textView)
-            self?.scrollView.needsLayout = true
+            self.reformattingGuideView?.updatePosition(in: self)
+            self.scrollView.needsLayout = true
         }
     }
 
@@ -209,7 +202,6 @@ extension TextViewController {
 
     func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
         let commandKey = NSEvent.ModifierFlags.command.rawValue
-        let commandOptionKey = NSEvent.ModifierFlags.command.union(.option).rawValue
 
         switch (modifierFlags, event.charactersIgnoringModifiers) {
         case (commandKey, "/"):
@@ -218,14 +210,8 @@ extension TextViewController {
         case (commandKey, "["):
             handleIndent(inwards: true)
             return nil
-        case (commandOptionKey, "["):
-            moveLinesUp()
-            return nil
         case (commandKey, "]"):
             handleIndent()
-            return nil
-        case (commandOptionKey, "]"):
-            moveLinesDown()
             return nil
         case (commandKey, "f"):
             _ = self.textView.resignFirstResponder()

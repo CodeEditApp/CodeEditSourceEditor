@@ -60,6 +60,9 @@ struct FindPanelView: View {
         .onChange(of: viewModel.findText) { _ in
             viewModel.findTextDidChange()
         }
+        .onChange(of: viewModel.replaceText) { _ in
+            viewModel.replaceTextDidChange()
+        }
         .onChange(of: viewModel.wrapAround) { _ in
             viewModel.find()
         }
