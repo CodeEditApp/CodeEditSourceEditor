@@ -128,9 +128,6 @@ public struct SourceEditor: NSViewControllerRepresentable {
             context.coordinator.isUpdatingFromRepresentable = false
         }
 
-        // Set this no matter what to avoid having to compare object pointers.
-        controller.textCoordinators = coordinators.map { WeakCoordinator($0) }
-
         // Do manual diffing to reduce the amount of reloads.
         // This helps a lot in view performance, as it otherwise gets triggered on each environment change.
         guard !paramsAreEqual(controller: controller, coordinator: context.coordinator) else {
