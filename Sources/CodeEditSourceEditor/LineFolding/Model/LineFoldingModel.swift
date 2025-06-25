@@ -131,6 +131,22 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate, ObservableObject {
 // MARK: - LineFoldPlaceholderDelegate
 
 extension LineFoldingModel: LineFoldPlaceholderDelegate {
+    func placeholderBackgroundColor() -> NSColor {
+        controller?.configuration.appearance.theme.invisibles.color ?? .lightGray
+    }
+
+    func placeholderTextColor() -> NSColor {
+        controller?.configuration.appearance.theme.text.color.withAlphaComponent(0.35) ?? .tertiaryLabelColor
+    }
+
+    func placeholderSelectedColor() -> NSColor {
+        .controlAccentColor
+    }
+
+    func placeholderSelectedTextColor() -> NSColor {
+        controller?.theme.background ?? .controlBackgroundColor
+    }
+
     func placeholderDiscarded(fold: FoldRange) {
         foldCache.toggleCollapse(forFold: fold)
         foldView?.needsDisplay = true
