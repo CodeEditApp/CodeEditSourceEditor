@@ -96,7 +96,6 @@ class StyledRangeContainer {
         var runs: [RangeStoreRun<StyleElement>] = []
 
         var minValue = allRuns.compactMap { $0.last }.enumerated().min(by: { $0.1.length < $1.1.length })
-
         while let value = minValue {
             // Get minimum length off the end of each array
             let minRunIdx = value.offset
@@ -118,7 +117,9 @@ class StyledRangeContainer {
                 }
             }
 
-            allRuns[minRunIdx].removeLast()
+            if !allRuns[minRunIdx].isEmpty {
+                allRuns[minRunIdx].removeLast()
+            }
 
             runs.append(minRun)
             minValue = allRuns.compactMap { $0.last }.enumerated().min(by: { $0.1.length < $1.1.length })

@@ -26,9 +26,6 @@ class FoldingRibbonView: NSView {
         }
     }
 
-#warning("Replace before release")
-    private static let demoFoldProvider = IndentationLineFoldProvider()
-
     static let width: CGFloat = 7.0
 
     var model: LineFoldingModel?
@@ -79,16 +76,13 @@ class FoldingRibbonView: NSView {
         true
     }
 
-    init(controller: TextViewController, foldProvider: LineFoldProvider?) {
+    init(controller: TextViewController) {
         super.init(frame: .zero)
         layerContentsRedrawPolicy = .onSetNeedsDisplay
         clipsToBounds = false
-
-        #warning("Replace before release")
         self.model = LineFoldingModel(
             controller: controller,
-            foldView: self,
-            foldProvider: foldProvider ?? Self.demoFoldProvider
+            foldView: self
         )
     }
 
@@ -114,8 +108,6 @@ class FoldingRibbonView: NSView {
         addTrackingArea(area)
     }
 
-    var attachments: [LineFoldPlaceholder] = []
-
     override func scrollWheel(with event: NSEvent) {
         super.scrollWheel(with: event)
         self.mouseMoved(with: event)
@@ -134,15 +126,15 @@ class FoldingRibbonView: NSView {
 
         if let attachment = findAttachmentFor(fold: fold, firstLineRange: firstLineInFold.range) {
             layoutManager.attachments.remove(atOffset: attachment.range.location)
-            attachments.removeAll(where: { $0 === attachment.attachment })
         } else {
-            let placeholder = LineFoldPlaceholder(fold: fold, charWidth: model?.controller?.fontCharWidth ?? 1.0)
+            let charWidth = model?.controller?.font.charWidth ?? 1.0
+            let placeholder = LineFoldPlaceholder(delegate: model, fold: fold, charWidth: charWidth)
             layoutManager.attachments.add(placeholder, for: NSRange(fold.range))
-            attachments.append(placeholder)
         }
 
         model?.foldCache.toggleCollapse(forFold: fold)
         model?.controller?.textView.needsLayout = true
+        model?.controller?.gutterView.needsDisplay = true
         mouseMoved(with: event)
     }
 

@@ -173,7 +173,7 @@ public class TextViewController: NSViewController {
     /// This will be `nil` if another highlighter provider is passed to the source editor.
     internal(set) public var treeSitterClient: TreeSitterClient?
 
-    var fontCharWidth: CGFloat { (" " as NSString).size(withAttributes: [.font: font]).width }
+    var foldProvider: LineFoldProvider
 
     /// Filters used when applying edits..
     var textFilters: [TextFormation.Filter] = []
@@ -202,6 +202,7 @@ public class TextViewController: NSViewController {
         configuration: SourceEditorConfiguration,
         cursorPositions: [CursorPosition],
         highlightProviders: [HighlightProviding] = [TreeSitterClient()],
+        foldProvider: LineFoldProvider? = nil,
         undoManager: CEUndoManager? = nil,
         coordinators: [TextViewCoordinator] = []
     ) {
@@ -209,6 +210,7 @@ public class TextViewController: NSViewController {
         self.configuration = configuration
         self.cursorPositions = cursorPositions
         self.highlightProviders = highlightProviders
+        self.foldProvider = foldProvider ?? LineIndentationFoldProvider()
         self._undoManager = undoManager
         self.invisibleCharactersCoordinator = InvisibleCharactersCoordinator(configuration: configuration)
 

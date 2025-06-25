@@ -8,7 +8,7 @@
 import AppKit
 import CodeEditTextView
 
-enum LineFoldProviderLineInfo {
+public enum LineFoldProviderLineInfo {
     case startFold(rangeStart: Int, newDepth: Int)
     case endFold(rangeEnd: Int, newDepth: Int)
 
@@ -32,7 +32,7 @@ enum LineFoldProviderLineInfo {
 }
 
 @MainActor
-protocol LineFoldProvider: AnyObject {
+public protocol LineFoldProvider: AnyObject {
     func foldLevelAtLine(
         lineNumber: Int,
         lineRange: NSRange,

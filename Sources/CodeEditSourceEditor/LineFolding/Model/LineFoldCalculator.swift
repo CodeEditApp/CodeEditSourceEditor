@@ -26,11 +26,10 @@ actor LineFoldCalculator {
     ///   - controller: The text controller to use for text and attachment fetching.
     ///   - textChangedStream: A stream of text changes, received as the document is edited.
     init(
-        foldProvider: LineFoldProvider?,
         controller: TextViewController,
-        textChangedStream: AsyncStream<(NSRange, Int)>
+        textChangedStream: AsyncStream<Void>
     ) {
-        self.foldProvider = foldProvider
+        self.foldProvider = controller.foldProvider
         self.controller = controller
         (valueStream, valueStreamContinuation) = AsyncStream<LineFoldStorage>.makeStream()
         Task { await listenToTextChanges(textChangedStream: textChangedStream) }
@@ -42,10 +41,10 @@ actor LineFoldCalculator {
 
     /// Sets up an attached task to listen to values on a stream of text changes.
     /// - Parameter textChangedStream: A stream of text changes.
-    private func listenToTextChanges(textChangedStream: AsyncStream<(NSRange, Int)>) {
+    private func listenToTextChanges(textChangedStream: AsyncStream<Void>) {
         textChangedTask = Task {
             for await edit in textChangedStream {
-                await buildFoldsForDocument(afterEditIn: edit.0, delta: edit.1)
+                await buildFoldsForDocument()
             }
         }
     }
@@ -54,7 +53,7 @@ actor LineFoldCalculator {
     ///
     /// For each line in the document, find the indentation level using the ``levelProvider``. At each line, if the
     /// indent increases from the previous line, we start a new fold. If it decreases we end the fold we were in.
-    private func buildFoldsForDocument(afterEditIn: NSRange, delta: Int) async {
+    private func buildFoldsForDocument() async {
         guard let controller = self.controller, let foldProvider = self.foldProvider else { return }
         let documentRange = await controller.textView.documentRange
         var foldCache: [LineFoldStorage.RawFold] = []

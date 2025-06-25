@@ -160,7 +160,7 @@ public class GutterView: NSView {
         self.textView = controller.textView
         self.delegate = delegate
 
-        foldingRibbon = FoldingRibbonView(controller: controller, foldProvider: nil)
+        foldingRibbon = FoldingRibbonView(controller: controller)
 
         super.init(frame: .zero)
         clipsToBounds = true

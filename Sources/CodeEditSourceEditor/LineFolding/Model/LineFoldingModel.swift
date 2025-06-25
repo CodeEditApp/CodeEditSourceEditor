@@ -26,17 +26,18 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate, ObservableObject {
     @Published var foldCache: LineFoldStorage = LineFoldStorage(documentLength: 0)
     private var calculator: LineFoldCalculator
 
-    private var textChangedStream: AsyncStream<(NSRange, Int)>
-    private var textChangedStreamContinuation: AsyncStream<(NSRange, Int)>.Continuation
+    private var textChangedStream: AsyncStream<Void>
+    private var textChangedStreamContinuation: AsyncStream<Void>.Continuation
     private var cacheListenTask: Task<Void, Never>?
 
     weak var controller: TextViewController?
+    weak var foldView: NSView?
 
-    init(controller: TextViewController, foldView: NSView, foldProvider: LineFoldProvider?) {
+    init(controller: TextViewController, foldView: NSView) {
         self.controller = controller
-        (textChangedStream, textChangedStreamContinuation) = AsyncStream<(NSRange, Int)>.makeStream()
+        self.foldView = foldView
+        (textChangedStream, textChangedStreamContinuation) = AsyncStream<Void>.makeStream()
         self.calculator = LineFoldCalculator(
-            foldProvider: foldProvider,
             controller: controller,
             textChangedStream: textChangedStream
         )
@@ -49,7 +50,7 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate, ObservableObject {
                 foldView?.needsDisplay = true
             }
         }
-        textChangedStreamContinuation.yield((.zero, 0))
+        textChangedStreamContinuation.yield(Void())
     }
 
     func getFolds(in range: Range<Int>) -> [FoldRange] {
@@ -66,7 +67,7 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate, ObservableObject {
             return
         }
         foldCache.storageUpdated(editedRange: editedRange, changeInLength: delta)
-        textChangedStreamContinuation.yield((editedRange, delta))
+        textChangedStreamContinuation.yield()
     }
 
     /// Finds the deepest cached depth of the fold for a line number.
@@ -124,5 +125,15 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate, ObservableObject {
 
     func clearEmphasis() {
         controller?.textView.emphasisManager?.removeEmphases(for: Self.emphasisId)
+    }
+}
+
+// MARK: - LineFoldPlaceholderDelegate
+
+extension LineFoldingModel: LineFoldPlaceholderDelegate {
+    func placeholderDiscarded(fold: FoldRange) {
+        foldCache.toggleCollapse(forFold: fold)
+        foldView?.needsDisplay = true
+        textChangedStreamContinuation.yield()
     }
 }

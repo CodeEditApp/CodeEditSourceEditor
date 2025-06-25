@@ -1,5 +1,5 @@
 //
-//  IndentationLineFoldProvider.swift
+//  LineIndentationFoldProvider.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 5/8/25.
@@ -8,7 +8,8 @@
 import AppKit
 import CodeEditTextView
 
-final class IndentationLineFoldProvider: LineFoldProvider {
+/// A basic fold provider that uses line indentation to determine fold regions.
+final class LineIndentationFoldProvider: LineFoldProvider {
     func indentLevelAtLine(substring: NSString) -> Int? {
         for idx in 0..<substring.length {
             let character = UnicodeScalar(substring.character(at: idx))
