@@ -55,7 +55,8 @@ struct LineFoldingModelTests {
     @Test
     func buildFoldsForDocument() async throws {
         let provider = HillPatternFoldProvider()
-        let model = LineFoldingModel(controller: controller, foldView: NSView(), foldProvider: provider)
+        controller.foldProvider = provider
+        let model = LineFoldingModel(controller: controller, foldView: NSView())
 
         var cacheUpdated = model.$foldCache.values.makeAsyncIterator()
         _ = await cacheUpdated.next()
