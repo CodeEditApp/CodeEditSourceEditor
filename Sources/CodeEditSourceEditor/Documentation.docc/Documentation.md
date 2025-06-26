@@ -1,4 +1,4 @@
-# ``SourceEditor``
+# ``CodeEditSourceEditor``
 
 A code editor with syntax highlighting powered by tree-sitter. 
 
@@ -35,7 +35,8 @@ Licensed under the [MIT license](https://github.com/CodeEditApp/CodeEdit/blob/ma
 ### Text View
 
 - ``SourceEditor`` The SwiftUI API for the source editor.
-- ``SourceEditorConfiguration`` Customize the source editor's behavior, layout, appearance, etc.
+- ``SourceEditorConfiguration`` Customize the source editor's behavior, layout, appearance, and more.
+- ``SourceEditorState`` Listen to the current state of the editor. Cursor positions, scroll positions, and more.
 - ``TextViewController`` The AppKit view controller for the source editor.
 - ``GutterView`` A view used to display line numbers and folding regions.
 
