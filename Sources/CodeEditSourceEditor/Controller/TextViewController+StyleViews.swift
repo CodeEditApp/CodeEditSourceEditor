@@ -13,7 +13,7 @@ extension TextViewController {
         // swiftlint:disable:next force_cast
         let paragraph = NSParagraphStyle.default.mutableCopy() as! NSMutableParagraphStyle
         paragraph.tabStops.removeAll()
-        paragraph.defaultTabInterval = CGFloat(tabWidth) * fontCharWidth
+        paragraph.defaultTabInterval = CGFloat(tabWidth) * font.charWidth
         return paragraph
     }
 

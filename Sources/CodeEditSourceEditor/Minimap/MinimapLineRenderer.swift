@@ -34,7 +34,7 @@ final class MinimapLineRenderer: TextLayoutManagerRenderDelegate {
             range: range,
             stringRef: stringRef,
             markedRanges: markedRanges,
-            attachments: []
+            attachments: attachments
         )
 
         // Make all fragments 2px tall

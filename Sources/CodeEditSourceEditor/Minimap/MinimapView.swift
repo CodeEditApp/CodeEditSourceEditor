@@ -63,6 +63,10 @@ public class MinimapView: FlippedNSView {
         minimapHeight / editorHeight
     }
 
+    var editorToMinimapWidthRatio: CGFloat {
+        3.0 / (textView?.font.charWidth ?? 3.0)
+    }
+
     /// The height of the available container, less the scroll insets to reflect the visible height.
     var containerHeight: CGFloat {
         scrollView.visibleRect.height - scrollView.contentInsets.vertical
@@ -144,6 +148,7 @@ public class MinimapView: FlippedNSView {
             delegate: self,
             renderDelegate: lineRenderer
         )
+        textView.layoutManager.attachments.delegate = self
         self.layoutManager = layoutManager
         self.contentView.layoutManager = layoutManager
         (textView.textStorage.delegate as? MultiStorageDelegate)?.addDelegate(layoutManager)

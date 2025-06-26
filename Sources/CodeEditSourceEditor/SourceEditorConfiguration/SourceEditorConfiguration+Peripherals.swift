@@ -16,6 +16,9 @@ extension SourceEditorConfiguration {
         /// Whether to show the reformatting guide.
         public var showReformattingGuide: Bool
 
+        /// Whether to show the folding ribbon. Only available if ``showGutter`` is `true`.
+        public var showFoldingRibbon: Bool
+
         /// Configuration for drawing invisible characters.
         ///
         /// See ``InvisibleCharactersConfiguration`` for more details.
@@ -29,12 +32,14 @@ extension SourceEditorConfiguration {
             showGutter: Bool = true,
             showMinimap: Bool = true,
             showReformattingGuide: Bool = false,
+            showFoldingRibbon: Bool = true,
             invisibleCharactersConfiguration: InvisibleCharactersConfiguration = .empty,
             warningCharacters: Set<UInt16> = []
         ) {
             self.showGutter = showGutter
             self.showMinimap = showMinimap
             self.showReformattingGuide = showReformattingGuide
+            self.showFoldingRibbon = showFoldingRibbon
             self.invisibleCharactersConfiguration = invisibleCharactersConfiguration
             self.warningCharacters = warningCharacters
         }
@@ -56,6 +61,10 @@ extension SourceEditorConfiguration {
             if oldConfig?.showReformattingGuide != showReformattingGuide {
                 controller.reformattingGuideView.isHidden = !showReformattingGuide
                 controller.reformattingGuideView.updatePosition(in: controller)
+            }
+
+            if oldConfig?.showFoldingRibbon != showFoldingRibbon {
+                controller.gutterView.showFoldingRibbon = showFoldingRibbon
             }
 
             if oldConfig?.invisibleCharactersConfiguration != invisibleCharactersConfiguration {

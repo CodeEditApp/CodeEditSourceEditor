@@ -77,7 +77,7 @@ class ReformattingGuideView: NSView {
     func updatePosition(in controller: TextViewController) {
         // Calculate the x position based on the font's character width and column number
         let xPosition = (
-            CGFloat(column) * (controller.fontCharWidth / 2) // Divide by 2 to account for coordinate system
+            CGFloat(column) * (controller.font.charWidth / 2) // Divide by 2 to account for coordinate system
             + (controller.textViewInsets.left / 2)
         )
 

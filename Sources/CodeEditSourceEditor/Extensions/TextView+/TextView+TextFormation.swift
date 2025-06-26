@@ -45,5 +45,6 @@ extension TextView: TextInterface {
             in: mutation.range,
             replacementLength: (mutation.string as NSString).length
         )
+        layoutManager.setNeedsLayout()
     }
 }

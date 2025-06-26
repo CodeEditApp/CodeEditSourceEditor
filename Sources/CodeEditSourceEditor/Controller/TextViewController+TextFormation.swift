@@ -11,23 +11,6 @@ import TextFormation
 import TextStory
 
 extension TextViewController {
-
-    internal enum BracketPairs {
-        static let allValues: [(String, String)] = [
-            ("{", "}"),
-            ("[", "]"),
-            ("(", ")"),
-            ("\"", "\""),
-            ("'", "'")
-        ]
-
-        static let emphasisValues: [(String, String)] = [
-            ("{", "}"),
-            ("[", "]"),
-            ("(", ")")
-        ]
-    }
-
     // MARK: - Filter Configuration
 
     /// Initializes any filters for text editing.
