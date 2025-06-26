@@ -1,4 +1,4 @@
-# ``SourceEditor``
+# Source Editor
 
 ## Usage
 

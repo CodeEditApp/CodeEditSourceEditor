@@ -31,11 +31,11 @@ import AppKit
 ///   - The category initializer.
 ///   - The passthrough variable in `TextViewController`.
 
-/// Configuration object for the ``SourceEditor``. Determines appearance, behavior, layout and what features are
+/// Configuration object for the <doc:SourceEditor>. Determines appearance, behavior, layout and what features are
 /// enabled (peripherals).
 ///
 /// To update the configuration, update the ``TextViewController/configuration`` property, or pass a value to the
-/// ``SourceEditor`` SwiftUI API. Both methods will call the `didSetOnController` method on this type, which will
+/// <doc:SourceEditor> SwiftUI API. Both methods will call the `didSetOnController` method on this type, which will
 /// update the text controller as necessary for the new configuration.
 public struct SourceEditorConfiguration: Equatable {
     /// Configure the appearance of the editor. Font, theme, line height, etc.
