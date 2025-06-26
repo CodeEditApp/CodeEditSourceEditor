@@ -1,5 +1,5 @@
 //
-//  FoldingRibbonView.swift
+//  LineFoldRibbonView.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 5/6/25.
@@ -11,8 +11,11 @@ import CodeEditTextView
 
 /// Displays the code folding ribbon in the ``GutterView``.
 ///
-/// This view draws its contents
-class FoldingRibbonView: NSView {
+/// This view draws its contents manually. This was chosen over managing views on a per-fold basis, which would come
+/// with needing to manage view reuse and positioning. Drawing allows this view to draw only what macOS requests, and
+/// ends up being extremely efficient. This does mean that animations have to be done manually with a timer.
+/// Re: the `hoveredFold` property.
+class LineFoldRibbonView: NSView {
     struct HoverAnimationDetails: Equatable {
         var fold: FoldRange?
         var foldMask: CGPath?
@@ -28,7 +31,7 @@ class FoldingRibbonView: NSView {
 
     static let width: CGFloat = 7.0
 
-    var model: LineFoldingModel?
+    var model: LineFoldModel?
 
     @Invalidating(.display)
     var hoveringFold: HoverAnimationDetails = .empty
@@ -80,7 +83,7 @@ class FoldingRibbonView: NSView {
         super.init(frame: .zero)
         layerContentsRedrawPolicy = .onSetNeedsDisplay
         clipsToBounds = false
-        self.model = LineFoldingModel(
+        self.model = LineFoldModel(
             controller: controller,
             foldView: self
         )
@@ -112,6 +115,8 @@ class FoldingRibbonView: NSView {
         super.scrollWheel(with: event)
         self.mouseMoved(with: event)
     }
+
+    // MARK: - Mouse Events
 
     override func mouseDown(with event: NSEvent) {
         let clickPoint = convert(event.locationInWindow, from: nil)

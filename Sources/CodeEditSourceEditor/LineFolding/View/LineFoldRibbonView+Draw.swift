@@ -1,5 +1,5 @@
 //
-//  FoldingRibbonView.swift
+//  LineFoldRibbonView+Draw.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 5/8/25.
@@ -8,7 +8,7 @@
 import AppKit
 import CodeEditTextView
 
-extension FoldingRibbonView {
+extension LineFoldRibbonView {
     struct DrawingFoldInfo {
         let fold: FoldRange
         let startLine: TextLineStorage<TextLine>.TextLinePosition
@@ -29,12 +29,14 @@ extension FoldingRibbonView {
         context.saveGState()
         context.clip(to: dirtyRect)
 
+        // Only draw folds in the requested dirty rect
         let folds = getDrawingFolds(
             forTextRange: rangeStart.range.location..<rangeEnd.range.upperBound,
             layoutManager: layoutManager
         )
         let foldCaps = FoldCapInfo(folds)
 
+        // Draw non-collapsed folds first
         for fold in folds.filter({ !$0.fold.isCollapsed }) {
             drawFoldMarker(
                 fold,
@@ -44,6 +46,7 @@ extension FoldingRibbonView {
             )
         }
 
+        // Collapsed folds should *always* be on top of non-collapsed, so we draw them last.
         for fold in folds.filter({ $0.fold.isCollapsed }) {
             drawFoldMarker(
                 fold,

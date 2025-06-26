@@ -1,5 +1,5 @@
 //
-//  LineFoldingModel.swift
+//  LineFoldModel.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 5/7/25.
@@ -9,16 +9,15 @@ import AppKit
 import CodeEditTextView
 import Combine
 
-/// # Basic Premise
+/// This object acts as the conductor between the line folding components.
 ///
-/// We need to update, delete, or add fold ranges in the invalidated lines.
+/// This receives text changed events, and notifies the line fold calculator.
+/// It then receives fold calculation updates, and notifies the drawing view.
+/// It manages a cache of fold ranges for drawing.
 ///
-/// # Implementation
-///
-/// - For each line in the document, put its indent level into a list.
-/// - Loop through the list, creating nested folds as indents go up and down.
-///
-class LineFoldingModel: NSObject, NSTextStorageDelegate, ObservableObject {
+/// For fold storage and querying, see ``LineFoldStorage``. For fold calculation see ``LineFoldCalculator``
+/// and ``LineFoldProvider``. For drawing see ``LineFoldRibbonView``.
+class LineFoldModel: NSObject, NSTextStorageDelegate, ObservableObject {
     static let emphasisId = "lineFolding"
 
     /// An ordered tree of fold ranges in a document. Can be traversed using ``FoldRange/parent``
@@ -38,6 +37,7 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate, ObservableObject {
         self.foldView = foldView
         (textChangedStream, textChangedStreamContinuation) = AsyncStream<Void>.makeStream()
         self.calculator = LineFoldCalculator(
+            foldProvider: controller.foldProvider,
             controller: controller,
             textChangedStream: textChangedStream
         )
@@ -130,7 +130,7 @@ class LineFoldingModel: NSObject, NSTextStorageDelegate, ObservableObject {
 
 // MARK: - LineFoldPlaceholderDelegate
 
-extension LineFoldingModel: LineFoldPlaceholderDelegate {
+extension LineFoldModel: LineFoldPlaceholderDelegate {
     func placeholderBackgroundColor() -> NSColor {
         controller?.configuration.appearance.theme.invisibles.color ?? .lightGray
     }

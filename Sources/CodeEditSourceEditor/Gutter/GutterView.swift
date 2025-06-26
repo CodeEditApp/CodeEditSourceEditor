@@ -101,14 +101,14 @@ public class GutterView: NSView {
     }
 
     /// The view that draws the fold decoration in the gutter.
-    var foldingRibbon: FoldingRibbonView
+    var foldingRibbon: LineFoldRibbonView
 
     /// Syntax helper for determining the required space for the folding ribbon.
     private var foldingRibbonWidth: CGFloat {
         if foldingRibbon.isHidden {
             0.0
         } else {
-            FoldingRibbonView.width + foldingRibbonPadding
+            LineFoldRibbonView.width + foldingRibbonPadding
         }
     }
 
@@ -160,7 +160,7 @@ public class GutterView: NSView {
         self.textView = controller.textView
         self.delegate = delegate
 
-        foldingRibbon = FoldingRibbonView(controller: controller)
+        foldingRibbon = LineFoldRibbonView(controller: controller)
 
         super.init(frame: .zero)
         clipsToBounds = true

@@ -18,6 +18,10 @@ protocol LineFoldPlaceholderDelegate: AnyObject {
     func placeholderDiscarded(fold: FoldRange)
 }
 
+/// Used to display a folded region in a text document.
+///
+/// To stay up-to-date with the user's theme, it uses the ``LineFoldPlaceholderDelegate`` to query for current colors
+/// to use for drawing.
 class LineFoldPlaceholder: TextAttachment {
     let fold: FoldRange
     let charWidth: CGFloat

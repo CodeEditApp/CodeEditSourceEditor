@@ -8,9 +8,10 @@
 import AppKit
 import CodeEditTextView
 
-/// A utility that calculates foldable line ranges in a text document based on indentation depth.
+/// `LineFoldCalculator` receives text edits and rebuilds fold regions asynchronously.
 ///
-/// `LineFoldCalculator` observes text edits and rebuilds fold regions asynchronously.
+/// This is an actor, all methods and modifications happen in isolation in it's async region. All text requests are
+/// marked `@MainActor` for safety.
 actor LineFoldCalculator {
     weak var foldProvider: LineFoldProvider?
     weak var controller: TextViewController?
@@ -26,10 +27,12 @@ actor LineFoldCalculator {
     ///   - controller: The text controller to use for text and attachment fetching.
     ///   - textChangedStream: A stream of text changes, received as the document is edited.
     init(
+        foldProvider: LineFoldProvider,
         controller: TextViewController,
         textChangedStream: AsyncStream<Void>
     ) {
-        self.foldProvider = controller.foldProvider
+        // This could be grabbed from the controller, but Swift 6 doesn't like that (concurrency safety)
+        self.foldProvider = foldProvider
         self.controller = controller
         (valueStream, valueStreamContinuation) = AsyncStream<LineFoldStorage>.makeStream()
         Task { await listenToTextChanges(textChangedStream: textChangedStream) }
@@ -43,7 +46,7 @@ actor LineFoldCalculator {
     /// - Parameter textChangedStream: A stream of text changes.
     private func listenToTextChanges(textChangedStream: AsyncStream<Void>) {
         textChangedTask = Task {
-            for await edit in textChangedStream {
+            for await _ in textChangedStream {
                 await buildFoldsForDocument()
             }
         }

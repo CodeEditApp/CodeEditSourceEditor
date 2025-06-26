@@ -1,5 +1,5 @@
 //
-//  FoldCapInfo.swift
+//  LineFoldRibbonView.swift
 //  CodeEditSourceEditor
 //
 //  Created by Khan Winter on 6/3/25.
@@ -7,7 +7,7 @@
 
 import AppKit
 
-extension FoldingRibbonView {
+extension LineFoldRibbonView {
     /// A helper type that determines if a fold should be drawn with a cap on the top or bottom if
     /// there's an adjacent fold on the same text line. It also provides a helper method to adjust fold rects using
     /// the cap information.

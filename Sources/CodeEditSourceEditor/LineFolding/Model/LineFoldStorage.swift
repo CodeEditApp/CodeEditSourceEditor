@@ -7,20 +7,6 @@
 import _RopeModule
 import Foundation
 
-/// Represents a single fold region with stable identifier and collapse state
-struct FoldRange: Sendable, Equatable {
-    typealias FoldIdentifier = UInt32
-
-    let id: FoldIdentifier
-    let depth: Int
-    let range: Range<Int>
-    var isCollapsed: Bool
-
-    func isHoveringEqual(_ other: FoldRange) -> Bool {
-        depth == other.depth && range.contains(other.range)
-    }
-}
-
 /// Sendable data model for code folding using RangeStore
 struct LineFoldStorage: Sendable {
     /// A temporary fold representation without stable ID
