@@ -7,7 +7,7 @@
 
 import AppKit
 
-/// A protocol that can be used to receive extra state change messages from <doc:SourceEditor>.
+/// A protocol that can be used to receive extra state change messages from <doc:SourceEditorView>.
 ///
 /// These are used as a way to push messages up from underlying components into SwiftUI land without requiring passing
 /// callbacks for each message to the
