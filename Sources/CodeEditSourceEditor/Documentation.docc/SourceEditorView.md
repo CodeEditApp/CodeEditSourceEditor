@@ -1,4 +1,4 @@
-# ``SourceEditor``
+# Source Editor View
 
 ## Usage
 
@@ -90,3 +90,6 @@ let editorController = TextViewController(
 )
 ```
 
+## Topics
+
+- ``SourceEditor``
