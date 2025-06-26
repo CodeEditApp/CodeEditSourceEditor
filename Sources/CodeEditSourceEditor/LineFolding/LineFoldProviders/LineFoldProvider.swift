@@ -38,8 +38,8 @@ public enum LineFoldProviderLineInfo {
 /// will be called very often. Return as fast as possible from this method, keeping in mind it is taking time on the
 /// main thread.
 ///
-/// Ordering between calls is not guaranteed, the provider may restart at any time. The implementation should provide fold info
-/// for only the given lines.
+/// Ordering between calls is not guaranteed, the provider may restart at any time. The implementation should provide
+/// fold info for only the given lines.
 @MainActor
 public protocol LineFoldProvider: AnyObject {
     func foldLevelAtLine(
