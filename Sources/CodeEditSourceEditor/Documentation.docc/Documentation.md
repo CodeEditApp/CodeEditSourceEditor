@@ -34,15 +34,12 @@ Licensed under the [MIT license](https://github.com/CodeEditApp/CodeEdit/blob/ma
 
 ### Text View
 
-<<<<<<< chore/docs
-- <doc:SourceEditor> The SwiftUI API for the source editor.
-=======
-- ``SourceEditor`` The SwiftUI API for the source editor.
->>>>>>> main
-- ``SourceEditorConfiguration`` Customize the source editor's behavior, layout, appearance, and more.
-- ``SourceEditorState`` Listen to the current state of the editor. Cursor positions, scroll positions, and more.
-- ``TextViewController`` The AppKit view controller for the source editor.
-- ``GutterView`` A view used to display line numbers and folding regions.
+- <doc:SourceEditorView> 
+- ``SourceEditor``
+- ``SourceEditorConfiguration``
+- ``SourceEditorState``
+- ``TextViewController``
+- ``GutterView``
 
 ### Themes
 
