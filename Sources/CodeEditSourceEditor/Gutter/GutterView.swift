@@ -10,7 +10,7 @@ import CodeEditTextView
 import CodeEditTextViewObjC
 
 public protocol GutterViewDelegate: AnyObject {
-    func gutterViewWidthDidUpdate(newWidth: CGFloat)
+    func gutterViewWidthDidUpdate()
 }
 
 /// The gutter view displays line numbers that match the text view's line indexes.
@@ -57,6 +57,10 @@ public class GutterView: NSView {
     @Invalidating(.display)
     var backgroundEdgeInsets: EdgeInsets = EdgeInsets(leading: 0, trailing: 8)
 
+    /// The leading padding for the folding ribbon from the line numbers.
+    @Invalidating(.display)
+    var foldingRibbonPadding: CGFloat = 4
+
     @Invalidating(.display)
     var backgroundColor: NSColor? = NSColor.controlBackgroundColor
 
@@ -69,12 +73,17 @@ public class GutterView: NSView {
     @Invalidating(.display)
     var selectedLineColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
 
-    /// The required width of the entire gutter, including padding.
-    private(set) public var gutterWidth: CGFloat = 0
+    /// Toggle the visibility of the line fold decoration.
+    @Invalidating(.display)
+    public var showFoldingRibbon: Bool = true {
+        didSet {
+            foldingRibbon.isHidden = !showFoldingRibbon
+        }
+    }
 
     private weak var textView: TextView?
     private weak var delegate: GutterViewDelegate?
-    private var maxWidth: CGFloat = 0
+    private var maxLineNumberWidth: CGFloat = 0
     /// The maximum number of digits found for a line number.
     private var maxLineLength: Int = 0
 
@@ -91,20 +100,49 @@ public class GutterView: NSView {
         fontLineHeight = (ascent + descent + leading)
     }
 
+    /// The view that draws the fold decoration in the gutter.
+    var foldingRibbon: LineFoldRibbonView
+
+    /// Syntax helper for determining the required space for the folding ribbon.
+    private var foldingRibbonWidth: CGFloat {
+        if foldingRibbon.isHidden {
+            0.0
+        } else {
+            LineFoldRibbonView.width + foldingRibbonPadding
+        }
+    }
+
+    /// The gutter's y positions start at the top of the document and increase as it moves down the screen.
     override public var isFlipped: Bool {
         true
     }
 
+    /// We override this variable so we can update the ``foldingRibbon``'s frame to match the gutter.
+    override public var frame: NSRect {
+        get {
+            super.frame
+        }
+        set {
+            super.frame = newValue
+            foldingRibbon.frame = NSRect(
+                x: newValue.width - edgeInsets.trailing - foldingRibbonWidth + foldingRibbonPadding,
+                y: 0.0,
+                width: foldingRibbonWidth,
+                height: newValue.height
+            )
+        }
+    }
+
     public convenience init(
         configuration: borrowing SourceEditorConfiguration,
-        textView: TextView,
+        controller: TextViewController,
         delegate: GutterViewDelegate? = nil
     ) {
         self.init(
             font: configuration.appearance.font,
             textColor: configuration.appearance.theme.text.color,
             selectedTextColor: configuration.appearance.theme.selection,
-            textView: textView,
+            controller: controller,
             delegate: delegate
         )
     }
@@ -113,14 +151,16 @@ public class GutterView: NSView {
         font: NSFont,
         textColor: NSColor,
         selectedTextColor: NSColor?,
-        textView: TextView,
+        controller: TextViewController,
         delegate: GutterViewDelegate? = nil
     ) {
         self.font = font
         self.textColor = textColor
         self.selectedLineTextColor = selectedTextColor ?? .secondaryLabelColor
-        self.textView = textView
+        self.textView = controller.textView
         self.delegate = delegate
+
+        foldingRibbon = LineFoldRibbonView(controller: controller)
 
         super.init(frame: .zero)
         clipsToBounds = true
@@ -128,6 +168,8 @@ public class GutterView: NSView {
         layerContentsRedrawPolicy = .onSetNeedsDisplay
         translatesAutoresizingMaskIntoConstraints = false
         layer?.masksToBounds = true
+
+        addSubview(foldingRibbon)
 
         NotificationCenter.default.addObserver(
             forName: TextSelectionManager.selectionChangedNotification,
@@ -138,22 +180,17 @@ public class GutterView: NSView {
         }
     }
 
-    override init(frame frameRect: NSRect) {
-        super.init(frame: frameRect)
-    }
-
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    /// Updates the width of the gutter if needed.
+    /// Updates the width of the gutter if needed to match the maximum line number found as well as the folding ribbon.
     func updateWidthIfNeeded() {
         guard let textView else { return }
         let attributes: [NSAttributedString.Key: Any] = [
             .font: font,
             .foregroundColor: textColor
         ]
-        let originalMaxWidth = maxWidth
         // Reserve at least 3 digits of space no matter what
         let lineStorageDigits = max(3, String(textView.layoutManager.lineCount).count)
 
@@ -163,27 +200,36 @@ public class GutterView: NSView {
                 NSAttributedString(string: String(repeating: "0", count: lineStorageDigits), attributes: attributes)
             )
             let width = CTLineGetTypographicBounds(maxCtLine, nil, nil, nil)
-            maxWidth = max(maxWidth, width)
+            maxLineNumberWidth = max(maxLineNumberWidth, width)
             maxLineLength = lineStorageDigits
         }
 
-        if originalMaxWidth != maxWidth {
-            gutterWidth = maxWidth + edgeInsets.horizontal
-            delegate?.gutterViewWidthDidUpdate(newWidth: maxWidth + edgeInsets.horizontal)
+        let newWidth = maxLineNumberWidth + edgeInsets.horizontal + foldingRibbonWidth
+        if frame.size.width != newWidth {
+            frame.size.width = newWidth
+            delegate?.gutterViewWidthDidUpdate()
         }
     }
 
-    private func drawBackground(_ context: CGContext) {
+    /// Fills the gutter background color.
+    /// - Parameters:
+    ///   - context: The drawing context to draw in.
+    ///   - dirtyRect: A rect to draw in, received from ``draw(_:)``.
+    private func drawBackground(_ context: CGContext, dirtyRect: NSRect) {
         guard let backgroundColor else { return }
-        let xPos = backgroundEdgeInsets.leading
-        let width = gutterWidth - backgroundEdgeInsets.trailing
+        let minX = max(backgroundEdgeInsets.leading, dirtyRect.minX)
+        let maxX = min(frame.width - backgroundEdgeInsets.trailing - foldingRibbonWidth, dirtyRect.maxX)
+        let width = maxX - minX
 
         context.saveGState()
         context.setFillColor(backgroundColor.cgColor)
-        context.fill(CGRect(x: xPos, y: 0, width: width, height: frame.height))
+        context.fill(CGRect(x: minX, y: dirtyRect.minY, width: width, height: dirtyRect.height))
         context.restoreGState()
     }
 
+    /// Draws selected line backgrounds from the text view's selection manager into the gutter view, making the
+    /// selection background appear seamless between the gutter and text view.
+    /// - Parameter context: The drawing context to use.
     private func drawSelectedLines(_ context: CGContext) {
         guard let textView = textView,
               let selectionManager = textView.selectionManager,
@@ -197,7 +243,7 @@ public class GutterView: NSView {
         context.setFillColor(selectedLineColor.cgColor)
 
         let xPos = backgroundEdgeInsets.leading
-        let width = gutterWidth - backgroundEdgeInsets.trailing
+        let width = frame.width - backgroundEdgeInsets.trailing
 
         for selection in selectionManager.textSelections where selection.range.isEmpty {
             guard let line = textView.layoutManager.textLineForOffset(selection.range.location),
@@ -219,7 +265,11 @@ public class GutterView: NSView {
         context.restoreGState()
     }
 
-    private func drawLineNumbers(_ context: CGContext) {
+    /// Draw line numbers in the gutter, limited to a drawing rect.
+    /// - Parameters:
+    ///   - context: The drawing context to draw in.
+    ///   - dirtyRect: A rect to draw in, received from ``draw(_:)``.
+    private func drawLineNumbers(_ context: CGContext, dirtyRect: NSRect) {
         guard let textView = textView else { return }
         var attributes: [NSAttributedString.Key: Any] = [.font: font]
 
@@ -233,9 +283,10 @@ public class GutterView: NSView {
         }
 
         context.saveGState()
+        context.clip(to: dirtyRect)
 
         context.textMatrix = CGAffineTransform(scaleX: 1, y: -1)
-        for linePosition in textView.layoutManager.visibleLines() {
+        for linePosition in textView.layoutManager.linesStartingAt(dirtyRect.minY, until: dirtyRect.maxY) {
             if selectionRangeMap.intersects(integersIn: linePosition.range) {
                 attributes[.foregroundColor] = selectedLineTextColor ?? textColor
             } else {
@@ -252,7 +303,7 @@ public class GutterView: NSView {
 
             let yPos = linePosition.yPos + ascent + (fragment?.heightDifference ?? 0)/2 + fontHeightDifference
             // Leading padding + (width - linewidth)
-            let xPos = edgeInsets.leading + (maxWidth - lineNumberWidth)
+            let xPos = edgeInsets.leading + (maxLineNumberWidth - lineNumberWidth)
 
             ContextSetHiddenSmoothingStyle(context, 16)
 
@@ -263,18 +314,20 @@ public class GutterView: NSView {
         context.restoreGState()
     }
 
+    override public func setNeedsDisplay(_ invalidRect: NSRect) {
+        updateWidthIfNeeded()
+        super.setNeedsDisplay(invalidRect)
+    }
+
     override public func draw(_ dirtyRect: NSRect) {
         guard let context = NSGraphicsContext.current?.cgContext else {
             return
         }
-        CATransaction.begin()
-        superview?.clipsToBounds = false
-        superview?.layer?.masksToBounds = false
-        updateWidthIfNeeded()
-        drawBackground(context)
+        context.saveGState()
+        drawBackground(context, dirtyRect: dirtyRect)
         drawSelectedLines(context)
-        drawLineNumbers(context)
-        CATransaction.commit()
+        drawLineNumbers(context, dirtyRect: dirtyRect)
+        context.restoreGState()
     }
 
     deinit {

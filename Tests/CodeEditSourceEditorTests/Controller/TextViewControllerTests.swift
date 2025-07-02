@@ -5,7 +5,7 @@ import AppKit
 import SwiftUI
 import TextStory
 
-// swiftlint:disable all
+// swiftlint:disable:next type_body_length
 final class TextViewControllerTests: XCTestCase {
 
     var controller: TextViewController!
@@ -208,24 +208,27 @@ final class TextViewControllerTests: XCTestCase {
 
         // Insert lots of spaces
         controller.configuration.behavior.indentOption = .spaces(count: 1000)
-        controller.textView.replaceCharacters(in: NSRange(location: 0, length: controller.textView.textStorage.length), with: "")
+        controller.textView.replaceCharacters(
+            in: NSRange(location: 0, length: controller.textView.textStorage.length),
+            with: ""
+        )
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, String(repeating: " ", count: 1000))
     }
 
-    func test_letterSpacing() {
+    func test_letterSpacing() throws {
         let font: NSFont = .monospacedSystemFont(ofSize: 11, weight: .medium)
 
         controller.configuration.appearance.letterSpacing = 1.0
 
         XCTAssertEqual(
-            controller.attributesFor(nil)[.kern]! as! CGFloat,
+            try XCTUnwrap(controller.attributesFor(nil)[.kern] as? CGFloat),
             (" " as NSString).size(withAttributes: [.font: font]).width * 0.0
         )
 
         controller.configuration.appearance.letterSpacing = 2.0
         XCTAssertEqual(
-            controller.attributesFor(nil)[.kern]! as! CGFloat,
+            try XCTUnwrap(controller.attributesFor(nil)[.kern] as? CGFloat),
             (" " as NSString).size(withAttributes: [.font: font]).width * 1.0
         )
 
@@ -241,7 +244,7 @@ final class TextViewControllerTests: XCTestCase {
 
         controller.scrollView.setFrameSize(NSSize(width: 500, height: 500))
         controller.viewDidLoad()
-        let _ = controller.textView.becomeFirstResponder()
+        _ = controller.textView.becomeFirstResponder()
         controller.configuration.appearance.bracketPairEmphasis = nil
         controller.setText("{ Lorem Ipsum {} }")
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
@@ -280,7 +283,7 @@ final class TextViewControllerTests: XCTestCase {
     }
 
     func test_findClosingPair() {
-        let _ = controller.textView.becomeFirstResponder()
+        _ = controller.textView.becomeFirstResponder()
         controller.textView.string = "{ Lorem Ipsum {} }"
         var idx: Int?
 
@@ -295,28 +298,40 @@ final class TextViewControllerTests: XCTestCase {
         // Test extra pair
         controller.textView.string = "{ Loren Ipsum {}} }"
         idx = controller.findClosingPair("{", "}", from: 1, limit: 19, reverse: false)
-        XCTAssert(idx == 16, "Walking forwards with extra bracket pair failed. Expected `16`, found: `\(String(describing: idx))`")
+        XCTAssert(
+            idx == 16,
+            "Walking forwards with extra bracket pair failed. Expected `16`, found: `\(String(describing: idx))`"
+        )
 
         // Text extra pair backwards
         controller.textView.string = "{ Loren Ipsum {{} }"
         idx = controller.findClosingPair("}", "{", from: 18, limit: 0, reverse: true)
-        XCTAssert(idx == 14, "Walking backwards with extra bracket pair failed. Expected `14`, found: `\(String(describing: idx))`")
+        XCTAssert(
+            idx == 14,
+            "Walking backwards with extra bracket pair failed. Expected `14`, found: `\(String(describing: idx))`"
+        )
 
         // Test missing pair
         controller.textView.string = "{ Loren Ipsum { }"
         idx = controller.findClosingPair("{", "}", from: 1, limit: 17, reverse: false)
-        XCTAssert(idx == nil, "Walking forwards with missing pair failed. Expected `nil`, found: `\(String(describing: idx))`")
+        XCTAssert(
+            idx == nil,
+            "Walking forwards with missing pair failed. Expected `nil`, found: `\(String(describing: idx))`"
+        )
 
         // Test missing pair backwards
         controller.textView.string = " Loren Ipsum {} }"
         idx = controller.findClosingPair("}", "{", from: 17, limit: 0, reverse: true)
-        XCTAssert(idx == nil, "Walking backwards with missing pair failed. Expected `nil`, found: `\(String(describing: idx))`")
+        XCTAssert(
+            idx == nil,
+            "Walking backwards with missing pair failed. Expected `nil`, found: `\(String(describing: idx))`"
+        )
     }
 
     // MARK: Set Text
 
     func test_setText() {
-        let _ = controller.textView.becomeFirstResponder()
+        _ = controller.textView.becomeFirstResponder()
         controller.textView.string = "Hello World"
         controller.textView.selectionManager.setSelectedRange(NSRange(location: 1, length: 2))
 
@@ -336,7 +351,7 @@ final class TextViewControllerTests: XCTestCase {
     // MARK: Cursor Positions
 
     func test_cursorPositionRangeInit() {
-        let _ = controller.textView.becomeFirstResponder()
+        _ = controller.textView.becomeFirstResponder()
         controller.setText("Hello World")
 
         // Test adding a position returns a valid one
@@ -377,7 +392,7 @@ final class TextViewControllerTests: XCTestCase {
     }
 
     func test_cursorPositionRowColInit() {
-        let _ = controller.textView.becomeFirstResponder()
+        _ = controller.textView.becomeFirstResponder()
         controller.setText("Hello World")
 
         // Test adding a position returns a valid one
@@ -441,6 +456,25 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertFalse(controller.minimapView.isHidden)
         XCTAssertEqual(controller.minimapView.frame.width, MinimapView.maxWidth)
         XCTAssertEqual(controller.textViewInsets.right, MinimapView.maxWidth)
+    }
+
+    // MARK: Folding Ribbon
+
+    func test_foldingRibbonToggle() {
+        controller.setText("Hello World")
+        controller.configuration.peripherals.showFoldingRibbon = false
+        XCTAssertFalse(controller.gutterView.showFoldingRibbon)
+        controller.gutterView.updateWidthIfNeeded() // Would be called on a display pass
+        let noRibbonWidth = controller.gutterView.frame.width
+
+        controller.configuration.peripherals.showFoldingRibbon = true
+        XCTAssertTrue(controller.gutterView.showFoldingRibbon)
+        XCTAssertFalse(controller.gutterView.foldingRibbon.isHidden)
+        controller.gutterView.updateWidthIfNeeded() // Would be called on a display pass
+        XCTAssertEqual(
+            controller.gutterView.frame.width,
+            noRibbonWidth + 7.0 + controller.gutterView.foldingRibbonPadding
+        )
     }
 
     // MARK: - Get Overlapping Lines
@@ -545,4 +579,5 @@ final class TextViewControllerTests: XCTestCase {
         }
     }
 }
-// swiftlint:enable all
+
+// swiftlint:disable:this file_length

@@ -50,7 +50,19 @@ final class MinimapLineFragmentView: LineFragmentView {
         // Create the drawing runs using attribute information
         var position = newFragment.documentRange.location
 
-        while position < newFragment.documentRange.max {
+        for contentRun in newFragment.contents {
+            switch contentRun.data {
+            case .text:
+                addDrawingRunsUntil(max: position + contentRun.length, position: &position, textStorage: textStorage)
+            case .attachment(let attachment):
+                position += attachment.range.length
+                appendDrawingRun(color: .clear, range: NSRange(location: position, length: contentRun.length))
+            }
+        }
+    }
+
+    private func addDrawingRunsUntil(max: Int, position: inout Int, textStorage: NSTextStorage) {
+        while position < max {
             var longestRange: NSRange = .notFound
             defer { position = longestRange.max }
 
@@ -58,7 +70,7 @@ final class MinimapLineFragmentView: LineFragmentView {
                 .foregroundColor,
                 at: position,
                 longestEffectiveRange: &longestRange,
-                in: NSRange(start: position, end: newFragment.documentRange.max)
+                in: NSRange(start: position, end: max)
             ) as? NSColor else {
                 continue
             }
