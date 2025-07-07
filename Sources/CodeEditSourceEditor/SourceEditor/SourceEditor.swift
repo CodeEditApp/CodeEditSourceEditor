@@ -149,7 +149,8 @@ public struct SourceEditor: NSViewControllerRepresentable {
             controller.setCursorPositions(cursorPositions)
         }
 
-        if let scrollPosition = state.scrollPosition, scrollPosition != state.scrollPosition {
+        let scrollView = controller.scrollView
+        if let scrollPosition = state.scrollPosition, scrollPosition != scrollView?.contentView.bounds.origin {
             controller.scrollView.scroll(controller.scrollView.contentView, to: scrollPosition)
             controller.scrollView.reflectScrolledClipView(controller.scrollView.contentView)
             controller.gutterView.needsDisplay = true
