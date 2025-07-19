@@ -45,7 +45,7 @@ public class TextViewController: NSViewController {
     var _undoManager: CEUndoManager!
     var systemAppearance: NSAppearance.Name?
 
-    var localEvenMonitor: Any?
+    var localEventMonitor: Any?
     var isPostingCursorNotification: Bool = false
 
     /// A default `NSParagraphStyle` with a set `lineHeight`
@@ -266,9 +266,9 @@ public class TextViewController: NSViewController {
         textCoordinators.removeAll()
         NotificationCenter.default.removeObserver(self)
         cancellables.forEach { $0.cancel() }
-        if let localEvenMonitor {
-            NSEvent.removeMonitor(localEvenMonitor)
+        if let localEventMonitor {
+            NSEvent.removeMonitor(localEventMonitor)
         }
-        localEvenMonitor = nil
+        localEventMonitor = nil
     }
 }
