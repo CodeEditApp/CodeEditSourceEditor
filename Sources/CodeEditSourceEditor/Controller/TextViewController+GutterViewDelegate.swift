@@ -8,8 +8,7 @@
 import Foundation
 
 extension TextViewController: GutterViewDelegate {
-    public func gutterViewWidthDidUpdate(newWidth: CGFloat) {
-        gutterView?.frame.size.width = newWidth
-        textView?.textInsets = textViewInsets
+    public func gutterViewWidthDidUpdate() {
+        updateTextInsets()
     }
 }

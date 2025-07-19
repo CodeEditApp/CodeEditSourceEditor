@@ -45,6 +45,31 @@ class StyledRangeContainer {
         }
     }
 
+    enum RunState {
+        case empty
+        case value(RangeStoreRun<StyleElement>)
+        case exhausted
+
+        var isExhausted: Bool {
+            if case .exhausted = self { return true }
+            return false
+        }
+
+        var hasValue: Bool {
+            if case .value = self { return true }
+            return false
+        }
+
+        var length: Int {
+            switch self {
+            case .empty, .exhausted:
+                return 0
+            case .value(let run):
+                return run.length
+            }
+        }
+    }
+
     var _storage: [ProviderID: RangeStore<StyleElement>] = [:]
     weak var delegate: StyledRangeContainerDelegate?
 
@@ -118,7 +143,9 @@ class StyledRangeContainer {
                 }
             }
 
-            allRuns[minRunIdx].removeLast()
+            if !allRuns[minRunIdx].isEmpty {
+                allRuns[minRunIdx].removeLast()
+            }
 
             runs.append(minRun)
             minValue = allRuns.compactMap { $0.last }.enumerated().min(by: { $0.1.length < $1.1.length })
@@ -127,9 +154,9 @@ class StyledRangeContainer {
         return runs.reversed()
     }
 
-    func storageUpdated(replacedContentIn range: Range<Int>, withCount newLength: Int) {
+    func storageUpdated(editedRange: NSRange, changeInLength delta: Int) {
         for key in _storage.keys {
-            _storage[key]?.storageUpdated(replacedCharactersIn: range, withCount: newLength)
+            _storage[key]?.storageUpdated(editedRange: editedRange, changeInLength: delta)
         }
     }
 }

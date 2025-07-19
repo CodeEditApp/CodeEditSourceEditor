@@ -7,10 +7,11 @@
 
 import AppKit
 
-/// A protocol that can be used to receive extra state change messages from ``CodeEditSourceEditor``.
+/// A protocol that can be used to receive extra state change messages from <doc:SourceEditorView>.
 ///
 /// These are used as a way to push messages up from underlying components into SwiftUI land without requiring passing
-/// callbacks for each message to the ``CodeEditSourceEditor`` initializer.
+/// callbacks for each message to the
+/// ``SourceEditor/init(_:language:configuration:state:highlightProviders:undoManager:coordinators:)`` initializer.
 ///
 /// They're very useful for updating UI that is directly related to the state of the editor, such as the current
 /// cursor position. For an example, see the ``CombineCoordinator`` class, which implements combine publishers for the
@@ -26,6 +27,14 @@ public protocol TextViewCoordinator: AnyObject {
     ///                         dereferenced when ``TextViewCoordinator/destroy()-9nzfl`` is called.
     func prepareCoordinator(controller: TextViewController)
 
+    /// Called when the controller's `viewDidAppear` method is called by AppKit.
+    /// - Parameter controller: The text view controller that did appear.
+    func controllerDidAppear(controller: TextViewController)
+
+    /// Called when the controller's `viewDidDisappear` method is called by AppKit.
+    /// - Parameter controller: The text view controller that did disappear.
+    func controllerDidDisappear(controller: TextViewController)
+
     /// Called when the text view's text changed.
     /// - Parameter controller: The text controller.
     func textViewDidChangeText(controller: TextViewController)
@@ -40,6 +49,8 @@ public protocol TextViewCoordinator: AnyObject {
 
 /// Default implementations
 public extension TextViewCoordinator {
+    func controllerDidAppear(controller: TextViewController) { }
+    func controllerDidDisappear(controller: TextViewController) { }
     func textViewDidChangeText(controller: TextViewController) { }
     func textViewDidChangeSelection(controller: TextViewController, newPositions: [CursorPosition]) { }
     func destroy() { }

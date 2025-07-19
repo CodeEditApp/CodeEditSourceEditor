@@ -5,7 +5,7 @@ import AppKit
 import SwiftUI
 import TextStory
 
-// swiftlint:disable all
+// swiftlint:disable:next type_body_length
 final class TextViewControllerTests: XCTestCase {
 
     var controller: TextViewController!
@@ -13,27 +13,7 @@ final class TextViewControllerTests: XCTestCase {
 
     override func setUpWithError() throws {
         theme = Mock.theme()
-        controller = TextViewController(
-            string: "",
-            language: .default,
-            font: .monospacedSystemFont(ofSize: 11, weight: .medium),
-            theme: theme,
-            tabWidth: 4,
-            indentOption: .spaces(count: 4),
-            lineHeight: 1.0,
-            wrapLines: true,
-            cursorPositions: [],
-            editorOverscroll: 0.5,
-            useThemeBackground: true,
-            highlightProviders: [],
-            contentInsets: NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0),
-            isEditable: true,
-            isSelectable: true,
-            letterSpacing: 1.0,
-            useSystemCursor: false,
-            bracketPairEmphasis: .flash,
-            showMinimap: true
-        )
+        controller = Mock.textViewController(theme: theme)
 
         controller.loadView()
         controller.view.frame = NSRect(x: 0, y: 0, width: 1000, height: 1000)
@@ -69,17 +49,17 @@ final class TextViewControllerTests: XCTestCase {
     // MARK: Overscroll
 
     func test_editorOverScroll() throws {
-        controller.editorOverscroll = 0
+        controller.configuration.layout.editorOverscroll = 0
 
         // editorOverscroll: 0
         XCTAssertEqual(controller.textView.overscrollAmount, 0)
 
-        controller.editorOverscroll = 0.5
+        controller.configuration.layout.editorOverscroll = 0.5
 
         // editorOverscroll: 0.5
         XCTAssertEqual(controller.textView.overscrollAmount, 0.5)
 
-        controller.editorOverscroll = 1.0
+        controller.configuration.layout.editorOverscroll = 1.0
 
         XCTAssertEqual(controller.textView.overscrollAmount, 1.0)
     }
@@ -102,8 +82,9 @@ final class TextViewControllerTests: XCTestCase {
             XCTAssertEqual(lhs.left, rhs.left)
         }
 
-        controller.editorOverscroll = 0
-        controller.contentInsets = nil
+        controller.configuration.layout.editorOverscroll = 0
+        controller.configuration.layout.contentInsets = nil
+        controller.configuration.layout.additionalTextInsets = nil
         controller.reloadUI()
 
         // contentInsets: 0
@@ -111,14 +92,14 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.gutterView.frame.origin.y, 0)
 
         // contentInsets: 16
-        controller.contentInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        controller.configuration.layout.contentInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
         controller.reloadUI()
 
         try assertInsetsEqual(scrollView.contentInsets, NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16))
         XCTAssertEqual(controller.gutterView.frame.origin.y, -16)
 
         // contentInsets: different
-        controller.contentInsets = NSEdgeInsets(top: 32.5, left: 12.3, bottom: 20, right: 1)
+        controller.configuration.layout.contentInsets = NSEdgeInsets(top: 32.5, left: 12.3, bottom: 20, right: 1)
         controller.reloadUI()
 
         try assertInsetsEqual(scrollView.contentInsets, NSEdgeInsets(top: 32.5, left: 12.3, bottom: 20, right: 1))
@@ -126,8 +107,8 @@ final class TextViewControllerTests: XCTestCase {
 
         // contentInsets: 16
         // editorOverscroll: 0.5
-        controller.contentInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
-        controller.editorOverscroll = 0.5 // Should be ignored
+        controller.configuration.layout.contentInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        controller.configuration.layout.editorOverscroll = 0.5 // Should be ignored
         controller.reloadUI()
 
         try assertInsetsEqual(scrollView.contentInsets, NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16))
@@ -150,14 +131,14 @@ final class TextViewControllerTests: XCTestCase {
             XCTAssertEqual(lhs.left, rhs.left)
         }
 
-        controller.contentInsets = nil
-        controller.additionalTextInsets = nil
+        controller.configuration.layout.contentInsets = nil
+        controller.configuration.layout.additionalTextInsets = nil
 
         try assertInsetsEqual(scrollView.contentInsets, NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0))
         XCTAssertEqual(controller.gutterView.frame.origin.y, 0)
 
-        controller.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-        controller.additionalTextInsets = NSEdgeInsets(top: 10, left: 0, bottom: 10, right: 0)
+        controller.configuration.layout.contentInsets = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+        controller.configuration.layout.additionalTextInsets = NSEdgeInsets(top: 10, left: 0, bottom: 10, right: 0)
 
         controller.findViewController?.showFindPanel(animated: false)
 
@@ -195,60 +176,63 @@ final class TextViewControllerTests: XCTestCase {
         controller.highlighter = nil
 
         // Insert 1 space
-        controller.indentOption = .spaces(count: 1)
+        controller.configuration.behavior.indentOption = .spaces(count: 1)
         controller.textView.replaceCharacters(in: NSRange(location: 0, length: controller.textView.length), with: "")
         controller.textView.selectionManager.setSelectedRange(NSRange(location: 0, length: 0))
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, " ")
 
         // Insert 2 spaces
-        controller.indentOption = .spaces(count: 2)
+        controller.configuration.behavior.indentOption = .spaces(count: 2)
         controller.textView.replaceCharacters(in: NSRange(location: 0, length: controller.textView.length), with: "")
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, "  ")
 
         // Insert 3 spaces
-        controller.indentOption = .spaces(count: 3)
+        controller.configuration.behavior.indentOption = .spaces(count: 3)
         controller.textView.replaceCharacters(in: NSRange(location: 0, length: controller.textView.length), with: "")
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, "   ")
 
         // Insert 4 spaces
-        controller.indentOption = .spaces(count: 4)
+        controller.configuration.behavior.indentOption = .spaces(count: 4)
         controller.textView.replaceCharacters(in: NSRange(location: 0, length: controller.textView.length), with: "")
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, "    ")
 
         // Insert tab
-        controller.indentOption = .tab
+        controller.configuration.behavior.indentOption = .tab
         controller.textView.replaceCharacters(in: NSRange(location: 0, length: controller.textView.length), with: "")
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, "\t")
 
         // Insert lots of spaces
-        controller.indentOption = .spaces(count: 1000)
-        controller.textView.replaceCharacters(in: NSRange(location: 0, length: controller.textView.textStorage.length), with: "")
+        controller.configuration.behavior.indentOption = .spaces(count: 1000)
+        controller.textView.replaceCharacters(
+            in: NSRange(location: 0, length: controller.textView.textStorage.length),
+            with: ""
+        )
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, String(repeating: " ", count: 1000))
     }
 
-    func test_letterSpacing() {
+    func test_letterSpacing() throws {
         let font: NSFont = .monospacedSystemFont(ofSize: 11, weight: .medium)
 
-        controller.letterSpacing = 1.0
+        controller.configuration.appearance.letterSpacing = 1.0
 
         XCTAssertEqual(
-            controller.attributesFor(nil)[.kern]! as! CGFloat,
+            try XCTUnwrap(controller.attributesFor(nil)[.kern] as? CGFloat),
             (" " as NSString).size(withAttributes: [.font: font]).width * 0.0
         )
 
-        controller.letterSpacing = 2.0
+        controller.configuration.appearance.letterSpacing = 2.0
         XCTAssertEqual(
-            controller.attributesFor(nil)[.kern]! as! CGFloat,
+            try XCTUnwrap(controller.attributesFor(nil)[.kern] as? CGFloat),
             (" " as NSString).size(withAttributes: [.font: font]).width * 1.0
         )
 
-        controller.letterSpacing = 1.0
+        controller.configuration.appearance.letterSpacing = 1.0
     }
 
     // MARK: Bracket Highlights
@@ -260,28 +244,28 @@ final class TextViewControllerTests: XCTestCase {
 
         controller.scrollView.setFrameSize(NSSize(width: 500, height: 500))
         controller.viewDidLoad()
-        let _ = controller.textView.becomeFirstResponder()
-        controller.bracketPairEmphasis = nil
+        _ = controller.textView.becomeFirstResponder()
+        controller.configuration.appearance.bracketPairEmphasis = nil
         controller.setText("{ Lorem Ipsum {} }")
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
 
         XCTAssertEqual(getEmphasisCount(), 0, "Controller added bracket emphasis when setting is set to `nil`")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
 
-        controller.bracketPairEmphasis = .bordered(color: .black)
+        controller.configuration.appearance.bracketPairEmphasis = .bordered(color: .black)
         controller.textView.setNeedsDisplay()
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssertEqual(getEmphasisCount(), 2, "Controller created an incorrect number of emphases for bordered.")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
         XCTAssertEqual(getEmphasisCount(), 0, "Controller failed to remove bracket emphasis.")
 
-        controller.bracketPairEmphasis = .underline(color: .black)
+        controller.configuration.appearance.bracketPairEmphasis = .underline(color: .black)
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssertEqual(getEmphasisCount(), 2, "Controller created an incorrect number of emphases for underline.")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
         XCTAssertEqual(getEmphasisCount(), 0, "Controller failed to remove bracket emphasis.")
 
-        controller.bracketPairEmphasis = .flash
+        controller.configuration.appearance.bracketPairEmphasis = .flash
         controller.setCursorPositions([CursorPosition(line: 1, column: 2)]) // After first opening {
         XCTAssertEqual(getEmphasisCount(), 1, "Controller created more than one emphasis for flash animation.")
         controller.setCursorPositions([CursorPosition(line: 1, column: 3)])
@@ -299,7 +283,7 @@ final class TextViewControllerTests: XCTestCase {
     }
 
     func test_findClosingPair() {
-        let _ = controller.textView.becomeFirstResponder()
+        _ = controller.textView.becomeFirstResponder()
         controller.textView.string = "{ Lorem Ipsum {} }"
         var idx: Int?
 
@@ -314,34 +298,46 @@ final class TextViewControllerTests: XCTestCase {
         // Test extra pair
         controller.textView.string = "{ Loren Ipsum {}} }"
         idx = controller.findClosingPair("{", "}", from: 1, limit: 19, reverse: false)
-        XCTAssert(idx == 16, "Walking forwards with extra bracket pair failed. Expected `16`, found: `\(String(describing: idx))`")
+        XCTAssert(
+            idx == 16,
+            "Walking forwards with extra bracket pair failed. Expected `16`, found: `\(String(describing: idx))`"
+        )
 
         // Text extra pair backwards
         controller.textView.string = "{ Loren Ipsum {{} }"
         idx = controller.findClosingPair("}", "{", from: 18, limit: 0, reverse: true)
-        XCTAssert(idx == 14, "Walking backwards with extra bracket pair failed. Expected `14`, found: `\(String(describing: idx))`")
+        XCTAssert(
+            idx == 14,
+            "Walking backwards with extra bracket pair failed. Expected `14`, found: `\(String(describing: idx))`"
+        )
 
         // Test missing pair
         controller.textView.string = "{ Loren Ipsum { }"
         idx = controller.findClosingPair("{", "}", from: 1, limit: 17, reverse: false)
-        XCTAssert(idx == nil, "Walking forwards with missing pair failed. Expected `nil`, found: `\(String(describing: idx))`")
+        XCTAssert(
+            idx == nil,
+            "Walking forwards with missing pair failed. Expected `nil`, found: `\(String(describing: idx))`"
+        )
 
         // Test missing pair backwards
         controller.textView.string = " Loren Ipsum {} }"
         idx = controller.findClosingPair("}", "{", from: 17, limit: 0, reverse: true)
-        XCTAssert(idx == nil, "Walking backwards with missing pair failed. Expected `nil`, found: `\(String(describing: idx))`")
+        XCTAssert(
+            idx == nil,
+            "Walking backwards with missing pair failed. Expected `nil`, found: `\(String(describing: idx))`"
+        )
     }
 
     // MARK: Set Text
 
     func test_setText() {
-        let _ = controller.textView.becomeFirstResponder()
+        _ = controller.textView.becomeFirstResponder()
         controller.textView.string = "Hello World"
         controller.textView.selectionManager.setSelectedRange(NSRange(location: 1, length: 2))
 
         controller.setText("\nHello World with newline!")
 
-        XCTAssert(controller.string == "\nHello World with newline!")
+        XCTAssert(controller.text == "\nHello World with newline!")
         XCTAssertEqual(controller.cursorPositions.count, 1)
         XCTAssertEqual(controller.cursorPositions[0].line, 2)
         XCTAssertEqual(controller.cursorPositions[0].column, 1)
@@ -355,7 +351,7 @@ final class TextViewControllerTests: XCTestCase {
     // MARK: Cursor Positions
 
     func test_cursorPositionRangeInit() {
-        let _ = controller.textView.becomeFirstResponder()
+        _ = controller.textView.becomeFirstResponder()
         controller.setText("Hello World")
 
         // Test adding a position returns a valid one
@@ -396,7 +392,7 @@ final class TextViewControllerTests: XCTestCase {
     }
 
     func test_cursorPositionRowColInit() {
-        let _ = controller.textView.becomeFirstResponder()
+        _ = controller.textView.becomeFirstResponder()
         controller.setText("Hello World")
 
         // Test adding a position returns a valid one
@@ -452,14 +448,33 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.minimapView.frame.width, MinimapView.maxWidth)
         XCTAssertEqual(controller.textViewInsets.right, MinimapView.maxWidth)
 
-        controller.showMinimap = false
+        controller.configuration.peripherals.showMinimap = false
         XCTAssertTrue(controller.minimapView.isHidden)
         XCTAssertEqual(controller.textViewInsets.right, 0)
 
-        controller.showMinimap = true
+        controller.configuration.peripherals.showMinimap = true
         XCTAssertFalse(controller.minimapView.isHidden)
         XCTAssertEqual(controller.minimapView.frame.width, MinimapView.maxWidth)
         XCTAssertEqual(controller.textViewInsets.right, MinimapView.maxWidth)
+    }
+
+    // MARK: Folding Ribbon
+
+    func test_foldingRibbonToggle() {
+        controller.setText("Hello World")
+        controller.configuration.peripherals.showFoldingRibbon = false
+        XCTAssertFalse(controller.gutterView.showFoldingRibbon)
+        controller.gutterView.updateWidthIfNeeded() // Would be called on a display pass
+        let noRibbonWidth = controller.gutterView.frame.width
+
+        controller.configuration.peripherals.showFoldingRibbon = true
+        XCTAssertTrue(controller.gutterView.showFoldingRibbon)
+        XCTAssertFalse(controller.gutterView.foldingRibbon.isHidden)
+        controller.gutterView.updateWidthIfNeeded() // Would be called on a display pass
+        XCTAssertEqual(
+            controller.gutterView.frame.width,
+            noRibbonWidth + 7.0 + controller.gutterView.foldingRibbonPadding
+        )
     }
 
     // MARK: - Get Overlapping Lines
@@ -487,5 +502,82 @@ final class TextViewControllerTests: XCTestCase {
         lines = controller.getOverlappingLines(for: NSRange(location: 4, length: 1))
         XCTAssertEqual(2...2, lines)
     }
+
+    // MARK: - Invisible Characters
+
+    func test_setInvisibleCharacterConfig() {
+        controller.setText("     Hello world")
+        controller.configuration.behavior.indentOption = .spaces(count: 4)
+
+        XCTAssertEqual(controller.invisibleCharactersConfiguration, .empty)
+
+        controller.configuration.peripherals.invisibleCharactersConfiguration = .init(
+            showSpaces: true,
+            showTabs: true,
+            showLineEndings: true
+        )
+        XCTAssertEqual(
+            controller.invisibleCharactersConfiguration,
+            .init(showSpaces: true, showTabs: true, showLineEndings: true)
+        )
+        XCTAssertEqual(
+            controller.invisibleCharactersCoordinator.configuration,
+            .init(showSpaces: true, showTabs: true, showLineEndings: true)
+        )
+
+        // Should emphasize the 4th space
+        XCTAssertEqual(
+            controller.invisibleCharactersCoordinator.invisibleStyle(
+                for: InvisibleCharactersConfiguration.Symbols.space,
+                at: NSRange(location: 3, length: 1),
+                lineRange: NSRange(location: 0, length: 15)
+            ),
+            .replace(
+                replacementCharacter: "·",
+                color: controller.theme.invisibles.color,
+                font: controller.invisibleCharactersCoordinator.emphasizedFont
+            )
+        )
+        XCTAssertEqual(
+            controller.invisibleCharactersCoordinator.invisibleStyle(
+                for: InvisibleCharactersConfiguration.Symbols.space,
+                at: NSRange(location: 4, length: 1),
+                lineRange: NSRange(location: 0, length: 15)
+            ),
+            .replace(
+                replacementCharacter: "·",
+                color: controller.theme.invisibles.color,
+                font: controller.font
+            )
+        )
+
+        if case .emphasize = controller.invisibleCharactersCoordinator.invisibleStyle(
+            for: InvisibleCharactersConfiguration.Symbols.tab,
+            at: .zero,
+            lineRange: .zero
+        ) {
+            XCTFail("Incorrect character style for invisible character")
+        }
+    }
+
+    // MARK: - Warning Characters
+
+    func test_setWarningCharacterConfig() {
+        XCTAssertEqual(controller.warningCharacters, Set<UInt16>([]))
+
+        controller.configuration.peripherals.warningCharacters = [0, 1]
+
+        XCTAssertEqual(controller.warningCharacters, [0, 1])
+        XCTAssertEqual(controller.invisibleCharactersCoordinator.warningCharacters, [0, 1])
+
+        if case .replace = controller.invisibleCharactersCoordinator.invisibleStyle(
+            for: 0,
+            at: .zero,
+            lineRange: .zero
+        ) {
+            XCTFail("Incorrect character style for warning character")
+        }
+    }
 }
-// swiftlint:enable all
+
+// swiftlint:disable:this file_length

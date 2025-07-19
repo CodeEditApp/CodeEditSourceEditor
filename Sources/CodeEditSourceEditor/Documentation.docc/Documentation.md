@@ -20,11 +20,11 @@ See this issue [CodeEditLanguages#10](https://github.com/CodeEditApp/CodeEditLan
 
 ## Dependencies
 
-Special thanks to [Matt Massicotte](https://twitter.com/mattie) for the great work he's done!
+Special thanks to [Matt Massicotte](https://bsky.app/profile/massicotte.org) for the great work he's done!
 
 | Package | Source | Author |
 | :- | :- | :- |
-| `SwiftTreeSitter` | [GitHub](https://github.com/ChimeHQ/SwiftTreeSitter) | [Matt Massicotte](https://twitter.com/mattie) |
+| `SwiftTreeSitter` | [GitHub](https://github.com/ChimeHQ/SwiftTreeSitter) | [Matt Massicotte](https://bsky.app/profile/massicotte.org) |
 
 ## License
 
@@ -34,7 +34,10 @@ Licensed under the [MIT license](https://github.com/CodeEditApp/CodeEdit/blob/ma
 
 ### Text View
 
-- ``CodeEditSourceEditor/CodeEditSourceEditor``
+- <doc:SourceEditorView> 
+- ``SourceEditor``
+- ``SourceEditorConfiguration``
+- ``SourceEditorState``
 - ``TextViewController``
 - ``GutterView``
 

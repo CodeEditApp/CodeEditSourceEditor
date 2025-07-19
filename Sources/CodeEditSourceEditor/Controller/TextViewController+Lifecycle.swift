@@ -9,6 +9,23 @@ import CodeEditTextView
 import AppKit
 
 extension TextViewController {
+    override public func viewWillAppear() {
+        super.viewWillAppear()
+        // The calculation this causes cannot be done until the view knows it's final position
+        updateTextInsets()
+        minimapView.layout()
+    }
+
+    override public func viewDidAppear() {
+        super.viewDidAppear()
+        textCoordinators.forEach { $0.val?.controllerDidAppear(controller: self) }
+    }
+
+    override public func viewDidDisappear() {
+        super.viewDidDisappear()
+        textCoordinators.forEach { $0.val?.controllerDidDisappear(controller: self) }
+    }
+
     override public func loadView() {
         super.loadView()
 
@@ -16,25 +33,17 @@ extension TextViewController {
         scrollView.documentView = textView
 
         gutterView = GutterView(
-            font: font.rulerFont,
-            textColor: theme.text.color.withAlphaComponent(0.35),
-            selectedTextColor: theme.text.color,
-            textView: textView,
+            configuration: configuration,
+            controller: self,
             delegate: self
         )
         gutterView.updateWidthIfNeeded()
         scrollView.addFloatingSubview(gutterView, for: .horizontal)
 
-        guideView = ReformattingGuideView(
-            column: self.reformatAtColumn,
-            isVisible: self.showReformattingGuide,
-            theme: theme
-        )
-        guideView.wantsLayer = true
-        scrollView.addFloatingSubview(guideView, for: .vertical)
-        guideView.updatePosition(in: textView)
+        reformattingGuideView = ReformattingGuideView(configuration: configuration)
+        scrollView.addFloatingSubview(reformattingGuideView, for: .vertical)
 
-        minimapView = MinimapView(textView: textView, theme: theme)
+        minimapView = MinimapView(textView: textView, theme: configuration.appearance.theme)
         scrollView.addFloatingSubview(minimapView, for: .vertical)
 
         let findViewController = FindViewController(target: self, childView: scrollView)
@@ -50,7 +59,6 @@ extension TextViewController {
 
         styleTextView()
         styleScrollView()
-        styleGutterView()
         styleMinimapView()
 
         setUpHighlighter()
@@ -70,6 +78,8 @@ extension TextViewController {
         }
         setUpKeyBindings(eventMonitor: &self.localEventMonitor)
         updateContentInsets()
+
+        configuration.didSetOnController(controller: self, oldConfig: nil)
     }
 
     func setUpConstraints() {
@@ -109,6 +119,7 @@ extension TextViewController {
             guard let clipView = notification.object as? NSClipView else { return }
             self?.gutterView.needsDisplay = true
             self?.minimapXConstraint?.constant = clipView.bounds.origin.x
+            NotificationCenter.default.post(name: Self.scrollPositionDidUpdateNotification, object: self)
         }
     }
 
@@ -121,6 +132,7 @@ extension TextViewController {
             self?.gutterView.needsDisplay = true
             self?.emphasisManager?.removeEmphases(for: EmphasisGroup.brackets)
             self?.updateTextInsets()
+            NotificationCenter.default.post(name: Self.scrollPositionDidUpdateNotification, object: self)
         }
     }
 
@@ -130,14 +142,13 @@ extension TextViewController {
             object: textView,
             queue: .main
         ) { [weak self] _ in
-            guard let textView = self?.textView else { return }
-            self?.gutterView.frame.size.height = (self?.textView.frame.height ?? 0) + 10
-            self?.gutterView.frame.origin.y = (self?.textView.frame.origin.y ?? 0.0)
-            - (self?.scrollView.contentInsets.top ?? 0)
-
-            self?.gutterView.needsDisplay = true
-            self?.guideView?.updatePosition(in: textView)
-            self?.scrollView.needsLayout = true
+            guard let self else { return }
+            self.gutterView.frame.size.height = self.textView.frame.height + 10
+            self.gutterView.frame.origin.y = self.textView.frame.origin.y - self.scrollView.contentInsets.top
+            self.gutterView.needsDisplay = true
+            self.gutterView.foldingRibbon.needsDisplay = true
+            self.reformattingGuideView?.updatePosition(in: self)
+            self.scrollView.needsLayout = true
         }
     }
 
