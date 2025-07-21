@@ -11,7 +11,10 @@ final class StyledRangeContainerTests: XCTestCase {
 
         // Have to do string conversion due to missing Comparable conformance pre-macOS 14
         XCTAssertEqual(store._storage.keys.sorted(), providers)
-        XCTAssert(store._storage.values.allSatisfy({ $0.length == 100 }), "One or more providers have incorrect length")
+        XCTAssert(
+            store._storage.values.allSatisfy({ $0.store.length == 100 }),
+            "One or more providers have incorrect length"
+        )
     }
 
     @MainActor
@@ -26,10 +29,10 @@ final class StyledRangeContainerTests: XCTestCase {
         )
 
         XCTAssertNotNil(store._storage[providers[0]])
-        XCTAssertEqual(store._storage[providers[0]]!.count, 3)
-        XCTAssertNil(store._storage[providers[0]]!.runs(in: 0..<100)[0].value?.capture)
-        XCTAssertEqual(store._storage[providers[0]]!.runs(in: 0..<100)[1].value?.capture, .comment)
-        XCTAssertNil(store._storage[providers[0]]!.runs(in: 0..<100)[2].value?.capture)
+        XCTAssertEqual(store._storage[providers[0]]!.store.count, 3)
+        XCTAssertNil(store._storage[providers[0]]!.store.runs(in: 0..<100)[0].value?.capture)
+        XCTAssertEqual(store._storage[providers[0]]!.store.runs(in: 0..<100)[1].value?.capture, .comment)
+        XCTAssertNil(store._storage[providers[0]]!.store.runs(in: 0..<100)[2].value?.capture)
 
         XCTAssertEqual(
             store.runsIn(range: NSRange(location: 0, length: 100)),

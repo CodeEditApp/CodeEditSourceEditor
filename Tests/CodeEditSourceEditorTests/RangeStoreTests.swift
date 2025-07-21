@@ -1,4 +1,4 @@
-import XCTest
+import Testing
 @testable import CodeEditSourceEditor
 
 extension RangeStore {
@@ -6,39 +6,39 @@ extension RangeStore {
     var count: Int { _guts.count }
 }
 
-final class RangeStoreTests: XCTestCase {
+@Suite
+struct RangeStoreTests {
     typealias Store = RangeStore<StyledRangeContainer.StyleElement>
 
-    override var continueAfterFailure: Bool {
-        get { false }
-        set { }
-    }
-
-    func test_initWithLength() {
+    @Test
+    func initWithLength() {
         for _ in 0..<100 {
             let length = Int.random(in: 0..<1000)
             var store = Store(documentLength: length)
-            XCTAssertEqual(store.length, length)
+            #expect(store.length == length)
         }
     }
 
     // MARK: - Storage
 
-    func test_storageRemoveCharacters() {
+    @Test
+    func storageRemoveCharacters() {
         var store = Store(documentLength: 100)
         store.storageUpdated(replacedCharactersIn: 10..<12, withCount: 0)
-        XCTAssertEqual(store.length, 98, "Failed to remove correct range")
-        XCTAssertEqual(store.count, 1, "Failed to coalesce")
+        #expect(store.length == 98, "Failed to remove correct range")
+        #expect(store.count == 1, "Failed to coalesce")
     }
 
-    func test_storageRemoveFromEnd() {
+    @Test
+    func storageRemoveFromEnd() {
         var store = Store(documentLength: 100)
         store.storageUpdated(replacedCharactersIn: 95..<100, withCount: 0)
-        XCTAssertEqual(store.length, 95, "Failed to remove correct range")
-        XCTAssertEqual(store.count, 1, "Failed to coalesce")
+        #expect(store.length == 95, "Failed to remove correct range")
+        #expect(store.count == 1, "Failed to coalesce")
     }
 
-    func test_storageRemoveSingleCharacterFromEnd() {
+    @Test
+    func storageRemoveSingleCharacterFromEnd() {
         var store = Store(documentLength: 10)
         store.set( // Test that we can delete a character associated with a single syntax run too
             runs: [
@@ -49,122 +49,135 @@ final class RangeStoreTests: XCTestCase {
             for: 0..<10
         )
         store.storageUpdated(replacedCharactersIn: 9..<10, withCount: 0)
-        XCTAssertEqual(store.length, 9, "Failed to remove correct range")
-        XCTAssertEqual(store.count, 2)
+        #expect(store.length == 9, "Failed to remove correct range")
+        #expect(store.count == 2)
     }
 
-    func test_storageRemoveFromBeginning() {
+    @Test
+    func storageRemoveFromBeginning() {
         var store = Store(documentLength: 100)
         store.storageUpdated(replacedCharactersIn: 0..<15, withCount: 0)
-        XCTAssertEqual(store.length, 85, "Failed to remove correct range")
-        XCTAssertEqual(store.count, 1, "Failed to coalesce")
+        #expect(store.length == 85, "Failed to remove correct range")
+        #expect(store.count == 1, "Failed to coalesce")
     }
 
-    func test_storageRemoveAll() {
+    @Test
+    func storageRemoveAll() {
         var store = Store(documentLength: 100)
         store.storageUpdated(replacedCharactersIn: 0..<100, withCount: 0)
-        XCTAssertEqual(store.length, 0, "Failed to remove correct range")
-        XCTAssertEqual(store.count, 0, "Failed to remove all runs")
+        #expect(store.length == 0, "Failed to remove correct range")
+        #expect(store.count == 0, "Failed to remove all runs")
     }
 
-    func test_storageInsert() {
+    @Test
+    func storageInsert() {
         var store = Store(documentLength: 100)
         store.storageUpdated(replacedCharactersIn: 45..<45, withCount: 10)
-        XCTAssertEqual(store.length, 110)
-        XCTAssertEqual(store.count, 1, "Failed to coalesce")
+        #expect(store.length == 110)
+        #expect(store.count == 1, "Failed to coalesce")
     }
 
-    func test_storageInsertAtEnd() {
+    @Test
+    func storageInsertAtEnd() {
         var store = Store(documentLength: 100)
         store.storageUpdated(replacedCharactersIn: 100..<100, withCount: 10)
-        XCTAssertEqual(store.length, 110)
-        XCTAssertEqual(store.count, 1, "Failed to coalesce")
+        #expect(store.length == 110)
+        #expect(store.count == 1, "Failed to coalesce")
     }
 
-    func test_storageInsertAtBeginning() {
+    @Test
+    func storageInsertAtBeginning() {
         var store = Store(documentLength: 100)
         store.storageUpdated(replacedCharactersIn: 0..<0, withCount: 10)
-        XCTAssertEqual(store.length, 110)
-        XCTAssertEqual(store.count, 1, "Failed to coalesce")
+        #expect(store.length == 110)
+        #expect(store.count == 1, "Failed to coalesce")
     }
 
-    func test_storageInsertFromEmpty() {
+    @Test
+    func storageInsertFromEmpty() {
         var store = Store(documentLength: 0)
         store.storageUpdated(replacedCharactersIn: 0..<0, withCount: 10)
-        XCTAssertEqual(store.length, 10)
-        XCTAssertEqual(store.count, 1, "Failed to coalesce")
+        #expect(store.length == 10)
+        #expect(store.count == 1, "Failed to coalesce")
     }
 
-    func test_storageEdit() {
+    @Test
+    func storageEdit() {
         var store = Store(documentLength: 100)
         store.storageUpdated(replacedCharactersIn: 45..<50, withCount: 10)
-        XCTAssertEqual(store.length, 105)
-        XCTAssertEqual(store.count, 1, "Failed to coalesce")
+        #expect(store.length == 105)
+        #expect(store.count == 1, "Failed to coalesce")
     }
 
-    func test_storageEditAtEnd() {
+    @Test
+    func storageEditAtEnd() {
         var store = Store(documentLength: 100)
         store.storageUpdated(replacedCharactersIn: 95..<100, withCount: 10)
-        XCTAssertEqual(store.length, 105)
-        XCTAssertEqual(store.count, 1, "Failed to coalesce")
+        #expect(store.length == 105)
+        #expect(store.count == 1, "Failed to coalesce")
     }
 
-    func test_storageEditAtBeginning() {
+    @Test
+    func storageEditAtBeginning() {
         var store = Store(documentLength: 100)
         store.storageUpdated(replacedCharactersIn: 0..<5, withCount: 10)
-        XCTAssertEqual(store.length, 105)
-        XCTAssertEqual(store.count, 1, "Failed to coalesce")
+        #expect(store.length == 105)
+        #expect(store.count == 1, "Failed to coalesce")
     }
 
-    func test_storageEditAll() {
+    @Test
+    func storageEditAll() {
         var store = Store(documentLength: 100)
         store.storageUpdated(replacedCharactersIn: 0..<100, withCount: 10)
-        XCTAssertEqual(store.length, 10)
-        XCTAssertEqual(store.count, 1, "Failed to coalesce")
+        #expect(store.length == 10)
+        #expect(store.count == 1, "Failed to coalesce")
     }
 
     // MARK: - Styles
 
-    func test_setOneRun() {
+    @Test
+    func setOneRun() {
         var store = Store(documentLength: 100)
         store.set(value: .init(capture: .comment, modifiers: [.static]), for: 45..<50)
-        XCTAssertEqual(store.length, 100)
-        XCTAssertEqual(store.count, 3)
+        #expect(store.length == 100)
+        #expect(store.count == 3)
 
         let runs = store.runs(in: 0..<100)
-        XCTAssertEqual(runs.count, 3)
-        XCTAssertEqual(runs[0].length, 45)
-        XCTAssertEqual(runs[1].length, 5)
-        XCTAssertEqual(runs[2].length, 50)
+        #expect(runs.count == 3)
+        #expect(runs[0].length == 45)
+        #expect(runs[1].length == 5)
+        #expect(runs[2].length == 50)
 
-        XCTAssertNil(runs[0].value?.capture)
-        XCTAssertEqual(runs[1].value?.capture, .comment)
-        XCTAssertNil(runs[2].value?.capture)
+        #expect(runs[0].value?.capture == nil)
+        #expect(runs[1].value?.capture == .comment)
+        #expect(runs[2].value?.capture == nil)
 
-        XCTAssertEqual(runs[0].value?.modifiers, nil)
-        XCTAssertEqual(runs[1].value?.modifiers, [.static])
-        XCTAssertEqual(runs[2].value?.modifiers, nil)
+        #expect(runs[0].value?.modifiers == nil)
+        #expect(runs[1].value?.modifiers == [.static])
+        #expect(runs[2].value?.modifiers == nil)
     }
 
-    func test_queryOverlappingRun() {
+    @Test
+    func queryOverlappingRun() {
         var store = Store(documentLength: 100)
         store.set(value: .init(capture: .comment, modifiers: [.static]), for: 45..<50)
-        XCTAssertEqual(store.length, 100)
-        XCTAssertEqual(store.count, 3)
+        #expect(store.length == 100)
+        #expect(store.count == 3)
 
         let runs = store.runs(in: 47..<100)
-        XCTAssertEqual(runs.count, 2)
-        XCTAssertEqual(runs[0].length, 3)
-        XCTAssertEqual(runs[1].length, 50)
+        #expect(runs.count == 2)
+        #expect(runs[0].length == 3)
+        #expect(runs[1].length == 50)
 
-        XCTAssertEqual(runs[0].value?.capture, .comment)
-        XCTAssertNil(runs[1].value?.capture)
+        #expect(runs[0].value?.capture == .comment)
+        #expect(runs[1].value?.capture == nil)
 
-        XCTAssertEqual(runs[0].value?.modifiers, [.static])
-        XCTAssertEqual(runs[1].value?.modifiers, nil)
+        #expect(runs[0].value?.modifiers == [.static])
+        #expect(runs[1].value?.modifiers == nil)
     }
 
-    func test_setMultipleRuns() {
+    @Test
+    func setMultipleRuns() {
         var store = Store(documentLength: 100)
 
         store.set(value: .init(capture: .comment, modifiers: [.static]), for: 5..<15)
@@ -173,24 +186,25 @@ final class RangeStoreTests: XCTestCase {
         store.set(value: .init(capture: .function, modifiers: []), for: 45..<50)
         store.set(value: .init(capture: .variable, modifiers: []), for: 60..<70)
 
-        XCTAssertEqual(store.length, 100)
+        #expect(store.length == 100)
 
         let runs = store.runs(in: 0..<100)
-        XCTAssertEqual(runs.count, 11)
-        XCTAssertEqual(runs.reduce(0, { $0 + $1.length }), 100)
+        #expect(runs.count == 11)
+        #expect(runs.reduce(0, { $0 + $1.length }) == 100)
 
         let lengths = [5, 10, 5, 10, 5, 5, 5, 5, 10, 10, 30]
         let captures: [CaptureName?] = [nil, .comment, nil, .keyword, nil, .string, nil, .function, nil, .variable, nil]
         let modifiers: [CaptureModifierSet] = [[], [.static], [], [], [], [.static], [], [], [], [], []]
 
         runs.enumerated().forEach {
-            XCTAssertEqual($0.element.length, lengths[$0.offset])
-            XCTAssertEqual($0.element.value?.capture, captures[$0.offset])
-            XCTAssertEqual($0.element.value?.modifiers ?? [], modifiers[$0.offset])
+            #expect($0.element.length == lengths[$0.offset])
+            #expect($0.element.value?.capture == captures[$0.offset])
+            #expect($0.element.value?.modifiers ?? [] == modifiers[$0.offset])
         }
     }
 
-    func test_setMultipleRunsAndStorageUpdate() {
+    @Test
+    func setMultipleRunsAndStorageUpdate() {
         var store = Store(documentLength: 100)
 
         var lengths = [5, 10, 5, 10, 5, 5, 5, 5, 10, 10, 30]
@@ -204,43 +218,78 @@ final class RangeStoreTests: XCTestCase {
             for: 0..<100
         )
 
-        XCTAssertEqual(store.length, 100)
+        #expect(store.length == 100)
 
         var runs = store.runs(in: 0..<100)
-        XCTAssertEqual(runs.count, 11)
-        XCTAssertEqual(runs.reduce(0, { $0 + $1.length }), 100)
+        #expect(runs.count == 11)
+        #expect(runs.reduce(0, { $0 + $1.length }) == 100)
 
         runs.enumerated().forEach {
-            XCTAssertEqual(
-                $0.element.length,
-                lengths[$0.offset],
+            #expect(
+                $0.element.length == lengths[$0.offset],
                 "Run \($0.offset) has incorrect length: \($0.element.length). Expected \(lengths[$0.offset])"
             )
-            XCTAssertEqual(
-                $0.element.value?.capture,
-                captures[$0.offset], // swiftlint:disable:next line_length
+            #expect(
+                $0.element.value?.capture == captures[$0.offset], // swiftlint:disable:next line_length
                 "Run \($0.offset) has incorrect capture: \(String(describing: $0.element.value?.capture)). Expected \(String(describing: captures[$0.offset]))"
             )
-            XCTAssertEqual(
-                $0.element.value?.modifiers,
-                modifiers[$0.offset], // swiftlint:disable:next line_length
+            #expect(
+                $0.element.value?.modifiers == modifiers[$0.offset], // swiftlint:disable:next line_length
                 "Run \($0.offset) has incorrect modifiers: \(String(describing: $0.element.value?.modifiers)). Expected \(modifiers[$0.offset])"
             )
         }
 
         store.storageUpdated(replacedCharactersIn: 30..<45, withCount: 10)
         runs = store.runs(in: 0..<95)
-        XCTAssertEqual(runs.count, 9)
-        XCTAssertEqual(runs.reduce(0, { $0 + $1.length }), 95)
+        #expect(runs.count == 9)
+        #expect(runs.reduce(0, { $0 + $1.length }) == 95)
 
         lengths = [5, 10, 5, 10, 10, 5, 10, 10, 30]
         captures = [nil, .comment, nil, .keyword, nil, .function, nil, .variable, nil]
         modifiers = [[], [.static], [], [], [], [], [], [], []]
 
         runs.enumerated().forEach {
-            XCTAssertEqual($0.element.length, lengths[$0.offset])
-            XCTAssertEqual($0.element.value?.capture, captures[$0.offset])
-            XCTAssertEqual($0.element.value?.modifiers ?? [], modifiers[$0.offset])
+            #expect($0.element.length == lengths[$0.offset])
+            #expect($0.element.value?.capture == captures[$0.offset])
+            #expect($0.element.value?.modifiers ?? [] == modifiers[$0.offset])
+        }
+    }
+
+    // MARK: - Query
+
+    // A few known bad cases
+    @Test(arguments: [3..<8, 65..<100, 0..<5, 5..<12])
+    func runsInAlwaysBoundedByRange(_ range: Range<Int>) {
+        var store = Store(documentLength: 100)
+        let lengths = [5, 10, 5, 10, 5, 5, 5, 5, 10, 10, 30]
+        let captures: [CaptureName?] = [nil, .comment, nil, .keyword, nil, .string, nil, .function, nil, .variable, nil]
+        let modifiers: [CaptureModifierSet] = [[], [.static], [], [], [], [.static], [], [], [], [], []]
+
+        store.set(
+            runs: zip(zip(lengths, captures), modifiers).map {
+                Store.Run(length: $0.0, value: .init(capture: $0.1, modifiers: $1))
+            },
+            for: 0..<100
+        )
+
+        #expect(
+            store.runs(in: range).reduce(0, { $0 + $1.length }) == (range.upperBound - range.lowerBound),
+            "Runs returned by storage did not equal requested range"
+        )
+        #expect(store.runs(in: range).allSatisfy({ $0.length > 0 }))
+    }
+
+    // Randomized version of the previous test
+    @Test
+    func runsAlwaysBoundedByRangeRandom() {
+        func range() -> Range<Int> {
+            let start = Int.random(in: 0..<100)
+            let end = Int.random(in: start..<100)
+            return start..<end
+        }
+
+        for _ in 0..<1000 {
+            runsInAlwaysBoundedByRange(range())
         }
     }
 }
