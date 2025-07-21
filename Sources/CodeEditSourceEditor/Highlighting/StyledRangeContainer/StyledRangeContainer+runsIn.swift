@@ -26,7 +26,9 @@ extension StyledRangeContainer {
         }
 
         // Ordered by priority, lower = higher priority.
-        var allRuns = _storage.sorted(by: { $0.key < $1.key }).map { $0.value.runs(in: range.intRange) }
+        var allRuns = _storage.values
+            .sorted(by: { $0.priority < $1.priority })
+            .map { $0.store.runs(in: range.intRange) }
 
         var runs: [RangeStoreRun<StyleElement>] = []
         var minValue = allRuns.compactMap { $0.last }.enumerated().min(by: { $0.1.length < $1.1.length })

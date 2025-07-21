@@ -70,7 +70,7 @@ class StyledRangeContainer {
         }
     }
 
-    var _storage: [ProviderID: RangeStore<StyleElement>] = [:]
+    var _storage: [ProviderID: (store: RangeStore<StyleElement>, priority: Int)] = [:]
     weak var delegate: StyledRangeContainerDelegate?
 
     /// Initialize the container with a list of provider identifiers. Each provider is given an id, they should be
@@ -80,17 +80,21 @@ class StyledRangeContainer {
     ///   - providers: An array of identifiers given to providers.
     init(documentLength: Int, providers: [ProviderID]) {
         for provider in providers {
-            _storage[provider] = RangeStore<StyleElement>(documentLength: documentLength)
+            _storage[provider] = (store: RangeStore<StyleElement>(documentLength: documentLength), priority: provider)
         }
     }
 
-    func addProvider(_ id: ProviderID, documentLength: Int) {
+    func addProvider(_ id: ProviderID, priority: Int, documentLength: Int) {
         assert(!_storage.keys.contains(id), "Provider already exists")
-        _storage[id] = RangeStore<StyleElement>(documentLength: documentLength)
+        _storage[id] = (store: RangeStore<StyleElement>(documentLength: documentLength), priority: priority)
+    }
+
+    func setPriority(providerId: ProviderID, priority: Int) {
+        _storage[providerId]?.priority = priority
     }
 
     func removeProvider(_ id: ProviderID) {
-        guard let provider = _storage[id] else { return }
+        guard let provider = _storage[id]?.store else { return }
         applyHighlightResult(
             provider: id,
             highlights: [],
@@ -101,7 +105,7 @@ class StyledRangeContainer {
 
     func storageUpdated(editedRange: NSRange, changeInLength delta: Int) {
         for key in _storage.keys {
-            _storage[key]?.storageUpdated(editedRange: editedRange, changeInLength: delta)
+            _storage[key]?.store.storageUpdated(editedRange: editedRange, changeInLength: delta)
         }
     }
 }
@@ -116,7 +120,7 @@ extension StyledRangeContainer: HighlightProviderStateDelegate {
     ///   - rangeToHighlight: The range to apply the highlights to.
     func applyHighlightResult(provider: ProviderID, highlights: [HighlightRange], rangeToHighlight: NSRange) {
         assert(rangeToHighlight != .notFound, "NSNotFound is an invalid highlight range")
-        guard var storage = _storage[provider] else {
+        guard var storage = _storage[provider]?.store else {
             assertionFailure("No storage found for the given provider: \(provider)")
             return
         }
@@ -143,7 +147,7 @@ extension StyledRangeContainer: HighlightProviderStateDelegate {
         }
 
         storage.set(runs: runs, for: rangeToHighlight.intRange)
-        _storage[provider] = storage
+        _storage[provider]?.store = storage
         delegate?.styleContainerDidUpdate(in: rangeToHighlight)
     }
 }
