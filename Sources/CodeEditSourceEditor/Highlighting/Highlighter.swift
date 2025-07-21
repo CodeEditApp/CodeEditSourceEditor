@@ -163,7 +163,7 @@ class Highlighter: NSObject {
         let difference = newIds.difference(from: existingIds).inferringMoves()
 
         var highlightProviders = self.highlightProviders // Make a mutable copy
-        var moveMap: [Int: HighlightProviderState] = [:]
+        var moveMap: [Int: (Int, HighlightProviderState)] = [:]
 
         for change in difference {
             switch change {
@@ -174,7 +174,8 @@ class Highlighter: NSObject {
                     guard let movedProvider = moveMap[offset] else {
                         continue
                     }
-                    highlightProviders.insert(movedProvider, at: offset)
+                    highlightProviders.insert(movedProvider.1, at: offset)
+                    styleContainer.setPriority(providerId: movedProvider.0, priority: offset)
                     continue
                 }
                 // Set up a new provider and insert it with a unique ID
@@ -188,12 +189,12 @@ class Highlighter: NSObject {
                     language: language
                 )
                 highlightProviders.insert(state, at: offset)
-                styleContainer.addProvider(providerIdCounter, documentLength: textView.length)
+                styleContainer.addProvider(providerIdCounter, priority: offset, documentLength: textView.length)
                 state.invalidate() // Invalidate this new one
             case let .remove(offset, _, associatedOffset):
-                guard associatedOffset == nil else {
+                if let associatedOffset {
                     // Moved, add it to the move map
-                    moveMap[associatedOffset!] = highlightProviders.remove(at: offset)
+                    moveMap[associatedOffset] = (offset, highlightProviders.remove(at: offset))
                     continue
                 }
                 // Removed entirely
