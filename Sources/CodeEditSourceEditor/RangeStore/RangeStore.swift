@@ -39,23 +39,31 @@ struct RangeStore<Element: RangeStoreElement>: Sendable {
     /// - Parameter range: The range to query.
     /// - Returns: A continuous array of runs representing the queried range.
     func runs(in range: Range<Int>) -> [Run] {
+        let length = _guts.count(in: OffsetMetric())
         assert(range.lowerBound >= 0, "Negative lowerBound")
-        assert(range.upperBound <= _guts.count(in: OffsetMetric()), "upperBound outside valid range")
+        assert(range.upperBound <= length, "upperBound outside valid range")
         if let cache, cache.range == range {
             return cache.runs
         }
 
         var runs = [Run]()
-
         var index = findIndex(at: range.lowerBound).index
-        var offset: Int? = range.lowerBound - _guts.offset(of: index, in: OffsetMetric())
+        var offset: Int = range.lowerBound - _guts.offset(of: index, in: OffsetMetric())
+        var remainingLength = range.upperBound - range.lowerBound
 
-        while index < _guts.endIndex, _guts.offset(of: index, in: OffsetMetric()) < range.upperBound {
+        while index < _guts.endIndex,
+              _guts.offset(of: index, in: OffsetMetric()) < range.upperBound,
+              remainingLength > 0 {
             let run = _guts[index]
-            runs.append(Run(length: run.length - (offset ?? 0), value: run.value))
+            let runLength = min(run.length - offset, remainingLength)
+            runs.append(Run(length: runLength, value: run.value))
 
+            remainingLength -= runLength
+            if remainingLength <= 0 {
+                break // Avoid even checking the storage for the next index
+            }
             index = _guts.index(after: index)
-            offset = nil
+            offset = 0
         }
 
         return runs
@@ -82,6 +90,9 @@ struct RangeStore<Element: RangeStoreElement>: Sendable {
             let missingCharacters = range.upperBound - upperBound
             storageUpdated(replacedCharactersIn: upperBound..<upperBound, withCount: missingCharacters)
         }
+
+        // This is quite slow in debug builds but is a *really* important assertion for internal state.
+        assert(!runs.contains(where: { $0.length < 0 }), "Runs cannot have negative length.")
 
         _guts.replaceSubrange(
             range,
