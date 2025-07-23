@@ -87,11 +87,8 @@ public final class SuggestionController: NSWindowController {
     }
 
     /// Opens the window as a child of another window.
-    public func showWindow() {
-        guard let window = window,
-              let parentWindow = NSApplication.shared.keyWindow
-        else { return }
-
+    public func showWindow(attachedTo parentWindow: NSWindow) {
+        guard let window = window else { return }
         parentWindow.addChildWindow(window, ordered: .above)
 
         // Close on window switch observer

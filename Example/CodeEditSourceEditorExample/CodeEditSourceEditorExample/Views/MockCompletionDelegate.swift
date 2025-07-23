@@ -35,7 +35,7 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
         try? await Task.sleep(for: .seconds(0.2))
         return (cursorPosition, [Suggestion(text: "Hello"), Suggestion(text: "World")])
     }
-    
+
     func completionOnCursorMove(
         textView: TextViewController,
         cursorPosition: CursorPosition

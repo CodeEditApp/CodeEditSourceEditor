@@ -15,11 +15,11 @@ final class CodeSuggestionRowView: NSTableRowView {
         self.getSelectionColor = getSelectionColor
         super.init(frame: .zero)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func drawSelection(in dirtyRect: NSRect) {
         guard isSelected else { return }
         guard let context = NSGraphicsContext.current?.cgContext else { return }
