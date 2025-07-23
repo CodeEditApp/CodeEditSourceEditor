@@ -229,13 +229,14 @@ extension TextViewController {
             self.findViewController?.showFindPanel()
             return nil
         case (0, "\u{1b}"): // Escape key
-            self.findViewController?.hideFindPanel()
-            return nil
-        case (controlKey, " "):
-            let autocompleteCoordinators = textCoordinators.map {
-                ($0.val as? AutoCompleteCoordinatorProtocol)?.showAutocompleteWindow()
+            if findViewController?.viewModel.isShowingFindPanel == true {
+                self.findViewController?.hideFindPanel()
+                return nil
             }
-            return nil
+            // Attempt to show completions otherwise
+            return handleShowCompletions(event)
+        case (controlKey, " "):
+            return handleShowCompletions(event)
         case (_, _):
             return event
         }
@@ -257,5 +258,17 @@ extension TextViewController {
             handleIndent()
         }
         return nil
+    }
+
+    private func handleShowCompletions(_ event: NSEvent) -> NSEvent? {
+        if let completionDelegate = self.completionDelegate, let cursorPosition = cursorPositions.first {
+            SuggestionController.shared.showCompletions(
+                textView: self,
+                delegate: completionDelegate,
+                cursorPosition: cursorPosition
+            )
+            return nil
+        }
+        return event
     }
 }
