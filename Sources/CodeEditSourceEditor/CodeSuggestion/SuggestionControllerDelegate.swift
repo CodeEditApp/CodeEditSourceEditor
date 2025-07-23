@@ -6,6 +6,8 @@
 //
 
 public protocol SuggestionControllerDelegate: AnyObject {
+    var currentFilterText: String { get }
+
     func applyCompletionItem(item: CodeSuggestionEntry)
     func onClose()
     func onCompletion()

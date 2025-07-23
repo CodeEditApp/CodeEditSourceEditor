@@ -212,6 +212,7 @@ extension TextViewController {
 
     func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
         let commandKey = NSEvent.ModifierFlags.command.rawValue
+        let controlKey = NSEvent.ModifierFlags.control.rawValue
 
         switch (modifierFlags, event.charactersIgnoringModifiers) {
         case (commandKey, "/"):
@@ -229,6 +230,12 @@ extension TextViewController {
             return nil
         case (0, "\u{1b}"): // Escape key
             self.findViewController?.hideFindPanel()
+            return nil
+        case (controlKey, " "):
+//            suggestionController.showWindow()
+            let autocompleteCoordinators = textCoordinators.map {
+                ($0.val as? AutoCompleteCoordinatorProtocol)?.showAutocompleteWindow()
+            }
             return nil
         case (_, _):
             return event

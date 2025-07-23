@@ -46,7 +46,6 @@ public final class SuggestionController: NSWindowController {
 
     let tableView = NSTableView()
     let scrollView = NSScrollView()
-    let popover = NSPopover()
     /// Tracks when the window is placed above the cursor
     var isWindowAboveCursor = false
 
@@ -82,9 +81,15 @@ public final class SuggestionController: NSWindowController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        removeEventMonitors()
+    }
+
     /// Opens the window as a child of another window.
-    public func showWindow(attachedTo parentWindow: NSWindow) {
-        guard let window = window else { return }
+    public func showWindow() {
+        guard let window = window,
+              let parentWindow = NSApplication.shared.keyWindow
+        else { return }
 
         parentWindow.addChildWindow(window, ordered: .above)
         window.orderFront(nil)
@@ -176,9 +181,9 @@ public final class SuggestionController: NSWindowController {
 
         case 125, 126:  // Down/Up Arrow
             self.tableView.keyDown(with: event)
-            guard tableView.selectedRow >= 0 else { return event }
-            let selectedItem = items[tableView.selectedRow]
-            self.delegate?.onItemSelect(item: selectedItem)
+            let row = tableView.selectedRow
+            guard row >= 0, row < items.count else { return event }
+            self.delegate?.onItemSelect(item: items[row])
             return nil
 
         case 124: // Right Arrow
@@ -192,32 +197,11 @@ public final class SuggestionController: NSWindowController {
             guard tableView.selectedRow >= 0 else { return event }
             let selectedItem = items[tableView.selectedRow]
             self.delegate?.applyCompletionItem(item: selectedItem)
-            self.close()
             return nil
 
         default:
             return event
         }
-    }
-
-    private func handleRightArrow() {
-        guard let window = self.window,
-              let selectedRow = tableView.selectedRowIndexes.first,
-              selectedRow < items.count,
-              !popover.isShown else {
-            return
-        }
-        let rowRect = tableView.rect(ofRow: selectedRow)
-        let rowRectInWindow = tableView.convert(rowRect, to: nil)
-        let popoverPoint = NSPoint(
-            x: window.frame.maxX,
-            y: window.frame.minY + rowRectInWindow.midY
-        )
-        popover.show(
-            relativeTo: NSRect(x: popoverPoint.x, y: popoverPoint.y, width: 1, height: 1),
-            of: window.contentView!,
-            preferredEdge: .maxX
-        )
     }
 
     private func resetScrollPosition() {
@@ -245,9 +229,5 @@ public final class SuggestionController: NSWindowController {
             NotificationCenter.default.removeObserver(observer)
             cursorPositionObserver = nil
         }
-    }
-
-    deinit {
-        removeEventMonitors()
     }
 }

@@ -194,6 +194,9 @@ public class TextViewController: NSViewController {
         )
     }
 
+    /// The `SuggestionController` lets us display the autocomplete items
+    public lazy var suggestionController: SuggestionController = SuggestionController()
+
     // MARK: Init
 
     public init(
