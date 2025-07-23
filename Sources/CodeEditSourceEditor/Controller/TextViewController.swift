@@ -85,6 +85,8 @@ public class TextViewController: NSViewController {
     /// The provided highlight provider.
     public var highlightProviders: [HighlightProviding]
 
+    public weak var completionDelegate: CodeSuggestionDelegate?
+
     // MARK: - Config Helpers
 
     /// The font to use in the `textView`
