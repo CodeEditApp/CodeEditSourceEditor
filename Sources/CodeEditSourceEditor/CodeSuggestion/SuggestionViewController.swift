@@ -71,12 +71,26 @@ class SuggestionViewController: NSViewController {
         super.viewWillAppear()
         resetScrollPosition()
         tableView.reloadData()
+        if let controller = model?.activeTextView {
+            styleView(using: controller)
+        }
     }
 
     func styleView(using controller: TextViewController) {
         switch controller.systemAppearance {
         case .aqua:
-            tintView.layer?.backgroundColor = controller.theme.background.withAlphaComponent(0.3).cgColor
+            let color = controller.theme.background
+            if color != .clear {
+                let newColor = NSColor(
+                    red: color.redComponent * 0.95,
+                    green: color.greenComponent * 0.95,
+                    blue: color.blueComponent * 0.95,
+                    alpha: 1.0
+                )
+                tintView.layer?.backgroundColor = newColor.cgColor
+            } else {
+                tintView.layer?.backgroundColor = .clear
+            }
         case .darkAqua:
             tintView.layer?.backgroundColor = controller.theme.background.cgColor
         default:
