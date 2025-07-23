@@ -6,34 +6,28 @@
 //
 
 import AppKit
-
-/// Represents an item that can be displayed in the code suggestion view
-public protocol CodeSuggestionEntry {
-    var view: NSView { get }
-}
+import CodeEditTextView
+import Combine
 
 public final class SuggestionController: NSWindowController {
+    static var shared: SuggestionController = SuggestionController()
 
     // MARK: - Properties
 
-    public static var DEFAULT_SIZE: NSSize {
+    static var DEFAULT_SIZE: NSSize {
         NSSize(
             width: 256, // TODO: DOES MIN WIDTH DEPEND ON FONT SIZE?
             height: rowsToWindowHeight(for: 1)
         )
     }
 
-    /// The items to be displayed in the window
-    public var items: [CodeSuggestionEntry] = [] {
-        didSet { onItemsUpdated() }
-    }
-
-    /// Whether the suggestion window is visbile
-    public var isVisible: Bool {
+    /// Whether the suggestion window is visibile
+    var isVisible: Bool {
         window?.isVisible ?? false
     }
 
-    public weak var delegate: SuggestionControllerDelegate?
+    var itemObserver: AnyCancellable?
+    var model: SuggestionViewModel = SuggestionViewModel()
 
     // MARK: - Private Properties
 
@@ -44,45 +38,52 @@ public final class SuggestionController: NSWindowController {
     /// Padding at top and bottom of the window
     static let WINDOW_PADDING: CGFloat = 5
 
-    let tableView = NSTableView()
-    let scrollView = NSScrollView()
     /// Tracks when the window is placed above the cursor
     var isWindowAboveCursor = false
-
-    let noItemsLabel: NSTextField = {
-        let label = NSTextField(labelWithString: "No Completions")
-        label.textColor = .secondaryLabelColor
-        label.alignment = .center
-        label.translatesAutoresizingMaskIntoConstraints = false
-        label.isHidden = false
-        // TODO: GET FONT SIZE FROM THEME
-        label.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
-        return label
-    }()
 
     /// An event monitor for keyboard events
     private var localEventMonitor: Any?
     /// Holds the observer for the window resign notifications
     private var windowResignObserver: NSObjectProtocol?
-    /// Holds the observer for the cursor position update notifications
-    private var cursorPositionObserver: NSObjectProtocol?
 
     // MARK: - Initialization
 
     public init() {
         let window = Self.makeWindow()
+
+        let controller = SuggestionViewController()
+        controller.model = model
+        window.contentViewController = controller
+
         super.init(window: window)
-        configureTableView()
-        configureScrollView()
-        configureNoItemsLabel()
+
+        if window.isVisible {
+            window.close()
+        }
+
+        itemObserver = model.$items.receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.onItemsUpdated()
+        }
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
-    deinit {
-        removeEventMonitors()
+    func showCompletions(
+        textView: TextViewController,
+        delegate: CodeSuggestionDelegate,
+        cursorPosition: CursorPosition
+    ) {
+        model.showCompletions(
+            textView: textView,
+            delegate: delegate,
+            cursorPosition: cursorPosition
+        ) { parentWindow, cursorRect in
+            self.showWindow(attachedTo: parentWindow)
+            self.constrainWindowToScreenEdges(cursorRect: cursorRect)
+            (self.contentViewController as? SuggestionViewController)?.styleView(using: textView)
+        }
     }
 
     /// Opens the window as a child of another window.
@@ -92,7 +93,6 @@ public final class SuggestionController: NSWindowController {
         else { return }
 
         parentWindow.addChildWindow(window, ordered: .above)
-        window.orderFront(nil)
 
         // Close on window switch observer
         // Initialized outside of `setupEventMonitors` in order to grab the parent window
@@ -107,65 +107,35 @@ public final class SuggestionController: NSWindowController {
             self?.close()
         }
 
-        self.show()
-    }
-
-    /// Opens the window of items
-    func show() {
         setupEventMonitors()
-        resetScrollPosition()
         super.showWindow(nil)
+        window.orderFront(nil)
+        window.contentViewController?.viewWillAppear()
     }
 
     /// Close the window
     public override func close() {
-        guard isVisible else { return }
+        model.willClose()
         removeEventMonitors()
         super.close()
     }
 
     private func onItemsUpdated() {
         updateSuggestionWindowAndContents()
-        resetScrollPosition()
-        tableView.reloadData()
     }
 
     private func setupEventMonitors() {
         localEventMonitor = NSEvent.addLocalMonitorForEvents(
-            matching: [.keyDown, .leftMouseDown, .rightMouseDown]
+            matching: [.keyDown]
         ) { [weak self] event in
             guard let self = self else { return event }
 
             switch event.type {
             case .keyDown:
                 return checkKeyDownEvents(event)
-
-            case .leftMouseDown, .rightMouseDown:
-                // If we click outside the window, close the window
-                if !NSMouseInRect(NSEvent.mouseLocation, self.window!.frame, false) {
-                    self.close()
-                }
-                return event
-
             default:
                 return event
             }
-        }
-
-        if let existingObserver = cursorPositionObserver {
-            NotificationCenter.default.removeObserver(existingObserver)
-        }
-        cursorPositionObserver = NotificationCenter.default.addObserver(
-            forName: TextViewController.cursorPositionUpdatedNotification,
-            object: nil,
-            queue: .main
-        ) { [weak self] notification in
-            guard let self = self,
-                  let textViewController = notification.object as? TextViewController
-            else { return }
-
-            guard self.isVisible else { return }
-            self.delegate?.onCursorMove()
         }
     }
 
@@ -180,38 +150,15 @@ public final class SuggestionController: NSWindowController {
             return nil
 
         case 125, 126:  // Down/Up Arrow
-            self.tableView.keyDown(with: event)
-            let row = tableView.selectedRow
-            guard row >= 0, row < items.count else { return event }
-            self.delegate?.onItemSelect(item: items[row])
+            (contentViewController as? SuggestionViewController)?.tableView?.keyDown(with: event)
             return nil
 
-        case 124: // Right Arrow
-            return event
-
-        case 123: // Left Arrow
-            return event
-
         case 36, 48:  // Return/Tab
-            guard tableView.selectedRow >= 0 else { return event }
-            let selectedItem = items[tableView.selectedRow]
-            self.delegate?.applyCompletionItem(item: selectedItem)
+            (contentViewController as? SuggestionViewController)?.applySelectedItem()
             return nil
 
         default:
             return event
-        }
-    }
-
-    private func resetScrollPosition() {
-        guard let clipView = scrollView.contentView as? NSClipView else { return }
-
-        // Scroll to the top of the content
-        clipView.scroll(to: NSPoint(x: 0, y: -Self.WINDOW_PADDING))
-
-        // Select the first item
-        if !items.isEmpty {
-            tableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
         }
     }
 
@@ -224,9 +171,20 @@ public final class SuggestionController: NSWindowController {
             NotificationCenter.default.removeObserver(observer)
             windowResignObserver = nil
         }
-        if let observer = cursorPositionObserver {
-            NotificationCenter.default.removeObserver(observer)
-            cursorPositionObserver = nil
+    }
+
+    func cursorsUpdated(
+        textView: TextViewController,
+        delegate: CodeSuggestionDelegate,
+        position: CursorPosition,
+        presentIfNot: Bool = false
+    ) {
+        model.cursorsUpdated(textView: textView, delegate: delegate, position: position) {
+            close()
+
+            if presentIfNot {
+                self.showCompletions(textView: textView, delegate: delegate, cursorPosition: position)
+            }
         }
     }
 }

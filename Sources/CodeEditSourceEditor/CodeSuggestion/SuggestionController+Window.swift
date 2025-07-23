@@ -9,7 +9,7 @@ import AppKit
 
 extension SuggestionController {
     /// Will constrain the window's frame to be within the visible screen
-    public func constrainWindowToScreenEdges(cursorRect: NSRect, horizontalOffset: CGFloat) {
+    public func constrainWindowToScreenEdges(cursorRect: NSRect) {
         guard let window = self.window,
               let screenFrame = window.screen?.visibleFrame else {
             return
@@ -18,7 +18,7 @@ extension SuggestionController {
         let windowSize = window.frame.size
         let padding: CGFloat = 22
         var newWindowOrigin = NSPoint(
-            x: cursorRect.origin.x - Self.WINDOW_PADDING - horizontalOffset,
+            x: cursorRect.origin.x - Self.WINDOW_PADDING,
             y: cursorRect.origin.y
         )
 
@@ -64,17 +64,11 @@ extension SuggestionController {
     static func makeWindow() -> NSWindow {
         let window = NSWindow(
             contentRect: NSRect(origin: .zero, size: self.DEFAULT_SIZE),
-            styleMask: [.resizable, .fullSizeContentView, .nonactivatingPanel],
+            styleMask: [.resizable, .fullSizeContentView, .nonactivatingPanel, .utilityWindow],
             backing: .buffered,
             defer: false
         )
 
-        configureWindow(window)
-        configureWindowContent(window)
-        return window
-    }
-
-    static func configureWindow(_ window: NSWindow) {
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.isExcludedFromWindowsMenu = true
@@ -86,87 +80,8 @@ extension SuggestionController {
         window.hidesOnDeactivate = true
         window.backgroundColor = .clear
         window.minSize = Self.DEFAULT_SIZE
-    }
 
-    static func configureWindowContent(_ window: NSWindow) {
-        guard let contentView = window.contentView else { return }
-
-        contentView.wantsLayer = true
-        // TODO: GET COLOR FROM THEME
-        contentView.layer?.backgroundColor = CGColor(
-            srgbRed: 31.0 / 255.0,
-            green: 31.0 / 255.0,
-            blue: 36.0 / 255.0,
-            alpha: 1.0
-        )
-        contentView.layer?.cornerRadius = 8.5
-        contentView.layer?.borderWidth = 1
-        contentView.layer?.borderColor = NSColor.gray.withAlphaComponent(0.45).cgColor
-
-        let innerShadow = NSShadow()
-        innerShadow.shadowColor = NSColor.black.withAlphaComponent(0.1)
-        innerShadow.shadowOffset = NSSize(width: 0, height: -1)
-        innerShadow.shadowBlurRadius = 2
-        contentView.shadow = innerShadow
-    }
-
-    func configureTableView() {
-        tableView.delegate = self
-        tableView.dataSource = self
-        tableView.headerView = nil
-        tableView.backgroundColor = .clear
-        tableView.intercellSpacing = .zero
-        tableView.allowsEmptySelection = false
-        tableView.selectionHighlightStyle = .regular
-        tableView.style = .plain
-        tableView.usesAutomaticRowHeights = false
-        tableView.rowSizeStyle = .custom
-        tableView.rowHeight = 21
-        tableView.gridStyleMask = []
-        tableView.target = self
-        tableView.action = #selector(tableViewClicked(_:))
-        let column = NSTableColumn(identifier: NSUserInterfaceItemIdentifier("ItemsCell"))
-        tableView.addTableColumn(column)
-    }
-
-    @objc private func tableViewClicked(_ sender: Any?) {
-        if NSApp.currentEvent?.clickCount == 2 {
-            let row = tableView.selectedRow
-            guard row >= 0, row < items.count else {
-                return
-            }
-            let selectedItem = items[row]
-            delegate?.applyCompletionItem(item: selectedItem)
-            self.close()
-        }
-    }
-
-    func configureScrollView() {
-        scrollView.documentView = tableView
-        scrollView.hasVerticalScroller = true
-        scrollView.verticalScroller = NoSlotScroller()
-        scrollView.scrollerStyle = .overlay
-        scrollView.autohidesScrollers = true
-        scrollView.drawsBackground = false
-        scrollView.automaticallyAdjustsContentInsets = false
-        scrollView.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.verticalScrollElasticity = .allowed
-        scrollView.contentInsets = NSEdgeInsets(
-            top: Self.WINDOW_PADDING,
-            left: 0,
-            bottom: Self.WINDOW_PADDING,
-            right: 0
-        )
-
-        guard let contentView = window?.contentView else { return }
-        contentView.addSubview(scrollView)
-
-        NSLayoutConstraint.activate([
-            scrollView.topAnchor.constraint(equalTo: contentView.topAnchor),
-            scrollView.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-            scrollView.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: contentView.bottomAnchor)
-        ])
+        return window
     }
 
     /// Updates the item box window's height based on the number of items.
@@ -176,12 +91,9 @@ extension SuggestionController {
             return
         }
 
-        noItemsLabel.isHidden = !items.isEmpty
-        scrollView.isHidden = items.isEmpty
-
         // Update window dimensions
-        let numberOfVisibleRows = min(CGFloat(items.count), Self.MAX_VISIBLE_ROWS)
-        let newHeight = items.count == 0 ?
+        let numberOfVisibleRows = min(CGFloat(model.items.count), Self.MAX_VISIBLE_ROWS)
+        let newHeight = model.items.count == 0 ?
             Self.rowsToWindowHeight(for: 1) : // Height for 1 row when empty
             Self.rowsToWindowHeight(for: numberOfVisibleRows)
 
@@ -206,15 +118,6 @@ extension SuggestionController {
         window.minSize = NSSize(width: Self.DEFAULT_SIZE.width, height: newHeight)
     }
 
-    func configureNoItemsLabel() {
-        window?.contentView?.addSubview(noItemsLabel)
-
-        NSLayoutConstraint.activate([
-            noItemsLabel.centerXAnchor.constraint(equalTo: window!.contentView!.centerXAnchor),
-            noItemsLabel.centerYAnchor.constraint(equalTo: window!.contentView!.centerYAnchor)
-        ])
-    }
-
     /// Calculate the window height for a given number of rows.
     static func rowsToWindowHeight(for numberOfRows: CGFloat) -> CGFloat {
         let wholeRows = floor(numberOfRows)
@@ -227,59 +130,5 @@ extension SuggestionController {
         let padding = numberOfRows.truncatingRemainder(dividingBy: 1) == 0 ? WINDOW_PADDING * 2 : WINDOW_PADDING
 
         return baseHeight + partialHeight + padding
-    }
-}
-
-extension SuggestionController: NSTableViewDataSource, NSTableViewDelegate {
-    public func numberOfRows(in tableView: NSTableView) -> Int {
-        return items.count
-    }
-
-    public func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        guard row >= 0, row < items.count else { return nil }
-        return items[row].view
-    }
-
-    public func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
-        CodeSuggestionRowView()
-    }
-
-    public func tableView(_ tableView: NSTableView, shouldSelectRow row: Int) -> Bool {
-        // Only allow selection through keyboard navigation or single clicks
-        let event = NSApp.currentEvent
-        if event?.type == .leftMouseDragged {
-            return false
-        }
-        return true
-    }
-}
-
-/// Used to draw a custom selection highlight for the table row
-private class CodeSuggestionRowView: NSTableRowView {
-    override func drawSelection(in dirtyRect: NSRect) {
-        guard isSelected else { return }
-        guard let context = NSGraphicsContext.current?.cgContext else { return }
-
-        context.saveGState()
-        defer { context.restoreGState() }
-
-        // Create a rect that's inset from the edges and has proper padding
-        // TODO: We create a new selectionRect instead of using dirtyRect
-        // because there is a visual bug when holding down the arrow keys
-        // to select the first or last item, which draws a clipped
-        // rectangular highlight shape instead of the whole rectangle.
-        // Replace this when it gets fixed.
-        let selectionRect = NSRect(
-            x: SuggestionController.WINDOW_PADDING,
-            y: 0,
-            width: bounds.width - (SuggestionController.WINDOW_PADDING * 2),
-            height: bounds.height
-        )
-        let cornerRadius: CGFloat = 5
-        let path = NSBezierPath(roundedRect: selectionRect, xRadius: cornerRadius, yRadius: cornerRadius)
-        let selectionColor = NSColor.gray.withAlphaComponent(0.19)
-
-        context.setFillColor(selectionColor.cgColor)
-        path.fill()
     }
 }
