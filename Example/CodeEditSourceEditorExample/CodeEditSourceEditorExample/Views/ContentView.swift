@@ -22,6 +22,7 @@ struct ContentView: View {
     @State private var editorState = SourceEditorState(
         cursorPositions: [CursorPosition(line: 1, column: 1)]
     )
+    @StateObject private var suggestions: MockCompletionDelegate = MockCompletionDelegate()
 
     @State private var font: NSFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .medium)
     @AppStorage("wrapLines") private var wrapLines: Bool = true
@@ -71,7 +72,8 @@ struct ContentView: View {
                         warningCharacters: warningCharacters
                     )
                 ),
-                state: $editorState
+                state: $editorState,
+                completionDelegate: suggestions
             )
             .overlay(alignment: .bottom) {
                 StatusBar(
@@ -88,7 +90,7 @@ struct ContentView: View {
                     indentOption: $indentOption,
                     reformatAtColumn: $reformatAtColumn,
                     showReformattingGuide: $showReformattingGuide,
-                    showFoldingRibbon: $showFoldingRibbon
+                    showFoldingRibbon: $showFoldingRibbon,
                     invisibles: $invisibleCharactersConfig,
                     warningCharacters: $warningCharacters
                 )

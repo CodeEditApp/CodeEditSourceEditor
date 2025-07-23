@@ -104,7 +104,7 @@ struct StatusBar: View {
                     }
                 }
                 scrollPosition
-                Text(getLabel(state.cursorPositions))
+                Text(getLabel(state.cursorPositions ?? []))
             }
             .foregroundStyle(.secondary)
 
@@ -118,9 +118,9 @@ struct StatusBar: View {
                 .foregroundStyle(.secondary)
 
             Button {
-                state.findPanelVisible.toggle()
+                state.findPanelVisible?.toggle()
             } label: {
-                Text(state.findPanelVisible ? "Hide" : "Show") + Text(" Find")
+                Text((state.findPanelVisible ?? false) ? "Hide" : "Show") + Text(" Find")
             }
             .buttonStyle(.borderless)
             .foregroundStyle(.secondary)
