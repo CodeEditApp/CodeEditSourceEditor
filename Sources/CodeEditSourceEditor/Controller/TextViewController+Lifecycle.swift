@@ -232,7 +232,6 @@ extension TextViewController {
             self.findViewController?.hideFindPanel()
             return nil
         case (controlKey, " "):
-//            suggestionController.showWindow()
             let autocompleteCoordinators = textCoordinators.map {
                 ($0.val as? AutoCompleteCoordinatorProtocol)?.showAutocompleteWindow()
             }
