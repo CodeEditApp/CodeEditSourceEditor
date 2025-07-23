@@ -118,9 +118,9 @@ struct StatusBar: View {
                 .foregroundStyle(.secondary)
 
             Button {
-                state.findPanelVisible.toggle()
+                state.findPanelVisible?.toggle()
             } label: {
-                Text(state.findPanelVisible ? "Hide" : "Show") + Text(" Find")
+                Text(state.findPanelVisible ?? false ? "Hide" : "Show") + Text(" Find")
             }
             .buttonStyle(.borderless)
             .foregroundStyle(.secondary)
@@ -198,7 +198,9 @@ struct StatusBar: View {
     /// Create a label string for cursor positions.
     /// - Parameter cursorPositions: The cursor positions to create the label for.
     /// - Returns: A string describing the user's location in a document.
-    func getLabel(_ cursorPositions: [CursorPosition]) -> String {
+    func getLabel(_ cursorPositions: [CursorPosition]?) -> String {
+        guard let cursorPositions else { return "No cursor" }
+
         if cursorPositions.isEmpty {
             return "No cursor"
         }

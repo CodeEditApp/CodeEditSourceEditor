@@ -10,7 +10,8 @@ import CodeEditTextView
 import TextStory
 import TextFormation
 
-extension TextView: TextInterface {
+extension TextView: @retroactive TextStoring {}
+extension TextView: @retroactive TextInterface {
     public var selectedRange: NSRange {
         get {
             return selectionManager
@@ -45,6 +46,6 @@ extension TextView: TextInterface {
             in: mutation.range,
             replacementLength: (mutation.string as NSString).length
         )
-        layoutManager.setNeedsLayout()
+        layoutManager.invalidateLayoutForRange(mutation.range)
     }
 }

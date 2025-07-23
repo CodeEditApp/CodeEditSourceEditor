@@ -88,7 +88,7 @@ struct ContentView: View {
                     indentOption: $indentOption,
                     reformatAtColumn: $reformatAtColumn,
                     showReformattingGuide: $showReformattingGuide,
-                    showFoldingRibbon: $showFoldingRibbon
+                    showFoldingRibbon: $showFoldingRibbon,
                     invisibles: $invisibleCharactersConfig,
                     warningCharacters: $warningCharacters
                 )

@@ -214,7 +214,7 @@ class Highlighter: NSObject {
 
 // MARK: NSTextStorageDelegate
 
-extension Highlighter: NSTextStorageDelegate {
+extension Highlighter: @preconcurrency NSTextStorageDelegate {
     /// Processes an edited range in the text.
     func textStorage(
         _ textStorage: NSTextStorage,
