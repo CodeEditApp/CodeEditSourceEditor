@@ -5,9 +5,7 @@
 //  Created by Abe Malla on 4/8/25.
 //
 
-import LanguageServerProtocol
-
 public protocol AutoCompleteCoordinatorProtocol: TextViewCoordinator {
-    func fetchCompletions() async throws -> [CompletionItem]
+    func fetchCompletions() async throws -> [CodeSuggestionEntry]
     func showAutocompleteWindow()
 }

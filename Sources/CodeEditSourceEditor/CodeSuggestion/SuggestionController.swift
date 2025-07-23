@@ -187,7 +187,6 @@ public final class SuggestionController: NSWindowController {
             return nil
 
         case 124: // Right Arrow
-//          handleRightArrow()
             return event
 
         case 123: // Left Arrow
