@@ -14,25 +14,15 @@ public final class SuggestionController: NSWindowController {
 
     // MARK: - Properties
 
-    static var DEFAULT_SIZE: NSSize {
-        NSSize(
-            width: 256, // TODO: DOES MIN WIDTH DEPEND ON FONT SIZE?
-            height: rowsToWindowHeight(for: 1)
-        )
-    }
-
-    /// Whether the suggestion window is visibile
+    /// Whether the suggestion window is visible
     var isVisible: Bool {
         window?.isVisible ?? false
     }
 
-    var itemObserver: AnyCancellable?
     var model: SuggestionViewModel = SuggestionViewModel()
 
     // MARK: - Private Properties
 
-    /// Height of a single row
-    static let ROW_HEIGHT: CGFloat = 21
     /// Maximum number of visible rows (8.5)
     static let MAX_VISIBLE_ROWS: CGFloat = 8.5
     /// Padding at top and bottom of the window
@@ -60,28 +50,36 @@ public final class SuggestionController: NSWindowController {
         if window.isVisible {
             window.close()
         }
-
-        itemObserver = model.$items.receive(on: DispatchQueue.main).sink { [weak self] _ in
-            self?.onItemsUpdated()
-        }
     }
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // MARK: - Show Completions
+
     func showCompletions(
         textView: TextViewController,
         delegate: CodeSuggestionDelegate,
-        cursorPosition: CursorPosition
+        cursorPosition: CursorPosition,
+        asPopover: Bool = false
     ) {
         model.showCompletions(
             textView: textView,
             delegate: delegate,
             cursorPosition: cursorPosition
         ) { parentWindow, cursorRect in
-            self.showWindow(attachedTo: parentWindow)
-            self.constrainWindowToScreenEdges(cursorRect: cursorRect)
+            if asPopover {
+                let windowPosition = parentWindow.convertFromScreen(cursorRect)
+                let textViewPosition = textView.textView.convert(windowPosition, from: nil)
+                let popover = NSPopover()
+                popover.behavior = .transient
+                popover.contentViewController = self.contentViewController
+                popover.show(relativeTo: textViewPosition, of: textView.textView, preferredEdge: .maxY)
+            } else {
+                self.showWindow(attachedTo: parentWindow)
+                self.constrainWindowToScreenEdges(cursorRect: cursorRect)
+            }
             (self.contentViewController as? SuggestionViewController)?.styleView(using: textView)
         }
     }
@@ -117,9 +115,7 @@ public final class SuggestionController: NSWindowController {
         super.close()
     }
 
-    private func onItemsUpdated() {
-        updateSuggestionWindowAndContents()
-    }
+    // MARK: - Events
 
     private func setupEventMonitors() {
         localEventMonitor = NSEvent.addLocalMonitorForEvents(
@@ -169,6 +165,8 @@ public final class SuggestionController: NSWindowController {
             windowResignObserver = nil
         }
     }
+
+    // MARK: - Cursors Updated
 
     func cursorsUpdated(
         textView: TextViewController,
