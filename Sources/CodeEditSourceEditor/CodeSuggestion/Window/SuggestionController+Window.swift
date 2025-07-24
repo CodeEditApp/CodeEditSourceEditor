@@ -82,33 +82,4 @@ extension SuggestionController {
 
         return window
     }
-
-    /// Updates the item box window's height based on the number of items.
-    /// If there are no items, the default label will be displayed instead.
-//    func updateSuggestionWindowAndContents(font: NSFont, rowHeight: CGFloat) {
-//        guard let window = self.window else {
-//            return
-//        }
-//        let newSize = windowSize(font: font, rowHeight: rowHeight)
-//        let currentFrame = window.frame
-//
-//        if isWindowAboveCursor {
-//            // When window is above cursor, maintain the bottom position
-//            let bottomY = currentFrame.minY
-//            let newFrame = NSRect(
-//                x: currentFrame.minX,
-//                y: bottomY,
-//                width: newSize.width,
-//                height: newSize.height
-//            )
-//            window.setFrame(newFrame, display: true)
-//        } else {
-//            // When window is below cursor, maintain the top position
-//            window.setContentSize(newSize)
-//        }
-//
-//        // Don't allow vertical resizing
-//        window.maxSize = NSSize(width: CGFloat.infinity, height: newSize.height)
-//        window.minSize = NSSize(width: newSize.width, height: newSize.height)
-//    }
 }
