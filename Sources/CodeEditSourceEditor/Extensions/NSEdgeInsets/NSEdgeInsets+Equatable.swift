@@ -7,7 +7,7 @@
 
 import Foundation
 
-extension NSEdgeInsets: Equatable {
+extension NSEdgeInsets: @retroactive Equatable {
     public static func == (lhs: NSEdgeInsets, rhs: NSEdgeInsets) -> Bool {
         lhs.bottom == rhs.bottom &&
         lhs.top == rhs.top &&

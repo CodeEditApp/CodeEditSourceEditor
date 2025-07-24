@@ -14,7 +14,7 @@ struct RangeStoreTests {
     func initWithLength() {
         for _ in 0..<100 {
             let length = Int.random(in: 0..<1000)
-            var store = Store(documentLength: length)
+            let store = Store(documentLength: length)
             #expect(store.length == length)
         }
     }

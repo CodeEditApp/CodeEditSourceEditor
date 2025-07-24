@@ -43,25 +43,40 @@ final class MinimapLineFragmentView: LineFragmentView {
 
     /// Set the new line fragment, and calculate drawing runs for drawing the fragment in the view.
     /// - Parameter newFragment: The new fragment to use.
-    override func setLineFragment(_ newFragment: LineFragment, renderer: LineFragmentRenderer) {
-        super.setLineFragment(newFragment, renderer: renderer)
+    override func setLineFragment(_ newFragment: LineFragment, fragmentRange: NSRange, renderer: LineFragmentRenderer) {
+        super.setLineFragment(newFragment, fragmentRange: fragmentRange, renderer: renderer)
         guard let textStorage else { return }
+        let fragmentRange = newFragment.documentRange
 
         // Create the drawing runs using attribute information
-        var position = newFragment.documentRange.location
+        var position = fragmentRange.location
 
         for contentRun in newFragment.contents {
             switch contentRun.data {
             case .text:
-                addDrawingRunsUntil(max: position + contentRun.length, position: &position, textStorage: textStorage)
+                addDrawingRunsUntil(
+                    max: position + contentRun.length,
+                    position: &position,
+                    textStorage: textStorage,
+                    fragmentRange: fragmentRange
+                )
             case .attachment(let attachment):
                 position += attachment.range.length
-                appendDrawingRun(color: .clear, range: NSRange(location: position, length: contentRun.length))
+                appendDrawingRun(
+                    color: .clear,
+                    range: NSRange(location: position, length: contentRun.length),
+                    fragmentRange: fragmentRange
+                )
             }
         }
     }
 
-    private func addDrawingRunsUntil(max: Int, position: inout Int, textStorage: NSTextStorage) {
+    private func addDrawingRunsUntil(
+        max: Int,
+        position: inout Int,
+        textStorage: NSTextStorage,
+        fragmentRange: NSRange
+    ) {
         while position < max {
             var longestRange: NSRange = .notFound
             defer { position = longestRange.max }
@@ -83,7 +98,7 @@ final class MinimapLineFragmentView: LineFragmentView {
                 if let scalar = UnicodeScalar(char), CharacterSet.whitespacesAndNewlines.contains(scalar) {
                     // Whitespace
                     if range != .notFound {
-                        appendDrawingRun(color: foregroundColor, range: range)
+                        appendDrawingRun(color: foregroundColor, range: range, fragmentRange: fragmentRange)
                         range = .notFound
                     }
                 } else {
@@ -97,7 +112,7 @@ final class MinimapLineFragmentView: LineFragmentView {
             }
 
             if range != .notFound {
-                appendDrawingRun(color: foregroundColor, range: range)
+                appendDrawingRun(color: foregroundColor, range: range, fragmentRange: fragmentRange)
             }
         }
     }
@@ -106,12 +121,12 @@ final class MinimapLineFragmentView: LineFragmentView {
     /// - Parameters:
     ///   - color: The color of the run, will have opacity applied by this method.
     ///   - range: The range, relative to the document. Will be normalized to the fragment by this method.
-    private func appendDrawingRun(color: NSColor, range: NSRange) {
+    private func appendDrawingRun(color: NSColor, range: NSRange, fragmentRange: NSRange) {
         drawingRuns.append(
             Run(
                 color: color.withAlphaComponent(0.4),
                 range: NSRange(
-                    location: range.location - (lineFragment?.documentRange.location ?? 0),
+                    location: range.location - fragmentRange.location,
                     length: range.length
                 )
             )
