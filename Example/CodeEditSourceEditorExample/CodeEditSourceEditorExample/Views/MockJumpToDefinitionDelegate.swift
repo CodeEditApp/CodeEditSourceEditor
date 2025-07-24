@@ -27,7 +27,7 @@ final class MockJumpToDefinitionDelegate: JumpToDefinitionDelegate, ObservableOb
             )
         ] : nil
     }
-    
+
     func openLink(url: URL, targetRange: NSRange) {
         NSWorkspace.shared.open(url)
     }

@@ -200,43 +200,46 @@ extension TextViewController {
 
             // Only handle commands if this is the key window and text view is first responder
             guard isKeyWindow && isFirstResponder else { return event }
-            let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+            return handleEvent(event: event)
+        }
+    }
 
-            switch event.type {
-            case .keyDown:
-                let tabKey: UInt16 = 0x30
+    func handleEvent(event: NSEvent) -> NSEvent? {
+        let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        switch event.type {
+        case .keyDown:
+            let tabKey: UInt16 = 0x30
 
-                if event.keyCode == tabKey {
-                    return self.handleTab(event: event, modifierFalgs: modifierFlags.rawValue)
-                } else {
-                    return self.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
-                }
-            case .flagsChanged:
-                if modifierFlags.contains(.command),
-                   let coords = view.window?.convertPoint(fromScreen: NSEvent.mouseLocation) {
-                    self.jumpToDefinitionModel?.mouseHovered(windowCoordinates: coords)
-                }
+            if event.keyCode == tabKey {
+                return self.handleTab(event: event, modifierFlags: modifierFlags.rawValue)
+            } else {
+                return self.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
+            }
+        case .flagsChanged:
+            if modifierFlags.contains(.command),
+               let coords = view.window?.convertPoint(fromScreen: NSEvent.mouseLocation) {
+                self.jumpToDefinitionModel?.mouseHovered(windowCoordinates: coords)
+            }
 
-                if !modifierFlags.contains(.command) {
-                    self.jumpToDefinitionModel?.cancelHover()
-                }
-                return event
-            case .mouseMoved:
-                guard modifierFlags.contains(.command) else {
-                    self.jumpToDefinitionModel?.cancelHover()
-                    return event
-                }
-                self.jumpToDefinitionModel?.mouseHovered(windowCoordinates: event.locationInWindow)
-                return event
-            case .leftMouseUp:
-                if let range = jumpToDefinitionModel?.hoveredRange {
-                    self.jumpToDefinitionModel?.performJump(at: range)
-                    return nil
-                }
-                return event
-            default:
+            if !modifierFlags.contains(.command) {
+                self.jumpToDefinitionModel?.cancelHover()
+            }
+            return event
+        case .mouseMoved:
+            guard modifierFlags.contains(.command) else {
+                self.jumpToDefinitionModel?.cancelHover()
                 return event
             }
+            self.jumpToDefinitionModel?.mouseHovered(windowCoordinates: event.locationInWindow)
+            return event
+        case .leftMouseUp:
+            if let range = jumpToDefinitionModel?.hoveredRange {
+                self.jumpToDefinitionModel?.performJump(at: range)
+                return nil
+            }
+            return event
+        default:
+            return event
         }
     }
 
@@ -277,10 +280,10 @@ extension TextViewController {
     /// are highlighted and handles indenting accordingly.
     ///
     /// - Returns: The original event if it should be passed on, or `nil` to indicate handling within the method.
-    func handleTab(event: NSEvent, modifierFalgs: UInt) -> NSEvent? {
+    func handleTab(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
         let shiftKey = NSEvent.ModifierFlags.shift.rawValue
 
-        if modifierFalgs == shiftKey {
+        if modifierFlags == shiftKey {
             handleIndent(inwards: true)
         } else {
             // Only allow tab to work if multiple lines are selected
