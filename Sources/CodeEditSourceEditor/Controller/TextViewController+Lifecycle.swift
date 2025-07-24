@@ -189,7 +189,9 @@ extension TextViewController {
     }
 
     func setUpKeyBindings(eventMonitor: inout Any?) {
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event -> NSEvent? in
+        eventMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.keyDown, .flagsChanged, .mouseMoved]
+        ) { [weak self] event -> NSEvent? in
             guard let self = self else { return event }
 
             // Check if this window is key and if the text view is the first responder
@@ -198,14 +200,36 @@ extension TextViewController {
 
             // Only handle commands if this is the key window and text view is first responder
             guard isKeyWindow && isFirstResponder else { return event }
-
             let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-            let tabKey: UInt16 = 0x30
 
-            if event.keyCode == tabKey {
-                return self.handleTab(event: event, modifierFalgs: modifierFlags.rawValue)
-            } else {
-                return self.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
+            switch event.type {
+            case .keyDown:
+                let tabKey: UInt16 = 0x30
+
+                if event.keyCode == tabKey {
+                    return self.handleTab(event: event, modifierFalgs: modifierFlags.rawValue)
+                } else {
+                    return self.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
+                }
+            case .flagsChanged:
+                if modifierFlags.contains(.command),
+                   let coords = view.window?.convertPoint(fromScreen: NSEvent.mouseLocation) {
+                    self.jumpToDefinitionModel?.mouseHovered(windowCoordinates: coords)
+                }
+
+                if !modifierFlags.contains(.command) {
+                    self.jumpToDefinitionModel?.cancelHover()
+                }
+                return event
+            case .mouseMoved:
+                guard modifierFlags.contains(.command) else {
+                    self.jumpToDefinitionModel?.cancelHover()
+                    return event
+                }
+                self.jumpToDefinitionModel?.mouseHovered(windowCoordinates: event.locationInWindow)
+                return event
+            default:
+                return event
             }
         }
     }

@@ -180,6 +180,8 @@ public class TextViewController: NSViewController {
     /// Filters used when applying edits..
     var textFilters: [TextFormation.Filter] = []
 
+    var jumpToDefinitionModel: JumpToDefinitionModel?
+
     var cancellables = Set<AnyCancellable>()
 
     /// The trailing inset for the editor. Grows when line wrapping is disabled or when the minimap is shown.
@@ -223,7 +225,7 @@ public class TextViewController: NSViewController {
             self.treeSitterClient = client
         }
 
-        self.textView = TextView(
+        self.textView = SourceEditorTextView(
             string: string,
             font: font,
             textColor: theme.text.color,
@@ -242,6 +244,14 @@ public class TextViewController: NSViewController {
             $0.prepareCoordinator(controller: self)
         }
         self.textCoordinators = coordinators.map { WeakCoordinator($0) }
+
+        if let treeSitterClient {
+            jumpToDefinitionModel = JumpToDefinitionModel(
+                textView: textView,
+                treeSitterClient: treeSitterClient,
+                delegate: nil
+            )
+        }
     }
 
     required init?(coder: NSCoder) {
