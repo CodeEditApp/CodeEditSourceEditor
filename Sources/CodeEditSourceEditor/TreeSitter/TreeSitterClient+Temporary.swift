@@ -8,7 +8,7 @@
 import Foundation
 
 extension TreeSitterClient {
-    func temporaryHighlight() -> NSAttributedString {
-
-    }
+//    func temporaryHighlight() -> NSAttributedString {
+//
+//    }
 }

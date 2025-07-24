@@ -49,7 +49,7 @@ final class JumpToDefinitionModel {
     }
 
     // MARK: - Jump Action
-    
+
     /// Performs the jump action.
     /// - Parameter location: The location to query the delegate for.
     func performJump(at location: NSRange) {
@@ -130,5 +130,29 @@ final class JumpToDefinitionModel {
             Emphasis(range: newRange, style: .outline( color: color, fill: true)),
             for: Self.emphasisId
         )
+    }
+}
+
+extension JumpToDefinitionModel: CodeSuggestionDelegate {
+    func completionSuggestionsRequested(
+        textView: TextViewController,
+        cursorPosition: CursorPosition
+    ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
+        nil
+    }
+
+    nonisolated func completionOnCursorMove(
+        textView: TextViewController,
+        cursorPosition: CursorPosition
+    ) -> [CodeSuggestionEntry]? {
+        nil
+    }
+
+    nonisolated func completionWindowApplyCompletion(
+        item: CodeSuggestionEntry,
+        textView: TextViewController,
+        cursorPosition: CursorPosition
+    ) {
+
     }
 }
