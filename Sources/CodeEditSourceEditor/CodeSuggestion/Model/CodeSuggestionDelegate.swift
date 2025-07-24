@@ -26,7 +26,7 @@ public protocol CodeSuggestionDelegate: AnyObject {
     func completionWindowApplyCompletion(
         item: CodeSuggestionEntry,
         textView: TextViewController,
-        cursorPosition: CursorPosition
+        cursorPosition: CursorPosition?
     )
     // Optional
     func completionWindowDidSelect(item: CodeSuggestionEntry)

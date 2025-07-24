@@ -190,7 +190,7 @@ extension TextViewController {
 
     func setUpKeyBindings(eventMonitor: inout Any?) {
         eventMonitor = NSEvent.addLocalMonitorForEvents(
-            matching: [.keyDown, .flagsChanged, .mouseMoved]
+            matching: [.keyDown, .flagsChanged, .mouseMoved, .leftMouseUp]
         ) { [weak self] event -> NSEvent? in
             guard let self = self else { return event }
 
@@ -227,6 +227,12 @@ extension TextViewController {
                     return event
                 }
                 self.jumpToDefinitionModel?.mouseHovered(windowCoordinates: event.locationInWindow)
+                return event
+            case .leftMouseUp:
+                if let range = jumpToDefinitionModel?.hoveredRange {
+                    self.jumpToDefinitionModel?.performJump(at: range)
+                    return nil
+                }
                 return event
             default:
                 return event

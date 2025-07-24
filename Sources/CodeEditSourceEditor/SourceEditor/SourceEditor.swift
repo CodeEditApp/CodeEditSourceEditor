@@ -36,7 +36,8 @@ public struct SourceEditor: NSViewControllerRepresentable {
         highlightProviders: [any HighlightProviding]? = nil,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = [],
-        completionDelegate: CodeSuggestionDelegate? = nil
+        completionDelegate: CodeSuggestionDelegate? = nil,
+        jumpToDefinitionDelegate: JumpToDefinitionDelegate? = nil
     ) {
         self.text = .binding(text)
         self.language = language
@@ -46,6 +47,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         self.undoManager = undoManager
         self.coordinators = coordinators
         self.completionDelegate = completionDelegate
+        self.jumpToDefinitionDelegate = jumpToDefinitionDelegate
     }
 
     /// Initializes a new source editor
@@ -67,7 +69,8 @@ public struct SourceEditor: NSViewControllerRepresentable {
         highlightProviders: [any HighlightProviding]? = nil,
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = [],
-        completionDelegate: CodeSuggestionDelegate? = nil
+        completionDelegate: CodeSuggestionDelegate? = nil,
+        jumpToDefinitionDelegate: JumpToDefinitionDelegate? = nil
     ) {
         self.text = .storage(text)
         self.language = language
@@ -77,6 +80,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         self.undoManager = undoManager
         self.coordinators = coordinators
         self.completionDelegate = completionDelegate
+        self.jumpToDefinitionDelegate = jumpToDefinitionDelegate
     }
 
     var text: TextAPI
@@ -87,6 +91,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
     var undoManager: CEUndoManager?
     var coordinators: [any TextViewCoordinator]
     weak var completionDelegate: CodeSuggestionDelegate?
+    weak var jumpToDefinitionDelegate: JumpToDefinitionDelegate?
 
     public typealias NSViewControllerType = TextViewController
 
@@ -114,6 +119,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         }
 
         controller.completionDelegate = completionDelegate
+        controller.jumpToDefinitionModel?.delegate = jumpToDefinitionDelegate
 
         context.coordinator.setController(controller)
         return controller
@@ -125,6 +131,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
 
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
         controller.completionDelegate = completionDelegate
+        controller.jumpToDefinitionModel?.delegate = jumpToDefinitionDelegate
 
         context.coordinator.updateHighlightProviders(highlightProviders)
 

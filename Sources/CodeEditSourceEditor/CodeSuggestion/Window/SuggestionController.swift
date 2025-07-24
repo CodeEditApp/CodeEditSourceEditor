@@ -83,7 +83,10 @@ public final class SuggestionController: NSWindowController {
                 self.showWindow(attachedTo: parentWindow)
                 self.constrainWindowToScreenEdges(cursorRect: cursorRect)
             }
-            (self.contentViewController as? SuggestionViewController)?.styleView(using: textView)
+            if let controller = self.contentViewController as? SuggestionViewController {
+                controller.styleView(using: textView)
+                self.popover?.contentSize = controller.preferredContentSize
+            }
         }
     }
 

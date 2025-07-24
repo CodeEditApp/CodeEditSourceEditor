@@ -18,13 +18,13 @@ final class JumpToDefinitionModel {
     static let emphasisId = "jumpToDefinition"
 
     weak var delegate: JumpToDefinitionDelegate?
+    weak var treeSitterClient: TreeSitterClient?
 
     private weak var controller: TextViewController?
-    private weak var treeSitterClient: TreeSitterClient?
 
     private(set) public var hoveredRange: NSRange?
-    private var hoverRequestTask: Task<Void, Never>?
 
+    private var hoverRequestTask: Task<Void, Never>?
     private var jumpRequestTask: Task<Void, Never>?
 
     private var currentLinks: [JumpToDefinitionLink]?
@@ -33,7 +33,7 @@ final class JumpToDefinitionModel {
         controller?.textView
     }
 
-    init(controller: TextViewController, treeSitterClient: TreeSitterClient, delegate: JumpToDefinitionDelegate?) {
+    init(controller: TextViewController, treeSitterClient: TreeSitterClient?, delegate: JumpToDefinitionDelegate?) {
         self.controller = controller
         self.treeSitterClient = treeSitterClient
         self.delegate = delegate
@@ -87,7 +87,7 @@ final class JumpToDefinitionModel {
 
     // MARK: - Link Popover
 
-    func presentLinkPopover(on range: NSRange, links: [JumpToDefinitionLink]) {
+    private func presentLinkPopover(on range: NSRange, links: [JumpToDefinitionLink]) {
         let halfway = range.location + (range.length / 2)
         let range = NSRange(location: halfway, length: 0)
         guard let controller,
@@ -105,7 +105,7 @@ final class JumpToDefinitionModel {
 
     // MARK: - Local Link
 
-    func openLocalLink(link: JumpToDefinitionLink) {
+    private func openLocalLink(link: JumpToDefinitionLink) {
         guard let controller = controller else { return }
         controller.textView.selectionManager.setSelectedRange(link.targetRange)
         controller.textView.scrollSelectionToVisible()
@@ -179,7 +179,7 @@ extension JumpToDefinitionModel: CodeSuggestionDelegate {
     func completionWindowApplyCompletion(
         item: CodeSuggestionEntry,
         textView: TextViewController,
-        cursorPosition: CursorPosition
+        cursorPosition: CursorPosition?
     ) {
         guard let link = item as? JumpToDefinitionLink else { return }
         if let url = link.url {

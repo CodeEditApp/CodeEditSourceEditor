@@ -14,9 +14,7 @@ final class SuggestionViewModel: ObservableObject {
     var itemsRequestTask: Task<Void, Never>?
     weak var activeTextView: TextViewController?
 
-    var delegate: CodeSuggestionDelegate? {
-        activeTextView?.completionDelegate
-    }
+    weak var delegate: CodeSuggestionDelegate?
 
     func showCompletions(
         textView: TextViewController,
@@ -25,11 +23,13 @@ final class SuggestionViewModel: ObservableObject {
         showWindowOnParent: @escaping @MainActor (NSWindow, NSRect) -> Void
     ) {
         self.activeTextView = nil
+        self.delegate = nil
         itemsRequestTask?.cancel()
 
         guard let targetParentWindow = textView.view.window else { return }
 
         self.activeTextView = textView
+        self.delegate = delegate
         itemsRequestTask = Task {
             do {
                 guard let completionItems = await delegate.completionSuggestionsRequested(
@@ -89,14 +89,13 @@ final class SuggestionViewModel: ObservableObject {
     }
 
     func applySelectedItem(item: CodeSuggestionEntry, window: NSWindow?) {
-        guard let activeTextView,
-              let cursorPosition = activeTextView.cursorPositions.first else {
+        guard let activeTextView else {
             return
         }
         self.delegate?.completionWindowApplyCompletion(
             item: item,
             textView: activeTextView,
-            cursorPosition: cursorPosition
+            cursorPosition: activeTextView.cursorPositions.first
         )
         window?.close()
     }

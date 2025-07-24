@@ -105,7 +105,7 @@ class SuggestionViewController: NSViewController {
         let newHeight = rowHeight * numberOfVisibleRows + SuggestionController.WINDOW_PADDING * 2
 
         let maxLength = min((model?.items.max(by: { $0.label.count < $1.label.count })?.label.count ?? 16) + 4, 48)
-        let newWidth = CGFloat(maxLength) * controller.font.charWidth
+        let newWidth = max(256, CGFloat(maxLength) * controller.font.charWidth)
 
         view.constraints.filter({ $0.firstAnchor == view.heightAnchor }).forEach { $0.isActive = false }
         view.heightAnchor.constraint(equalToConstant: newHeight).isActive = true

@@ -173,7 +173,11 @@ public class TextViewController: NSViewController {
     /// The tree sitter client managed by the source editor.
     ///
     /// This will be `nil` if another highlighter provider is passed to the source editor.
-    internal(set) public var treeSitterClient: TreeSitterClient?
+    internal(set) public var treeSitterClient: TreeSitterClient? {
+        didSet {
+            jumpToDefinitionModel?.treeSitterClient = treeSitterClient
+        }
+    }
 
     var foldProvider: LineFoldProvider
 
@@ -245,13 +249,11 @@ public class TextViewController: NSViewController {
         }
         self.textCoordinators = coordinators.map { WeakCoordinator($0) }
 
-        if let treeSitterClient {
-            jumpToDefinitionModel = JumpToDefinitionModel(
-                controller: self,
-                treeSitterClient: treeSitterClient,
-                delegate: nil
-            )
-        }
+        jumpToDefinitionModel = JumpToDefinitionModel(
+            controller: self,
+            treeSitterClient: treeSitterClient,
+            delegate: nil
+        )
     }
 
     required init?(coder: NSCoder) {

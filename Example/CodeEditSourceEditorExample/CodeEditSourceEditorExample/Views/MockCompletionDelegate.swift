@@ -94,12 +94,13 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
     func completionWindowApplyCompletion(
         item: CodeSuggestionEntry,
         textView: TextViewController,
-        cursorPosition: CursorPosition
+        cursorPosition: CursorPosition?
     ) {
-        guard let suggestion = item as? Suggestion else {
+        guard let suggestion = item as? Suggestion, let cursorPosition else {
             return
         }
         textView.textView.undoManager?.beginUndoGrouping()
+        textView.textView.selectionManager.setSelectedRange(cursorPosition.range)
         textView.textView.insertText(suggestion.label)
         textView.textView.undoManager?.endUndoGrouping()
     }
