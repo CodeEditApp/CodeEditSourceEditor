@@ -124,7 +124,7 @@ final package class TreeSitterExecutor {
         queuedTasks.append(QueueItem(task: task, id: id, priority: priority))
     }
 
-    func exec<T>(_ priority: Priority = .access, operation: @escaping () -> T) async throws -> T{
+    func exec<T>(_ priority: Priority = .access, operation: @escaping () -> T) async throws -> T {
         return try await withCheckedThrowingContinuation { continuation in
             execAsync(priority: priority) {
                 continuation.resume(returning: operation())
