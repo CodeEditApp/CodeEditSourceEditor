@@ -78,7 +78,6 @@ extension SuggestionController {
         window.isOpaque = false
         window.tabbingMode = .disallowed
         window.hidesOnDeactivate = true
-        window.backgroundColor = .clear
 
         return window
     }
