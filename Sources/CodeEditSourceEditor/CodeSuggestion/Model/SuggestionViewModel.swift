@@ -7,6 +7,7 @@
 
 import AppKit
 
+@MainActor
 final class SuggestionViewModel: ObservableObject {
     /// The items to be displayed in the window
     @Published var items: [CodeSuggestionEntry] = []

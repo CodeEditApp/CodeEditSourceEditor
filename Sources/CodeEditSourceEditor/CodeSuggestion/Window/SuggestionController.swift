@@ -31,6 +31,8 @@ public final class SuggestionController: NSWindowController {
     /// Tracks when the window is placed above the cursor
     var isWindowAboveCursor = false
 
+    private var popover: NSPopover?
+
     /// An event monitor for keyboard events
     private var localEventMonitor: Any?
     /// Holds the observer for the window resign notifications
@@ -76,6 +78,7 @@ public final class SuggestionController: NSWindowController {
                 popover.behavior = .transient
                 popover.contentViewController = self.contentViewController
                 popover.show(relativeTo: textViewPosition, of: textView.textView, preferredEdge: .maxY)
+                self.popover = popover
             } else {
                 self.showWindow(attachedTo: parentWindow)
                 self.constrainWindowToScreenEdges(cursorRect: cursorRect)
@@ -112,6 +115,10 @@ public final class SuggestionController: NSWindowController {
     public override func close() {
         model.willClose()
         removeEventMonitors()
+
+        popover?.close()
+        popover = nil
+
         super.close()
     }
 

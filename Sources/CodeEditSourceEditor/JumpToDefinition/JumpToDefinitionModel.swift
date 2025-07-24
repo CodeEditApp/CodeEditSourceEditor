@@ -19,7 +19,7 @@ final class JumpToDefinitionModel {
 
     weak var delegate: JumpToDefinitionDelegate?
 
-    private weak var textView: TextView?
+    private weak var controller: TextViewController?
     private weak var treeSitterClient: TreeSitterClient?
 
     private(set) public var hoveredRange: NSRange?
@@ -27,8 +27,14 @@ final class JumpToDefinitionModel {
 
     private var jumpRequestTask: Task<Void, Never>?
 
-    init(textView: TextView, treeSitterClient: TreeSitterClient, delegate: JumpToDefinitionDelegate?) {
-        self.textView = textView
+    private var currentLinks: [JumpToDefinitionLink]?
+
+    private var textView: TextView? {
+        controller?.textView
+    }
+
+    init(controller: TextViewController, treeSitterClient: TreeSitterClient, delegate: JumpToDefinitionDelegate?) {
+        self.controller = controller
         self.treeSitterClient = treeSitterClient
         self.delegate = delegate
     }
@@ -55,9 +61,13 @@ final class JumpToDefinitionModel {
     func performJump(at location: NSRange) {
         jumpRequestTask?.cancel()
         jumpRequestTask = Task {
+            currentLinks = nil
             guard let links = await delegate?.queryLinks(forRange: location),
                   !links.isEmpty else {
                 NSSound.beep()
+                if let textView {
+                    BezelNotification.show(symbolName: "questionmark", over: textView)
+                }
                 return
             }
             if links.count == 1 {
@@ -79,10 +89,26 @@ final class JumpToDefinitionModel {
 
     func presentLinkPopover(on range: NSRange, links: [JumpToDefinitionLink]) {
         let halfway = range.location + (range.length / 2)
-        guard let textView = textView, let firstRect = textView.layoutManager.rectForOffset(halfway) else { return }
-        let popover = NSPopover()
-        popover.behavior = .transient
-        popover.show(relativeTo: firstRect, of: textView, preferredEdge: .minY)
+        let range = NSRange(location: halfway, length: 0)
+        guard let controller,
+              let position = controller.resolveCursorPosition(CursorPosition(range: range)) else {
+            return
+        }
+        currentLinks = links
+        SuggestionController.shared.showCompletions(
+            textView: controller,
+            delegate: self,
+            cursorPosition: position,
+            asPopover: true
+        )
+    }
+
+    // MARK: - Local Link
+
+    func openLocalLink(link: JumpToDefinitionLink) {
+        guard let controller = controller else { return }
+        controller.textView.selectionManager.setSelectedRange(link.targetRange)
+        controller.textView.scrollSelectionToVisible()
     }
 
     // MARK: - Mouse Interaction
@@ -138,21 +164,28 @@ extension JumpToDefinitionModel: CodeSuggestionDelegate {
         textView: TextViewController,
         cursorPosition: CursorPosition
     ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
-        nil
+        guard let links = currentLinks else { return nil }
+        defer { self.currentLinks = nil }
+        return (cursorPosition, links)
     }
 
-    nonisolated func completionOnCursorMove(
+    func completionOnCursorMove(
         textView: TextViewController,
         cursorPosition: CursorPosition
     ) -> [CodeSuggestionEntry]? {
         nil
     }
 
-    nonisolated func completionWindowApplyCompletion(
+    func completionWindowApplyCompletion(
         item: CodeSuggestionEntry,
         textView: TextViewController,
         cursorPosition: CursorPosition
     ) {
-
+        guard let link = item as? JumpToDefinitionLink else { return }
+        if let url = link.url {
+            delegate?.openLink(url: url, targetRange: link.targetRange)
+        } else {
+            openLocalLink(link: link)
+        }
     }
 }

@@ -247,7 +247,7 @@ public class TextViewController: NSViewController {
 
         if let treeSitterClient {
             jumpToDefinitionModel = JumpToDefinitionModel(
-                textView: textView,
+                controller: self,
                 treeSitterClient: treeSitterClient,
                 delegate: nil
             )
