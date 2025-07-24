@@ -5,27 +5,71 @@
 //  Created by Khan Winter on 7/22/25.
 //
 
-import AppKit
+import SwiftUI
 import CodeEditSourceEditor
 import CodeEditTextView
 
+private let text = [
+    "Lorem",
+    "ipsum",
+    "dolor",
+    "sit",
+    "amet,",
+    "consectetur",
+    "adipiscing",
+    "elit.",
+    "Ut",
+    "condimentum",
+    "dictum",
+    "malesuada.",
+    "Praesent",
+    "ut",
+    "imperdiet",
+    "nulla.",
+    "Vivamus",
+    "feugiat,",
+    "ante",
+    "non",
+    "sagittis",
+    "pellentesque,",
+    "dui",
+    "massa",
+    "consequat",
+    "odio,",
+    "ac",
+    "vestibulum",
+    "augue",
+    "erat",
+    "et",
+    "nunc."
+]
+
 class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
     class Suggestion: CodeSuggestionEntry {
-        let text: String
-        var view: NSView {
-            let view = NSTextField(string: text)
-            view.isEditable = false
-            view.isSelectable = false
-            view.isBezeled = false
-            view.isBordered = false
-            view.backgroundColor = .clear
-            view.textColor = .black
-            return view
-        }
+        var label: String
+        var detail: String?
+        var pathComponents: [String]? { nil }
+        var targetPosition: CursorPosition? { nil }
+        var sourcePreview: String? { nil }
+        var image: Image = Image(systemName: "dot.square.fill")
+        var imageColor: Color = .gray
+        var deprecated: Bool = false
 
         init(text: String) {
-            self.text = text
+            self.label = text
         }
+    }
+
+    private func randomSuggestions() -> [Suggestion] {
+        let count = Int.random(in: 0..<20)
+        var suggestions: [Suggestion] = []
+        for _ in 0..<count {
+            let randomString = (0..<Int.random(in: 1..<text.count)).map {
+                text[$0]
+            }.shuffled().joined(separator: " ")
+            suggestions.append(Suggestion(text: randomString))
+        }
+        return suggestions
     }
 
     func completionSuggestionsRequested(
@@ -33,7 +77,7 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
         cursorPosition: CursorPosition
     ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
         try? await Task.sleep(for: .seconds(0.2))
-        return (cursorPosition, [Suggestion(text: "Hello"), Suggestion(text: "World")])
+        return (cursorPosition, randomSuggestions())
     }
 
     func completionOnCursorMove(
@@ -41,7 +85,7 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
         cursorPosition: CursorPosition
     ) -> [CodeSuggestionEntry]? {
         if Bool.random() {
-            [Suggestion(text: "Another one")]
+            randomSuggestions()
         } else {
             nil
         }
@@ -56,7 +100,7 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
             return
         }
         textView.textView.undoManager?.beginUndoGrouping()
-        textView.textView.insertText(suggestion.text)
+        textView.textView.insertText(suggestion.label)
         textView.textView.undoManager?.endUndoGrouping()
     }
 }
