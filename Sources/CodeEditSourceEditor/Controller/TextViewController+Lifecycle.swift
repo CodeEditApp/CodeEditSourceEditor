@@ -261,7 +261,12 @@ extension TextViewController {
     }
 
     private func handleShowCompletions(_ event: NSEvent) -> NSEvent? {
-        if let completionDelegate = self.completionDelegate, let cursorPosition = cursorPositions.first {
+        if let completionDelegate = self.completionDelegate,
+           let cursorPosition = cursorPositions.first {
+            if SuggestionController.shared.isVisible {
+                SuggestionController.shared.close()
+                return event
+            }
             SuggestionController.shared.showCompletions(
                 textView: self,
                 delegate: completionDelegate,
