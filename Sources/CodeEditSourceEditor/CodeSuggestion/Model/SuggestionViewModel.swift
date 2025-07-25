@@ -30,6 +30,8 @@ final class SuggestionViewModel: ObservableObject {
 
         self.activeTextView = textView
         itemsRequestTask = Task {
+            defer { itemsRequestTask = nil }
+
             do {
                 guard let completionItems = await delegate.completionSuggestionsRequested(
                     textView: textView,
@@ -67,6 +69,8 @@ final class SuggestionViewModel: ObservableObject {
         position: CursorPosition,
         close: () -> Void
     ) {
+        guard itemsRequestTask == nil else { return }
+
         if activeTextView !== textView {
             close()
             return
@@ -75,7 +79,8 @@ final class SuggestionViewModel: ObservableObject {
         guard let newItems = delegate.completionOnCursorMove(
             textView: textView,
             cursorPosition: position
-        ) else {
+        ),
+              !newItems.isEmpty else {
             close()
             return
         }
