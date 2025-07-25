@@ -59,6 +59,20 @@ extension SuggestionController {
         }
     }
 
+    func updateWindowSize(newSize: NSSize) {
+        guard let window else { return }
+        let oldFrame = window.frame
+
+        window.minSize = newSize
+        window.maxSize = NSSize(width: CGFloat.infinity, height: newSize.height)
+
+        window.setContentSize(newSize)
+
+        if isWindowAboveCursor && oldFrame.size.height != newSize.height {
+            window.setFrameOrigin(oldFrame.origin)
+        }
+    }
+
     // MARK: - Private Methods
 
     static func makeWindow() -> NSWindow {
@@ -78,6 +92,7 @@ extension SuggestionController {
         window.isOpaque = false
         window.tabbingMode = .disallowed
         window.hidesOnDeactivate = true
+        window.backgroundColor = .clear
 
         return window
     }

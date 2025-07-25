@@ -24,7 +24,7 @@ struct CodeSuggestionLabelView: View {
                 )
 
             // Main label
-            HStack(spacing: 0) {
+            HStack(spacing: font.charWidth) {
                 Text(suggestion.label)
                     .foregroundStyle(suggestion.deprecated ? Color(secondaryLabelColor) : Color(labelColor))
 

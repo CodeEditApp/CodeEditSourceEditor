@@ -10,6 +10,7 @@ import SwiftUI
 import Combine
 
 class SuggestionViewController: NSViewController {
+    var tintView: NSView!
     var tableView: NSTableView!
     var scrollView: NSScrollView!
     var noItemsLabel: NSTextField!
@@ -29,7 +30,14 @@ class SuggestionViewController: NSViewController {
         super.loadView()
         view.wantsLayer = true
         view.layer?.cornerRadius = 8.5
-        view.layer?.backgroundColor = .clear
+        view.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
+
+        tintView = NSView()
+        tintView.translatesAutoresizingMaskIntoConstraints = false
+        tintView.wantsLayer = true
+        tintView.layer?.cornerRadius = 8.5
+        tintView.layer?.backgroundColor = .clear
+        view.addSubview(tintView)
 
         tableView = NSTableView()
         configureTableView()
@@ -46,6 +54,11 @@ class SuggestionViewController: NSViewController {
         view.addSubview(scrollView)
 
         NSLayoutConstraint.activate([
+            tintView.topAnchor.constraint(equalTo: view.topAnchor),
+            tintView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            tintView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            tintView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+
             noItemsLabel.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             noItemsLabel.topAnchor.constraint(equalTo: view.topAnchor, constant: 10),
             noItemsLabel.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -10),
@@ -78,22 +91,23 @@ class SuggestionViewController: NSViewController {
                     blue: color.blueComponent * 0.95,
                     alpha: 1.0
                 )
-                view.layer?.backgroundColor = newColor.cgColor
+                tintView.layer?.backgroundColor = newColor.cgColor
             } else {
-                view.layer?.backgroundColor = .clear
+                tintView.layer?.backgroundColor = .clear
             }
         case .darkAqua:
-            view.layer?.backgroundColor = controller.theme.background.cgColor
+            tintView.layer?.backgroundColor = controller.theme.background.cgColor
         default:
             return
         }
+        updateSize(using: controller)
+    }
 
+    func updateSize(using controller: TextViewController) {
         guard model?.items.isEmpty == false else {
             let size = NSSize(width: 256, height: noItemsLabel.fittingSize.height + 20)
             preferredContentSize = size
-            view.window?.setContentSize(size)
-            view.window?.contentMinSize = size
-            view.window?.contentMaxSize = size
+            (self.view.window?.windowController as? SuggestionController)?.updateWindowSize(newSize: size)
             return
         }
         guard let rowView = tableView.view(atColumn: 0, row: 0, makeIfNecessary: true) else {
@@ -104,16 +118,17 @@ class SuggestionViewController: NSViewController {
         let numberOfVisibleRows = min(CGFloat(model?.items.count ?? 0), SuggestionController.MAX_VISIBLE_ROWS)
         let newHeight = rowHeight * numberOfVisibleRows + SuggestionController.WINDOW_PADDING * 2
 
-        let maxLength = min((model?.items.max(by: { $0.label.count < $1.label.count })?.label.count ?? 16) + 4, 48)
+        let maxLength = min(
+            (model?.items.reduce(0, { max($0, $1.label.count + ($1.detail?.count ?? 0)) }) ?? 16) + 4,
+            64
+        )
         let newWidth = CGFloat(maxLength) * controller.font.charWidth
 
         view.constraints.filter({ $0.firstAnchor == view.heightAnchor }).forEach { $0.isActive = false }
         view.heightAnchor.constraint(equalToConstant: newHeight).isActive = true
 
-        preferredContentSize = NSSize(width: newWidth, height: newHeight)
-        view.window?.setContentSize(NSSize(width: newWidth, height: newHeight))
-        view.window?.contentMinSize = NSSize(width: newWidth, height: newHeight)
-        view.window?.contentMaxSize = NSSize(width: .infinity, height: newHeight)
+        let newSize = NSSize(width: newWidth, height: newHeight)
+        (self.view.window?.windowController as? SuggestionController)?.updateWindowSize(newSize: newSize)
     }
 
     func configureTableView() {
@@ -158,6 +173,9 @@ class SuggestionViewController: NSViewController {
             scrollView.isHidden = model.items.isEmpty
         }
         tableView.reloadData()
+        if let activeTextView = model?.activeTextView {
+            updateSize(using: activeTextView)
+        }
     }
 
     @objc private func tableViewClicked(_ sender: Any?) {
@@ -204,7 +222,7 @@ extension SuggestionViewController: NSTableViewDataSource, NSTableViewDelegate {
             rootView: CodeSuggestionLabelView(
                 suggestion: model.items[row],
                 labelColor: textView.theme.text.color,
-                secondaryLabelColor: textView.theme.comments.color,
+                secondaryLabelColor: textView.theme.text.color.withAlphaComponent(0.5),
                 font: textView.font
             )
         )
