@@ -47,8 +47,8 @@ extension TextViewController {
                 continue
             }
             let column = (selectedRange.range.location - linePosition.range.location) + 1
-            let row = linePosition.index + 1
-            positions.append(CursorPosition(range: selectedRange.range, line: row, column: column))
+            let line = linePosition.index + 1
+            positions.append(CursorPosition(range: selectedRange.range, line: line, column: column))
         }
 
         isPostingCursorNotification = true
@@ -58,5 +58,34 @@ extension TextViewController {
             coordinator.textViewDidChangeSelection(controller: self, newPositions: cursorPositions)
         }
         isPostingCursorNotification = false
+
+        if let completionDelegate = completionDelegate, let position = cursorPositions.first {
+            SuggestionController.shared.cursorsUpdated(textView: self, delegate: completionDelegate, position: position)
+        }
+    }
+
+    /// Fills out all properties on the given cursor position if it's missing either the range or line/column
+    /// information.
+    func resolveCursorPosition(_ position: CursorPosition) -> CursorPosition? {
+        var range = position.range
+        if range == .notFound {
+            guard position.line > 0, position.column > 0,
+                    let linePosition = textView.layoutManager.textLineForIndex(position.line - 1) else {
+                return nil
+            }
+            range = NSRange(location: linePosition.range.location + position.column, length: 0)
+        }
+
+        var line = position.line
+        var column = position.column
+        if position.line <= 0 || position.column <= 0 {
+            guard range != .notFound, let linePosition = textView.layoutManager.textLineForOffset(range.location) else {
+                return nil
+            }
+            column = (range.location - linePosition.range.location) + 1
+            line = linePosition.index + 1
+        }
+
+        return CursorPosition(range: range, line: line, column: column)
     }
 }

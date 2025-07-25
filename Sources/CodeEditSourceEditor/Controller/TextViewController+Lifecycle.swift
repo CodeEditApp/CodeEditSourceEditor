@@ -73,10 +73,10 @@ extension TextViewController {
 
         textView.updateFrameIfNeeded()
 
-        if let localEventMonitor = self.localEvenMonitor {
+        if let localEventMonitor = self.localEventMonitor {
             NSEvent.removeMonitor(localEventMonitor)
         }
-        setUpKeyBindings(eventMonitor: &self.localEvenMonitor)
+        setUpKeyBindings(eventMonitor: &self.localEventMonitor)
         updateContentInsets()
 
         configuration.didSetOnController(controller: self, oldConfig: nil)
@@ -212,6 +212,7 @@ extension TextViewController {
 
     func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
         let commandKey = NSEvent.ModifierFlags.command.rawValue
+        let controlKey = NSEvent.ModifierFlags.control.rawValue
 
         switch (modifierFlags, event.charactersIgnoringModifiers) {
         case (commandKey, "/"):
@@ -228,8 +229,14 @@ extension TextViewController {
             self.findViewController?.showFindPanel()
             return nil
         case (0, "\u{1b}"): // Escape key
-            self.findViewController?.hideFindPanel()
-            return nil
+            if findViewController?.viewModel.isShowingFindPanel == true {
+                self.findViewController?.hideFindPanel()
+                return nil
+            }
+            // Attempt to show completions otherwise
+            return handleShowCompletions(event)
+        case (controlKey, " "):
+            return handleShowCompletions(event)
         case (_, _):
             return event
         }
@@ -251,5 +258,22 @@ extension TextViewController {
             handleIndent()
         }
         return nil
+    }
+
+    private func handleShowCompletions(_ event: NSEvent) -> NSEvent? {
+        if let completionDelegate = self.completionDelegate,
+           let cursorPosition = cursorPositions.first {
+            if SuggestionController.shared.isVisible {
+                SuggestionController.shared.close()
+                return event
+            }
+            SuggestionController.shared.showCompletions(
+                textView: self,
+                delegate: completionDelegate,
+                cursorPosition: cursorPosition
+            )
+            return nil
+        }
+        return event
     }
 }
