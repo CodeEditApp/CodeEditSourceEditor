@@ -60,8 +60,8 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
         }
     }
 
-    private func randomSuggestions() -> [Suggestion] {
-        let count = Int.random(in: 0..<20)
+    private func randomSuggestions(_ count: Int? = nil) -> [Suggestion] {
+        let count = count ?? Int.random(in: 0..<20)
         var suggestions: [Suggestion] = []
         for _ in 0..<count {
             let randomString = (0..<Int.random(in: 1..<text.count)).map {
@@ -71,6 +71,8 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
         }
         return suggestions
     }
+
+    var moveCount = 0
 
     func completionSuggestionsRequested(
         textView: TextViewController,
@@ -84,17 +86,22 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
         textView: TextViewController,
         cursorPosition: CursorPosition
     ) -> [CodeSuggestionEntry]? {
-        if Bool.random() {
-            randomSuggestions()
-        } else {
-            nil
+        moveCount += 1
+        switch moveCount {
+        case 1:
+            return randomSuggestions(2)
+        case 2:
+            return randomSuggestions(20)
+        default:
+            moveCount = 0
+            return nil
         }
     }
 
     func completionWindowApplyCompletion(
         item: CodeSuggestionEntry,
         textView: TextViewController,
-        cursorPosition: CursorPosition
+        cursorPosition: CursorPosition?
     ) {
         guard let suggestion = item as? Suggestion else {
             return
