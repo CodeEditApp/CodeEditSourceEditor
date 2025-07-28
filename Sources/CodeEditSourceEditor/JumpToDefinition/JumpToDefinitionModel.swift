@@ -62,7 +62,8 @@ final class JumpToDefinitionModel {
         jumpRequestTask?.cancel()
         jumpRequestTask = Task {
             currentLinks = nil
-            guard let links = await delegate?.queryLinks(forRange: location),
+            guard let controller,
+                  let links = await delegate?.queryLinks(forRange: location, textView: controller),
                   !links.isEmpty else {
                 NSSound.beep()
                 if let textView {
@@ -72,10 +73,10 @@ final class JumpToDefinitionModel {
             }
             if links.count == 1 {
                 let link = links[0]
-                if let url = link.url {
-                    delegate?.openLink(url: url, targetRange: link.targetRange)
+                if link.url != nil {
+                    delegate?.openLink(link: link)
                 } else {
-                    textView?.selectionManager.setSelectedRange(link.targetRange)
+                    textView?.selectionManager.setSelectedRange(link.targetRange.range)
                 }
 
                 textView?.scrollSelectionToVisible()
@@ -106,8 +107,10 @@ final class JumpToDefinitionModel {
     // MARK: - Local Link
 
     private func openLocalLink(link: JumpToDefinitionLink) {
-        guard let controller = controller else { return }
-        controller.textView.selectionManager.setSelectedRange(link.targetRange)
+        guard let controller = controller, let range = controller.resolveCursorPosition(link.targetRange) else {
+            return
+        }
+        controller.textView.selectionManager.setSelectedRange(range.range)
         controller.textView.scrollSelectionToVisible()
     }
 
@@ -183,7 +186,7 @@ extension JumpToDefinitionModel: CodeSuggestionDelegate {
     ) {
         guard let link = item as? JumpToDefinitionLink else { return }
         if let url = link.url {
-            delegate?.openLink(url: url, targetRange: link.targetRange)
+            delegate?.openLink(link: link)
         } else {
             openLocalLink(link: link)
         }

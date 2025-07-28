@@ -8,6 +8,6 @@
 import Foundation
 
 public protocol JumpToDefinitionDelegate: AnyObject {
-    func queryLinks(forRange range: NSRange) async -> [JumpToDefinitionLink]?
-    func openLink(url: URL, targetRange: NSRange)
+    func queryLinks(forRange range: NSRange, textView: TextViewController) async -> [JumpToDefinitionLink]?
+    func openLink(link: JumpToDefinitionLink)
 }
