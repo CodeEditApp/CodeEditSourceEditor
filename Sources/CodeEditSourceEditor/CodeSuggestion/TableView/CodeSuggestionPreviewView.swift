@@ -39,7 +39,7 @@ final class CodeSuggestionPreviewView: NSVisualEffectView {
     var font: NSFont = .systemFont(ofSize: 12) {
         didSet {
             sourcePreviewLabel.font = font
-            pathComponentsLabel.font = font
+            pathComponentsLabel.font = .systemFont(ofSize: font.pointSize)
         }
     }
     var documentationFont: NSFont = .systemFont(ofSize: 12) {
@@ -76,6 +76,10 @@ final class CodeSuggestionPreviewView: NSVisualEffectView {
         styleStaticLabel(documentationLabel)
         styleStaticLabel(pathComponentsLabel)
 
+        pathComponentsLabel.maximumNumberOfLines = 1
+        pathComponentsLabel.lineBreakMode = .byTruncatingMiddle
+        pathComponentsLabel.usesSingleLineMode = true
+
         stackView.addArrangedSubview(sourcePreviewLabel)
         stackView.addArrangedSubview(documentationLabel)
         stackView.addArrangedSubview(pathComponentsLabel)
@@ -97,6 +101,10 @@ final class CodeSuggestionPreviewView: NSVisualEffectView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    func hideIfEmpty() {
+        isHidden = sourcePreview == nil && documentation == nil && pathComponents.isEmpty
+    }
+
     func setPreferredMaxLayoutWidth(width: CGFloat) {
         sourcePreviewLabel.preferredMaxLayoutWidth = width
         documentationLabel.preferredMaxLayoutWidth = width
@@ -105,6 +113,7 @@ final class CodeSuggestionPreviewView: NSVisualEffectView {
 
     private func styleStaticLabel(_ label: NSTextField) {
         label.isEditable = false
+        label.isSelectable = true
         label.allowsDefaultTighteningForTruncation = false
         label.isBezeled = false
         label.isBordered = false
@@ -113,7 +122,48 @@ final class CodeSuggestionPreviewView: NSVisualEffectView {
     }
 
     private func configurePathComponentsLabel() {
-        // TODO: This
-        pathComponentsLabel.isHidden = true
+        pathComponentsLabel.isHidden = pathComponents.isEmpty
+
+        let folder = NSTextAttachment()
+        folder.image = NSImage(systemSymbolName: "folder.fill", accessibilityDescription: nil)?
+            .withSymbolConfiguration(
+                .init(paletteColors: [NSColor.systemBlue]).applying(.init(pointSize: font.pointSize, weight: .regular))
+            )
+
+        let string: NSMutableAttributedString = NSMutableAttributedString(attachment: folder)
+        string.append(NSAttributedString(string: " "))
+
+        let separator = NSTextAttachment()
+        separator.image = NSImage(systemSymbolName: "chevron.compact.right", accessibilityDescription: nil)?
+            .withSymbolConfiguration(
+                .init(paletteColors: [NSColor.labelColor])
+                .applying(.init(pointSize: font.pointSize + 1, weight: .regular))
+            )
+
+        for (idx, component) in pathComponents.enumerated() {
+            string.append(NSAttributedString(string: component, attributes: [.foregroundColor: NSColor.labelColor]))
+            if idx != pathComponents.count - 1 {
+                string.append(NSAttributedString(string: " "))
+                string.append(NSAttributedString(attachment: separator))
+                string.append(NSAttributedString(string: " "))
+            }
+        }
+
+        if let targetRange {
+            string.append(NSAttributedString(string: ":\(targetRange.start.line)"))
+            if targetRange.start.column > 1 {
+                string.append(NSAttributedString(string: ":\(targetRange.start.column)"))
+            }
+        }
+        if let paragraphStyle = NSMutableParagraphStyle.default.mutableCopy() as? NSMutableParagraphStyle {
+            paragraphStyle.lineBreakMode = .byTruncatingMiddle
+            string.addAttribute(
+                .paragraphStyle,
+                value: paragraphStyle,
+                range: NSRange(location: 0, length: string.length)
+            )
+        }
+
+        pathComponentsLabel.attributedStringValue = string
     }
 }

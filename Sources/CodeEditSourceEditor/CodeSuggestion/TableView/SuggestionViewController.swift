@@ -334,10 +334,10 @@ extension SuggestionViewController: NSTableViewDataSource, NSTableViewDelegate {
             let selectedItem = model.items[tableView.selectedRow]
 
             previewView.sourcePreview = selectedItem.sourcePreview
-            // TODO: Add Documentation To Completion Items
-            previewView.documentation = selectedItem.detail
+            previewView.documentation = selectedItem.documentation
             previewView.pathComponents = selectedItem.pathComponents ?? []
             previewView.targetRange = selectedItem.targetPosition
+            previewView.hideIfEmpty()
             updateSize(using: nil)
 
             model.didSelect(item: selectedItem)

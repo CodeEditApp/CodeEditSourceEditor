@@ -18,13 +18,14 @@ public struct JumpToDefinitionLink: Identifiable, Sendable, CodeSuggestionEntry 
     public let targetRange: CursorPosition
 
     public let label: String
-    public let sourcePreview: String?
+    public var detail: String? { url?.lastPathComponent }
+    public var documentation: String?
 
+    public let sourcePreview: String?
     public let image: Image
     public let imageColor: Color
 
-    public var detail: String? { url?.lastPathComponent }
-    public var pathComponents: [String]? { url?.pathComponents ?? [] }
+    public var pathComponents: [String]? { url?.relativePath.components(separatedBy: "/") ?? [] }
     public var deprecated: Bool { false }
 
     public init(
@@ -32,12 +33,14 @@ public struct JumpToDefinitionLink: Identifiable, Sendable, CodeSuggestionEntry 
         targetRange: CursorPosition,
         typeName: String,
         sourcePreview: String,
+        documentation: String?,
         image: Image = Image(systemName: "dot.square.fill"),
         imageColor: Color = Color(NSColor.lightGray)
     ) {
         self.url = url
         self.targetRange = targetRange
         self.label = typeName
+        self.documentation = documentation
         self.sourcePreview = sourcePreview
         self.image = image
         self.imageColor = imageColor

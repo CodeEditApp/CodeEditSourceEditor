@@ -49,7 +49,7 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
         var label: String
         var detail: String?
         var pathComponents: [String]?
-        var targetPosition: CursorPosition? { nil }
+        var targetPosition: CursorPosition? = CursorPosition(line: 10, column: 20)
         var sourcePreview: String?
         var image: Image = Image(systemName: "dot.square.fill")
         var imageColor: Color = .gray
@@ -75,7 +75,7 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
                     text: randomString,
                     detail: text.randomElement()!,
                     sourcePreview: randomString,
-                    pathComponents: (0..<Int.random(in: 1..<5)).map { text[$0] }
+                    pathComponents: (0..<Int.random(in: 0..<10)).map { text[$0] }
                 )
             )
         }
