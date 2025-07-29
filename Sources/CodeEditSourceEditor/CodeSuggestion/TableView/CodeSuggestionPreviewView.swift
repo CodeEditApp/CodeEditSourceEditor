@@ -92,7 +92,7 @@ final class CodeSuggestionPreviewView: NSVisualEffectView {
             stackView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -13)
         ])
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
