@@ -333,7 +333,7 @@ extension SuggestionViewController: NSTableViewDataSource, NSTableViewDelegate {
             // Update our preview view
             let selectedItem = model.items[tableView.selectedRow]
 
-            previewView.sourcePreview = selectedItem.sourcePreview
+            previewView.sourcePreview = model.syntaxHighlights(forIndex: tableView.selectedRow)
             previewView.documentation = selectedItem.documentation
             previewView.pathComponents = selectedItem.pathComponents ?? []
             previewView.targetRange = selectedItem.targetPosition

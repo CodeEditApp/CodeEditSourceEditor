@@ -16,6 +16,8 @@ final class SuggestionViewModel: ObservableObject {
 
     weak var delegate: CodeSuggestionDelegate?
 
+    private var syntaxHighlightedCache: [Int: NSAttributedString] = [:]
+
     func showCompletions(
         textView: TextViewController,
         delegate: CodeSuggestionDelegate,
@@ -56,6 +58,7 @@ final class SuggestionViewModel: ObservableObject {
                     }
 
                     self.items = completionItems.items
+                    self.syntaxHighlightedCache = [:]
                     showWindowOnParent(targetParentWindow, cursorRect)
                 }
             } catch {
@@ -108,5 +111,27 @@ final class SuggestionViewModel: ObservableObject {
     func willClose() {
         items.removeAll()
         activeTextView = nil
+    }
+
+    func syntaxHighlights(forIndex index: Int) -> NSAttributedString? {
+        if let cached = syntaxHighlightedCache[index] {
+            return cached
+        }
+
+        if let sourcePreview = items[index].sourcePreview,
+           let theme = activeTextView?.theme,
+           let font = activeTextView?.font,
+           let language = activeTextView?.language {
+            let string = TreeSitterClient.quickHighlight(
+                string: sourcePreview,
+                theme: theme,
+                font: font,
+                language: language
+            )
+            syntaxHighlightedCache[index] = string
+            return string
+        }
+
+        return nil
     }
 }

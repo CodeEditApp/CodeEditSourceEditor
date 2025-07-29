@@ -10,9 +10,9 @@ import SwiftUI
 final class CodeSuggestionPreviewView: NSVisualEffectView {
     private let spacing: CGFloat = 5
 
-    var sourcePreview: String? {
+    var sourcePreview: NSAttributedString? {
         didSet {
-            sourcePreviewLabel.stringValue = sourcePreview ?? ""
+            sourcePreviewLabel.attributedStringValue = sourcePreview ?? NSAttributedString(string: "")
             sourcePreviewLabel.isHidden = sourcePreview == nil
         }
     }
