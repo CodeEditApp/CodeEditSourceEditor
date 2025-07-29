@@ -83,6 +83,8 @@ final class JumpToDefinitionModel {
             } else {
                 presentLinkPopover(on: location, links: links)
             }
+
+            cancelHover()
         }
     }
 
@@ -185,7 +187,7 @@ extension JumpToDefinitionModel: CodeSuggestionDelegate {
         cursorPosition: CursorPosition?
     ) {
         guard let link = item as? JumpToDefinitionLink else { return }
-        if let url = link.url {
+        if link.url != nil {
             delegate?.openLink(link: link)
         } else {
             openLocalLink(link: link)

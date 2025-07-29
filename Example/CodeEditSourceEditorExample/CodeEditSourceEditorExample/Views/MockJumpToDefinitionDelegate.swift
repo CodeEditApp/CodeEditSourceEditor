@@ -9,26 +9,26 @@ import AppKit
 import CodeEditSourceEditor
 
 final class MockJumpToDefinitionDelegate: JumpToDefinitionDelegate, ObservableObject {
-    func queryLinks(forRange range: NSRange) async -> [JumpToDefinitionLink]? {
-        Bool.random() ? [
+    func queryLinks(forRange range: NSRange, textView: TextViewController) async -> [JumpToDefinitionLink]? {
+        [
             JumpToDefinitionLink(
                 url: nil,
-                targetPosition: CursorPosition(line: 0, column: 0),
-                targetRange: NSRange(start: 0, end: 10),
+                targetRange: CursorPosition(line: 0, column: 10),
                 typeName: "Start of Document",
                 sourcePreview: "// Comment at start"
             ),
             JumpToDefinitionLink(
                 url: URL(string: "https://codeedit.app/"),
-                targetPosition: CursorPosition(line: 1024, column: 10),
-                targetRange: NSRange(location: 30, length: 100),
+                targetRange: CursorPosition(line: 1024, column: 10),
                 typeName: "CodeEdit Website",
                 sourcePreview: "https://codeedit.app/"
             )
-        ] : nil
+        ]
     }
 
-    func openLink(url: URL, targetRange: NSRange) {
-        NSWorkspace.shared.open(url)
+    func openLink(link: JumpToDefinitionLink) {
+        if let url = link.url {
+            NSWorkspace.shared.open(url)
+        }
     }
 }

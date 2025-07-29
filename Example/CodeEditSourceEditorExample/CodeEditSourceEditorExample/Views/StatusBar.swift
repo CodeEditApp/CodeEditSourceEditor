@@ -211,6 +211,6 @@ struct StatusBar: View {
         }
 
         // When there's a single cursor, display the line and column.
-        return "Line: \(cursorPositions[0].line)  Col: \(cursorPositions[0].column) Range: \(cursorPositions[0].range)"
+        return "Line: \(cursorPositions[0].start.line)  Col: \(cursorPositions[0].start.column) Range: \(cursorPositions[0].range)"
     }
 }

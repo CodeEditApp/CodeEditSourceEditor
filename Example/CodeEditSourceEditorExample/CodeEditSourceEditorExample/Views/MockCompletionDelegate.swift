@@ -48,15 +48,18 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
     class Suggestion: CodeSuggestionEntry {
         var label: String
         var detail: String?
-        var pathComponents: [String]? { nil }
+        var pathComponents: [String]?
         var targetPosition: CursorPosition? { nil }
-        var sourcePreview: String? { nil }
+        var sourcePreview: String?
         var image: Image = Image(systemName: "dot.square.fill")
         var imageColor: Color = .gray
         var deprecated: Bool = false
 
-        init(text: String) {
+        init(text: String, detail: String?, sourcePreview: String?, pathComponents: [String]?) {
             self.label = text
+            self.detail = detail
+            self.sourcePreview = sourcePreview
+            self.pathComponents = pathComponents
         }
     }
 
@@ -67,7 +70,14 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
             let randomString = (0..<Int.random(in: 1..<text.count)).map {
                 text[$0]
             }.shuffled().joined(separator: " ")
-            suggestions.append(Suggestion(text: randomString))
+            suggestions.append(
+                Suggestion(
+                    text: randomString,
+                    detail: text.randomElement()!,
+                    sourcePreview: randomString,
+                    pathComponents: (0..<Int.random(in: 1..<5)).map { text[$0] }
+                )
+            )
         }
         return suggestions
     }

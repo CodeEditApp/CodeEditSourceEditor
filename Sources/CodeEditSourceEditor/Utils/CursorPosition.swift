@@ -48,7 +48,7 @@ public struct CursorPosition: Sendable, Codable, Equatable, Hashable {
         self.end = nil
     }
 
-    public init(start: Position, end: Position) {
+    public init(start: Position, end: Position?) {
         self.range = .notFound
         self.start = start
         self.end = end

@@ -16,7 +16,7 @@ public final class SuggestionController: NSWindowController {
 
     /// Whether the suggestion window is visible
     var isVisible: Bool {
-        window?.isVisible ?? false
+        window?.isVisible ?? false || popover?.isShown ?? false
     }
 
     var model: SuggestionViewModel = SuggestionViewModel()
@@ -31,10 +31,8 @@ public final class SuggestionController: NSWindowController {
     /// Tracks when the window is placed above the cursor
     var isWindowAboveCursor = false
 
-    private var popover: NSPopover?
+    var popover: NSPopover?
 
-    /// An event monitor for keyboard events
-    private var localEventMonitor: Any?
     /// Holds the observer for the window resign notifications
     private var windowResignObserver: NSObjectProtocol?
 
@@ -48,6 +46,8 @@ public final class SuggestionController: NSWindowController {
         window.contentViewController = controller
 
         super.init(window: window)
+
+        controller.windowController = self
 
         if window.isVisible {
             window.close()
@@ -72,20 +72,30 @@ public final class SuggestionController: NSWindowController {
             cursorPosition: cursorPosition
         ) { parentWindow, cursorRect in
             if asPopover {
+                self.popover?.close()
+                self.popover = nil
+
                 let windowPosition = parentWindow.convertFromScreen(cursorRect)
                 let textViewPosition = textView.textView.convert(windowPosition, from: nil)
                 let popover = NSPopover()
                 popover.behavior = .transient
-                popover.contentViewController = self.contentViewController
+
+                let controller = SuggestionViewController()
+                controller.model = self.model
+                controller.windowController = self
+                controller.tableView.reloadData()
+                controller.styleView(using: textView)
+
+                popover.contentViewController = controller
                 popover.show(relativeTo: textViewPosition, of: textView.textView, preferredEdge: .maxY)
                 self.popover = popover
             } else {
                 self.showWindow(attachedTo: parentWindow)
                 self.constrainWindowToScreenEdges(cursorRect: cursorRect)
-            }
-            if let controller = self.contentViewController as? SuggestionViewController {
-                controller.styleView(using: textView)
-                self.popover?.contentSize = controller.preferredContentSize
+
+                if let controller = self.contentViewController as? SuggestionViewController {
+                    controller.styleView(using: textView)
+                }
             }
         }
     }
@@ -108,7 +118,6 @@ public final class SuggestionController: NSWindowController {
             self?.close()
         }
 
-        setupEventMonitors()
         super.showWindow(nil)
         window.orderFront(nil)
         window.contentViewController?.viewWillAppear()
@@ -117,63 +126,15 @@ public final class SuggestionController: NSWindowController {
     /// Close the window
     public override func close() {
         model.willClose()
-        removeEventMonitors()
 
-        popover?.close()
-        popover = nil
+        if popover != nil {
+            popover?.close()
+            popover = nil
+        } else {
+            contentViewController?.viewWillDisappear()
+        }
 
         super.close()
-    }
-
-    // MARK: - Events
-
-    private func setupEventMonitors() {
-        localEventMonitor = NSEvent.addLocalMonitorForEvents(
-            matching: [.keyDown]
-        ) { [weak self] event in
-            guard let self = self else { return event }
-
-            switch event.type {
-            case .keyDown:
-                return checkKeyDownEvents(event)
-            default:
-                return event
-            }
-        }
-    }
-
-    private func checkKeyDownEvents(_ event: NSEvent) -> NSEvent? {
-        if !self.isVisible {
-            return event
-        }
-
-        switch event.keyCode {
-        case 53: // Escape
-            self.close()
-            return nil
-
-        case 125, 126:  // Down/Up Arrow
-            (contentViewController as? SuggestionViewController)?.tableView?.keyDown(with: event)
-            return nil
-
-        case 36, 48:  // Return/Tab
-            (contentViewController as? SuggestionViewController)?.applySelectedItem()
-            return nil
-
-        default:
-            return event
-        }
-    }
-
-    private func removeEventMonitors() {
-        if let monitor = localEventMonitor {
-            NSEvent.removeMonitor(monitor)
-            localEventMonitor = nil
-        }
-        if let observer = windowResignObserver {
-            NotificationCenter.default.removeObserver(observer)
-            windowResignObserver = nil
-        }
     }
 
     // MARK: - Cursors Updated
@@ -182,13 +143,23 @@ public final class SuggestionController: NSWindowController {
         textView: TextViewController,
         delegate: CodeSuggestionDelegate,
         position: CursorPosition,
-        presentIfNot: Bool = false
+        presentIfNot: Bool = false,
+        asPopover: Bool = false
     ) {
+        if !asPopover && popover != nil {
+            close()
+        }
+
         model.cursorsUpdated(textView: textView, delegate: delegate, position: position) {
             close()
 
             if presentIfNot {
-                self.showCompletions(textView: textView, delegate: delegate, cursorPosition: position)
+                self.showCompletions(
+                    textView: textView,
+                    delegate: delegate,
+                    cursorPosition: position,
+                    asPopover: asPopover
+                )
             }
         }
     }
