@@ -211,6 +211,7 @@ struct StatusBar: View {
         }
 
         // When there's a single cursor, display the line and column.
+        // swiftlint:disable:next line_length
         return "Line: \(cursorPositions[0].start.line)  Col: \(cursorPositions[0].start.column) Range: \(cursorPositions[0].range)"
     }
 }
