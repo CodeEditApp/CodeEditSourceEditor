@@ -35,7 +35,8 @@ public struct SourceEditor: NSViewControllerRepresentable {
         state: Binding<SourceEditorState>,
         highlightProviders: [any HighlightProviding]? = nil,
         undoManager: CEUndoManager? = nil,
-        coordinators: [any TextViewCoordinator] = []
+        coordinators: [any TextViewCoordinator] = [],
+        completionDelegate: CodeSuggestionDelegate? = nil
     ) {
         self.text = .binding(text)
         self.language = language
@@ -44,6 +45,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         self.highlightProviders = highlightProviders
         self.undoManager = undoManager
         self.coordinators = coordinators
+        self.completionDelegate = completionDelegate
     }
 
     /// Initializes a new source editor
@@ -64,7 +66,8 @@ public struct SourceEditor: NSViewControllerRepresentable {
         state: Binding<SourceEditorState>,
         highlightProviders: [any HighlightProviding]? = nil,
         undoManager: CEUndoManager? = nil,
-        coordinators: [any TextViewCoordinator] = []
+        coordinators: [any TextViewCoordinator] = [],
+        completionDelegate: CodeSuggestionDelegate? = nil
     ) {
         self.text = .storage(text)
         self.language = language
@@ -73,6 +76,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         self.highlightProviders = highlightProviders
         self.undoManager = undoManager
         self.coordinators = coordinators
+        self.completionDelegate = completionDelegate
     }
 
     var text: TextAPI
@@ -82,6 +86,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
     var highlightProviders: [any HighlightProviding]?
     var undoManager: CEUndoManager?
     var coordinators: [any TextViewCoordinator]
+    weak var completionDelegate: CodeSuggestionDelegate?
 
     public typealias NSViewControllerType = TextViewController
 
@@ -108,6 +113,8 @@ public struct SourceEditor: NSViewControllerRepresentable {
             controller.setCursorPositions(state.cursorPositions ?? [])
         }
 
+        controller.completionDelegate = completionDelegate
+
         context.coordinator.setController(controller)
         return controller
     }
@@ -117,6 +124,8 @@ public struct SourceEditor: NSViewControllerRepresentable {
     }
 
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
+        controller.completionDelegate = completionDelegate
+
         context.coordinator.updateHighlightProviders(highlightProviders)
 
         // Prevent infinite loop of update notifications

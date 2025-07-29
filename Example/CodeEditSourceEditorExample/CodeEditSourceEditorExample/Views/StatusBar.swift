@@ -104,7 +104,7 @@ struct StatusBar: View {
                     }
                 }
                 scrollPosition
-                Text(getLabel(state.cursorPositions))
+                Text(getLabel(state.cursorPositions ?? []))
             }
             .foregroundStyle(.secondary)
 
