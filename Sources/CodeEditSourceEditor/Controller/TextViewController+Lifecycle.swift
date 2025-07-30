@@ -213,7 +213,7 @@ extension TextViewController {
             if event.keyCode == tabKey {
                 return self.handleTab(event: event, modifierFlags: modifierFlags.rawValue)
             } else {
-                return self.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
+                return self.handleCommand(event: event, modifierFlags: modifierFlags)
             }
         case .flagsChanged:
             if modifierFlags.contains(.command),
@@ -243,9 +243,9 @@ extension TextViewController {
         }
     }
 
-    func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
-        let commandKey = NSEvent.ModifierFlags.command.rawValue
-        let controlKey = NSEvent.ModifierFlags.control.rawValue
+    func handleCommand(event: NSEvent, modifierFlags: NSEvent.ModifierFlags) -> NSEvent? {
+        let commandKey = NSEvent.ModifierFlags.command
+        let controlKey = NSEvent.ModifierFlags.control
 
         switch (modifierFlags, event.charactersIgnoringModifiers) {
         case (commandKey, "/"):
@@ -261,7 +261,7 @@ extension TextViewController {
             _ = self.textView.resignFirstResponder()
             self.findViewController?.showFindPanel()
             return nil
-        case (0, "\u{1b}"): // Escape key
+        case (.init(rawValue: 0), "\u{1b}"): // Escape key
             if findViewController?.viewModel.isShowingFindPanel == true {
                 self.findViewController?.hideFindPanel()
                 return nil
@@ -270,6 +270,12 @@ extension TextViewController {
             return handleShowCompletions(event)
         case (controlKey, " "):
             return handleShowCompletions(event)
+        case ([NSEvent.ModifierFlags.command, NSEvent.ModifierFlags.control], "j"):
+            guard let cursor = cursorPositions.first else {
+                return event
+            }
+            jumpToDefinitionModel?.performJump(at: cursor.range)
+            return nil
         case (_, _):
             return event
         }
