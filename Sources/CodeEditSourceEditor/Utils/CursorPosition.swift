@@ -72,7 +72,7 @@ public struct CursorPosition: Sendable, Codable, Equatable, Hashable {
     ///   - range: The range of the position.
     ///   - start: The start position of the range.
     ///   - end: The end position of the range.
-    package init(range: NSRange, start: Position, end: Position?) {
+    init(range: NSRange, start: Position, end: Position?) {
         self.range = range
         self.start = start
         self.end = end

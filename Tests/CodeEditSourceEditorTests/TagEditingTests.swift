@@ -69,7 +69,7 @@ final class TagEditingTests: XCTestCase {
         )
         XCTAssertEqual(
             controller.cursorPositions[0],
-            CursorPosition(range: NSRange(location: 43, length: 0), line: 4, column: 13)
+            CursorPosition(range: NSRange(location: 43, length: 0), start: .init(line: 4, column: 13), end: nil)
         )
     }
 
@@ -85,7 +85,7 @@ final class TagEditingTests: XCTestCase {
         )
         XCTAssertEqual(
             controller.cursorPositions[0],
-            CursorPosition(range: NSRange(location: 7, length: 0), line: 2, column: 1)
+            CursorPosition(range: NSRange(location: 7, length: 0), start: .init(line: 2, column: 1), end: nil)
         )
     }
 
