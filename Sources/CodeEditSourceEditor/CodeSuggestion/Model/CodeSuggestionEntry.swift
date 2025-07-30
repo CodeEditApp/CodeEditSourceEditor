@@ -12,6 +12,7 @@ import SwiftUI
 public protocol CodeSuggestionEntry {
     var label: String { get }
     var detail: String? { get }
+    var documentation: String? { get }
 
     /// Leave as `nil` if the link is in the same document.
     var pathComponents: [String]? { get }

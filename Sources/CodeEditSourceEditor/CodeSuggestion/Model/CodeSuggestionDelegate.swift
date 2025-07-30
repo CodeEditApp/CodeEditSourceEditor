@@ -5,6 +5,7 @@
 //  Created by Abe Malla on 12/26/24.
 //
 
+@MainActor
 public protocol CodeSuggestionDelegate: AnyObject {
     func completionTriggerCharacters() -> Set<String>
 

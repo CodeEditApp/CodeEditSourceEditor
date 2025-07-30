@@ -339,8 +339,8 @@ final class TextViewControllerTests: XCTestCase {
 
         XCTAssert(controller.text == "\nHello World with newline!")
         XCTAssertEqual(controller.cursorPositions.count, 1)
-        XCTAssertEqual(controller.cursorPositions[0].line, 2)
-        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+        XCTAssertEqual(controller.cursorPositions[0].start.line, 2)
+        XCTAssertEqual(controller.cursorPositions[0].start.column, 1)
         XCTAssertEqual(controller.cursorPositions[0].range.location, 1)
         XCTAssertEqual(controller.cursorPositions[0].range.length, 2)
         XCTAssertEqual(controller.textView.selectionManager.textSelections.count, 1)
@@ -359,8 +359,8 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.cursorPositions.count, 1)
         XCTAssertEqual(controller.cursorPositions[0].range.location, 0)
         XCTAssertEqual(controller.cursorPositions[0].range.length, 5)
-        XCTAssertEqual(controller.cursorPositions[0].line, 1)
-        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+        XCTAssertEqual(controller.cursorPositions[0].start.line, 1)
+        XCTAssertEqual(controller.cursorPositions[0].start.column, 1)
 
         // Test an invalid position is ignored
         controller.setCursorPositions([CursorPosition(range: NSRange(location: -1, length: 25))])
@@ -372,8 +372,8 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.cursorPositions.count, 1)
         XCTAssertEqual(controller.cursorPositions[0].range.location, 2)
         XCTAssertEqual(controller.cursorPositions[0].range.length, 0)
-        XCTAssertEqual(controller.cursorPositions[0].line, 2)
-        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+        XCTAssertEqual(controller.cursorPositions[0].start.line, 2)
+        XCTAssertEqual(controller.cursorPositions[0].start.column, 1)
 
         // Test order and validity of multiple positions.
         controller.setCursorPositions([
@@ -383,12 +383,12 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.cursorPositions.count, 2)
         XCTAssertEqual(controller.cursorPositions[0].range.location, 2)
         XCTAssertEqual(controller.cursorPositions[0].range.length, 0)
-        XCTAssertEqual(controller.cursorPositions[0].line, 2)
-        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+        XCTAssertEqual(controller.cursorPositions[0].start.line, 2)
+        XCTAssertEqual(controller.cursorPositions[0].start.column, 1)
         XCTAssertEqual(controller.cursorPositions[1].range.location, 5)
         XCTAssertEqual(controller.cursorPositions[1].range.length, 1)
-        XCTAssertEqual(controller.cursorPositions[1].line, 3)
-        XCTAssertEqual(controller.cursorPositions[1].column, 2)
+        XCTAssertEqual(controller.cursorPositions[1].start.line, 3)
+        XCTAssertEqual(controller.cursorPositions[1].start.column, 2)
     }
 
     func test_cursorPositionRowColInit() {
@@ -400,8 +400,8 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.cursorPositions.count, 1)
         XCTAssertEqual(controller.cursorPositions[0].range.location, 0)
         XCTAssertEqual(controller.cursorPositions[0].range.length, 0)
-        XCTAssertEqual(controller.cursorPositions[0].line, 1)
-        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+        XCTAssertEqual(controller.cursorPositions[0].start.line, 1)
+        XCTAssertEqual(controller.cursorPositions[0].start.column, 1)
 
         // Test an invalid position is ignored
         controller.setCursorPositions([CursorPosition(line: -1, column: 10)])
@@ -413,8 +413,8 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.cursorPositions.count, 1)
         XCTAssertEqual(controller.cursorPositions[0].range.location, 2)
         XCTAssertEqual(controller.cursorPositions[0].range.length, 0)
-        XCTAssertEqual(controller.cursorPositions[0].line, 2)
-        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+        XCTAssertEqual(controller.cursorPositions[0].start.line, 2)
+        XCTAssertEqual(controller.cursorPositions[0].start.column, 1)
 
         // Test order and validity of multiple positions.
         controller.setCursorPositions([
@@ -424,12 +424,12 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.cursorPositions.count, 2)
         XCTAssertEqual(controller.cursorPositions[0].range.location, 0)
         XCTAssertEqual(controller.cursorPositions[0].range.length, 0)
-        XCTAssertEqual(controller.cursorPositions[0].line, 1)
-        XCTAssertEqual(controller.cursorPositions[0].column, 1)
+        XCTAssertEqual(controller.cursorPositions[0].start.line, 1)
+        XCTAssertEqual(controller.cursorPositions[0].start.column, 1)
         XCTAssertEqual(controller.cursorPositions[1].range.location, 4)
         XCTAssertEqual(controller.cursorPositions[1].range.length, 0)
-        XCTAssertEqual(controller.cursorPositions[1].line, 3)
-        XCTAssertEqual(controller.cursorPositions[1].column, 1)
+        XCTAssertEqual(controller.cursorPositions[1].start.line, 3)
+        XCTAssertEqual(controller.cursorPositions[1].start.column, 1)
     }
 
     // MARK: - TreeSitterClient

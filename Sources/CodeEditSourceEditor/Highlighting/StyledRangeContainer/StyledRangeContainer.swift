@@ -111,6 +111,25 @@ class StyledRangeContainer {
 }
 
 extension StyledRangeContainer: HighlightProviderStateDelegate {
+    func updateStorageLength(newLength: Int) {
+        for key in _storage.keys {
+            guard var value = _storage[key] else { continue }
+            var store = value.store
+            let length = store.length
+            if length != newLength {
+                let missingCharacters = newLength - length
+                if missingCharacters < 0 {
+                    store.storageUpdated(replacedCharactersIn: (length + missingCharacters)..<length, withCount: 0)
+                } else {
+                    store.storageUpdated(replacedCharactersIn: length..<length, withCount: missingCharacters)
+                }
+            }
+
+            value.store = store
+            _storage[key] = value
+        }
+    }
+
     /// Applies a highlight result from a highlight provider to the storage container.
     /// - Parameters:
     ///   - provider: The provider sending the highlights.

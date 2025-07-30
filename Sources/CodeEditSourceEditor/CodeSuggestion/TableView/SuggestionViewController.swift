@@ -10,12 +10,18 @@ import SwiftUI
 import Combine
 
 class SuggestionViewController: NSViewController {
-    var tintView: NSView!
-    var tableView: NSTableView!
-    var scrollView: NSScrollView!
-    var noItemsLabel: NSTextField!
+    var tintView: NSView = NSView()
+    var tableView: NSTableView = NSTableView()
+    var scrollView: NSScrollView = NSScrollView()
+    var noItemsLabel: NSTextField = NSTextField(labelWithString: "No Completions")
+    var previewView: CodeSuggestionPreviewView = CodeSuggestionPreviewView()
+
+    var scrollViewHeightConstraint: NSLayoutConstraint?
+    var viewHeightConstraint: NSLayoutConstraint?
+    var viewWidthConstraint: NSLayoutConstraint?
 
     var itemObserver: AnyCancellable?
+    var cachedFont: NSFont?
 
     weak var model: SuggestionViewModel? {
         didSet {
@@ -26,32 +32,36 @@ class SuggestionViewController: NSViewController {
         }
     }
 
+    /// An event monitor for keyboard events
+    private var localEventMonitor: Any?
+
+    weak var windowController: SuggestionController?
+
     override func loadView() {
         super.loadView()
         view.wantsLayer = true
         view.layer?.cornerRadius = 8.5
         view.layer?.backgroundColor = NSColor.windowBackgroundColor.cgColor
 
-        tintView = NSView()
         tintView.translatesAutoresizingMaskIntoConstraints = false
         tintView.wantsLayer = true
         tintView.layer?.cornerRadius = 8.5
         tintView.layer?.backgroundColor = .clear
         view.addSubview(tintView)
 
-        tableView = NSTableView()
         configureTableView()
-        scrollView = NSScrollView()
         configureScrollView()
 
-        noItemsLabel = NSTextField(labelWithString: "No Completions")
         noItemsLabel.textColor = .secondaryLabelColor
         noItemsLabel.alignment = .center
         noItemsLabel.translatesAutoresizingMaskIntoConstraints = false
         noItemsLabel.isHidden = false
 
+        previewView.translatesAutoresizingMaskIntoConstraints = false
+
         view.addSubview(noItemsLabel)
         view.addSubview(scrollView)
+        view.addSubview(previewView)
 
         NSLayoutConstraint.activate([
             tintView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -66,7 +76,11 @@ class SuggestionViewController: NSViewController {
             scrollView.topAnchor.constraint(equalTo: view.topAnchor),
             scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            scrollView.bottomAnchor.constraint(equalTo: previewView.topAnchor),
+
+            previewView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            previewView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            previewView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
     }
 
@@ -77,10 +91,59 @@ class SuggestionViewController: NSViewController {
         if let controller = model?.activeTextView {
             styleView(using: controller)
         }
+        setupEventMonitors()
+    }
+
+    override func viewWillDisappear() {
+        super.viewWillDisappear()
+        if let monitor = localEventMonitor {
+            NSEvent.removeMonitor(monitor)
+            localEventMonitor = nil
+        }
+    }
+
+    private func setupEventMonitors() {
+        if let monitor = localEventMonitor {
+            NSEvent.removeMonitor(monitor)
+            localEventMonitor = nil
+        }
+        localEventMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.keyDown]
+        ) { [weak self] event in
+            guard let self = self else { return event }
+
+            switch event.type {
+            case .keyDown:
+                return checkKeyDownEvents(event)
+            default:
+                return event
+            }
+        }
+    }
+
+    private func checkKeyDownEvents(_ event: NSEvent) -> NSEvent? {
+        switch event.keyCode {
+        case 53: // Escape
+            windowController?.close()
+            return nil
+
+        case 125, 126:  // Down/Up Arrow
+            tableView.keyDown(with: event)
+            return nil
+
+        case 36, 48:  // Return/Tab
+            self.applySelectedItem()
+            return nil
+
+        default:
+            return event
+        }
     }
 
     func styleView(using controller: TextViewController) {
         noItemsLabel.font = controller.font
+        previewView.font = controller.font
+        previewView.documentationFont = controller.font
         switch controller.systemAppearance {
         case .aqua:
             let color = controller.theme.background
@@ -103,32 +166,56 @@ class SuggestionViewController: NSViewController {
         updateSize(using: controller)
     }
 
-    func updateSize(using controller: TextViewController) {
-        guard model?.items.isEmpty == false else {
+    func updateSize(using controller: TextViewController?) {
+        guard model?.items.isEmpty == false && tableView.numberOfRows > 0 else {
             let size = NSSize(width: 256, height: noItemsLabel.fittingSize.height + 20)
             preferredContentSize = size
-            (self.view.window?.windowController as? SuggestionController)?.updateWindowSize(newSize: size)
+            windowController?.updateWindowSize(newSize: size)
             return
         }
+
+        if controller != nil {
+            cachedFont = controller?.font
+        }
+
         guard let rowView = tableView.view(atColumn: 0, row: 0, makeIfNecessary: true) else {
             return
         }
-        let rowHeight = rowView.fittingSize.height
-
-        let numberOfVisibleRows = min(CGFloat(model?.items.count ?? 0), SuggestionController.MAX_VISIBLE_ROWS)
-        let newHeight = rowHeight * numberOfVisibleRows + SuggestionController.WINDOW_PADDING * 2
 
         let maxLength = min(
             (model?.items.reduce(0, { max($0, $1.label.count + ($1.detail?.count ?? 0)) }) ?? 16) + 4,
             64
         )
-        let newWidth = CGFloat(maxLength) * controller.font.charWidth
+        let newWidth = max( // minimum width = 256px, horizontal item padding = 13px
+            CGFloat(maxLength) * (controller?.font ?? cachedFont ?? NSFont.systemFont(ofSize: 12)).charWidth + 26,
+            256
+        )
 
-        view.constraints.filter({ $0.firstAnchor == view.heightAnchor }).forEach { $0.isActive = false }
-        view.heightAnchor.constraint(equalToConstant: newHeight).isActive = true
+        let rowHeight = rowView.fittingSize.height
+
+        let numberOfVisibleRows = min(CGFloat(model?.items.count ?? 0), SuggestionController.MAX_VISIBLE_ROWS)
+        previewView.setPreferredMaxLayoutWidth(width: newWidth)
+        var newHeight = rowHeight * numberOfVisibleRows + SuggestionController.WINDOW_PADDING * 2
+
+        viewHeightConstraint?.isActive = false
+        viewWidthConstraint?.isActive = false
+        scrollViewHeightConstraint?.isActive = false
+
+        scrollViewHeightConstraint = scrollView.heightAnchor.constraint(equalToConstant: newHeight)
+        newHeight += previewView.fittingSize.height
+        viewHeightConstraint = view.heightAnchor.constraint(equalToConstant: newHeight)
+        viewWidthConstraint = view.widthAnchor.constraint(equalToConstant: newWidth)
+
+        viewHeightConstraint?.isActive = true
+        viewWidthConstraint?.isActive = true
+        scrollViewHeightConstraint?.isActive = true
+
+        view.updateConstraintsForSubtreeIfNeeded()
+        view.layoutSubtreeIfNeeded()
 
         let newSize = NSSize(width: newWidth, height: newHeight)
-        (self.view.window?.windowController as? SuggestionController)?.updateWindowSize(newSize: newSize)
+        preferredContentSize = newSize
+        windowController?.updateWindowSize(newSize: newSize)
     }
 
     func configureTableView() {
@@ -171,6 +258,7 @@ class SuggestionViewController: NSViewController {
         if let model {
             noItemsLabel.isHidden = !model.items.isEmpty
             scrollView.isHidden = model.items.isEmpty
+            previewView.isHidden = model.items.isEmpty
         }
         tableView.reloadData()
         if let activeTextView = model?.activeTextView {
@@ -242,7 +330,17 @@ extension SuggestionViewController: NSTableViewDataSource, NSTableViewDelegate {
     public func tableViewSelectionDidChange(_ notification: Notification) {
         guard tableView.selectedRow >= 0 else { return }
         if let model {
-            model.didSelect(item: model.items[tableView.selectedRow])
+            // Update our preview view
+            let selectedItem = model.items[tableView.selectedRow]
+
+            previewView.sourcePreview = model.syntaxHighlights(forIndex: tableView.selectedRow)
+            previewView.documentation = selectedItem.documentation
+            previewView.pathComponents = selectedItem.pathComponents ?? []
+            previewView.targetRange = selectedItem.targetPosition
+            previewView.hideIfEmpty()
+            updateSize(using: nil)
+
+            model.didSelect(item: selectedItem)
         }
     }
 }

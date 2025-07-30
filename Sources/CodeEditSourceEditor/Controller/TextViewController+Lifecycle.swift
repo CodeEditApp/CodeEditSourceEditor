@@ -189,7 +189,9 @@ extension TextViewController {
     }
 
     func setUpKeyBindings(eventMonitor: inout Any?) {
-        eventMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event -> NSEvent? in
+        eventMonitor = NSEvent.addLocalMonitorForEvents(
+            matching: [.keyDown, .flagsChanged, .mouseMoved, .leftMouseUp]
+        ) { [weak self] event -> NSEvent? in
             guard let self = self else { return event }
 
             // Check if this window is key and if the text view is the first responder
@@ -198,21 +200,52 @@ extension TextViewController {
 
             // Only handle commands if this is the key window and text view is first responder
             guard isKeyWindow && isFirstResponder else { return event }
-
-            let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-            let tabKey: UInt16 = 0x30
-
-            if event.keyCode == tabKey {
-                return self.handleTab(event: event, modifierFalgs: modifierFlags.rawValue)
-            } else {
-                return self.handleCommand(event: event, modifierFlags: modifierFlags.rawValue)
-            }
+            return handleEvent(event: event)
         }
     }
 
-    func handleCommand(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
-        let commandKey = NSEvent.ModifierFlags.command.rawValue
-        let controlKey = NSEvent.ModifierFlags.control.rawValue
+    func handleEvent(event: NSEvent) -> NSEvent? {
+        let modifierFlags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        switch event.type {
+        case .keyDown:
+            let tabKey: UInt16 = 0x30
+
+            if event.keyCode == tabKey {
+                return self.handleTab(event: event, modifierFlags: modifierFlags.rawValue)
+            } else {
+                return self.handleCommand(event: event, modifierFlags: modifierFlags)
+            }
+        case .flagsChanged:
+            if modifierFlags.contains(.command),
+               let coords = view.window?.convertPoint(fromScreen: NSEvent.mouseLocation) {
+                self.jumpToDefinitionModel?.mouseHovered(windowCoordinates: coords)
+            }
+
+            if !modifierFlags.contains(.command) {
+                self.jumpToDefinitionModel?.cancelHover()
+            }
+            return event
+        case .mouseMoved:
+            guard modifierFlags.contains(.command) else {
+                self.jumpToDefinitionModel?.cancelHover()
+                return event
+            }
+            self.jumpToDefinitionModel?.mouseHovered(windowCoordinates: event.locationInWindow)
+            return event
+        case .leftMouseUp:
+            if let range = jumpToDefinitionModel?.hoveredRange {
+                self.jumpToDefinitionModel?.performJump(at: range)
+                return nil
+            }
+            return event
+        default:
+            return event
+        }
+    }
+
+    func handleCommand(event: NSEvent, modifierFlags: NSEvent.ModifierFlags) -> NSEvent? {
+        let commandKey = NSEvent.ModifierFlags.command
+        let controlKey = NSEvent.ModifierFlags.control
 
         switch (modifierFlags, event.charactersIgnoringModifiers) {
         case (commandKey, "/"):
@@ -228,7 +261,7 @@ extension TextViewController {
             _ = self.textView.resignFirstResponder()
             self.findViewController?.showFindPanel()
             return nil
-        case (0, "\u{1b}"): // Escape key
+        case (.init(rawValue: 0), "\u{1b}"): // Escape key
             if findViewController?.viewModel.isShowingFindPanel == true {
                 self.findViewController?.hideFindPanel()
                 return nil
@@ -237,6 +270,12 @@ extension TextViewController {
             return handleShowCompletions(event)
         case (controlKey, " "):
             return handleShowCompletions(event)
+        case ([NSEvent.ModifierFlags.command, NSEvent.ModifierFlags.control], "j"):
+            guard let cursor = cursorPositions.first else {
+                return event
+            }
+            jumpToDefinitionModel?.performJump(at: cursor.range)
+            return nil
         case (_, _):
             return event
         }
@@ -247,10 +286,10 @@ extension TextViewController {
     /// are highlighted and handles indenting accordingly.
     ///
     /// - Returns: The original event if it should be passed on, or `nil` to indicate handling within the method.
-    func handleTab(event: NSEvent, modifierFalgs: UInt) -> NSEvent? {
+    func handleTab(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
         let shiftKey = NSEvent.ModifierFlags.shift.rawValue
 
-        if modifierFalgs == shiftKey {
+        if modifierFlags == shiftKey {
             handleIndent(inwards: true)
         } else {
             // Only allow tab to work if multiple lines are selected
