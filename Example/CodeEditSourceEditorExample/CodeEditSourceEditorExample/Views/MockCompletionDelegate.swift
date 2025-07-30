@@ -118,6 +118,7 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
         }
         textView.textView.undoManager?.beginUndoGrouping()
         textView.textView.selectionManager.setSelectedRange(cursorPosition.range)
+
         textView.textView.insertText(suggestion.label)
         textView.textView.undoManager?.endUndoGrouping()
     }
