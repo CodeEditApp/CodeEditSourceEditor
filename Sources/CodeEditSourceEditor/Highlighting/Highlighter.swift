@@ -154,6 +154,7 @@ class Highlighter: NSObject {
     /// - Parameter providers: All providers to use.
     public func setProviders(_ providers: [HighlightProviding]) {
         guard let textView else { return }
+        self.styleContainer.updateStorageLength(newLength: textView.textStorage.length)
 
         let existingIds: [ObjectIdentifier] = self.highlightProviders
             .compactMap { $0.highlightProvider }

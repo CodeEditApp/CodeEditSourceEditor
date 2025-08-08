@@ -17,6 +17,22 @@ import Foundation
 /// controller.
 /// 
 public struct CursorPosition: Sendable, Codable, Equatable, Hashable {
+    public struct Position: Sendable, Codable, Equatable, Hashable {
+        /// The line the cursor is located at. 1-indexed.
+        /// If ``CursorPosition/range`` is not empty, this is the line at the beginning of the selection.
+        public let line: Int
+        /// The column the cursor is located at. 1-indexed.
+        /// If ``CursorPosition/range`` is not empty, this is the column at the beginning of the selection.
+        public let column: Int
+
+        public init(line: Int, column: Int) {
+            self.line = line
+            self.column = column
+        }
+
+        var isPositive: Bool { line > 0 && column > 0 }
+    }
+
     /// Initialize a cursor position.
     ///
     /// When this initializer is used, ``CursorPosition/range`` will be initialized to `NSNotFound`.
@@ -28,8 +44,14 @@ public struct CursorPosition: Sendable, Codable, Equatable, Hashable {
     ///   - column: The column of the cursor position, 1-indexed.
     public init(line: Int, column: Int) {
         self.range = .notFound
-        self.line = line
-        self.column = column
+        self.start = Position(line: line, column: column)
+        self.end = nil
+    }
+
+    public init(start: Position, end: Position?) {
+        self.range = .notFound
+        self.start = start
+        self.end = end
     }
 
     /// Initialize a cursor position.
@@ -41,27 +63,23 @@ public struct CursorPosition: Sendable, Codable, Equatable, Hashable {
     /// - Parameter range: The range of the cursor position.
     public init(range: NSRange) {
         self.range = range
-        self.line = -1
-        self.column = -1
+        self.start = Position(line: -1, column: -1)
+        self.end = nil
     }
 
     /// Private initializer.
     /// - Parameters:
     ///   - range: The range of the position.
-    ///   - line: The line of the position.
-    ///   - column: The column of the position.
-    package init(range: NSRange, line: Int, column: Int) {
+    ///   - start: The start position of the range.
+    ///   - end: The end position of the range.
+    init(range: NSRange, start: Position, end: Position?) {
         self.range = range
-        self.line = line
-        self.column = column
+        self.start = start
+        self.end = end
     }
 
     /// The range of the selection.
     public let range: NSRange
-    /// The line the cursor is located at. 1-indexed.
-    /// If ``CursorPosition/range`` is not empty, this is the line at the beginning of the selection.
-    public let line: Int
-    /// The column the cursor is located at. 1-indexed.
-    /// If ``CursorPosition/range`` is not empty, this is the column at the beginning of the selection.
-    public let column: Int
+    public let start: Position
+    public let end: Position?
 }

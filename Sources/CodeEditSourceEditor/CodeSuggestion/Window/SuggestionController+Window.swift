@@ -60,6 +60,11 @@ extension SuggestionController {
     }
 
     func updateWindowSize(newSize: NSSize) {
+        if let popover {
+            popover.contentSize = newSize
+            return
+        }
+
         guard let window else { return }
         let oldFrame = window.frame
 

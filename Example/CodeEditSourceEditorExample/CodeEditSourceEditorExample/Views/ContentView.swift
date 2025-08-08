@@ -23,6 +23,7 @@ struct ContentView: View {
         cursorPositions: [CursorPosition(line: 1, column: 1)]
     )
     @StateObject private var suggestions: MockCompletionDelegate = MockCompletionDelegate()
+    @StateObject private var jumpToDefinition: MockJumpToDefinitionDelegate = MockJumpToDefinitionDelegate()
 
     @State private var font: NSFont = NSFont.monospacedSystemFont(ofSize: 12, weight: .medium)
     @AppStorage("wrapLines") private var wrapLines: Bool = true
@@ -73,7 +74,8 @@ struct ContentView: View {
                     )
                 ),
                 state: $editorState,
-                completionDelegate: suggestions
+                completionDelegate: suggestions,
+                jumpToDefinitionDelegate: jumpToDefinition
             )
             .overlay(alignment: .bottom) {
                 StatusBar(
