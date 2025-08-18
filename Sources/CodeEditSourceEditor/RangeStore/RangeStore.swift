@@ -84,7 +84,7 @@ struct RangeStore<Element: RangeStoreElement>: Sendable {
     ///   - runs: The runs to insert.
     ///   - range: The range to replace.
     mutating func set(runs: [Run], for range: Range<Int>) {
-        let gutsRange = 0..<_guts.count(in: OffsetMetric())
+        let gutsRange = 0..<length
         if range.clamped(to: gutsRange) != range {
             let upperBound = range.clamped(to: gutsRange).upperBound
             let missingCharacters = range.upperBound - upperBound

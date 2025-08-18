@@ -7,15 +7,16 @@
 
 import AppKit
 
+@MainActor
 final class SuggestionViewModel: ObservableObject {
     /// The items to be displayed in the window
     @Published var items: [CodeSuggestionEntry] = []
     var itemsRequestTask: Task<Void, Never>?
     weak var activeTextView: TextViewController?
 
-    var delegate: CodeSuggestionDelegate? {
-        activeTextView?.completionDelegate
-    }
+    weak var delegate: CodeSuggestionDelegate?
+
+    private var syntaxHighlightedCache: [Int: NSAttributedString] = [:]
 
     func showCompletions(
         textView: TextViewController,
@@ -24,11 +25,13 @@ final class SuggestionViewModel: ObservableObject {
         showWindowOnParent: @escaping @MainActor (NSWindow, NSRect) -> Void
     ) {
         self.activeTextView = nil
+        self.delegate = nil
         itemsRequestTask?.cancel()
 
         guard let targetParentWindow = textView.view.window else { return }
 
         self.activeTextView = textView
+        self.delegate = delegate
         itemsRequestTask = Task {
             defer { itemsRequestTask = nil }
 
@@ -55,6 +58,7 @@ final class SuggestionViewModel: ObservableObject {
                     }
 
                     self.items = completionItems.items
+                    self.syntaxHighlightedCache = [:]
                     showWindowOnParent(targetParentWindow, cursorRect)
                 }
             } catch {
@@ -93,14 +97,13 @@ final class SuggestionViewModel: ObservableObject {
     }
 
     func applySelectedItem(item: CodeSuggestionEntry, window: NSWindow?) {
-        guard let activeTextView,
-              let cursorPosition = activeTextView.cursorPositions.first else {
+        guard let activeTextView else {
             return
         }
         self.delegate?.completionWindowApplyCompletion(
             item: item,
             textView: activeTextView,
-            cursorPosition: cursorPosition
+            cursorPosition: activeTextView.cursorPositions.first
         )
         window?.close()
     }
@@ -108,5 +111,27 @@ final class SuggestionViewModel: ObservableObject {
     func willClose() {
         items.removeAll()
         activeTextView = nil
+    }
+
+    func syntaxHighlights(forIndex index: Int) -> NSAttributedString? {
+        if let cached = syntaxHighlightedCache[index] {
+            return cached
+        }
+
+        if let sourcePreview = items[index].sourcePreview,
+           let theme = activeTextView?.theme,
+           let font = activeTextView?.font,
+           let language = activeTextView?.language {
+            let string = TreeSitterClient.quickHighlight(
+                string: sourcePreview,
+                theme: theme,
+                font: font,
+                language: language
+            )
+            syntaxHighlightedCache[index] = string
+            return string
+        }
+
+        return nil
     }
 }
