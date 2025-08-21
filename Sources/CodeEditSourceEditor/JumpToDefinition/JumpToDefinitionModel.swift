@@ -119,7 +119,8 @@ final class JumpToDefinitionModel {
     // MARK: - Mouse Interaction
 
     func mouseHovered(windowCoordinates: CGPoint) {
-        guard let textViewCoords = textView?.convert(windowCoordinates, from: nil),
+        guard delegate != nil,
+              let textViewCoords = textView?.convert(windowCoordinates, from: nil),
               let location = textView?.layoutManager.textOffsetAtPoint(textViewCoords),
               location < textView?.textStorage.length ?? 0 else {
             cancelHover()
