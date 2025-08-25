@@ -50,7 +50,7 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
     class Suggestion: CodeSuggestionEntry {
         var label: String
         var detail: String?
-        var documentation: String? = nil
+        var documentation: String?
         var pathComponents: [String]?
         var targetPosition: CursorPosition? = CursorPosition(line: 10, column: 20)
         var sourcePreview: String?
