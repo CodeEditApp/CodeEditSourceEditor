@@ -91,7 +91,7 @@ public final class SuggestionController: NSWindowController {
                 self.popover = popover
             } else {
                 self.showWindow(attachedTo: parentWindow)
-                self.constrainWindowToScreenEdges(cursorRect: cursorRect)
+                self.constrainWindowToScreenEdges(cursorRect: cursorRect, font: textView.font)
 
                 if let controller = self.contentViewController as? SuggestionViewController {
                     controller.styleView(using: textView)
