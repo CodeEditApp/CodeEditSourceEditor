@@ -82,8 +82,8 @@ extension TextViewController {
         }
         isPostingCursorNotification = false
 
-        if let completionDelegate = completionDelegate, let position = cursorPositions.first {
-            SuggestionController.shared.cursorsUpdated(textView: self, delegate: completionDelegate, position: position)
+        if let position = cursorPositions.first {
+            suggestionTriggerModel.selectionUpdated(position)
         }
     }
 

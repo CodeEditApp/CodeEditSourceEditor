@@ -51,6 +51,8 @@ public class TextViewController: NSViewController {
     /// A default `NSParagraphStyle` with a set `lineHeight`
     lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
 
+    var suggestionTriggerModel = SuggestionTriggerCharacterModel()
+
     // MARK: - Public Variables
 
     /// Passthrough value for the `textView`s string
@@ -223,6 +225,8 @@ public class TextViewController: NSViewController {
         self.invisibleCharactersCoordinator = InvisibleCharactersCoordinator(configuration: configuration)
 
         super.init(nibName: nil, bundle: nil)
+
+        suggestionTriggerModel.controller = self
 
         if let idx = highlightProviders.firstIndex(where: { $0 is TreeSitterClient }),
            let client = highlightProviders[idx] as? TreeSitterClient {

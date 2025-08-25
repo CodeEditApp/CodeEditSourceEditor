@@ -16,6 +16,7 @@ final class SuggestionViewModel: ObservableObject {
 
     weak var delegate: CodeSuggestionDelegate?
 
+    private var cursorPosition: CursorPosition?
     private var syntaxHighlightedCache: [Int: NSAttributedString] = [:]
 
     func showCompletions(
