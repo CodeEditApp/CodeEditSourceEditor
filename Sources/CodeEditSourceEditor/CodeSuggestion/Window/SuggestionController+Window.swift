@@ -9,7 +9,7 @@ import AppKit
 
 extension SuggestionController {
     /// Will constrain the window's frame to be within the visible screen
-    public func constrainWindowToScreenEdges(cursorRect: NSRect) {
+    public func constrainWindowToScreenEdges(cursorRect: NSRect, font: NSFont) {
         guard let window = self.window,
               let screenFrame = window.screen?.visibleFrame else {
             return
@@ -18,7 +18,8 @@ extension SuggestionController {
         let windowSize = window.frame.size
         let padding: CGFloat = 22
         var newWindowOrigin = NSPoint(
-            x: cursorRect.origin.x - Self.WINDOW_PADDING,
+            x: cursorRect.origin.x - Self.WINDOW_PADDING
+            - CodeSuggestionLabelView.HORIZONTAL_PADDING - font.pointSize,
             y: cursorRect.origin.y
         )
 

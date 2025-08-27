@@ -24,7 +24,6 @@ extension TextViewController {
         setUpNewlineTabFilters(indentOption: configuration.behavior.indentOption)
         setUpDeletePairFilters(pairs: BracketPairs.allValues)
         setUpDeleteWhitespaceFilter(indentOption: configuration.behavior.indentOption)
-        setUpSuggestionsFilter()
     }
 
     /// Returns a `TextualIndenter` based on available language configuration.
@@ -120,25 +119,5 @@ extension TextViewController {
         }
 
         return true
-    }
-
-    func setUpSuggestionsFilter() {
-        textFilters.append(
-            CodeSuggestionTriggerFilter(
-                triggerCharacters: configuration.peripherals.codeSuggestionTriggerCharacters,
-                didTrigger: { [weak self] in
-                    guard let self else { return }
-                    if let completionDelegate = self.completionDelegate,
-                       let position = self.cursorPositions.first {
-                        SuggestionController.shared.cursorsUpdated(
-                            textView: self,
-                            delegate: completionDelegate,
-                            position: position,
-                            presentIfNot: true
-                        )
-                    }
-                }
-            )
-        )
     }
 }

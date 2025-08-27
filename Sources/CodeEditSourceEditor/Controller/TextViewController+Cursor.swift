@@ -82,8 +82,8 @@ extension TextViewController {
         }
         isPostingCursorNotification = false
 
-        if let completionDelegate = completionDelegate, let position = cursorPositions.first {
-            SuggestionController.shared.cursorsUpdated(textView: self, delegate: completionDelegate, position: position)
+        if let position = cursorPositions.first {
+            suggestionTriggerModel.selectionUpdated(position)
         }
     }
 
@@ -96,7 +96,7 @@ extension TextViewController {
                     let linePosition = textView.layoutManager.textLineForIndex(position.start.line - 1) else {
                 return nil
             }
-            if let end = position.end, let endPosition = textView.layoutManager.textLineForIndex(end.line - 1) {
+            if position.end != nil {
                 range = NSRange(
                     location: linePosition.range.location + position.start.column,
                     length: linePosition.range.max

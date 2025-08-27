@@ -45,9 +45,12 @@ private let text = [
 ]
 
 class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
+    var lastPosition: CursorPosition?
+
     class Suggestion: CodeSuggestionEntry {
         var label: String
         var detail: String?
+        var documentation: String?
         var pathComponents: [String]?
         var targetPosition: CursorPosition? = CursorPosition(line: 10, column: 20)
         var sourcePreview: String?
@@ -89,6 +92,7 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
         cursorPosition: CursorPosition
     ) async -> (windowPosition: CursorPosition, items: [CodeSuggestionEntry])? {
         try? await Task.sleep(for: .seconds(0.2))
+        lastPosition = cursorPosition
         return (cursorPosition, randomSuggestions())
     }
 
@@ -96,12 +100,24 @@ class MockCompletionDelegate: CodeSuggestionDelegate, ObservableObject {
         textView: TextViewController,
         cursorPosition: CursorPosition
     ) -> [CodeSuggestionEntry]? {
+        // Check if we're typing all in a row.
+        guard (lastPosition?.range.location ?? 0) + 1 == cursorPosition.range.location else {
+            lastPosition = nil
+            moveCount = 0
+            return nil
+        }
+
+        lastPosition = cursorPosition
         moveCount += 1
         switch moveCount {
         case 1:
             return randomSuggestions(2)
         case 2:
             return randomSuggestions(20)
+        case 3:
+            return randomSuggestions(4)
+        case 4:
+            return randomSuggestions(1)
         default:
             moveCount = 0
             return nil

@@ -27,6 +27,8 @@ extension TextViewController: TextViewDelegate {
                 coordinator.textViewDidChangeText(controller: self)
             }
         }
+
+        suggestionTriggerModel.textView(textView, didReplaceContentsIn: range, with: string)
     }
 
     public func textView(_ textView: TextView, shouldReplaceContentsIn range: NSRange, with string: String) -> Bool {
