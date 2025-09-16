@@ -87,6 +87,7 @@ let editorController = TextViewController(
     highlightProviders: [], // Use the tree-sitter syntax highlighting provider by default
     undoManager: nil,
     coordinators: [], // Optionally inject editing behavior or other plugins.
+    completionDelegate: nil, // Provide code suggestions while typing via a delegate object.
     jumpToDefinitionDelegate // Allow users to perform the 'jump to definition' using a delegate object.
 )
 ```
