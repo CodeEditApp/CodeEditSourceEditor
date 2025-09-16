@@ -15,18 +15,17 @@ import TextStory
 /// Was originally a `TextFilter` model, however those are called before text is changed and cursors are updated.
 /// The suggestion model expects up-to-date cursor positions as well as complete text contents. This being
 /// essentially a textview delegate ensures both of those promises are upheld.
+@MainActor
 final class SuggestionTriggerCharacterModel {
     weak var controller: TextViewController?
     private var lastPosition: NSRange?
 
-    var triggerCharacters: Set<String>? {
-        controller?.configuration.peripherals.codeSuggestionTriggerCharacters
-    }
-
     func textView(_ textView: TextView, didReplaceContentsIn range: NSRange, with string: String) {
-        guard let controller, let completionDelegate = controller.completionDelegate, let triggerCharacters else {
+        guard let controller, let completionDelegate = controller.completionDelegate else {
             return
         }
+
+        let triggerCharacters = completionDelegate.completionTriggerCharacters()
 
         let mutation = TextMutation(
             string: string,
