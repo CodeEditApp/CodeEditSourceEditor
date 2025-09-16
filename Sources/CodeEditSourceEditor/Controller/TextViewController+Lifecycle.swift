@@ -218,23 +218,23 @@ extension TextViewController {
         case .flagsChanged:
             if modifierFlags.contains(.command),
                let coords = view.window?.convertPoint(fromScreen: NSEvent.mouseLocation) {
-                self.jumpToDefinitionModel?.mouseHovered(windowCoordinates: coords)
+                self.jumpToDefinitionModel.mouseHovered(windowCoordinates: coords)
             }
 
             if !modifierFlags.contains(.command) {
-                self.jumpToDefinitionModel?.cancelHover()
+                self.jumpToDefinitionModel.cancelHover()
             }
             return event
         case .mouseMoved:
             guard modifierFlags.contains(.command) else {
-                self.jumpToDefinitionModel?.cancelHover()
+                self.jumpToDefinitionModel.cancelHover()
                 return event
             }
-            self.jumpToDefinitionModel?.mouseHovered(windowCoordinates: event.locationInWindow)
+            self.jumpToDefinitionModel.mouseHovered(windowCoordinates: event.locationInWindow)
             return event
         case .leftMouseUp:
-            if let range = jumpToDefinitionModel?.hoveredRange {
-                self.jumpToDefinitionModel?.performJump(at: range)
+            if let range = jumpToDefinitionModel.hoveredRange {
+                self.jumpToDefinitionModel.performJump(at: range)
                 return nil
             }
             return event
@@ -274,7 +274,7 @@ extension TextViewController {
             guard let cursor = cursorPositions.first else {
                 return event
             }
-            jumpToDefinitionModel?.performJump(at: cursor.range)
+            jumpToDefinitionModel.performJump(at: cursor.range)
             return nil
         case (_, _):
             return event

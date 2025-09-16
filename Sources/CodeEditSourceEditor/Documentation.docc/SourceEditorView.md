@@ -86,9 +86,28 @@ let editorController = TextViewController(
     cursorPositions: [CursorPosition(line: 0, column: 0)],
     highlightProviders: [], // Use the tree-sitter syntax highlighting provider by default
     undoManager: nil,
-    coordinators: [] // Optionally inject editing behavior or other plugins.
+    coordinators: [], // Optionally inject editing behavior or other plugins.
+    completionDelegate: nil, // Provide code suggestions while typing via a delegate object.
+    jumpToDefinitionDelegate // Allow users to perform the 'jump to definition' using a delegate object.
 )
 ```
+
+To add the controller to your view, add it as a child view controller and add the editor's view to your view hierarchy.
+
+```swift
+final class MyController: NSViewController {
+    override func loadView() {
+        super.loadView()
+        let editorController: TextViewController = /**/
+
+        addChild(editorController)
+        view.addSubview(editorController.view)
+        editorController.view.viewDidMoveToSuperview()
+    }
+}
+```
+
+For more AppKit API options, see the documentation on ``TextViewController``.
 
 ## Topics
 

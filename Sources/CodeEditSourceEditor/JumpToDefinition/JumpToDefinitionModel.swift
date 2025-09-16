@@ -20,7 +20,7 @@ final class JumpToDefinitionModel {
     weak var delegate: JumpToDefinitionDelegate?
     weak var treeSitterClient: TreeSitterClient?
 
-    private weak var controller: TextViewController?
+    weak var controller: TextViewController?
 
     private(set) public var hoveredRange: NSRange?
 
@@ -33,7 +33,7 @@ final class JumpToDefinitionModel {
         controller?.textView
     }
 
-    init(controller: TextViewController, treeSitterClient: TreeSitterClient?, delegate: JumpToDefinitionDelegate?) {
+    init(controller: TextViewController?, treeSitterClient: TreeSitterClient?, delegate: JumpToDefinitionDelegate?) {
         self.controller = controller
         self.treeSitterClient = treeSitterClient
         self.delegate = delegate
