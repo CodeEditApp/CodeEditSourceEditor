@@ -130,7 +130,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
 
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
         controller.completionDelegate = completionDelegate
-        controller.jumpToDefinitionModel?.delegate = jumpToDefinitionDelegate
+        controller.jumpToDefinitionDelegate = jumpToDefinitionDelegate
 
         context.coordinator.updateHighlightProviders(highlightProviders)
 
