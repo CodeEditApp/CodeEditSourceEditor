@@ -28,16 +28,13 @@ extension SourceEditorConfiguration {
         /// non-standard quote character: `“ (0x201C)`.
         public var warningCharacters: Set<UInt16>
 
-        public var codeSuggestionTriggerCharacters: Set<String>
-
         public init(
             showGutter: Bool = true,
             showMinimap: Bool = true,
             showReformattingGuide: Bool = false,
             showFoldingRibbon: Bool = true,
             invisibleCharactersConfiguration: InvisibleCharactersConfiguration = .empty,
-            warningCharacters: Set<UInt16> = [],
-            codeSuggestionTriggerCharacters: Set<String> = []
+            warningCharacters: Set<UInt16> = []
         ) {
             self.showGutter = showGutter
             self.showMinimap = showMinimap
@@ -45,7 +42,6 @@ extension SourceEditorConfiguration {
             self.showFoldingRibbon = showFoldingRibbon
             self.invisibleCharactersConfiguration = invisibleCharactersConfiguration
             self.warningCharacters = warningCharacters
-            self.codeSuggestionTriggerCharacters = codeSuggestionTriggerCharacters
         }
 
         @MainActor
@@ -82,10 +78,6 @@ extension SourceEditorConfiguration {
             if shouldUpdateInsets && controller.scrollView != nil { // Check for view existence
                 controller.updateContentInsets()
                 controller.updateTextInsets()
-            }
-
-            if oldConfig?.codeSuggestionTriggerCharacters != codeSuggestionTriggerCharacters {
-                controller.setUpTextFormation()
             }
         }
     }
