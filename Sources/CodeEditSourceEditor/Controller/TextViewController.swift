@@ -24,8 +24,6 @@ public class TextViewController: NSViewController {
 
     // MARK: - Views and Child VCs
 
-    // MARK: - Views and Child VCs
-
     weak var findViewController: FindViewController?
 
     internal(set) public var scrollView: NSScrollView!
@@ -88,6 +86,18 @@ public class TextViewController: NSViewController {
     public var highlightProviders: [HighlightProviding]
 
     public weak var completionDelegate: CodeSuggestionDelegate?
+
+    /// A delegate object that responds to requests for jump to definition actions. see ``JumpToDefinitionDelegate``.
+    /// - Note: The ``TextViewController`` keeps only a `weak` reference to this object. To function properly, ensure a
+    ///         strong reference to the delegate is kept *outside* of this variable.
+    public var jumpToDefinitionDelegate: JumpToDefinitionDelegate? {
+        get {
+            jumpToDefinitionModel.delegate
+        }
+        set {
+            jumpToDefinitionModel.delegate = newValue
+        }
+    }
 
     // MARK: - Config Helpers
 
@@ -177,7 +187,7 @@ public class TextViewController: NSViewController {
     /// This will be `nil` if another highlighter provider is passed to the source editor.
     internal(set) public var treeSitterClient: TreeSitterClient? {
         didSet {
-            jumpToDefinitionModel?.treeSitterClient = treeSitterClient
+            jumpToDefinitionModel.treeSitterClient = treeSitterClient
         }
     }
 
@@ -186,7 +196,7 @@ public class TextViewController: NSViewController {
     /// Filters used when applying edits..
     var textFilters: [TextFormation.Filter] = []
 
-    var jumpToDefinitionModel: JumpToDefinitionModel?
+    var jumpToDefinitionModel: JumpToDefinitionModel
 
     var cancellables = Set<AnyCancellable>()
 
@@ -214,7 +224,8 @@ public class TextViewController: NSViewController {
         highlightProviders: [HighlightProviding] = [TreeSitterClient()],
         foldProvider: LineFoldProvider? = nil,
         undoManager: CEUndoManager? = nil,
-        coordinators: [TextViewCoordinator] = []
+        coordinators: [TextViewCoordinator] = [],
+        jumpToDefinitionDelegate: JumpToDefinitionDelegate? = nil
     ) {
         self.language = language
         self.configuration = configuration
@@ -223,9 +234,15 @@ public class TextViewController: NSViewController {
         self.foldProvider = foldProvider ?? LineIndentationFoldProvider()
         self._undoManager = undoManager
         self.invisibleCharactersCoordinator = InvisibleCharactersCoordinator(configuration: configuration)
+        self.jumpToDefinitionModel = JumpToDefinitionModel(
+            controller: nil,
+            treeSitterClient: treeSitterClient,
+            delegate: jumpToDefinitionDelegate
+        )
 
         super.init(nibName: nil, bundle: nil)
 
+        jumpToDefinitionModel.controller = self
         suggestionTriggerModel.controller = self
 
         if let idx = highlightProviders.firstIndex(where: { $0 is TreeSitterClient }),
@@ -253,11 +270,6 @@ public class TextViewController: NSViewController {
         }
         self.textCoordinators = coordinators.map { WeakCoordinator($0) }
 
-        jumpToDefinitionModel = JumpToDefinitionModel(
-            controller: self,
-            treeSitterClient: treeSitterClient,
-            delegate: nil
-        )
     }
 
     required init?(coder: NSCoder) {
