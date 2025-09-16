@@ -103,7 +103,9 @@ public struct SourceEditor: NSViewControllerRepresentable {
             cursorPositions: state.cursorPositions ?? [],
             highlightProviders: context.coordinator.highlightProviders,
             undoManager: undoManager,
-            coordinators: coordinators
+            coordinators: coordinators,
+            completionDelegate: completionDelegate,
+            jumpToDefinitionDelegate: jumpToDefinitionDelegate
         )
         switch text {
         case .binding(let binding):
@@ -117,9 +119,6 @@ public struct SourceEditor: NSViewControllerRepresentable {
         if !(state.cursorPositions?.isEmpty ?? true) {
             controller.setCursorPositions(state.cursorPositions ?? [])
         }
-
-        controller.completionDelegate = completionDelegate
-        controller.jumpToDefinitionModel?.delegate = jumpToDefinitionDelegate
 
         context.coordinator.setController(controller)
         return controller
