@@ -103,7 +103,10 @@ public final class SuggestionController: NSWindowController {
     /// Opens the window as a child of another window.
     public func showWindow(attachedTo parentWindow: NSWindow) {
         guard let window = window else { return }
+
+        super.showWindow(nil)
         parentWindow.addChildWindow(window, ordered: .above)
+        window.orderFront(nil)
 
         // Close on window switch observer
         // Initialized outside of `setupEventMonitors` in order to grab the parent window
@@ -118,8 +121,6 @@ public final class SuggestionController: NSWindowController {
             self?.close()
         }
 
-        super.showWindow(nil)
-        window.orderFront(nil)
         window.contentViewController?.viewWillAppear()
     }
 
@@ -132,6 +133,12 @@ public final class SuggestionController: NSWindowController {
             popover = nil
         } else {
             contentViewController?.viewWillDisappear()
+        }
+
+        // Clean up window observers
+        if let observer = windowResignObserver {
+            NotificationCenter.default.removeObserver(observer)
+            windowResignObserver = nil
         }
 
         super.close()
