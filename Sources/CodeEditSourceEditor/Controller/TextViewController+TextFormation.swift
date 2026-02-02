@@ -19,10 +19,14 @@ extension TextViewController {
 
         // Filters
 
-        setUpOpenPairFilters(pairs: BracketPairs.allValues)
+        // Only set up bracket pair completion if enabled in settings
+        if configuration.behavior.autocompleteBraces {
+            setUpOpenPairFilters(pairs: BracketPairs.allValues)
+            setUpDeletePairFilters(pairs: BracketPairs.allValues)
+        }
+
         setUpTagFilter()
         setUpNewlineTabFilters(indentOption: configuration.behavior.indentOption)
-        setUpDeletePairFilters(pairs: BracketPairs.allValues)
         setUpDeleteWhitespaceFilter(indentOption: configuration.behavior.indentOption)
     }
 
