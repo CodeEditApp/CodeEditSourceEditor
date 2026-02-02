@@ -20,16 +20,22 @@ extension SourceEditorConfiguration {
         /// The column to reformat at.
         public var reformatAtColumn: Int = 80
 
+        /// Controls whether opening brackets automatically insert their closing pair.
+        /// When true, typing `{` will automatically insert `}` and position the cursor between them.
+        public var autocompleteBraces: Bool = true
+
         public init(
             isEditable: Bool = true,
             isSelectable: Bool = true,
             indentOption: IndentOption = .spaces(count: 4),
-            reformatAtColumn: Int = 80
+            reformatAtColumn: Int = 80,
+            autocompleteBraces: Bool = true
         ) {
             self.isEditable = isEditable
             self.isSelectable = isSelectable
             self.indentOption = indentOption
             self.reformatAtColumn = reformatAtColumn
+            self.autocompleteBraces = autocompleteBraces
         }
 
         @MainActor
@@ -48,7 +54,7 @@ extension SourceEditorConfiguration {
                 controller.textView.isSelectable = isSelectable
             }
 
-            if oldConfig?.indentOption != indentOption {
+            if oldConfig?.indentOption != indentOption || oldConfig?.autocompleteBraces != autocompleteBraces {
                 controller.setUpTextFormation()
             }
 
