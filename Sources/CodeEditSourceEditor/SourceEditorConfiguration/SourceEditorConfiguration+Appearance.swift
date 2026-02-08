@@ -87,6 +87,7 @@ extension SourceEditorConfiguration {
                 controller.textView.font = font
                 controller.textView.typingAttributes = controller.attributesFor(nil)
                 controller.gutterView.font = font.rulerFont
+                controller.refreshEstimatedLineHeightCache()
                 needsHighlighterInvalidation = true
             }
 
@@ -103,6 +104,7 @@ extension SourceEditorConfiguration {
 
             if oldConfig?.lineHeightMultiple != lineHeightMultiple {
                 controller.textView.layoutManager.lineHeightMultiplier = lineHeightMultiple
+                controller.refreshEstimatedLineHeightCache()
             }
 
             if oldConfig?.wrapLines != wrapLines {

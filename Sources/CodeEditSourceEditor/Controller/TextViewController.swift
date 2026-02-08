@@ -163,6 +163,21 @@ public class TextViewController: NSViewController {
     /// Toggle the visibility of the gutter view in the editor.
     public var showGutter: Bool { configuration.peripherals.showGutter }
 
+    /// Optional provider for custom gutter decorations.
+    public var gutterDecorationProvider: (any GutterDecorationProviding)? {
+        didSet {
+            gutterView.decorationProvider = gutterDecorationProvider
+            gutterView.needsDisplay = true
+        }
+    }
+
+    /// Optional interaction delegate for gutter decorations.
+    public var gutterDecorationInteractionDelegate: (any GutterDecorationInteractionDelegate)? {
+        didSet {
+            gutterView.decorationInteractionDelegate = gutterDecorationInteractionDelegate
+        }
+    }
+
     /// Toggle the visibility of the minimap view in the editor.
     public var showMinimap: Bool { configuration.peripherals.showMinimap }
 
@@ -288,6 +303,16 @@ public class TextViewController: NSViewController {
         self.textView.setText(text)
         self.setUpHighlighter()
         self.gutterView.setNeedsDisplay(self.gutterView.frame)
+    }
+
+    /// Force the layout manager to recalculate its cached estimated line height.
+    ///
+    /// The estimated line height is cached and not invalidated when the font or line height multiplier changes,
+    /// causing vertical cursor movement (`moveDown:`/`moveUp:`) to use stale values and fail to cross line
+    /// boundaries. Re-assigning `renderDelegate` triggers the cache to refresh.
+    func refreshEstimatedLineHeightCache() {
+        let renderDelegate = textView.layoutManager.renderDelegate
+        textView.layoutManager.renderDelegate = renderDelegate
     }
 
     deinit {
