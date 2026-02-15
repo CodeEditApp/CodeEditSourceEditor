@@ -14,6 +14,9 @@ extension SourceEditorConfiguration {
         /// false, the editor is selectable but not editable.
         public var isSelectable: Bool = true
 
+        /// Controls whether opening brackets/braces are automatically completed with their closing counterpart.
+        public var autocompleteBraces: Bool = true
+
         /// Determines what character(s) to insert when the tab key is pressed. Defaults to 4 spaces.
         public var indentOption: IndentOption = .spaces(count: 4)
 
@@ -23,11 +26,13 @@ extension SourceEditorConfiguration {
         public init(
             isEditable: Bool = true,
             isSelectable: Bool = true,
+            autocompleteBraces: Bool = true,
             indentOption: IndentOption = .spaces(count: 4),
             reformatAtColumn: Int = 80
         ) {
             self.isEditable = isEditable
             self.isSelectable = isSelectable
+            self.autocompleteBraces = autocompleteBraces
             self.indentOption = indentOption
             self.reformatAtColumn = reformatAtColumn
         }
@@ -48,7 +53,7 @@ extension SourceEditorConfiguration {
                 controller.textView.isSelectable = isSelectable
             }
 
-            if oldConfig?.indentOption != indentOption {
+            if oldConfig?.indentOption != indentOption || oldConfig?.autocompleteBraces != autocompleteBraces {
                 controller.setUpTextFormation()
             }
 
