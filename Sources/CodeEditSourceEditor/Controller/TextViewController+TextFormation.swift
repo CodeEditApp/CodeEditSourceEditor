@@ -19,11 +19,14 @@ extension TextViewController {
 
         // Filters
 
-        setUpOpenPairFilters(pairs: BracketPairs.allValues)
+        if configuration.behavior.autocompleteBraces {
+            setUpOpenPairFilters(pairs: BracketPairs.allValues)
+            setUpDeletePairFilters(pairs: BracketPairs.allValues)
+        }
         setUpTagFilter()
         setUpNewlineTabFilters(indentOption: configuration.behavior.indentOption)
-        setUpDeletePairFilters(pairs: BracketPairs.allValues)
         setUpDeleteWhitespaceFilter(indentOption: configuration.behavior.indentOption)
+
     }
 
     /// Returns a `TextualIndenter` based on available language configuration.
