@@ -18,11 +18,14 @@ extension TextViewController {
         textFilters = []
 
         // Filters
-
-        setUpOpenPairFilters(pairs: BracketPairs.allValues)
+        if configuration.behavior.completeBrackets {
+            setUpOpenPairFilters(pairs: BracketPairs.allValues)
+        }
         setUpTagFilter()
         setUpNewlineTabFilters(indentOption: configuration.behavior.indentOption)
-        setUpDeletePairFilters(pairs: BracketPairs.allValues)
+        if configuration.behavior.completeBrackets {
+            setUpDeletePairFilters(pairs: BracketPairs.allValues)
+        }
         setUpDeleteWhitespaceFilter(indentOption: configuration.behavior.indentOption)
     }
 

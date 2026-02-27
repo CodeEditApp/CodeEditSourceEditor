@@ -19,17 +19,23 @@ extension SourceEditorConfiguration {
 
         /// The column to reformat at.
         public var reformatAtColumn: Int = 80
+        
+        /// Controls whether bracket pairs are automatically completed when typing an opening bracket.
+        /// When `true`, typing `{` will automatically insert `}`. Defaults to `true`.
+        public var completeBrackets: Bool = true
 
         public init(
             isEditable: Bool = true,
             isSelectable: Bool = true,
             indentOption: IndentOption = .spaces(count: 4),
-            reformatAtColumn: Int = 80
+            reformatAtColumn: Int = 80,
+            completeBrackets: Bool = true
         ) {
             self.isEditable = isEditable
             self.isSelectable = isSelectable
             self.indentOption = indentOption
             self.reformatAtColumn = reformatAtColumn
+            self.completeBrackets = completeBrackets
         }
 
         @MainActor
@@ -56,6 +62,10 @@ extension SourceEditorConfiguration {
                 controller.reformattingGuideView.column = reformatAtColumn
                 controller.reformattingGuideView.updatePosition(in: controller)
                 controller.view.updateConstraintsForSubtreeIfNeeded()
+            }
+          
+            if oldConfig?.completeBrackets != completeBrackets {
+                controller.setUpTextFormation()
             }
         }
     }
