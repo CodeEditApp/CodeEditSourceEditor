@@ -3,6 +3,7 @@ import XCTest
 import SwiftTreeSitter
 import AppKit
 import SwiftUI
+import TextFormation
 import TextStory
 
 // swiftlint:disable:next type_body_length
@@ -214,6 +215,26 @@ final class TextViewControllerTests: XCTestCase {
         )
         controller.textView.insertText("\t", replacementRange: .zero)
         XCTAssertEqual(controller.textView.string, String(repeating: " ", count: 1000))
+    }
+
+    // MARK: Bracket Completion
+
+    func test_completeBracketsEnabled() {
+        controller.configuration.behavior.completeBrackets = true
+
+        let hasPairFilter = controller.textFilters.contains(where: { $0 is StandardOpenPairFilter })
+        let hasDeleteFilter = controller.textFilters.contains(where: { $0 is DeleteCloseFilter })
+        XCTAssertTrue(hasPairFilter, "Should have open pair filters when completeBrackets is enabled")
+        XCTAssertTrue(hasDeleteFilter, "Should have delete pair filters when completeBrackets is enabled")
+    }
+
+    func test_completeBracketsDisabled() {
+        controller.configuration.behavior.completeBrackets = false
+
+        let hasPairFilter = controller.textFilters.contains(where: { $0 is StandardOpenPairFilter })
+        let hasDeleteFilter = controller.textFilters.contains(where: { $0 is DeleteCloseFilter })
+        XCTAssertFalse(hasPairFilter, "Should not have open pair filters when completeBrackets is disabled")
+        XCTAssertFalse(hasDeleteFilter, "Should not have delete pair filters when completeBrackets is disabled")
     }
 
     func test_letterSpacing() throws {
