@@ -92,6 +92,18 @@ public enum CaptureName: Int8, CaseIterable, Sendable {
             return .keywordReturn
         case "keyword.function":
             return .keywordFunction
+        case "text.title", "text.strong", "punctuation.special":
+            return .keyword
+        case "text.literal", "text.uri", "string.escape":
+            return .string
+        case "text.reference":
+            return .type
+        case "text.emphasis":
+            return .variable
+        case "punctuation.delimiter":
+            return .comment
+        case "none":
+            return nil
         default:
             return nil
         }
