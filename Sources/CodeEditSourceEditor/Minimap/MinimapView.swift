@@ -267,6 +267,7 @@ public class MinimapView: FlippedNSView {
     }
 
     override public func hitTest(_ point: NSPoint) -> NSView? {
+        guard !isHidden else { return nil }
         guard let point = superview?.convert(point, to: self) else { return nil }
         // For performance, don't hitTest the layout fragment views, but make sure the `documentVisibleView` is
         // hittable.
