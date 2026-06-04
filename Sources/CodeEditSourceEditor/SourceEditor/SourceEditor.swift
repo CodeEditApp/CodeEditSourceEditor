@@ -140,6 +140,14 @@ public struct SourceEditor: NSViewControllerRepresentable {
         } else {
             context.coordinator.isUpdatingFromRepresentable = true
             updateControllerWithState(state, controller: controller)
+            switch text {
+            case .storage:
+                break
+            case let .binding(text):
+                if controller.text != text.wrappedValue {
+                    controller.text = text.wrappedValue
+                }
+            }
             context.coordinator.isUpdatingFromRepresentable = false
         }
 
