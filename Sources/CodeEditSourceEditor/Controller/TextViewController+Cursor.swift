@@ -85,6 +85,13 @@ extension TextViewController {
         if let position = cursorPositions.first {
             suggestionTriggerModel.selectionUpdated(position)
         }
+
+        // Dismiss ghost text when the cursor moves off the suggestion's anchor.
+        if activeInlineSuggestion != nil,
+           let anchor = inlineSuggestionAnchor,
+           cursorPositions.first?.range != NSRange(location: anchor, length: 0) {
+            dismissInlineSuggestion()
+        }
     }
 
     /// Fills out all properties on the given cursor position if it's missing either the range or line/column

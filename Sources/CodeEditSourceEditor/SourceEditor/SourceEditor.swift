@@ -37,6 +37,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = [],
         completionDelegate: CodeSuggestionDelegate? = nil,
+        inlineCompletionDelegate: InlineCompletionDelegate? = nil,
         jumpToDefinitionDelegate: JumpToDefinitionDelegate? = nil
     ) {
         self.text = .binding(text)
@@ -47,6 +48,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         self.undoManager = undoManager
         self.coordinators = coordinators
         self.completionDelegate = completionDelegate
+        self.inlineCompletionDelegate = inlineCompletionDelegate
         self.jumpToDefinitionDelegate = jumpToDefinitionDelegate
     }
 
@@ -70,6 +72,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         undoManager: CEUndoManager? = nil,
         coordinators: [any TextViewCoordinator] = [],
         completionDelegate: CodeSuggestionDelegate? = nil,
+        inlineCompletionDelegate: InlineCompletionDelegate? = nil,
         jumpToDefinitionDelegate: JumpToDefinitionDelegate? = nil
     ) {
         self.text = .storage(text)
@@ -80,6 +83,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
         self.undoManager = undoManager
         self.coordinators = coordinators
         self.completionDelegate = completionDelegate
+        self.inlineCompletionDelegate = inlineCompletionDelegate
         self.jumpToDefinitionDelegate = jumpToDefinitionDelegate
     }
 
@@ -91,6 +95,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
     var undoManager: CEUndoManager?
     var coordinators: [any TextViewCoordinator]
     weak var completionDelegate: CodeSuggestionDelegate?
+    weak var inlineCompletionDelegate: InlineCompletionDelegate?
     weak var jumpToDefinitionDelegate: JumpToDefinitionDelegate?
 
     public typealias NSViewControllerType = TextViewController
@@ -105,6 +110,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
             undoManager: undoManager,
             coordinators: coordinators,
             completionDelegate: completionDelegate,
+            inlineCompletionDelegate: inlineCompletionDelegate,
             jumpToDefinitionDelegate: jumpToDefinitionDelegate
         )
         switch text {
@@ -130,6 +136,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
 
     public func updateNSViewController(_ controller: TextViewController, context: Context) {
         controller.completionDelegate = completionDelegate
+        controller.inlineCompletionDelegate = inlineCompletionDelegate
         controller.jumpToDefinitionDelegate = jumpToDefinitionDelegate
 
         context.coordinator.updateHighlightProviders(highlightProviders)

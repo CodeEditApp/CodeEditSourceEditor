@@ -247,6 +247,11 @@ extension TextViewController {
         let commandKey = NSEvent.ModifierFlags.command
         let controlKey = NSEvent.ModifierFlags.control
 
+        // Inline completion (ghost text) keys take precedence while a suggestion is active.
+        if handleInlineCompletionKeyDown(event: event, modifierFlags: modifierFlags) {
+            return nil
+        }
+
         switch (modifierFlags, event.charactersIgnoringModifiers) {
         case (commandKey, "/"):
             handleCommandSlash()
@@ -262,12 +267,7 @@ extension TextViewController {
             self.findViewController?.showFindPanel()
             return nil
         case (.init(rawValue: 0), "\u{1b}"): // Escape key
-            if findViewController?.viewModel.isShowingFindPanel == true {
-                self.findViewController?.hideFindPanel()
-                return nil
-            }
-            // Attempt to show completions otherwise
-            return handleShowCompletions(event)
+            return handleEscapeKey(event)
         case (controlKey, " "):
             return handleShowCompletions(event)
         case ([NSEvent.ModifierFlags.command, NSEvent.ModifierFlags.control], "j"):
@@ -281,6 +281,40 @@ extension TextViewController {
         }
     }
 
+    /// Handles the Escape key when no inline completion is active: hides the find panel if it is showing, otherwise
+    /// toggles the completion suggestions.
+    private func handleEscapeKey(_ event: NSEvent) -> NSEvent? {
+        if findViewController?.viewModel.isShowingFindPanel == true {
+            self.findViewController?.hideFindPanel()
+            return nil
+        }
+        // Attempt to show completions otherwise
+        return handleShowCompletions(event)
+    }
+
+    /// Handles key events that control an active inline completion (ghost text).
+    ///
+    /// While a suggestion is active, Escape dismisses it and Option+`]` / Option+`[` cycle through the available items.
+    /// When no suggestion is active this is a no-op so the keys keep their normal behavior.
+    /// - Returns: `true` if the event was consumed by the inline completion.
+    private func handleInlineCompletionKeyDown(event: NSEvent, modifierFlags: NSEvent.ModifierFlags) -> Bool {
+        guard activeInlineSuggestion != nil else { return false }
+
+        switch (modifierFlags, event.charactersIgnoringModifiers) {
+        case (.option, "]"):
+            selectNextInlineSuggestion()
+            return true
+        case (.option, "["):
+            selectPreviousInlineSuggestion()
+            return true
+        case (.init(rawValue: 0), "\u{1b}"): // Escape key
+            dismissInlineSuggestion()
+            return true
+        default:
+            return false
+        }
+    }
+
     /// Handles the tab key event.
     /// If the Shift key is pressed, it handles unindenting. If no modifier key is pressed, it checks if multiple lines
     /// are highlighted and handles indenting accordingly.
@@ -288,6 +322,12 @@ extension TextViewController {
     /// - Returns: The original event if it should be passed on, or `nil` to indicate handling within the method.
     func handleTab(event: NSEvent, modifierFlags: UInt) -> NSEvent? {
         let shiftKey = NSEvent.ModifierFlags.shift.rawValue
+
+        // Accept ghost text with an unmodified Tab, but only when the suggestion popup isn't also showing.
+        if modifierFlags == 0, activeInlineSuggestion != nil, !SuggestionController.shared.isVisible {
+            acceptInlineSuggestion()
+            return nil
+        }
 
         if modifierFlags == shiftKey {
             handleIndent(inwards: true)

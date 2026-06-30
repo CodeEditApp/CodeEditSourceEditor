@@ -50,6 +50,19 @@ public class TextViewController: NSViewController {
     lazy var paragraphStyle: NSMutableParagraphStyle = generateParagraphStyle()
 
     var suggestionTriggerModel = SuggestionTriggerCharacterModel()
+    var inlineCompletionTriggerModel = InlineCompletionTriggerModel()
+
+    /// The inline completion items currently available, ordered as provided by the delegate.
+    var inlineSuggestionItems: [InlineCompletionItem] = []
+
+    /// The index of the displayed inline suggestion within ``inlineSuggestionItems``.
+    var inlineSuggestionSelectedIndex: Int = 0
+
+    /// The document offset the current ghost text is anchored to, used to dismiss it when the cursor moves away.
+    var inlineSuggestionAnchor: Int?
+
+    /// The single in-flight task used to request inline completions.
+    var inlineCompletionTask: Task<Void, Never>?
 
     // MARK: - Public Variables
 
@@ -90,6 +103,15 @@ public class TextViewController: NSViewController {
     /// - Note: The ``TextViewController`` keeps only a `weak` reference to this object. To function properly, ensure a
     ///         strong reference to the delegate is kept *outside* of this variable.
     public weak var completionDelegate: CodeSuggestionDelegate?
+
+    /// A delegate object that can respond to requests for inline completion items (ghost text), and to their
+    /// lifecycle. See ``InlineCompletionDelegate``.
+    /// - Note: The ``TextViewController`` keeps only a `weak` reference to this object. To function properly, ensure a
+    ///         strong reference to the delegate is kept *outside* of this variable.
+    public weak var inlineCompletionDelegate: InlineCompletionDelegate?
+
+    /// The inline completion item currently displayed as ghost text, if any.
+    internal(set) public var activeInlineSuggestion: InlineCompletionItem?
 
     /// A delegate object that responds to requests for jump to definition actions. see ``JumpToDefinitionDelegate``.
     /// - Note: The ``TextViewController`` keeps only a `weak` reference to this object. To function properly, ensure a
@@ -230,6 +252,7 @@ public class TextViewController: NSViewController {
         undoManager: CEUndoManager? = nil,
         coordinators: [TextViewCoordinator] = [],
         completionDelegate: CodeSuggestionDelegate? = nil,
+        inlineCompletionDelegate: InlineCompletionDelegate? = nil,
         jumpToDefinitionDelegate: JumpToDefinitionDelegate? = nil
     ) {
         self.language = language
@@ -240,6 +263,7 @@ public class TextViewController: NSViewController {
         self._undoManager = undoManager
         self.invisibleCharactersCoordinator = InvisibleCharactersCoordinator(configuration: configuration)
         self.completionDelegate = completionDelegate
+        self.inlineCompletionDelegate = inlineCompletionDelegate
         self.jumpToDefinitionModel = JumpToDefinitionModel(
             controller: nil,
             treeSitterClient: treeSitterClient,
@@ -250,6 +274,7 @@ public class TextViewController: NSViewController {
 
         jumpToDefinitionModel.controller = self
         suggestionTriggerModel.controller = self
+        inlineCompletionTriggerModel.controller = self
 
         if let idx = highlightProviders.firstIndex(where: { $0 is TreeSitterClient }),
            let client = highlightProviders[idx] as? TreeSitterClient {
@@ -296,6 +321,7 @@ public class TextViewController: NSViewController {
         }
         highlighter = nil
         highlightProviders.removeAll()
+        inlineCompletionTask?.cancel()
         textCoordinators.values().forEach {
             $0.destroy()
         }
