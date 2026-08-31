@@ -235,6 +235,20 @@ final class TextViewControllerTests: XCTestCase {
         controller.configuration.appearance.letterSpacing = 1.0
     }
 
+    func test_lineNumberFont() {
+        let defaultFont = controller.font.rulerFont
+        XCTAssertNil(controller.lineNumberFont)
+        XCTAssertEqual(controller.gutterView.font, defaultFont)
+
+        let customFont = NSFont.monospacedSystemFont(ofSize: 17, weight: .bold)
+        controller.configuration.appearance.lineNumberFont = customFont
+        XCTAssertEqual(controller.lineNumberFont, customFont)
+        XCTAssertEqual(controller.gutterView.font, customFont)
+
+        controller.configuration.appearance.lineNumberFont = nil
+        XCTAssertEqual(controller.gutterView.font, defaultFont)
+    }
+
     // MARK: Bracket Highlights
 
     func test_bracketHighlights() throws {

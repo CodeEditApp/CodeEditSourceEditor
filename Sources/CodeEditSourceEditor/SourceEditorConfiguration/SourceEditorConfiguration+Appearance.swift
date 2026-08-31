@@ -19,6 +19,9 @@ extension SourceEditorConfiguration {
         /// The default font.
         public var font: NSFont
 
+        /// An optional font for line numbers. When `nil`, a font derived from ``font`` is used.
+        public var lineNumberFont: NSFont?
+
         /// The line height multiplier (e.g. `1.2`).
         public var lineHeightMultiple: Double
 
@@ -45,6 +48,7 @@ extension SourceEditorConfiguration {
         ///   - useThemeBackground: Determines whether the editor uses the theme's background color, or a transparent
         ///                         background color.
         ///   - font: The default font.
+        ///   - lineNumberFont: An optional font for line numbers. Defaults to a font derived from `font`.
         ///   - lineHeightMultiple: The line height multiplier (e.g. `1.2`).
         ///   - letterSpacing: The amount of space to use between letters, as a percent. Eg: `1.0` = no space, `1.5`
         ///                    = 1/2 of a character's width between characters, etc. Defaults to `1.0`.
@@ -57,6 +61,7 @@ extension SourceEditorConfiguration {
             theme: EditorTheme,
             useThemeBackground: Bool = true,
             font: NSFont,
+            lineNumberFont: NSFont? = nil,
             lineHeightMultiple: Double = 1.2,
             letterSpacing: Double = 1.0,
             wrapLines: Bool,
@@ -67,6 +72,7 @@ extension SourceEditorConfiguration {
             self.theme = theme
             self.useThemeBackground = useThemeBackground
             self.font = font
+            self.lineNumberFont = lineNumberFont
             self.lineHeightMultiple = lineHeightMultiple
             self.letterSpacing = letterSpacing
             self.wrapLines = wrapLines
@@ -86,9 +92,10 @@ extension SourceEditorConfiguration {
             if oldConfig?.font != font {
                 controller.textView.font = font
                 controller.textView.typingAttributes = controller.attributesFor(nil)
-                controller.gutterView.font = font.rulerFont
                 needsHighlighterInvalidation = true
             }
+
+            controller.gutterView.font = lineNumberFont ?? font.rulerFont
 
             if oldConfig?.theme != theme || oldConfig?.useThemeBackground != useThemeBackground {
                 updateControllerNewTheme(controller: controller)

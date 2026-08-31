@@ -108,6 +108,9 @@ public class TextViewController: NSViewController {
     /// The font to use in the `textView`
     public var font: NSFont { configuration.appearance.font }
 
+    /// The optional font used for line numbers. When `nil`, the editor derives one from ``font``.
+    public var lineNumberFont: NSFont? { configuration.appearance.lineNumberFont }
+
     /// The  ``EditorTheme`` used for highlighting.
     public var theme: EditorTheme { configuration.appearance.theme }
 
