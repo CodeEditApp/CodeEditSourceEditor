@@ -13,6 +13,27 @@ public protocol GutterViewDelegate: AnyObject {
     func gutterViewWidthDidUpdate()
 }
 
+/// Configures the vertical separator between the gutter and editor content.
+public struct GutterSeparator: Equatable {
+    /// The separator's stroke color.
+    public var color: NSColor
+    /// The separator's width in points.
+    public var lineWidth: CGFloat
+    /// Alternating painted and unpainted lengths. An empty array draws a solid line.
+    public var dashPattern: [CGFloat]
+
+    /// Creates a gutter separator.
+    /// - Parameters:
+    ///   - color: The separator's stroke color.
+    ///   - lineWidth: The separator's width in points.
+    ///   - dashPattern: Alternating painted and unpainted lengths. Leave empty for a solid line.
+    public init(color: NSColor = .separatorColor, lineWidth: CGFloat = 1, dashPattern: [CGFloat] = []) {
+        self.color = color
+        self.lineWidth = lineWidth
+        self.dashPattern = dashPattern
+    }
+}
+
 /// The gutter view displays line numbers that match the text view's line indexes.
 /// This view is used as a scroll view's ruler view. It sits on top of the text view so text scrolls underneath the
 /// gutter if line wrapping is disabled.
@@ -72,6 +93,14 @@ public class GutterView: NSView {
 
     @Invalidating(.display)
     var selectedLineColor: NSColor = NSColor.selectedTextBackgroundColor.withSystemEffect(.disabled)
+
+    var separator: GutterSeparator? {
+        didSet {
+            if oldValue != separator {
+                needsDisplay = true
+            }
+        }
+    }
 
     /// Toggle the visibility of the line fold decoration.
     @Invalidating(.display)
@@ -145,6 +174,7 @@ public class GutterView: NSView {
             controller: controller,
             delegate: delegate
         )
+        separator = configuration.appearance.gutterSeparator
     }
 
     public init(
@@ -327,6 +357,7 @@ public class GutterView: NSView {
         drawBackground(context, dirtyRect: dirtyRect)
         drawSelectedLines(context)
         drawLineNumbers(context, dirtyRect: dirtyRect)
+        drawSeparator(context)
         context.restoreGState()
     }
 
@@ -334,5 +365,20 @@ public class GutterView: NSView {
         NotificationCenter.default.removeObserver(self)
         delegate = nil
         textView = nil
+    }
+}
+
+private extension GutterView {
+    func drawSeparator(_ context: CGContext) {
+        guard let separator, separator.lineWidth > 0 else { return }
+        context.saveGState()
+        context.setStrokeColor(separator.color.cgColor)
+        context.setLineWidth(separator.lineWidth)
+        context.setLineDash(phase: 0, lengths: separator.dashPattern)
+        let xPosition = bounds.maxX - separator.lineWidth / 2
+        context.move(to: CGPoint(x: xPosition, y: bounds.minY))
+        context.addLine(to: CGPoint(x: xPosition, y: bounds.maxY))
+        context.strokePath()
+        context.restoreGState()
     }
 }

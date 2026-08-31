@@ -458,6 +458,17 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.textViewInsets.right, MinimapView.maxWidth)
     }
 
+    func test_gutterSeparator() {
+        XCTAssertNil(controller.gutterSeparator)
+        XCTAssertNil(controller.gutterView.separator)
+
+        let separator = GutterSeparator(color: .systemRed, lineWidth: 2, dashPattern: [1, 1])
+        controller.configuration.appearance.gutterSeparator = separator
+
+        XCTAssertEqual(controller.gutterSeparator, separator)
+        XCTAssertEqual(controller.gutterView.separator, separator)
+    }
+
     // MARK: Folding Ribbon
 
     func test_foldingRibbonToggle() {

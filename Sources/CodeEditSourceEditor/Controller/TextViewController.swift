@@ -154,6 +154,9 @@ public class TextViewController: NSViewController {
     /// The type of highlight to use when highlighting bracket pairs. Leave as `nil` to disable highlighting.
     public var bracketPairEmphasis: BracketPairEmphasis? { configuration.appearance.bracketPairEmphasis }
 
+    /// The optional vertical separator between the gutter and editor content.
+    public var gutterSeparator: GutterSeparator? { configuration.appearance.gutterSeparator }
+
     /// The column at which to show the reformatting guide
     public var reformatAtColumn: Int { configuration.behavior.reformatAtColumn }
 

@@ -39,6 +39,9 @@ extension SourceEditorConfiguration {
         /// See ``BracketPairEmphasis`` for more information. Defaults to `.flash`.
         public var bracketPairEmphasis: BracketPairEmphasis? = .flash
 
+        /// The optional vertical separator between the gutter and editor content.
+        public var gutterSeparator: GutterSeparator?
+
         /// Create a new appearance configuration object.
         /// - Parameters:
         ///   - theme: The theme for syntax highlighting.
@@ -53,6 +56,7 @@ extension SourceEditorConfiguration {
         ///   - tabWidth: The visual tab width in number of spaces.
         ///   - bracketPairEmphasis: The type of highlight to use to highlight bracket pairs. See
         ///                          ``BracketPairEmphasis`` for more information. Defaults to `.flash`.
+        ///   - gutterSeparator: The optional vertical separator between the gutter and editor content.
         public init(
             theme: EditorTheme,
             useThemeBackground: Bool = true,
@@ -62,7 +66,8 @@ extension SourceEditorConfiguration {
             wrapLines: Bool,
             useSystemCursor: Bool = true,
             tabWidth: Int = 4,
-            bracketPairEmphasis: BracketPairEmphasis? = .flash
+            bracketPairEmphasis: BracketPairEmphasis? = .flash,
+            gutterSeparator: GutterSeparator? = nil
         ) {
             self.theme = theme
             self.useThemeBackground = useThemeBackground
@@ -77,6 +82,7 @@ extension SourceEditorConfiguration {
             }
             self.tabWidth = tabWidth
             self.bracketPairEmphasis = bracketPairEmphasis
+            self.gutterSeparator = gutterSeparator
         }
 
         @MainActor
@@ -122,6 +128,8 @@ extension SourceEditorConfiguration {
             if oldConfig?.bracketPairEmphasis != bracketPairEmphasis {
                 controller.emphasizeSelectionPairs()
             }
+
+            controller.gutterView.separator = gutterSeparator
 
             // Cant put these in one if sadly
             if #available(macOS 14, *) {
