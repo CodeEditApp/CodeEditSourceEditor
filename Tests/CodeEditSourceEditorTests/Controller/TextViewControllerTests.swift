@@ -432,6 +432,24 @@ final class TextViewControllerTests: XCTestCase {
         XCTAssertEqual(controller.cursorPositions[1].start.column, 1)
     }
 
+    func test_sourceEditorUpdatesCursorPositionsFromState() {
+        controller.setText("1\n2\n")
+        controller.setCursorPositions([CursorPosition(line: 1, column: 1)])
+        let editor = SourceEditor(
+            .constant(""),
+            language: .default,
+            configuration: Mock.config(),
+            state: .constant(SourceEditorState())
+        )
+
+        editor.updateControllerWithState(
+            SourceEditorState(cursorPositions: [CursorPosition(line: 2, column: 1)]),
+            controller: controller
+        )
+
+        XCTAssertEqual(controller.cursorPositions.first?.start, CursorPosition.Position(line: 2, column: 1))
+    }
+
     // MARK: - TreeSitterClient
 
     func test_treeSitterSetUp() {
