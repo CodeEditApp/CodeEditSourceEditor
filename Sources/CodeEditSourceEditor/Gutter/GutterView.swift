@@ -274,9 +274,11 @@ public class GutterView: NSView {
 
         var highlightedLines: Set<UUID> = []
 
-        // Line highlight starts after the git change indicator column, with a rounded leading edge
+        // Line highlight starts after the git change indicator column, with a rounded leading edge, and ends where
+        // the background does. Past it the text view's own highlight shows through; drawing over that too would stack
+        // the two translucent fills and darken the band around the folding ribbon.
         let highlightLeading = gitChangeIndicatorWidth + backgroundEdgeInsets.leading
-        let highlightWidth = frame.width - highlightLeading - backgroundEdgeInsets.trailing
+        let highlightWidth = frame.width - highlightLeading - backgroundEdgeInsets.trailing - foldingRibbonWidth
 
         let viewZones = textView.layoutManager.viewZones
         let hasViewZones = !viewZones.zones.isEmpty
