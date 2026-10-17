@@ -29,7 +29,7 @@ extension TextViewController {
     override public func loadView() {
         super.loadView()
 
-        scrollView = NSScrollView()
+        scrollView = TextScrollView()
         scrollView.documentView = textView
 
         gutterView = GutterView(

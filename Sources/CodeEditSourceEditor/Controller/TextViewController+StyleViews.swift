@@ -58,6 +58,13 @@ extension TextViewController {
         scrollView.contentInsets.bottom += additionalTextInsets?.bottom ?? 0
         minimapView.scrollView.contentInsets.top += additionalTextInsets?.top ?? 0
         minimapView.scrollView.contentInsets.bottom += additionalTextInsets?.bottom ?? 0
+        // That padding is still readable area, so the text view mustn't treat it as covered by chrome.
+        textView.contentInsetPadding = NSEdgeInsets(
+            top: additionalTextInsets?.top ?? 0,
+            left: 0,
+            bottom: additionalTextInsets?.bottom ?? 0,
+            right: 0
+        )
 
         // Inset the top by the find panel height
         let findInset: CGFloat = if findViewController?.viewModel.isShowingFindPanel ?? false {
