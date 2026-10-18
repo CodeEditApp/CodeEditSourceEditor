@@ -139,7 +139,7 @@ public struct SourceEditor: NSViewControllerRepresentable {
             context.coordinator.isUpdateFromTextView = false
         } else {
             context.coordinator.isUpdatingFromRepresentable = true
-            updateControllerWithState(state, controller: controller)
+            updateControllerWithState(state, controller: controller, coordinator: context.coordinator)
             context.coordinator.isUpdatingFromRepresentable = false
         }
 
@@ -159,13 +159,21 @@ public struct SourceEditor: NSViewControllerRepresentable {
         return
     }
 
-    private func updateControllerWithState(_ state: SourceEditorState, controller: TextViewController) {
+    private func updateControllerWithState(
+        _ state: SourceEditorState,
+        controller: TextViewController,
+        coordinator: Coordinator
+    ) {
         if let cursorPositions = state.cursorPositions, cursorPositions != state.cursorPositions {
             controller.setCursorPositions(cursorPositions)
         }
 
+        // Skip positions the text view reported itself (see `Coordinator.lastSentScrollPosition`).
         let scrollView = controller.scrollView
-        if let scrollPosition = state.scrollPosition, scrollPosition != scrollView?.contentView.bounds.origin {
+        if let scrollPosition = state.scrollPosition,
+           scrollPosition != coordinator.lastSentScrollPosition,
+           scrollPosition != scrollView?.contentView.bounds.origin {
+            coordinator.lastSentScrollPosition = scrollPosition
             controller.scrollView.scroll(controller.scrollView.contentView, to: scrollPosition)
             controller.scrollView.reflectScrolledClipView(controller.scrollView.contentView)
             controller.gutterView.needsDisplay = true

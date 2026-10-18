@@ -19,6 +19,11 @@ extension SourceEditor {
         var text: TextAPI
         @Binding var editorState: SourceEditorState
 
+        /// The scroll position last reported to, or applied from, ``editorState``. A state position equal to it came
+        /// from the text view and is not re-applied: during a resize the clip view's origin moves while the binding
+        /// lags a runloop turn behind, and scrolling back to the stale value would fight the resize.
+        var lastSentScrollPosition: CGPoint?
+
         private(set) var highlightProviders: [any HighlightProviding]
 
         private var cancellables: Set<AnyCancellable> = []
@@ -141,6 +146,7 @@ extension SourceEditor {
                 return
             }
             let currentPosition = controller.scrollView.contentView.bounds.origin
+            lastSentScrollPosition = currentPosition
             if editorState.scrollPosition != currentPosition {
                 updateState { $0.scrollPosition = currentPosition }
             }
