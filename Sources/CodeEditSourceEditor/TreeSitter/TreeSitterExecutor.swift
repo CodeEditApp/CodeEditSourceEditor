@@ -53,6 +53,10 @@ final package class TreeSitterExecutor {
     private let lock = NSLock()
     private var queuedTasks: [QueueItem] = []
 
+    /// Test hook, awaited at the start of every async operation before it checks whether it may run or was cancelled.
+    /// Lets tests keep operations pending while they cancel them.
+    var asyncStartGate: (@Sendable () async -> Void)?
+
     enum Error: Swift.Error {
         case syncUnavailable
     }
@@ -95,7 +99,11 @@ final package class TreeSitterExecutor {
         lock.lock()
         defer { lock.unlock() }
         let id = UUID()
+        let startGate = asyncStartGate
         let task = Task(priority: .userInitiated) { // __This executes outside the outer lock's control__
+            if let startGate {
+                await startGate()
+            }
             // Fast path: if we can execute immediately, do so without any delay
             if self.lock.withLock({ canTaskExec(id: id, priority: priority) }) {
                 guard !Task.isCancelled else {

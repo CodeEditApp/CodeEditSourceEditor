@@ -7,8 +7,7 @@
 
 import Foundation
 
-/// Helper methods for dispatching (sync or async) on the main queue only if the calling thread is not already the
-/// main queue.
+/// Helper methods for dispatching on the main queue only if the calling thread is not already the main queue.
 
 extension DispatchQueue {
     /// Executes the work item on the main thread, dispatching asynchronously if the thread is not the main thread.
@@ -20,18 +19,6 @@ extension DispatchQueue {
             DispatchQueue.main.async {
                 item()
             }
-        }
-    }
-
-    /// Executes the work item on the main thread, keeping control on the calling thread until the work item is
-    /// executed if not already on the main thread.
-    /// - Parameter item: The work item to execute.
-    /// - Returns: The value of the work item.
-    static func waitMainIfNot<T>(_ item: () -> T) -> T {
-        if Thread.isMainThread {
-            return item()
-        } else {
-            return DispatchQueue.main.sync(execute: item)
         }
     }
 }

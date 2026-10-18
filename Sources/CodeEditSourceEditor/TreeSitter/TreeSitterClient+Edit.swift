@@ -15,10 +15,14 @@ extension TreeSitterClient {
     /// Concurrency note: This method checks for task cancellation between layer edits, after editing all layers, and
     /// before setting the client's state.
     ///
-    /// - Parameter edit: The edit to apply to the internal tree sitter state.
+    /// - Parameters:
+    ///   - edit: The edit to apply to the internal tree sitter state.
+    ///   - snapshot: The text after the edit (and after every pending edit).
     /// - Returns: The set of ranges invalidated by the edit operation.
-    func applyEdit(edit: InputEdit) -> IndexSet {
-        guard let state = state?.copy(), let readBlock, let readCallback else { return IndexSet() }
+    func applyEdit(edit: InputEdit, snapshot: TreeSitterTextSnapshot) -> IndexSet {
+        guard let state = state?.copy() else { return IndexSet() }
+        let readBlock = snapshot.readBlock
+        let readCallback = snapshot.readCallback
         let pendingEdits = pendingEdits.value() // Grab pending edits.
         let edits = pendingEdits + [edit]
 
@@ -60,8 +64,9 @@ extension TreeSitterClient {
 
         if Task.isCancelled { return IndexSet() }
 
-        self.state = state // Apply the copied state
-        self.pendingEdits.mutate { edits in // Clear the queue
+        self.state = state
+        self.readCallback = readCallback
+        self.pendingEdits.mutate { edits in
             edits = []
         }
 

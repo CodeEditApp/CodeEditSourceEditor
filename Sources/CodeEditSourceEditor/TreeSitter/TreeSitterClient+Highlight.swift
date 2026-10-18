@@ -57,8 +57,6 @@ extension TreeSitterClient {
             return []
         }
 
-        // This needs to be on the main thread since we're going to use the `textProvider` in
-        // the `highlightsFromCursor` method, which uses the textView's text storage.
         guard let queryCursor = layer.languageQuery?.execute(node: rootNode, in: tree) else {
             return []
         }
@@ -77,8 +75,8 @@ extension TreeSitterClient {
         return highlights
     }
 
-    /// Resolves a query cursor to the highlight ranges it contains.
-    /// **Must be called on the main thread**
+    /// Resolves a query cursor to the highlight ranges it contains. Predicates read the text snapshot of the current
+    /// state (``readCallback``), so this runs on any thread.
     /// - Parameters:
     ///     - cursor: The cursor to resolve.
     ///     - includedRange: The range to include highlights from.
@@ -87,7 +85,7 @@ extension TreeSitterClient {
         cursor: QueryCursor,
         includedRange: NSRange
     ) -> [HighlightRange] {
-        guard let textProvider = cachedReadCallback ?? readCallback else { return [] }
+        guard let textProvider = readCallback else { return [] }
         var ranges: [NSRange: Int] = [:]
         return cursor
             .resolve(with: .init(textProvider: textProvider)) // Resolve our cursor against the query

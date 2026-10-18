@@ -158,7 +158,8 @@ public class LanguageLayer: Hashable {
                 }
                 wasLongParse = true
             }
-            newTree = DispatchQueue.waitMainIfNot { parser.parse(tree: tree, readBlock: readBlock) }
+            // The read block reads a text snapshot, so the parse runs on the calling thread.
+            newTree = parser.parse(tree: tree, readBlock: readBlock)
         }
 
         if wasLongParse {
