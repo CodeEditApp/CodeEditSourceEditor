@@ -328,6 +328,31 @@ final class TextViewControllerTests: XCTestCase {
         )
     }
 
+    func test_findClosingPairClampsLimitsToTheDocument() {
+        controller.textView.string = "{ {} }"
+        XCTAssertEqual(controller.findClosingPair("{", "}", from: 1, limit: 10_000, reverse: false), 5)
+        XCTAssertEqual(controller.findClosingPair("}", "{", from: 5, limit: -10_000, reverse: true), 0)
+        XCTAssertNil(controller.findClosingPair("{", "}", from: 4, limit: 2, reverse: false), "inverted window")
+    }
+
+    func test_cursorColumnsClampToTheirLine() {
+        controller.setText("ab\r\ncd\nef")
+        func selectedRange(_ position: CursorPosition) -> NSRange? {
+            controller.setCursorPositions([position])
+            return controller.textView.selectionManager.textSelections.first?.range
+        }
+
+        // Past the end of a line: the end of its content, before the line ending.
+        XCTAssertEqual(selectedRange(CursorPosition(line: 1, column: 100)), NSRange(location: 2, length: 0))
+        XCTAssertEqual(selectedRange(CursorPosition(line: 2, column: 100)), NSRange(location: 6, length: 0))
+        XCTAssertEqual(selectedRange(CursorPosition(line: 3, column: 100)), NSRange(location: 9, length: 0))
+
+        // An end before the start is normalized.
+        let reversed = CursorPosition(start: .init(line: 2, column: 100), end: .init(line: 1, column: 1))
+        XCTAssertEqual(selectedRange(reversed), NSRange(location: 0, length: 6))
+        XCTAssertEqual(controller.resolveCursorPosition(reversed)?.range, NSRange(location: 0, length: 6))
+    }
+
     // MARK: Set Text
 
     func test_setText() {

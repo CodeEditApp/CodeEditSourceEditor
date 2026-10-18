@@ -7,8 +7,27 @@
 
 import Foundation
 import AppKit
+import CodeEditTextView
 
 extension TextViewController {
+    /// Resolves a 1-indexed column on `line` to a UTF-16 offset, clamped to the line's content. Restored state and
+    /// LSP positions can be out of range, and must not spill onto the next line.
+    func characterOffset(in line: TextLineStorage<TextLine>.TextLinePosition, forColumn column: Int) -> Int {
+        let range = line.range
+        let string = textView.textStorage.string as NSString
+        var contentLength = range.length
+        if contentLength > 0 {
+            let last = string.character(at: range.max - 1)
+            if last == 0x0A || last == 0x0D { // \n or \r
+                contentLength -= 1
+                if last == 0x0A, contentLength > 0, string.character(at: range.max - 2) == 0x0D { // \r\n
+                    contentLength -= 1
+                }
+            }
+        }
+        return range.location + min(max(column - 1, 0), contentLength)
+    }
+
     /// Sets new cursor positions.
     /// - Parameter positions: The positions to set. Lines and columns are 1-indexed.
     public func setCursorPositions(_ positions: [CursorPosition], scrollToVisible: Bool = false) {
@@ -26,16 +45,14 @@ extension TextViewController {
                     newSelectedRanges.append(NSRange(location: 0, length: 0))
                 } else if let linePosition = textView.layoutManager.textLineForIndex(position.start.line - 1) {
                     // If this is a valid line, set the new position
-                    let startCharacter = linePosition.range.lowerBound + min(
-                        linePosition.range.upperBound,
-                        position.start.column - 1
-                    )
+                    let startCharacter = characterOffset(in: linePosition, forColumn: position.start.column)
                     if let end = position.end, let endLine = textView.layoutManager.textLineForIndex(end.line - 1) {
-                        let endCharacter = endLine.range.lowerBound + min(
-                            endLine.range.upperBound,
-                            end.column - 1
-                        )
-                        newSelectedRanges.append(NSRange(start: startCharacter, end: endCharacter))
+                        let endCharacter = characterOffset(in: endLine, forColumn: end.column)
+                        // An end before the start would make a negative-length range.
+                        newSelectedRanges.append(NSRange(
+                            start: min(startCharacter, endCharacter),
+                            end: max(startCharacter, endCharacter)
+                        ))
                     } else {
                         newSelectedRanges.append(NSRange(location: startCharacter, length: 0))
                     }
@@ -96,13 +113,14 @@ extension TextViewController {
                     let linePosition = textView.layoutManager.textLineForIndex(position.start.line - 1) else {
                 return nil
             }
-            if position.end != nil {
-                range = NSRange(
-                    location: linePosition.range.location + position.start.column,
-                    length: linePosition.range.max
-                )
+            let startOffset = characterOffset(in: linePosition, forColumn: position.start.column)
+            if let endPos = position.end,
+               endPos.line > 0, endPos.column > 0,
+               let endLinePosition = textView.layoutManager.textLineForIndex(endPos.line - 1) {
+                let endOffset = characterOffset(in: endLinePosition, forColumn: endPos.column)
+                range = NSRange(start: min(startOffset, endOffset), end: max(startOffset, endOffset))
             } else {
-                range = NSRange(location: linePosition.range.location + position.start.column, length: 0)
+                range = NSRange(location: startOffset, length: 0)
             }
         }
 

@@ -9,6 +9,10 @@ import AppKit
 import CodeEditTextView
 
 extension TextViewController {
+    /// How far from the cursor to scan for a matching bracket, in UTF-16 units. Anchored on the cursor rather than the
+    /// visible range, which is empty until the text view's first layout.
+    private static let bracketSearchDistance = 4096
+
     /// Emphasizes bracket pairs using the current selection.
     internal func emphasizeSelectionPairs() {
         guard let bracketPairEmphasis = configuration.appearance.bracketPairEmphasis else { return }
@@ -37,7 +41,7 @@ extension TextViewController {
             pair.0,
             pair.1,
             from: range.location,
-            limit: min((textView.visibleTextRange ?? .zero).max + 4096, textView.documentRange.max),
+            limit: range.location + Self.bracketSearchDistance,
             reverse: false
         ) {
             emphasizeCharacter(characterIndex)
@@ -52,7 +56,7 @@ extension TextViewController {
             pair.1,
             pair.0,
             from: range.location - 1,
-            limit: max((textView.visibleTextRange?.location ?? 0) - 4096, textView.documentRange.location),
+            limit: range.location - Self.bracketSearchDistance,
             reverse: true
         ) {
             emphasizeCharacter(characterIndex)
@@ -82,36 +86,39 @@ extension TextViewController {
     ///   - from: The index to start from. This should not include the start character. Eg given `"{ }"` looking forward
     ///           the index should be `1`
     ///   - limit: A limiting index to stop at. When `reverse` is `true`, this is the minimum index. When `false` this
-    ///            is the maximum index.
+    ///            is the maximum index. Clamped to the document.
     ///   - reverse: Set to `true` to walk backwards from `from`.
     /// - Returns: The index of the found closing pair, if any.
     internal func findClosingPair(_ close: String, _ open: String, from: Int, limit: Int, reverse: Bool) -> Int? {
-        // Walk the text, counting each close. When we find an open that makes closeCount < 0, return that index.
-        var options: NSString.EnumerationOptions = .byCaretPositions
-        if reverse {
-            options = options.union(.reverse)
-        }
-        var closeCount = 0
-        var index: Int?
-        textView.textStorage.mutableString.enumerateSubstrings(
-            in: reverse ?
-                NSRange(location: limit, length: from - limit) :
-                NSRange(location: from, length: limit - from),
-            options: options,
-            using: { substring, range, _, stop in
-                if substring == close {
-                    closeCount += 1
-                } else if substring == open {
-                    closeCount -= 1
-                }
+        // Brackets are single UTF-16 units, so the window is scanned as raw code units.
+        guard let closeUnit = close.utf16.first, let openUnit = open.utf16.first else { return nil }
+        let documentRange = textView.documentRange
+        let lowerBound = max(reverse ? limit : from, documentRange.location)
+        let upperBound = min(reverse ? from : limit, documentRange.max)
+        guard lowerBound < upperBound else { return nil }
+        let length = upperBound - lowerBound
+        let string = textView.textStorage.string as NSString
 
-                if closeCount < 0 {
-                    index = range.location
-                    stop.pointee = true
+        return withUnsafeTemporaryAllocation(of: unichar.self, capacity: length) { buffer -> Int? in
+            guard let units = buffer.baseAddress else { return nil }
+            string.getCharacters(units, range: NSRange(location: lowerBound, length: length))
+            // Count each close. The open that takes the count below zero is the match.
+            var closeCount = 0
+            let step = reverse ? -1 : 1
+            var offset = reverse ? length - 1 : 0
+            while offset >= 0 && offset < length {
+                if units[offset] == closeUnit {
+                    closeCount += 1
+                } else if units[offset] == openUnit {
+                    closeCount -= 1
+                    if closeCount < 0 {
+                        return lowerBound + offset
+                    }
                 }
+                offset += step
             }
-        )
-        return index
+            return nil
+        }
     }
 
     /// Adds a temporary emphasis effect to the character at the given location.
