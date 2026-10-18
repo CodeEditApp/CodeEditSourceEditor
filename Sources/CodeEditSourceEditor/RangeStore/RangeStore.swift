@@ -138,7 +138,7 @@ extension RangeStore {
             _guts.removeSubrange(range, in: OffsetMetric())
         }
 
-        if _guts.count > 0 {
+        if !_guts.isEmpty {
             // Coalesce nearby items if necessary.
             coalesceNearby(range: Range(lowerBound: range.lowerBound, length: newLength))
         }

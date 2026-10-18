@@ -23,7 +23,8 @@ extension RangeStore {
         }
 
         index = findIndex(at: range.lowerBound).index
-        if index > _guts.startIndex && index < _guts.endIndex && _guts.count > 1 {
+        // Strictly inside the rope implies a preceding run. Avoid `_guts.count`, which walks every run.
+        if index > _guts.startIndex && index < _guts.endIndex {
             index = _guts.index(before: index)
             coalesceRunAfter(index: &index)
         }
