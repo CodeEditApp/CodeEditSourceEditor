@@ -324,7 +324,7 @@ public final class GitChangeIndicatorView: NSView {
     /// Two overlay layers are required because the GutterView clips its own sublayer tree
     /// (`layer.masksToBounds = true`), so a single layer cannot span both the gutter and text areas:
     /// - `hoverGutterOverlayLayer`: sublayer of `self.layer` — draws above the gutter background,
-    ///   from the bar's left edge to the GutterView's right edge (clipped there by the gutter).
+    ///   from the bar's left edge to where that background ends. Past it the text overlay shows through.
     /// - `hoverOverlayLayer`: sublayer of the document view's layer — covers the full text content area.
     ///   The portion behind the opaque gutter is hidden so only the text-area portion is visible.
     /// Both layers share the same drawing logic via ``configureOverlayLayer``.
@@ -353,9 +353,10 @@ public final class GitChangeIndicatorView: NSView {
         case .modified, .deleted: color = modifiedColor
         }
 
-        // Gutter overlay: from the bar's left edge to the right edge of the GutterView.
+        // Gutter overlay: from the bar's left edge to where the gutter's background ends.
         let barLeftEdge = centerX - Self.barWidth / 2.0 + 1.0
-        let gutterOverlayWidth = gutterView.frame.width - barLeftEdge
+        let backgroundMaxX = (gutterView as? GutterView)?.backgroundMaxX ?? gutterView.frame.width
+        let gutterOverlayWidth = backgroundMaxX - barLeftEdge
         if hoverGutterOverlayLayer == nil {
             let layer = makeOverlayLayer()
             self.layer?.addSublayer(layer)

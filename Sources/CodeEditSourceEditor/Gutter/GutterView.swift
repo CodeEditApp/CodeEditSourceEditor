@@ -132,6 +132,11 @@ public class GutterView: NSView {
         }
     }
 
+    /// Where the gutter's background ends.
+    var backgroundMaxX: CGFloat {
+        (frame.width - backgroundEdgeInsets.trailing - foldingRibbonWidth).rounded()
+    }
+
     /// The gutter's y positions start at the top of the document and increase as it moves down the screen.
     override public var isFlipped: Bool {
         true
@@ -251,7 +256,7 @@ public class GutterView: NSView {
     private func drawBackground(_ context: CGContext, dirtyRect: NSRect) {
         guard let backgroundColor else { return }
         let minX = max(backgroundEdgeInsets.leading, dirtyRect.minX)
-        let maxX = min(frame.width - backgroundEdgeInsets.trailing - foldingRibbonWidth, dirtyRect.maxX)
+        let maxX = min(backgroundMaxX, dirtyRect.maxX)
         let width = maxX - minX
 
         context.saveGState()
@@ -278,7 +283,7 @@ public class GutterView: NSView {
         // the background does. Past it the text view's own highlight shows through; drawing over that too would stack
         // the two translucent fills and darken the band around the folding ribbon.
         let highlightLeading = gitChangeIndicatorWidth + backgroundEdgeInsets.leading
-        let highlightWidth = frame.width - highlightLeading - backgroundEdgeInsets.trailing - foldingRibbonWidth
+        let highlightWidth = backgroundMaxX - highlightLeading
 
         let viewZones = textView.layoutManager.viewZones
         let hasViewZones = !viewZones.zones.isEmpty
